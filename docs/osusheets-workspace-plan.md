@@ -48,3 +48,13 @@ The next follow-up adds each map's official beatmapset cover behind the fixed
 identity column. Keep the artwork secondary to literal map details and controls;
 reuse BeatmapCover's decorative image and failure behavior without adding row
 height, shifting the editor or introducing another click target.
+
+## Compact in-cell follow-up — 2026-11-03
+
+Visual thesis: a dense, calm comparison sheet with a small artwork identity band
+and light input borders; each map occupies one row rather than a display/editor
+pair. Content plan: fixed map identity with a linked title, compact direct/Copy
+BID controls, the actor's editable cell first, then teammate saved comparisons.
+Interaction thesis: edit in place without mounting a separate row; retain drafts
+across Mods and preserve safe save/delete retries; show copy feedback and reveal
+previous map context on demand. Touch controls keep 44px targets.

@@ -1,16 +1,18 @@
-# #731 — practice artwork, Feel and compact availability UI
+# #731 — in-cell practice, artwork, Feel and compact availability UI
 
 Organizer follow-up to the merged #727, implemented from main `d25bc324` on
 2026-11-02. This batch retires practice stars and refines both private
 sheets using MainSheet surfaces, typography and existing locale catalogs.
 The next organizer request adds optional Feel alongside score/comment.
 The following request adds the corresponding beatmap background.
+The 2026-11-03 follow-up moves editing into the record cell and compacts the
+identity actions.
 
 ## Result
 
 Practice contains score/Feel/comment, with compact pool/Mod tabs, labelled
-reload/save/delete icons and a personal editor that stays within the visible
-container. Long literal comments show a three-line preview and expand through
+reload/save/delete icons and an editor directly in the actor's own cell. Each map
+uses one table row. Long literal teammate comments show a three-line preview and expand through
 an explicit keyboard-accessible disclosure. New edits hide obsolete Saved text.
 Current read projections and commands omit rating; legacy rating input is
 rejected. The nullable legacy column remains, old reads do not modify it, and
@@ -20,7 +22,9 @@ private transactional audit. Separate nullable Feel storage is added by
 or NULL. Existing records remain unset. Old stars are never converted to Feel.
 An older score/comment payload preserves saved Feel and its retry hash; current
 forms explicitly send NULL to clear Feel. Deletion clears it in the same audit.
-Desktop controls share one row; mobile comments use the full-width second row.
+Score/Feel/save share the first line inside the owner cell, with comment/delete
+below. The actor's column is ordered first; horizontal scrolling retains the map
+and player headers.
 
 The timetable initially focuses the selected day. Weekday shortcuts and the
 Week control switch between that day and the full seven-day overview while
@@ -33,6 +37,44 @@ legend stay beside the grid; optional help supports Escape.
 
 All existing ownership, current-captain team visibility, optimistic versions,
 idempotency, chart-context, UTC/DST and unfilled/explicit-state semantics remain.
+
+## In-cell follow-up — 2026-11-03
+
+The separate editor row is removed. Only the actor's writable cell displays inputs;
+the current score/Feel/comment are not duplicated above it. Saving and deletion
+retain the same mounted form and version/retry behavior. An outdated own map
+record is available in a Previous map context disclosure beside the fresh form.
+Read-only workspaces retain saved-value cells.
+
+The official osu! web action moves to the literal beatmap-title hyperlink.
+Direct is a compact icon beside Copy BID, which copies the difficulty ID, reports
+success and exposes clipboard failure. The desktop targets are 32px; coarse
+pointer targets remain 44px. Map titles use two lines and metadata one preview
+line, with literal full text retained. Normal row measurements with the synthetic
+fixture and fine pointer: **88.6px at 1280px**, **126.5px at 320px**; alerts,
+expanded comments/history and longer FM policy text may increase row height.
+
+Twenty focused Chrome component checks passed across desktop/mobile and
+light/dark. They cover single-row owner-cell editing, first-column ordering at
+320px/719px, draft retention, linked title/direct destinations, copied BID vs set
+ID, clipboard failure, outdated-map history, saving, safe deletion retry and
+recreation, and read-only controls. These focused checks address the changed
+browser layout/interaction; full application E2E was not run (too slow).
+
+`npm run check`, production build, catalog extraction and audit passed; no new
+locale messages, read contracts or schema changes were introduced in this
+follow-up. `npm audit --omit=dev` found 0 vulnerabilities.
+
+The full isolated-DB run completed with 2,316 passed, two skipped and one i18n
+guard failure: a literal BID label in JSX. The label now uses the existing BID
+catalog entry. The affected `test:i18n` suite then passed all four tests, followed
+by a fresh successful check/build. The other 2,313 tests had passed in the full
+run; the full suite was not repeated for that label-only fix. Focused browser
+results remain the 20 passing checks described above, whose visible label stays
+BID in all three locales.
+
+![Inline practice desktop dark](practice-inline-desktop-dark.png)
+![Inline practice mobile light](practice-inline-mobile-light.png)
 
 ## Artwork follow-up
 

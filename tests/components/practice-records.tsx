@@ -54,7 +54,9 @@ function workspace(poolId: string): PracticeWorkspace {
       id: "67800000-0000-4000-8000-000000000003",
       name: "Synthetic Team",
     },
-    participants: [actor, teammate],
+    participants: params.has("actor-last")
+      ? [teammate, actor]
+      : [actor, teammate],
     readOnly: params.has("readonly"),
     pools: [
       { id: first, name: "Round 1", roundName: "Round 1", stage: "group" },
@@ -101,7 +103,7 @@ function workspace(poolId: string): PracticeWorkspace {
                   comment: "My saved comment",
                   version: 1,
                   updatedAt: "2026-11-01T12:00:00Z",
-                  stale: false,
+                  stale: params.has("stale"),
                 },
                 {
                   userId: teammate.osuId,

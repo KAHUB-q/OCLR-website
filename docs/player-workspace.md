@@ -21,8 +21,10 @@ Changing Mod keeps each map's unsaved inputs mounted; changing pools asks before
 discarding drafts. Hidden pools and historical archives are unavailable.
 Each map has an optional manually entered score, an optional **Feel** selection
 (Poor / Okay / Good), and a compact, vertically resizable comment field (up to
-2,000 characters). The score, Feel, comment and save action share one desktop
-row; on mobile, comments use a full-width second row. Pool and Mod selectors use compact
+2,000 characters). Players fill in their own record cell directly, with score,
+Feel and save above the comment and delete control. There is no separate editor
+row. The actor's column appears first beside the fixed map column, including
+when saved roster order differs. Pool and Mod selectors use compact
 underlined tabs, and reload/save/delete use labelled utility controls.
 
 Team records use a map-by-player comparison table with fixed map and player
@@ -35,9 +37,17 @@ of the score and never enters the highest-score comparison. Long comments initia
 three literal lines and expand through a keyboard-accessible disclosure; the
 complete text is retained. The current context's highest saved score is
 emphasized (ties share the emphasis). Missing scores and outdated map contexts
-never enter that comparison. Each map retains its personal form below the
-comparison row; updates and deletions immediately update the comparison. The
-table scrolls horizontally while the editor stays inside the visible container.
+never enter that comparison. Only the owner's cell is editable; read-only
+workspaces retain the saved-value display. Outdated own records remain available
+in a Previous map context disclosure beside the fresh form. Deletion clears the
+inputs while retaining the same cell for recreation. The table scrolls
+horizontally with fixed map identity and player headers.
+
+Map titles link directly to their official difficulty page. Compact direct and
+Copy BID controls share the identity toolbar. Copy uses the difficulty ID,
+reports success or clipboard failure, and retains 44px targets for touch input.
+Long titles use a two-line preview and metadata one line with their literal full
+text retained in the DOM/title. Normal desktop controls use 32px rows.
 
 Star ratings were retired by organizer request in #731. Current practice
 commands accept score/feel/comment and reject the retired rating field; read

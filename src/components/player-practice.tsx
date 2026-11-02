@@ -10,6 +10,7 @@ import {
   type PracticeValue,
 } from "@/lib/player-workspace-model";
 import { categories, slotLabel, fmPolicyName } from "@/lib/mappool-model";
+import { beatmapLinks } from "@/lib/beatmap-links";
 import { BeatmapActions } from "./beatmap-actions";
 import { BeatmapCover } from "./beatmap-cover";
 import { EmptyState } from "./ui";
@@ -19,6 +20,12 @@ import styles from "./player-workspace.module.css";
 
 type Entry = NonNullable<PracticeWorkspace["pool"]>["entries"][number];
 const empty: PracticeValue = { score: null, feel: null, comment: "" };
+function practiceParticipants(data: PracticeWorkspace) {
+  return [
+    ...data.participants.filter((player) => player.osuId === data.actorId),
+    ...data.participants.filter((player) => player.osuId !== data.actorId),
+  ];
+}
 
 function PracticeTabs({
   id,
@@ -113,6 +120,15 @@ function PracticeEntry({
 }) {
   const tr = useAppTranslations();
   const feelLabels = { bad: tr("Poor"), normal: tr("Okay"), good: tr("Good") };
+  const links = beatmapLinks(entry.beatmapId, entry.metadata.setId);
+  const [copyState, setCopyState] = useState<"idle" | "copied" | "failed">(
+    "idle",
+  );
+  useEffect(() => {
+    if (copyState !== "copied") return;
+    const timer = window.setTimeout(() => setCopyState("idle"), 1600);
+    return () => window.clearTimeout(timer);
+  }, [copyState]);
   const own = entry.records.find((record) => record.userId === data.actorId);
   const initial =
     own && !own.stale
@@ -148,6 +164,167 @@ function PracticeEntry({
     expectedContext: entry.context,
     expectedVersion: version,
   };
+  const best = Math.max(
+    ...visibleRecords
+      .filter((record) => !record.stale && record.score !== null)
+      .map((record) => record.score!),
+  );
+  const deleteRecord = async () => {
+    if (!window.confirm(tr("Delete your practice record?"))) return;
+    setValidation("");
+    const next = await save(
+      { ...target, action: "delete_practice" },
+      tr("Practice record deleted."),
+    );
+    if (next !== undefined) {
+      setVersion(next);
+      setExists(false);
+      setStale(false);
+      setValue(empty);
+      setSaved(empty);
+    }
+  };
+  const editor = (
+    <form
+      className={styles.practiceForm}
+      aria-label={`${tr("My practice")}: ${label}`}
+      onSubmit={async (event) => {
+        event.preventDefault();
+        setValidation("");
+        const parsed = practiceValueSchema.safeParse(value);
+        if (!parsed.success) {
+          setValidation(tr("Enter a valid practice score, feel and comment."));
+          return;
+        }
+        const next = await save({
+          ...parsed.data,
+          ...target,
+          action: "save_practice",
+        });
+        if (next !== undefined) {
+          setVersion(next);
+          setValue(parsed.data);
+          setSaved(parsed.data);
+          setStale(false);
+          setExists(true);
+        }
+      }}
+    >
+      {stale && (
+        <p className="notice small">
+          {tr(
+            "This map or its mod policy changed. Your previous record is shown below; enter a new record for the current map.",
+          )}
+        </p>
+      )}
+      <div className={styles.practiceRow}>
+        <label className="field">
+          <span className="sr-only">{tr("Practice score")}</span>
+          <input
+            className={
+              !dirty && !stale && value.score !== null && value.score === best
+                ? styles.bestScore
+                : undefined
+            }
+            type="number"
+            inputMode="numeric"
+            min={0}
+            max={Number.MAX_SAFE_INTEGER}
+            step={1}
+            placeholder={tr("Practice score")}
+            value={value.score ?? ""}
+            disabled={disabled}
+            onChange={(event) =>
+              setValue({
+                ...value,
+                score:
+                  event.target.value === "" ? null : Number(event.target.value),
+              })
+            }
+          />
+        </label>
+        <label className="field">
+          <span className="sr-only">{tr("Feel")}</span>
+          <select
+            value={value.feel ?? ""}
+            disabled={disabled}
+            onChange={(event) =>
+              setValue({
+                ...value,
+                feel: (event.target.value || null) as PracticeFeel | null,
+              })
+            }
+          >
+            <option value="">{tr("Feel")}</option>
+            {practiceFeels.map((feel) => (
+              <option key={feel} value={feel}>
+                {feelLabels[feel]}
+              </option>
+            ))}
+          </select>
+        </label>
+        <label className={`field ${styles.practiceComment}`}>
+          <span className="sr-only">{tr("Practice comment")}</span>
+          <textarea
+            maxLength={2000}
+            rows={1}
+            placeholder={tr("Practice comment")}
+            value={value.comment}
+            disabled={disabled}
+            onChange={(event) =>
+              setValue({ ...value, comment: event.target.value })
+            }
+          />
+        </label>
+        {!data.readOnly && (
+          <button
+            className={styles.iconButton}
+            type="submit"
+            disabled={busy || !dirty}
+            aria-label={busy ? tr("Saving…") : tr("Save practice")}
+            title={busy ? tr("Saving…") : tr("Save practice")}
+          >
+            <SheetIcon kind="save" />
+          </button>
+        )}
+        {exists && (
+          <button
+            type="button"
+            className={`secondary ${styles.deleteButton}`}
+            aria-label={tr("Delete practice record")}
+            title={tr("Delete practice record")}
+            disabled={busy}
+            onClick={deleteRecord}
+          >
+            <SheetIcon kind="delete" />
+          </button>
+        )}
+      </div>
+      {dirty && (
+        <span className={styles.draftMark} role="status">
+          {tr("Unsaved changes")}
+        </span>
+      )}
+      {feedback && (
+        <p
+          role={validation || failed ? "alert" : "status"}
+          className={validation || failed ? "error-text small" : "muted small"}
+        >
+          {feedback}
+        </p>
+      )}
+      {stale && own && (
+        <details className={styles.previousRecord}>
+          <summary>{tr("Previous map context")}</summary>
+          <p>
+            {own.score?.toLocaleString(tr.locale) ?? "—"}
+            {own.feel ? ` · ${feelLabels[own.feel]}` : ""}
+          </p>
+          {own.comment && <PracticeComment comment={own.comment} />}
+        </details>
+      )}
+    </form>
+  );
   return (
     <tbody className={styles.practiceMap} aria-labelledby={`map-${entry.id}`}>
       <tr>
@@ -156,15 +333,63 @@ function PracticeEntry({
             <BeatmapCover setId={entry.metadata.setId} compact />
           </div>
           <div className={styles.mapHeading}>
-            <div className={styles.identity}>
+            <div className={styles.mapTop}>
               <span className="badge">{label}</span>
+              <div className={styles.mapTools}>
+                <BeatmapActions
+                  beatmapId={entry.beatmapId}
+                  setId={entry.metadata.setId}
+                  name={`${label} ${entry.metadata.title}`}
+                  compact
+                  showWeb={false}
+                />
+                <button
+                  type="button"
+                  className={`secondary ${styles.copyButton}`}
+                  aria-label={`${tr("Copy beatmap ID")}: ${entry.beatmapId}`}
+                  title={
+                    copyState === "failed"
+                      ? tr("Could not copy the beatmap ID.")
+                      : tr("Copy beatmap ID")
+                  }
+                  data-copied={copyState === "copied"}
+                  onClick={async () => {
+                    try {
+                      await navigator.clipboard.writeText(
+                        String(entry.beatmapId),
+                      );
+                      setCopyState("copied");
+                    } catch {
+                      setCopyState("failed");
+                    }
+                  }}
+                >
+                  {copyState === "copied" ? (
+                    <SheetIcon kind="check" />
+                  ) : (
+                    <span aria-hidden="true">{tr("BID")}</span>
+                  )}
+                </button>
+              </div>
+            </div>
+            <div className={styles.identity}>
               <h2
                 id={`map-${entry.id}`}
                 title={`${entry.metadata.artist} — ${entry.metadata.title}`}
               >
-                {entry.metadata.artist} — {entry.metadata.title}
+                <a
+                  href={links.web ?? undefined}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  title={tr("Open on osu!")}
+                >
+                  {entry.metadata.artist} — {entry.metadata.title}
+                </a>
               </h2>
-              <p className="muted small">
+              <p
+                className={styles.mapMetadata}
+                title={`${entry.metadata.difficulty} · ${entry.metadata.mapper}`}
+              >
                 {entry.metadata.difficulty} · {entry.metadata.mapper}
               </p>
               {entry.category === "FM" && data.pool?.fmMode && (
@@ -176,26 +401,28 @@ function PracticeEntry({
                 </p>
               )}
             </div>
-            <BeatmapActions
-              beatmapId={entry.beatmapId}
-              setId={entry.metadata.setId}
-              name={`${label} ${entry.metadata.title}`}
-              compact
-            />
+            {copyState === "copied" && (
+              <span className="sr-only" role="status">
+                {tr("Copied")}
+              </span>
+            )}
+            {copyState === "failed" && (
+              <p className="error-text small" role="alert">
+                {tr("Could not copy the beatmap ID.")}
+              </p>
+            )}
           </div>
         </th>
-        {data.participants.map((player) => {
+        {practiceParticipants(data).map((player) => {
           const record = visibleRecords.find(
             (value) => value.userId === player.osuId,
           );
-          const best = Math.max(
-            ...visibleRecords
-              .filter((value) => !value.stale && value.score !== null)
-              .map((value) => value.score!),
-          );
+
           return (
             <td key={player.osuId} data-own={player.osuId === data.actorId}>
-              {record ? (
+              {player.osuId === data.actorId && !data.readOnly ? (
+                editor
+              ) : record ? (
                 <div className={styles.comparisonRecord}>
                   {record.stale && (
                     <span className="badge">{tr("Previous map context")}</span>
@@ -220,35 +447,6 @@ function PracticeEntry({
                         {feelLabels[record.feel]}
                       </span>
                     )}
-                    {player.osuId === data.actorId && !data.readOnly && (
-                      <button
-                        type="button"
-                        className={`secondary ${styles.deleteButton}`}
-                        aria-label={tr("Delete practice record")}
-                        title={tr("Delete practice record")}
-                        disabled={busy}
-                        onClick={async () => {
-                          if (
-                            !window.confirm(tr("Delete your practice record?"))
-                          )
-                            return;
-                          setValidation("");
-                          const next = await save(
-                            { ...target, action: "delete_practice" },
-                            tr("Practice record deleted."),
-                          );
-                          if (next !== undefined) {
-                            setVersion(next);
-                            setExists(false);
-                            setStale(false);
-                            setValue(empty);
-                            setSaved(empty);
-                          }
-                        }}
-                      >
-                        <SheetIcon kind="delete" />
-                      </button>
-                    )}
                   </div>
                   {record.comment && (
                     <PracticeComment comment={record.comment} />
@@ -263,144 +461,6 @@ function PracticeEntry({
             </td>
           );
         })}
-      </tr>
-      <tr className={styles.practiceEditRow}>
-        <td colSpan={data.participants.length + 1}>
-          <div className={styles.practiceEditor}>
-            <form
-              className={styles.practiceForm}
-              aria-label={`${tr("My practice")}: ${label}`}
-              onSubmit={async (event) => {
-                event.preventDefault();
-                setValidation("");
-                const parsed = practiceValueSchema.safeParse(value);
-                if (!parsed.success) {
-                  setValidation(
-                    tr("Enter a valid practice score, feel and comment."),
-                  );
-                  return;
-                }
-                const next = await save({
-                  ...parsed.data,
-                  ...target,
-                  action: "save_practice",
-                });
-                if (next !== undefined) {
-                  setVersion(next);
-                  setValue(parsed.data);
-                  setSaved(parsed.data);
-                  setStale(false);
-                  setExists(true);
-                }
-              }}
-            >
-              {stale && (
-                <p className="notice small">
-                  {tr(
-                    "This map or its mod policy changed. Your previous record is shown below; enter a new record for the current map.",
-                  )}
-                </p>
-              )}
-              <div className={styles.practiceRow}>
-                <label className="field">
-                  <span className="sr-only">{tr("Practice score")}</span>
-                  <input
-                    type="number"
-                    inputMode="numeric"
-                    min={0}
-                    max={Number.MAX_SAFE_INTEGER}
-                    step={1}
-                    placeholder={tr("Practice score")}
-                    value={value.score ?? ""}
-                    disabled={disabled}
-                    onChange={(event) =>
-                      setValue({
-                        ...value,
-                        score:
-                          event.target.value === ""
-                            ? null
-                            : Number(event.target.value),
-                      })
-                    }
-                  />
-                </label>
-                <label className="field">
-                  <span className="sr-only">{tr("Feel")}</span>
-                  <select
-                    value={value.feel ?? ""}
-                    disabled={disabled}
-                    onChange={(event) =>
-                      setValue({
-                        ...value,
-                        feel: (event.target.value ||
-                          null) as PracticeFeel | null,
-                      })
-                    }
-                  >
-                    <option value="">{tr("Feel")}</option>
-                    {practiceFeels.map((feel) => (
-                      <option key={feel} value={feel}>
-                        {feelLabels[feel]}
-                      </option>
-                    ))}
-                  </select>
-                </label>
-                <label className={`field ${styles.practiceComment}`}>
-                  <span className="sr-only">{tr("Practice comment")}</span>
-                  <textarea
-                    maxLength={2000}
-                    rows={1}
-                    placeholder={tr("Practice comment")}
-                    value={value.comment}
-                    disabled={disabled}
-                    onChange={(event) =>
-                      setValue({ ...value, comment: event.target.value })
-                    }
-                  />
-                </label>
-                {!data.readOnly && (
-                  <button
-                    className={styles.iconButton}
-                    type="submit"
-                    disabled={busy || !dirty}
-                    aria-label={busy ? tr("Saving…") : tr("Save practice")}
-                    title={busy ? tr("Saving…") : tr("Save practice")}
-                  >
-                    <svg
-                      viewBox="0 0 24 24"
-                      width="20"
-                      height="20"
-                      fill="none"
-                      stroke="currentColor"
-                      strokeWidth="1.8"
-                      strokeLinecap="round"
-                      strokeLinejoin="round"
-                      aria-hidden="true"
-                    >
-                      <path d="M19 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h12l4 4v12a2 2 0 0 1-2 2Z" />
-                      <path d="M7 3v6h10V3M7 21v-8h10v8" />
-                    </svg>
-                  </button>
-                )}
-              </div>
-              {dirty && (
-                <span className={styles.draftMark} role="status">
-                  {tr("Unsaved changes")}
-                </span>
-              )}
-              {feedback && (
-                <p
-                  role={validation || failed ? "alert" : "status"}
-                  className={
-                    validation || failed ? "error-text small" : "muted small"
-                  }
-                >
-                  {feedback}
-                </p>
-              )}
-            </form>
-          </div>
-        </td>
       </tr>
     </tbody>
   );
@@ -520,16 +580,30 @@ export function PlayerPractice({
                 <table
                   className={styles.comparisonTable}
                   style={{
-                    minWidth: `${14 + data.participants.length * 13}rem`,
+                    minWidth: `calc(var(--practice-map-width) + var(--practice-own-width) + ${(data.participants.length - 1) * 13}rem)`,
                   }}
                 >
+                  <colgroup>
+                    <col style={{ width: "var(--practice-map-width)" }} />
+                    {practiceParticipants(data).map((player) => (
+                      <col
+                        key={player.osuId}
+                        style={{
+                          width:
+                            player.osuId === data.actorId
+                              ? "var(--practice-own-width)"
+                              : "13rem",
+                        }}
+                      />
+                    ))}
+                  </colgroup>
                   <caption className="sr-only">
                     {tr("Team practice records")} · {category}
                   </caption>
                   <thead>
                     <tr>
                       <th scope="col">{tr("Beatmap")}</th>
-                      {data.participants.map((player) => (
+                      {practiceParticipants(data).map((player) => (
                         <th
                           scope="col"
                           key={player.osuId}

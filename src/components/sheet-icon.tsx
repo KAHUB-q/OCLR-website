@@ -2,7 +2,7 @@
 export function SheetIcon({
   kind,
 }: {
-  kind: "reload" | "delete" | "undo" | "save" | "help" | "expand";
+  kind: "reload" | "delete" | "undo" | "save" | "help" | "expand" | "check";
 }) {
   return (
     <svg
@@ -39,6 +39,8 @@ export function SheetIcon({
           <circle cx="12" cy="12" r="9" />
           <path d="M12 11v6M12 7h.01" />
         </>
+      ) : kind === "check" ? (
+        <path d="m5 12 4 4L19 6" />
       ) : (
         <path d="m6 9 6 6 6-6" />
       )}

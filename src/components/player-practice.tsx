@@ -10,11 +10,12 @@ import {
 import { categories, slotLabel, fmPolicyName } from "@/lib/mappool-model";
 import { BeatmapActions } from "./beatmap-actions";
 import { EmptyState } from "./ui";
+import { SheetIcon } from "./sheet-icon";
 import { useUnsavedWorkspace, useWorkspaceSave } from "./player-workspace-save";
 import styles from "./player-workspace.module.css";
 
 type Entry = NonNullable<PracticeWorkspace["pool"]>["entries"][number];
-const empty: PracticeValue = { score: null, rating: null, comment: "" };
+const empty: PracticeValue = { score: null, comment: "" };
 
 function PracticeTabs({
   id,
@@ -78,6 +79,24 @@ function PracticeTabs({
   );
 }
 
+function PracticeComment({ comment }: { comment: string }) {
+  const tr = useAppTranslations();
+  if (comment.length <= 120 && comment.split("\n").length <= 3)
+    return <p className={styles.comment}>{comment}</p>;
+  return (
+    <details className={styles.commentDisclosure}>
+      <summary role="button" aria-label={tr("Read full comment")}>
+        <span className={styles.commentPreview}>{comment}</span>
+        <span className={styles.commentExpand}>
+          <SheetIcon kind="expand" />
+          <span>{tr("Practice comment")}</span>
+        </span>
+      </summary>
+      <p className={styles.comment}>{comment}</p>
+    </details>
+  );
+}
+
 function PracticeEntry({
   entry,
   data,
@@ -92,41 +111,18 @@ function PracticeEntry({
   const tr = useAppTranslations();
   const own = entry.records.find((record) => record.userId === data.actorId);
   const initial =
-    own && !own.stale
-      ? { score: own.score, rating: own.rating, comment: own.comment }
-      : empty;
+    own && !own.stale ? { score: own.score, comment: own.comment } : empty;
   const [value, setValue] = useState(initial),
     [saved, setSaved] = useState(initial);
   const [version, setVersion] = useState(entry.ownVersion);
   const [exists, setExists] = useState(Boolean(own));
   const [stale, setStale] = useState(Boolean(own?.stale));
   const [validation, setValidation] = useState("");
-  const [ratingOpen, setRatingOpen] = useState(false);
-  const ratingRoot = useRef<HTMLFieldSetElement>(null);
-  const ratingToggle = useRef<HTMLButtonElement>(null);
   const { save, busy, message, failed } = useWorkspaceSave(
     `/api/tournaments/${slug}/player/practice`,
   );
   const dirty = JSON.stringify(value) !== JSON.stringify(saved);
-  useEffect(() => {
-    if (!ratingOpen) return;
-    const close = (event: PointerEvent) => {
-      if (
-        event.target instanceof Node &&
-        !ratingRoot.current?.contains(event.target)
-      )
-        setRatingOpen(false);
-    };
-    document.addEventListener("pointerdown", close);
-    return () => document.removeEventListener("pointerdown", close);
-  }, [ratingOpen]);
-  const chooseRating = (rating: number | null) => {
-    setValue({ ...value, rating });
-    if (ratingOpen) {
-      setRatingOpen(false);
-      ratingToggle.current?.focus();
-    }
-  };
+  const feedback = validation || (failed || !dirty ? message : "");
   useEffect(() => {
     onDirty(entry.id, dirty || busy);
     return () => onDirty(entry.id, false);
@@ -153,7 +149,10 @@ function PracticeEntry({
           <div className={styles.mapHeading}>
             <div className={styles.identity}>
               <span className="badge">{label}</span>
-              <h2 id={`map-${entry.id}`}>
+              <h2
+                id={`map-${entry.id}`}
+                title={`${entry.metadata.artist} — ${entry.metadata.title}`}
+              >
                 {entry.metadata.artist} — {entry.metadata.title}
               </h2>
               <p className="muted small">
@@ -205,42 +204,46 @@ function PracticeEntry({
                       <span className="sr-only">{tr("Practice score")}: </span>
                       {record.score?.toLocaleString(tr.locale) ?? "—"}
                     </strong>
-                    <span title={tr("Practice rating")}>
-                      <span aria-hidden="true">★ </span>
-                      {record.rating === null ? "—" : `${record.rating}/5`}
-                    </span>
+
+                    {player.osuId === data.actorId && !data.readOnly && (
+                      <button
+                        type="button"
+                        className={`secondary ${styles.deleteButton}`}
+                        aria-label={tr("Delete practice record")}
+                        title={tr("Delete practice record")}
+                        disabled={busy}
+                        onClick={async () => {
+                          if (
+                            !window.confirm(tr("Delete your practice record?"))
+                          )
+                            return;
+                          setValidation("");
+                          const next = await save(
+                            { ...target, action: "delete_practice" },
+                            tr("Practice record deleted."),
+                          );
+                          if (next !== undefined) {
+                            setVersion(next);
+                            setExists(false);
+                            setStale(false);
+                            setValue(empty);
+                            setSaved(empty);
+                          }
+                        }}
+                      >
+                        <SheetIcon kind="delete" />
+                      </button>
+                    )}
                   </div>
                   {record.comment && (
-                    <p className={styles.comment}>{record.comment}</p>
-                  )}
-                  {player.osuId === data.actorId && !data.readOnly && (
-                    <button
-                      type="button"
-                      className="secondary destructive-action"
-                      disabled={busy}
-                      onClick={async () => {
-                        if (!window.confirm(tr("Delete your practice record?")))
-                          return;
-                        setValidation("");
-                        const next = await save(
-                          { ...target, action: "delete_practice" },
-                          tr("Practice record deleted."),
-                        );
-                        if (next !== undefined) {
-                          setVersion(next);
-                          setExists(false);
-                          setStale(false);
-                          setValue(empty);
-                          setSaved(empty);
-                        }
-                      }}
-                    >
-                      {tr("Delete practice record")}
-                    </button>
+                    <PracticeComment comment={record.comment} />
                   )}
                 </div>
               ) : (
-                <span className="muted small">{tr("Not submitted")}</span>
+                <span className={styles.noRecord} title={tr("Not submitted")}>
+                  <span aria-hidden="true">—</span>
+                  <span className="sr-only">{tr("Not submitted")}</span>
+                </span>
               )}
             </td>
           );
@@ -258,7 +261,7 @@ function PracticeEntry({
                 const parsed = practiceValueSchema.safeParse(value);
                 if (!parsed.success) {
                   setValidation(
-                    tr("Enter a valid practice score, rating and comment."),
+                    tr("Enter a valid practice score and comment."),
                   );
                   return;
                 }
@@ -306,93 +309,6 @@ function PracticeEntry({
                     }
                   />
                 </label>
-                <fieldset
-                  ref={ratingRoot}
-                  className={styles.rating}
-                  disabled={disabled}
-                  data-open={ratingOpen}
-                  onBlur={(event) => {
-                    if (!event.currentTarget.contains(event.relatedTarget))
-                      setRatingOpen(false);
-                  }}
-                  onKeyDown={(event) => {
-                    if (event.key === "Escape" && ratingOpen) {
-                      event.preventDefault();
-                      setRatingOpen(false);
-                      ratingToggle.current?.focus();
-                    }
-                  }}
-                >
-                  <legend className="sr-only">{tr("Practice rating")}</legend>
-                  <button
-                    ref={ratingToggle}
-                    type="button"
-                    className={`secondary ${styles.ratingToggle}`}
-                    aria-label={`${tr("Practice rating")}${value.rating === null ? "" : `: ${tr("{value0} out of 5 stars", { value0: value.rating })}`}`}
-                    title={tr("Practice rating")}
-                    aria-expanded={ratingOpen}
-                    aria-controls={`practice-rating-${entry.id}`}
-                    onClick={() => setRatingOpen(!ratingOpen)}
-                  >
-                    <span aria-hidden="true">
-                      {value.rating === null ? "☆" : `★ ${value.rating}`}
-                    </span>
-                  </button>
-                  <div
-                    className={styles.stars}
-                    id={`practice-rating-${entry.id}`}
-                  >
-                    {[1, 2, 3, 4, 5].map((rating) => (
-                      <label
-                        key={rating}
-                        title={tr("{value0} out of 5 stars", {
-                          value0: rating,
-                        })}
-                      >
-                        <input
-                          type="radio"
-                          name={`rating-${entry.id}`}
-                          value={rating}
-                          checked={value.rating === rating}
-                          onChange={() => chooseRating(rating)}
-                        />
-                        <span
-                          className={
-                            value.rating !== null && rating <= value.rating
-                              ? styles.starSelected
-                              : undefined
-                          }
-                          aria-hidden="true"
-                        >
-                          ★
-                        </span>
-                        <span className="sr-only">
-                          {tr("{value0} out of 5 stars", { value0: rating })}
-                        </span>
-                      </label>
-                    ))}
-                    <button
-                      className={`secondary ${styles.iconButton}`}
-                      type="button"
-                      aria-label={tr("Clear rating")}
-                      title={tr("Clear rating")}
-                      disabled={disabled || value.rating === null}
-                      onClick={() => chooseRating(null)}
-                    >
-                      <svg
-                        viewBox="0 0 24 24"
-                        width="18"
-                        height="18"
-                        fill="none"
-                        stroke="currentColor"
-                        strokeWidth="2"
-                        aria-hidden="true"
-                      >
-                        <path d="m6 6 12 12M6 18 18 6" />
-                      </svg>
-                    </button>
-                  </div>
-                </fieldset>
                 <label className={`field ${styles.practiceComment}`}>
                   <span className="sr-only">{tr("Practice comment")}</span>
                   <textarea
@@ -431,17 +347,19 @@ function PracticeEntry({
                   </button>
                 )}
               </div>
-              <span className="sr-only">
-                {dirty ? tr("Unsaved changes") : ""}
-              </span>
-              {(validation || message) && (
+              {dirty && (
+                <span className={styles.draftMark} role="status">
+                  {tr("Unsaved changes")}
+                </span>
+              )}
+              {feedback && (
                 <p
                   role={validation || failed ? "alert" : "status"}
                   className={
                     validation || failed ? "error-text small" : "muted small"
                   }
                 >
-                  {validation || message}
+                  {feedback}
                 </p>
               )}
             </form>
@@ -513,13 +431,15 @@ export function PlayerPractice({
         </div>
         <button
           type="button"
-          className="secondary"
+          className={`secondary ${styles.reloadButton}`}
+          aria-label={tr("Reload team records")}
+          title={tr("Reload team records")}
           onClick={() => window.location.reload()}
         >
-          {tr("Reload team records")}
+          <SheetIcon kind="reload" />
         </button>
       </div>
-      <p className="muted small">
+      <p className={`muted small ${styles.sharing}`}>
         {data.team
           ? tr("Shared with {value0}. Only you can edit your own records.", {
               value0: data.team.name,
@@ -564,7 +484,7 @@ export function PlayerPractice({
                 <table
                   className={styles.comparisonTable}
                   style={{
-                    minWidth: `${17 + data.participants.length * 12}rem`,
+                    minWidth: `${14 + data.participants.length * 13}rem`,
                   }}
                 >
                   <caption className="sr-only">

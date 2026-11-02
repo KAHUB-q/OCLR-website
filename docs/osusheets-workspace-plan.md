@@ -25,3 +25,18 @@ local/UTC changes regenerate dated half-hour columns, including repeated DST hou
 Verification includes interval replacement, mixed/partial existing intervals,
 non-overlap, DST days, midnight/week changes, authorized ownership and idempotent
 persistence, followed by check/test/build/i18n and focused synthetic UI coverage.
+
+## Follow-up #731 — score/comment and quieter tables
+
+Visual thesis: compact, aligned MainSheet tables with restrained borders, clear
+identity columns and continuous availability bands; make editable values the focus.
+Content plan: one pool/Mod toolbar or week/timezone toolbar, comparison grid,
+nearby personal save/status controls, and optional help/full-comment disclosures.
+Interaction thesis: fixed names/maps and time headers preserve position; long
+comments expand on demand; weekday shortcuts and continuous drag feedback keep
+navigation and painting immediate. Focus the selected day initially and retain
+a full-week overview. Keep focus and reduced-motion behavior clear.
+
+Practice now has score/comment only. Retire rating from current commands and read
+projections while retaining legacy storage/audit. Remove stale rating UI and tests;
+verify legacy records still expose score/comment and reject retired command fields.

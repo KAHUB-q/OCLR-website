@@ -33,7 +33,6 @@ export const seasonAvailabilitySchema = z
 export const practiceValueSchema = z
   .object({
     score: z.number().int().min(0).max(Number.MAX_SAFE_INTEGER).nullable(),
-    rating: z.number().int().min(1).max(5).nullable(),
     comment: z.string().trim().max(2000),
   })
   .strict();

@@ -97,7 +97,6 @@ function workspace(poolId: string): PracticeWorkspace {
                   ...actor,
                   userId: actor.osuId,
                   score: 900000,
-                  rating: 3,
                   comment: "My saved comment",
                   version: 1,
                   updatedAt: "2026-11-01T12:00:00Z",
@@ -106,7 +105,6 @@ function workspace(poolId: string): PracticeWorkspace {
                 {
                   userId: teammate.osuId,
                   score: 950000,
-                  rating: 5,
                   comment: params.has("long")
                     ? "合成測試評論WithALongUnbrokenWordABCDEFGHIJKLMNOPQRSTUVWXYZ".repeat(
                         3,

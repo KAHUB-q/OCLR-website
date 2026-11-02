@@ -232,7 +232,6 @@ export async function playerPracticeWorkspace(
                   .map((r) => ({
                     userId: r.userId,
                     score: r.score,
-                    rating: r.rating,
                     comment: r.comment,
                     version: r.version,
                     updatedAt: r.updatedAt.toISOString(),
@@ -308,10 +307,7 @@ export async function playerPracticeCommand(
   assertDirectPlayerWorkspace();
   const parsed = practiceCommandSchema.safeParse(input);
   if (!parsed.success)
-    throw new HttpError(
-      400,
-      "Enter a valid practice score, rating and comment.",
-    );
+    throw new HttpError(400, "Enter a valid practice score and comment.");
   const p = parsed.data,
     hash = digest(p);
   return db().transaction(async (tx) => {
@@ -385,8 +381,9 @@ export async function playerPracticeCommand(
       throw new HttpError(404, "Practice record not found.");
     const values = {
       ...(p.action === "save_practice"
-        ? { score: p.score, rating: p.rating, comment: p.comment }
-        : { score: null, rating: null, comment: "" }),
+        ? { score: p.score, comment: p.comment }
+        : { score: null, comment: "" }),
+      rating: null,
       accuracy: null,
       deletedAt: p.action === "delete_practice" ? new Date() : null,
       beatmapId: entry.entry.beatmapId,

@@ -1,6 +1,6 @@
 import { test, expect } from "@playwright/test";
 for (const theme of ["light", "dark"]) {
-  test(`${theme}: score, rating, comment and save stay on one row at 719px and 320px`, async ({
+  test(`${theme}: score, comment and save stay on one row at 719px and 320px`, async ({
     page,
   }) => {
     const writes: Record<string, unknown>[] = [];
@@ -26,10 +26,10 @@ for (const theme of ["light", "dark"]) {
         name: "Practice score",
         exact: true,
       });
-      const rating = form.getByRole("group", {
-        name: "Practice rating",
-        exact: true,
-      });
+      await expect(
+        page.getByRole("group", { name: "Practice rating", exact: true }),
+      ).toHaveCount(0);
+      await expect(page.getByRole("radio")).toHaveCount(0);
       const comment = form.getByRole("textbox", {
         name: "Practice comment",
         exact: true,
@@ -39,7 +39,7 @@ for (const theme of ["light", "dark"]) {
         exact: true,
       });
       const boxes = await Promise.all(
-        [score, rating, comment, save].map((control) => control.boundingBox()),
+        [score, comment, save].map((control) => control.boundingBox()),
       );
       expect(boxes.every((box) => box !== null)).toBe(true);
       expect(
@@ -52,42 +52,12 @@ for (const theme of ["light", "dark"]) {
           () => document.documentElement.scrollWidth <= innerWidth,
         ),
       ).toBe(true);
-      const toggle = rating.getByRole("button", { name: /^Practice rating/ });
-      const compact = await toggle.isVisible();
-      if (compact) {
-        await toggle.click();
-        await expect(toggle).toHaveAttribute("aria-expanded", "true");
-        await page.keyboard.press("Tab");
-        await expect(
-          rating.getByRole("radio", { name: "3 out of 5 stars", exact: true }),
-        ).toBeFocused();
-        await page.keyboard.press("Escape");
-        await expect(toggle).toBeFocused();
-        await expect(toggle).toHaveAttribute("aria-expanded", "false");
-        await toggle.click();
-        await score.click();
-        await expect(toggle).toHaveAttribute("aria-expanded", "false");
-        await toggle.click();
-      }
-      await rating
-        .getByRole("radio", { name: "5 out of 5 stars", exact: true })
-        .check();
-      if (compact) {
-        await expect(toggle).toHaveAccessibleName(
-          "Practice rating: 5 out of 5 stars",
-        );
-        await expect(toggle).toHaveAttribute("aria-expanded", "false");
-        await toggle.click();
-      }
-      await rating
-        .getByRole("button", { name: "Clear rating", exact: true })
-        .click();
       await comment.fill("Single-row practice note");
       await save.click();
       await expect(form.getByRole("status")).toHaveText("Saved");
+      expect(writes.at(-1)).not.toHaveProperty("rating");
       expect(writes.at(-1)).toMatchObject({
         action: "save_practice",
-        rating: null,
         score: 900000,
         comment: "Single-row practice note",
         expectedVersion: 1,
@@ -108,7 +78,24 @@ for (const theme of ["light", "dark"]) {
       exact: true,
     });
     await expect(own.getByText("Visible teammate comment")).toHaveCount(0);
-    await expect(own.getByText(/合成測試評論WithALong/)).toBeVisible();
+    const disclosure = own.locator("details");
+    await expect(
+      disclosure.locator("summary").getByText(/合成測試評論WithALong/),
+    ).toBeVisible();
+    const collapsedHeight = (await own.boundingBox())!.height;
+    await disclosure
+      .getByRole("button", { name: "Read full comment", exact: true })
+      .click();
+    await expect(disclosure.locator("p")).toContainText(
+      "合成測試評論WithALong",
+    );
+    expect((await own.boundingBox())!.height).toBeGreaterThan(collapsedHeight);
+    await disclosure
+      .getByRole("button", { name: "Read full comment", exact: true })
+      .click();
+    expect(
+      Math.abs((await own.boundingBox())!.height - collapsedHeight),
+    ).toBeLessThan(2);
     await expect(page.getByText("Accuracy (%)", { exact: true })).toHaveCount(
       0,
     );

@@ -19,18 +19,26 @@ ineligible applicants and delegated remote sessions.
 published mappool, with tabs for other published pools and each available Mod.
 Changing Mod keeps each map's unsaved inputs mounted; changing pools asks before
 discarding drafts. Hidden pools and historical archives are unavailable.
-Each map has optional manually entered
-score, a 1–5 star rating and a compact, vertically resizable comment field (up to
-2,000 characters). Score, rating, comment and the save action share one compact
-row. Narrow containers show the current rating in a button that opens the same
-five-star controls; choosing a value, clearing it, Escape or leaving the control
-closes the picker. Team records use a map-by-player comparison table with fixed map and player
-headers. Scores, ratings and comments are visible together, and the current
-context's highest saved score is emphasized (ties share the emphasis). Missing
-scores and outdated map contexts never enter that comparison. Each map retains
-its compact personal form below the comparison row; updates and deletions
-immediately update that map's comparison. The table scrolls horizontally while
-the editor stays within the visible container.
+Each map has an optional manually entered score and a compact, vertically
+resizable comment field (up to 2,000 characters). The score, comment and save
+action share one row, including at 320px. Pool and Mod selectors use compact
+underlined tabs, and reload/save/delete use labelled utility controls.
+
+Team records use a map-by-player comparison table with fixed map and player
+headers. Scores and comments are visible together. Long comments initially show
+three literal lines and expand through a keyboard-accessible disclosure; the
+complete text is retained. The current context's highest saved score is
+emphasized (ties share the emphasis). Missing scores and outdated map contexts
+never enter that comparison. Each map retains its personal form below the
+comparison row; updates and deletions immediately update the comparison. The
+table scrolls horizontally while the editor stays inside the visible container.
+
+Star ratings were retired by organizer request in #731. Current practice
+commands accept only score/comment and reject the retired rating field; read
+projections omit it. The legacy nullable database column and existing private
+audit history remain intact. Reading old records does not rewrite them; a later
+owner save/delete clears the retired value, with the previous value retained in
+the normal private before/after audit. No database migration is required.
 
 Each player edits only their own record. Current active teammates can read each
 other's records; an unassigned player can save and view their own records.
@@ -58,8 +66,18 @@ silently transfer a score to a new slot.
 for the whole season, independently of teams and fixtures. The horizontal sheet
 groups real dates within the selected week, with a shared half-hour axis and one
 row per authorized player. Names stay visible during horizontal scrolling.
-The initial view scrolls to the selected date/time; date and previous/next-week
-controls keep the full calendar date in context.
+The initial view focuses the selected date and aligns the hour cells to complete
+column boundaries. Weekday shortcuts switch dates, and the Week control restores
+the full seven-day overview. Both modes keep all unsaved intervals in memory;
+view changes do not alter the saved data. Date and previous/next-week controls
+retain the full calendar date in context. Headers and player identities stay
+visible during scrolling, and consecutive states form continuous bands.
+
+Date headings show the zone offset once; only ambiguous repeated hours repeat
+the offset in the hour header. Local/UTC controls, compact undo/save and the state
+legend stay near the grid. Supplemental access/keyboard help is available from
+the Notes disclosure, which supports Escape. Unsaved status and failures remain
+visible; a stale Saved message is hidden when a new edit is made.
 
 Clicking a cell cycles available → unsure → unavailable → unfilled. Dragging
 copies the starting cell's existing state across the continuous range, including

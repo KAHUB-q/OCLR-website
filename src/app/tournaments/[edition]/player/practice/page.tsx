@@ -36,7 +36,7 @@ export default async function Page({
           title={tr("Practice sheet")}
         >
           {tr(
-            "Published mappools load automatically. Record your scores, ratings and comments for your team.",
+            "Published mappools load automatically. Record your scores and comments for your team.",
           )}
         </PageHeading>
         <PlayerPractice slug={edition} data={data} />

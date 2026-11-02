@@ -124,12 +124,24 @@ for (const theme of ["light", "dark"]) {
       page
         .getByRole("region", { name: "Team availability", exact: true })
         .locator("tbody tr"),
+    ).toHaveCount(3);
+    await page.getByRole("button", { name: "Week", exact: true }).click();
+    await expect(
+      page
+        .getByRole("region", { name: "Team availability", exact: true })
+        .locator("tbody tr"),
     ).toHaveCount(21);
     await expect(page.locator("button[data-slot]")).toHaveCount(0);
     await expect(
       page.getByRole("button", { name: "Save season timetable", exact: true }),
     ).toHaveCount(0);
     await page.goto(`/schedule-selection?theme=${theme}`);
+    await expect(
+      page
+        .getByRole("region", { name: "My availability", exact: true })
+        .locator("tbody tr"),
+    ).toHaveCount(1);
+    await page.getByRole("button", { name: "Week", exact: true }).click();
     await expect(
       page.getByRole("region", { name: "Team availability", exact: true }),
     ).toHaveCount(0);
@@ -233,4 +245,106 @@ test("cycles every state, paints backwards and retries the same save", async ({
     .click();
   await expect(page.getByRole("status")).toContainText("Saved");
   expect(writes[0]).toEqual(writes[1]);
+});
+
+test("weekday shortcuts and full-week overview retain every unsaved instant", async ({
+  page,
+}) => {
+  const writes: Record<string, unknown>[] = [];
+  await page.route(
+    "**/api/tournaments/synthetic/player/availability",
+    async (route) => {
+      writes.push(route.request().postDataJSON());
+      await route.fulfill({ json: { saved: true, version: 2 } });
+    },
+  );
+  await page.goto("/schedule-selection?captain");
+  const region = page.getByRole("region", {
+    name: "Team availability",
+    exact: true,
+  });
+  await expect(region.locator("section")).toHaveCount(1);
+  await page.locator(slot("11:00")).click();
+  await page.getByRole("button", { name: "Week", exact: true }).click();
+  await expect(region.locator("section")).toHaveCount(7);
+  await page
+    .getByRole("button", { name: "Monday, October 26, 2026", exact: true })
+    .click();
+  await expect(region.locator("section")).toHaveCount(1);
+  await expect(page.getByLabel("Week containing", { exact: true })).toHaveValue(
+    "2026-10-26",
+  );
+  await page
+    .getByRole("button", { name: "Sunday, November 1, 2026", exact: true })
+    .click();
+  await expect(page.locator(slot("11:00"))).toHaveAccessibleName(/Available$/);
+  await page
+    .getByRole("button", { name: "Save season timetable", exact: true })
+    .click();
+  await expect(page.getByRole("status")).toContainText("Saved");
+  expect(writes[0].intervals).toEqual([
+    { start: "2026-11-01T10:00:00.000Z", end: "2026-11-01T11:30:00.000Z" },
+  ]);
+});
+for (const theme of ["light", "dark"]) {
+  test(`${theme}: narrow timetable keeps controls and optional help inside 320px`, async ({
+    page,
+  }) => {
+    await page.setViewportSize({ width: 320, height: 900 });
+    await page.goto(`/schedule-selection?captain&theme=${theme}`);
+    expect(
+      await page.evaluate(
+        () => document.documentElement.scrollWidth <= innerWidth,
+      ),
+    ).toBe(true);
+    const shortcuts = page.getByRole("group", { name: "Week", exact: true });
+    const selectedDay = (await shortcuts
+      .locator('button[aria-pressed="true"]')
+      .boundingBox())!;
+    const strip = (await shortcuts.boundingBox())!;
+    expect(selectedDay.x + selectedDay.width).toBeLessThanOrEqual(
+      strip.x + strip.width + 1,
+    );
+    expect(selectedDay.x).toBeGreaterThanOrEqual(
+      (await shortcuts
+        .getByRole("button", { name: "Week", exact: true })
+        .boundingBox())!.x + 43,
+    );
+    await page.getByRole("button", { name: "Notes", exact: true }).click();
+    await expect(page.getByRole("note")).toBeVisible();
+    expect(
+      await page.evaluate(
+        () => document.documentElement.scrollWidth <= innerWidth,
+      ),
+    ).toBe(true);
+    await page.keyboard.press("Escape");
+    await expect(page.getByRole("note")).not.toBeVisible();
+    await expect(
+      page.getByRole("button", { name: "Notes", exact: true }),
+    ).toBeFocused();
+  });
+}
+
+test("resizing keeps the selected day and its saved hour visible", async ({
+  page,
+}) => {
+  await page.setViewportSize({ width: 1280, height: 900 });
+  await page.goto("/schedule-selection?captain");
+  await page.setViewportSize({ width: 320, height: 900 });
+  const shortcuts = page.getByRole("group", { name: "Week", exact: true });
+  await expect(async () => {
+    const selected = (await shortcuts
+      .locator('button[aria-pressed="true"]')
+      .boundingBox())!;
+    const strip = (await shortcuts.boundingBox())!;
+    expect(selected.x + selected.width).toBeLessThanOrEqual(
+      strip.x + strip.width + 1,
+    );
+    const cell = (await page.locator(slot("10:00")).boundingBox())!;
+    const region = (await page
+      .getByRole("region", { name: "Team availability", exact: true })
+      .boundingBox())!;
+    expect(cell.x).toBeGreaterThanOrEqual(region.x + 107);
+    expect(cell.x + cell.width).toBeLessThanOrEqual(region.x + region.width);
+  }).toPass();
 });

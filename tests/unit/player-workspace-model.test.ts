@@ -10,10 +10,9 @@ import {
   remotePageSupported,
 } from "../../src/lib/data-source";
 describe("player workspace values", () => {
-  it("requires bounded scores, ratings and comments", () => {
+  it("requires bounded scores and comments and rejects retired practice fields", () => {
     const value = {
       score: 0,
-      rating: 5,
       comment: "  Team note  ",
     };
     expect(practiceValueSchema.parse(value).comment).toBe("Team note");
@@ -24,8 +23,8 @@ describe("player workspace values", () => {
       { accuracy: NaN },
       { accuracy: 101 },
       { accuracy: null },
-      { rating: 0 },
-      { rating: 6 },
+      { rating: 5 },
+      { rating: null },
       { comment: "x".repeat(2001) },
       { userId: 1 },
     ])

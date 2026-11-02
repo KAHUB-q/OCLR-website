@@ -26,6 +26,7 @@ import {
 } from "@/lib/player-timetable-model";
 import { useUnsavedWorkspace, useWorkspaceSave } from "./player-workspace-save";
 import styles from "./player-timetable.module.css";
+import { SheetIcon } from "./sheet-icon";
 
 const subscribe = () => () => {};
 const localZone = () => Intl.DateTimeFormat().resolvedOptions().timeZone;
@@ -60,6 +61,7 @@ export function PlayerTimetable({
     () => data.timeZone,
   );
   const [utc, setUtc] = useState(false);
+  const [weekView, setWeekView] = useState(false);
   const timeZone = utc ? "UTC" : deviceZone;
   const [anchor, setAnchor] = useState(
     () =>
@@ -76,12 +78,14 @@ export function PlayerTimetable({
   const [validation, setValidation] = useState("");
   const drag = useRef<Drag | null>(null);
   const viewportRef = useRef<HTMLDivElement>(null);
+  const weekDaysRef = useRef<HTMLDivElement>(null);
   const { save, busy, message, failed } = useWorkspaceSave(
     `/api/tournaments/${slug}/player/availability`,
   );
   const dirty = JSON.stringify(intervals) !== JSON.stringify(saved);
   useUnsavedWorkspace(dirty);
   const disabled = !data.canEdit || busy;
+  const feedback = validation || (failed || !dirty ? message : "");
   const startDate = weekStart(anchor, timeZone);
   const dates = useMemo(
     () =>
@@ -93,29 +97,61 @@ export function PlayerTimetable({
   );
   useEffect(() => {
     const root = viewportRef.current;
-    const date = localDateTime(anchor, timeZone).slice(0, 10);
-    const day = root?.querySelector<HTMLElement>(`[data-day="${date}"]`);
-    if (!root || !day) return;
-    root.scrollTop +=
-      day.getBoundingClientRect().top - root.getBoundingClientRect().top;
-    const columns = [
-      ...day.querySelectorAll<HTMLElement>("thead th[data-start]"),
-    ];
-    const column = columns.reduce<HTMLElement | null>(
-      (closest, value) =>
-        !closest ||
-        Math.abs(Date.parse(value.dataset.start!) - Date.parse(anchor)) <
-          Math.abs(Date.parse(closest.dataset.start!) - Date.parse(anchor))
-          ? value
-          : closest,
-      null,
-    );
-    if (column)
-      root.scrollLeft +=
-        column.getBoundingClientRect().left -
-        root.getBoundingClientRect().left -
-        240;
-  }, [anchor, timeZone]);
+    const strip = weekDaysRef.current;
+    if (!root || !strip) return;
+    const align = () => {
+      const selected = strip?.querySelector<HTMLButtonElement>(
+        'button[aria-pressed="true"]',
+      );
+      if (strip && selected)
+        strip.scrollLeft = weekView
+          ? 0
+          : selected.offsetLeft - strip.clientWidth + selected.clientWidth;
+      const date = localDateTime(anchor, timeZone).slice(0, 10);
+      const day = root?.querySelector<HTMLElement>(`[data-day="${date}"]`);
+      if (!root || !day) return;
+      root.scrollTop +=
+        day.getBoundingClientRect().top - root.getBoundingClientRect().top;
+      const columns = [
+        ...day.querySelectorAll<HTMLElement>("thead th[data-start]"),
+      ];
+      const column = columns.reduce<HTMLElement | null>(
+        (closest, value) =>
+          !closest ||
+          Math.abs(Date.parse(value.dataset.start!) - Date.parse(anchor)) <
+            Math.abs(Date.parse(closest.dataset.start!) - Date.parse(anchor))
+            ? value
+            : closest,
+        null,
+      );
+      if (column) {
+        const width = column.getBoundingClientRect().width;
+        const nameWidth =
+          day.querySelector("thead th")?.getBoundingClientRect().width ?? 0;
+        const desired =
+          root.scrollLeft +
+          column.getBoundingClientRect().left -
+          root.getBoundingClientRect().left -
+          nameWidth -
+          width * 2;
+        root.scrollLeft = Math.max(
+          0,
+          Math.floor(
+            Math.min(root.scrollWidth - root.clientWidth, desired) / width,
+          ) * width,
+        );
+      }
+    };
+    align();
+    const observer = new ResizeObserver(align);
+    observer.observe(root);
+    observer.observe(strip);
+    return () => observer.disconnect();
+  }, [anchor, timeZone, weekView]);
+  const selectedDate = localDateTime(anchor, timeZone).slice(0, 10);
+  const visibleDates = weekView
+    ? dates
+    : dates.filter(({ date }) => date === selectedDate);
   const people = (
     data.teamAvailability.length
       ? data.teamAvailability
@@ -168,6 +204,7 @@ export function PlayerTimetable({
             type="button"
             className="secondary"
             aria-label={tr("Previous week")}
+            title={tr("Previous week")}
             onClick={() => goToDate(shiftDate(startDate, -7))}
           >
             ‹
@@ -186,6 +223,7 @@ export function PlayerTimetable({
             type="button"
             className="secondary"
             aria-label={tr("Next week")}
+            title={tr("Next week")}
             onClick={() => goToDate(shiftDate(startDate, 7))}
           >
             ›
@@ -197,50 +235,75 @@ export function PlayerTimetable({
           >
             {tr("Today")}
           </button>
+        </div>
+        <div className={styles.tools}>
+          <fieldset className={styles.zone}>
+            <legend className="sr-only">{tr("Time zone")}</legend>
+            <label>
+              <input
+                type="radio"
+                name="timetable-zone"
+                checked={!utc}
+                onChange={() => setUtc(false)}
+              />
+              {tr("Local time")}
+            </label>
+            <label>
+              <input
+                type="radio"
+                name="timetable-zone"
+                checked={utc}
+                onChange={() => setUtc(true)}
+              />
+              {tr("UTC+0")}
+            </label>
+          </fieldset>
           <button
             type="button"
-            className="secondary"
+            className={`secondary ${styles.iconButton}`}
+            aria-label={tr("Reload")}
+            title={tr("Reload")}
             disabled={busy}
             onClick={() => window.location.reload()}
           >
-            {tr("Reload")}
+            <SheetIcon kind="reload" />
           </button>
+          <details
+            className={styles.help}
+            onKeyDown={(event) => {
+              if (event.key === "Escape") {
+                event.currentTarget.open = false;
+                event.currentTarget.querySelector("summary")?.focus();
+              }
+            }}
+          >
+            <summary role="button" aria-label={tr("Notes")} title={tr("Notes")}>
+              <SheetIcon kind="help" />
+            </summary>
+            <div role="note">
+              <p>
+                {data.teamAvailability.length
+                  ? tr(
+                      "Your team's availability is shown together. You can only edit your own time slots.",
+                    )
+                  : tr(
+                      "Your timetable is visible to you and your current captain. Saved slots apply to the whole season.",
+                    )}
+              </p>
+              <p id="timetable-help">
+                {tr(
+                  "Click a cell to cycle its state. Drag from a filled cell to copy its state. Scroll across the hours; use arrow keys and Space on your row.",
+                )}
+              </p>
+            </div>
+          </details>
         </div>
-        <fieldset className={styles.zone}>
-          <legend className="sr-only">{tr("Time zone")}</legend>
-          <label>
-            <input
-              type="radio"
-              name="timetable-zone"
-              checked={!utc}
-              onChange={() => setUtc(false)}
-            />
-            {tr("Local time")}
-          </label>
-          <label>
-            <input
-              type="radio"
-              name="timetable-zone"
-              checked={utc}
-              onChange={() => setUtc(true)}
-            />
-            {tr("UTC+0")}
-          </label>
-        </fieldset>
       </div>
       <div className={styles.context}>
-        <p className="muted small">
-          {timeZone} · {startDate} — {shiftDate(startDate, 6)}
-        </p>
-        <p className="muted small">
-          {data.teamAvailability.length
-            ? tr(
-                "Your team's availability is shown together. You can only edit your own time slots.",
-              )
-            : tr(
-                "Your timetable is visible to you and your current captain. Saved slots apply to the whole season.",
-              )}
-        </p>
+        <span>
+          {startDate} — {shiftDate(startDate, 6)}
+        </span>
+        <span>{timeZone}</span>
       </div>
       {!data.canEdit && (
         <p className="notice">
@@ -251,6 +314,49 @@ export function PlayerTimetable({
             : tr("This player workspace is read-only.")}
         </p>
       )}
+      <div
+        ref={weekDaysRef}
+        className={styles.weekDays}
+        role="group"
+        aria-label={tr("Week")}
+      >
+        <button
+          type="button"
+          className="secondary"
+          aria-pressed={weekView}
+          onClick={() => setWeekView(true)}
+        >
+          {tr("Week")}
+        </button>
+        {dates.map(({ date }) => (
+          <button
+            key={date}
+            type="button"
+            className="secondary"
+            aria-label={dateLabel(date)}
+            title={dateLabel(date)}
+            aria-pressed={!weekView && selectedDate === date}
+            onClick={() => {
+              setWeekView(false);
+              goToDate(date);
+            }}
+          >
+            <span>
+              {new Intl.DateTimeFormat(tr.locale, {
+                timeZone: "UTC",
+                weekday: "short",
+              }).format(new Date(`${date}T12:00:00Z`))}
+            </span>
+            <strong>
+              {new Intl.DateTimeFormat(tr.locale, {
+                timeZone: "UTC",
+                month: "numeric",
+                day: "numeric",
+              }).format(new Date(`${date}T12:00:00Z`))}
+            </strong>
+          </button>
+        ))}
+      </div>
       <div className={styles.editBar}>
         <div
           className={styles.legend}
@@ -272,7 +378,9 @@ export function PlayerTimetable({
           <div className={styles.actions}>
             <button
               type="button"
-              className="secondary"
+              className={`secondary ${styles.iconButton}`}
+              aria-label={tr("Undo")}
+              title={tr("Undo")}
               disabled={busy || !history.length}
               onClick={() => {
                 setIntervals(history.at(-1)!);
@@ -280,10 +388,13 @@ export function PlayerTimetable({
                 setValidation("");
               }}
             >
-              {tr("Undo")}
+              <SheetIcon kind="undo" />
             </button>
             <button
               type="button"
+              className={styles.saveButton}
+              aria-label={busy ? tr("Saving…") : tr("Save season timetable")}
+              title={tr("Save season timetable")}
               disabled={busy || !dirty}
               onClick={async () => {
                 setValidation("");
@@ -299,33 +410,29 @@ export function PlayerTimetable({
                 }
               }}
             >
-              {busy ? tr("Saving…") : tr("Save season timetable")}
+              <SheetIcon kind="save" />
+              <span>{busy ? tr("Saving…") : tr("Save")}</span>
             </button>
           </div>
         )}
       </div>
-      {data.canEdit && (
-        <p className="muted small" id="timetable-help">
-          {tr(
-            "Click a cell to cycle its state. Drag from a filled cell to copy its state. Scroll across the hours; use arrow keys and Space on your row.",
+      {(dirty || feedback) && (
+        <div className={styles.feedback} aria-live="polite">
+          {dirty && (
+            <span className={styles.draftMark}>{tr("Unsaved changes")}</span>
           )}
-        </p>
+          {feedback && (
+            <p
+              role={validation || failed ? "alert" : "status"}
+              className={
+                validation || failed ? "error-text small" : "muted small"
+              }
+            >
+              {feedback}
+            </p>
+          )}
+        </div>
       )}
-      <div className={styles.feedback} aria-live="polite">
-        <span className="muted small">
-          {dirty ? tr("Unsaved changes") : ""}
-        </span>
-        {(validation || message) && (
-          <p
-            role={validation || failed ? "alert" : "status"}
-            className={
-              validation || failed ? "error-text small" : "muted small"
-            }
-          >
-            {validation || message}
-          </p>
-        )}
-      </div>
       <div
         ref={viewportRef}
         className={styles.viewport}
@@ -337,7 +444,7 @@ export function PlayerTimetable({
         }
         tabIndex={0}
       >
-        {dates.map(({ date, slots }) => (
+        {visibleDates.map(({ date, slots }) => (
           <section
             key={`${date}-${timeZone}`}
             className={styles.day}
@@ -417,8 +524,10 @@ export function PlayerTimetable({
             onLostPointerCapture={cancelDrag}
           >
             <h2 id={`day-${date}`} className={styles.dayHeading}>
-              {dateLabel(date)}
-              <span>
+              <span className={styles.dateTitle} title={dateLabel(date)}>
+                {dateLabel(date)}
+              </span>
+              <span className={styles.offset}>
                 {[...new Set(slots.map((slot) => slot.offset))].join(" → ")}
               </span>
             </h2>
@@ -435,95 +544,121 @@ export function PlayerTimetable({
                       scope="col"
                       data-start={slot.start}
                       title={`${slot.time} ${slot.offset}`}
+                      aria-label={`${slot.time} ${slot.offset}`}
+                      data-hour={slot.time.endsWith(":00")}
                     >
-                      <span>{slot.time}</span>
-                      <small>{slot.offset}</small>
+                      <span>
+                        {slot.time.endsWith(":00") ? slot.time : ":30"}
+                      </span>
+                      {slots.filter((value) => value.time === slot.time)
+                        .length > 1 && <small>{slot.offset}</small>}
                     </th>
                   ))}
                 </tr>
               </thead>
               <tbody>
-                {people.map((person) => (
-                  <tr
-                    key={person.userId}
-                    data-own={person.userId === data.owner.osuId}
-                  >
-                    <th scope="row">
-                      <strong>{person.username}</strong>
-                      {person.userId === data.owner.osuId && (
-                        <small>{tr("My availability")}</small>
-                      )}
-                      {!person.intervals.length && (
-                        <small>{tr("Not submitted")}</small>
-                      )}
-                    </th>
-                    {slots.map((slot, index) => {
-                      const state = cellState(
-                        person.intervals,
-                        slot.start,
-                        slot.end,
-                      );
-                      const label = `${person.username} · ${date} · ${slot.time} ${slot.offset} · ${names[state]}`;
-                      return (
-                        <td key={slot.start} data-state={state} title={label}>
-                          {person.userId === data.owner.osuId && !disabled ? (
-                            <button
-                              type="button"
-                              data-slot={index}
-                              data-date={date}
-                              data-start={slot.start}
-                              aria-label={label}
-                              aria-describedby="timetable-help"
-                              tabIndex={index === 0 ? 0 : -1}
-                              onClick={(event) => {
-                                if (event.detail === 0)
-                                  commit(
-                                    paintAvailability(
-                                      intervals,
-                                      slot.start,
-                                      slot.end,
-                                      nextCellState(state),
-                                    ),
-                                  );
-                              }}
-                              onKeyDown={(event) => {
-                                const next =
-                                  event.key === "ArrowRight"
-                                    ? index + 1
-                                    : event.key === "ArrowLeft"
-                                      ? index - 1
-                                      : event.key === "Home"
-                                        ? 0
-                                        : event.key === "End"
-                                          ? slots.length - 1
-                                          : null;
-                                if (next !== null) {
-                                  event.preventDefault();
-                                  event.currentTarget
-                                    .closest("tr")
-                                    ?.querySelector<HTMLButtonElement>(
-                                      `button[data-slot="${Math.max(0, Math.min(slots.length - 1, next))}"]`,
-                                    )
-                                    ?.focus();
-                                }
-                              }}
-                            >
-                              <span aria-hidden="true">{symbols[state]}</span>
-                            </button>
-                          ) : (
-                            <span
-                              className={styles.readCell}
-                              role="img"
-                              aria-label={label}
-                            >
-                              {symbols[state]}
-                            </span>
-                          )}
-                        </td>
-                      );
-                    })}
-                  </tr>
-                ))}
+                {people.map((person) => {
+                  const states = slots.map((slot) =>
+                    cellState(person.intervals, slot.start, slot.end),
+                  );
+                  return (
+                    <tr
+                      key={person.userId}
+                      data-own={person.userId === data.owner.osuId}
+                    >
+                      <th scope="row">
+                        <strong title={person.username}>
+                          {person.username}
+                        </strong>
+                        {person.userId === data.owner.osuId && (
+                          <small>{tr("My availability")}</small>
+                        )}
+                        {!person.intervals.length && (
+                          <small>{tr("Not submitted")}</small>
+                        )}
+                      </th>
+                      {slots.map((slot, index) => {
+                        const state = states[index];
+                        const showSymbol =
+                          index === 0 ||
+                          states[index - 1] !== state ||
+                          slot.time.endsWith(":00");
+                        const label = `${person.username} · ${date} · ${slot.time} ${slot.offset} · ${names[state]}`;
+                        return (
+                          <td
+                            key={slot.start}
+                            data-state={state}
+                            data-hour={slot.time.endsWith(":00")}
+                            data-run-start={
+                              index === 0 || states[index - 1] !== state
+                            }
+                            title={label}
+                          >
+                            {person.userId === data.owner.osuId && !disabled ? (
+                              <button
+                                type="button"
+                                data-slot={index}
+                                data-date={date}
+                                data-start={slot.start}
+                                aria-label={label}
+                                aria-describedby="timetable-help"
+                                tabIndex={index === 0 ? 0 : -1}
+                                onClick={(event) => {
+                                  if (event.detail === 0)
+                                    commit(
+                                      paintAvailability(
+                                        intervals,
+                                        slot.start,
+                                        slot.end,
+                                        nextCellState(state),
+                                      ),
+                                    );
+                                }}
+                                onKeyDown={(event) => {
+                                  const next =
+                                    event.key === "ArrowRight"
+                                      ? index + 1
+                                      : event.key === "ArrowLeft"
+                                        ? index - 1
+                                        : event.key === "Home"
+                                          ? 0
+                                          : event.key === "End"
+                                            ? slots.length - 1
+                                            : null;
+                                  if (next !== null) {
+                                    event.preventDefault();
+                                    event.currentTarget
+                                      .closest("tr")
+                                      ?.querySelector<HTMLButtonElement>(
+                                        `button[data-slot="${Math.max(0, Math.min(slots.length - 1, next))}"]`,
+                                      )
+                                      ?.focus();
+                                  }
+                                }}
+                              >
+                                <span aria-hidden="true">
+                                  {showSymbol && state !== "unfilled"
+                                    ? symbols[state]
+                                    : ""}
+                                </span>
+                              </button>
+                            ) : (
+                              <span
+                                className={styles.readCell}
+                                role="img"
+                                aria-label={label}
+                              >
+                                {showSymbol && state !== "unfilled"
+                                  ? symbols[state]
+                                  : ""}
+                              </span>
+                            )}
+                          </td>
+                        );
+                      })}
+                    </tr>
+                  );
+                })}
               </tbody>
             </table>
           </section>

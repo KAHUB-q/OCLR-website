@@ -168,7 +168,6 @@ describe.skipIf(!url)("private player workspace #671", () => {
       expectedVersion: 0,
       requestKey: randomUUID(),
       score: 900000,
-      rating: 4,
       comment: "Team note",
       ...extra,
     };
@@ -311,7 +310,6 @@ describe.skipIf(!url)("private player workspace #671", () => {
       requestKey: randomUUID(),
       expectedVersion: 1,
       score: null,
-      rating: null,
       comment: "",
     });
     expect((await db().select().from(playerPracticeRecords))[0]).toMatchObject({
@@ -320,6 +318,48 @@ describe.skipIf(!url)("private player workspace #671", () => {
       rating: null,
       comment: "",
     });
+  });
+  it("omits retired ratings from reads, rejects old fields and keeps legacy audit evidence", async () => {
+    await playerPracticeCommand(p, slug, await practice());
+    await db()
+      .update(playerPracticeRecords)
+      .set({ rating: 4 })
+      .where(eq(playerPracticeRecords.userId, p.osuId));
+    const record = (await playerPracticeWorkspace(p, slug)).pool!.entries[0]
+      .records[0];
+    expect(record).toMatchObject({
+      score: 900000,
+      comment: "Team note",
+      version: 1,
+    });
+    expect(record).not.toHaveProperty("rating");
+    await expect(
+      playerPracticeCommand(
+        p,
+        slug,
+        await practice(p, { expectedVersion: 1, rating: 5 }),
+      ),
+    ).rejects.toMatchObject({ status: 400 });
+    expect((await db().select().from(playerPracticeRecords))[0].rating).toBe(4);
+    await playerPracticeCommand(
+      p,
+      slug,
+      await practice(p, { expectedVersion: 1, comment: "Score/comment only" }),
+    );
+    expect((await db().select().from(playerPracticeRecords))[0]).toMatchObject({
+      version: 2,
+      score: 900000,
+      rating: null,
+      comment: "Score/comment only",
+    });
+    const events = await db()
+      .select()
+      .from(playerWorkspaceEvents)
+      .where(eq(playerWorkspaceEvents.actorId, p.osuId));
+    expect(events).toHaveLength(2);
+    expect(
+      events.find((event) => event.after.version === 2)?.before,
+    ).toMatchObject({ rating: 4, comment: "Team note" });
   });
   it("serializes competing creates instead of duplicating records", async () => {
     const cmd = await practice();

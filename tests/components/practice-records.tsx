@@ -81,7 +81,7 @@ function workspace(poolId: string): PracticeWorkspace {
         context: "a".repeat(64),
         ownVersion: one && index === 0 ? 1 : 0,
         metadata: {
-          setId: 1,
+          setId: params.has("missing-cover") ? 0 : 1,
           artist: "Synthetic Artist",
           title: `${category} Signal`,
           difficulty: "Synthetic Insane",

@@ -26,7 +26,11 @@ row; on mobile, comments use a full-width second row. Pool and Mod selectors use
 underlined tabs, and reload/save/delete use labelled utility controls.
 
 Team records use a map-by-player comparison table with fixed map and player
-headers. Scores, saved Feel and comments are visible together. Feel is independent
+headers. The map identity column reuses the official beatmapset cover as a
+subdued decorative background behind the title, metadata and download controls.
+It follows the MainSheet surface in light/dark, has no pointer targets or extra
+screen-reader text, and falls back to the original surface when unavailable.
+Scores, saved Feel and comments are visible together. Feel is independent
 of the score and never enters the highest-score comparison. Long comments initially show
 three literal lines and expand through a keyboard-accessible disclosure; the
 complete text is retained. The current context's highest saved score is

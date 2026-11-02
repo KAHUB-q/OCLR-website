@@ -43,3 +43,8 @@ comment occupies a full-width second row. Keep Feel secondary in saved records.
 Retire rating from current commands and read
 projections while retaining legacy storage/audit. Remove stale rating UI and tests;
 verify legacy records still expose score/comment and reject retired command fields.
+
+The next follow-up adds each map's official beatmapset cover behind the fixed
+identity column. Keep the artwork secondary to literal map details and controls;
+reuse BeatmapCover's decorative image and failure behavior without adding row
+height, shifting the editor or introducing another click target.

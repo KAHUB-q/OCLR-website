@@ -1,9 +1,10 @@
-# #731 — practice Feel and compact availability UI
+# #731 — practice artwork, Feel and compact availability UI
 
 Organizer follow-up to the merged #727, implemented from main `d25bc324` on
 2026-11-02. This batch retires practice stars and refines both private
 sheets using MainSheet surfaces, typography and existing locale catalogs.
 The next organizer request adds optional Feel alongside score/comment.
+The following request adds the corresponding beatmap background.
 
 ## Result
 
@@ -32,6 +33,31 @@ legend stay beside the grid; optional help supports Escape.
 
 All existing ownership, current-captain team visibility, optimistic versions,
 idempotency, chart-context, UTC/DST and unfilled/explicit-state semantics remain.
+
+## Artwork follow-up
+
+The fixed map column now reuses BeatmapCover and its official beatmapset cover
+URL. A decorative layer at 24% opacity fills the cell without changing its
+intrinsic row height. Map metadata uses MainSheet foreground for readable
+contrast in both themes. The layer has no pointer targets and is hidden from
+screen readers. A missing cover leaves the original surface; shared image
+failure handling is retained. No data schema, command or interface text changes.
+
+Manual synthetic browser inspection covers desktop and 320px, light/dark, and
+missing-cover fallback. The mobile cover overrides the shared thumbnail height
+cap so the background fills the whole identity cell. The fixture's
+`?missing-cover` option supplies an invalid set ID for the absent-cover check.
+No new browser suite was run; E2E was not run (too slow), following ordinary
+development policy.
+
+This follow-up passed `npm run check`, the final production build and the full
+isolated-DB suite: **267 files, 2,317 tests passed and two skipped**.
+`npm audit --omit=dev` found **0 vulnerabilities**, and `git diff --check` passed.
+No new unit tests were added for the decorative layout; existing artwork and
+private-workspace tests remain in the complete suite.
+
+![Practice background desktop dark](practice-art-desktop-dark.png)
+![Practice background mobile light](practice-art-mobile-light.png)
 
 ## Feel follow-up verification
 

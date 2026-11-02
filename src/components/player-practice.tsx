@@ -11,6 +11,7 @@ import {
 } from "@/lib/player-workspace-model";
 import { categories, slotLabel, fmPolicyName } from "@/lib/mappool-model";
 import { BeatmapActions } from "./beatmap-actions";
+import { BeatmapCover } from "./beatmap-cover";
 import { EmptyState } from "./ui";
 import { SheetIcon } from "./sheet-icon";
 import { useUnsavedWorkspace, useWorkspaceSave } from "./player-workspace-save";
@@ -151,6 +152,9 @@ function PracticeEntry({
     <tbody className={styles.practiceMap} aria-labelledby={`map-${entry.id}`}>
       <tr>
         <th scope="row" className={styles.mapColumn}>
+          <div className={styles.mapArtwork} aria-hidden="true">
+            <BeatmapCover setId={entry.metadata.setId} compact />
+          </div>
           <div className={styles.mapHeading}>
             <div className={styles.identity}>
               <span className="badge">{label}</span>

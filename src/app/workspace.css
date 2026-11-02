@@ -277,13 +277,6 @@
   :is(.draft-picks p, .admin-breadcrumbs li + li::before) {
   color: var(--site-muted);
 }
-.themed-site.private-site .admin-return {
-  border-color: var(--site-control-border);
-}
-.themed-site.private-site .admin-return:hover {
-  background: var(--site-raised);
-  border-color: var(--site-accent);
-}
 .themed-site.private-site
   :is(.draft-order-preview li > ol > li, .captain-drop-zone.is-dragging) {
   background: var(--site-tint);

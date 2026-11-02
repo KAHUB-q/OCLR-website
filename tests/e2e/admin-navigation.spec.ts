@@ -68,14 +68,14 @@ test.describe("tournament-centered administration", () => {
     const selector = page.getByLabel("Selected tournament");
     await expect(selector.locator('option[value=""]')).toHaveCount(0);
     await expect(page.locator('.sidebar a[href="/"]')).toHaveCount(0);
-    const back = page.getByRole("link", {
-      name: "← All tournaments",
-      exact: true,
-    });
-    await expect(back).toHaveCount(1);
-    await expect(back).toHaveClass(/button secondary/);
+    await expect(
+      page.locator('.sidebar a[href="/admin/tournaments"]'),
+    ).toHaveCount(0);
+    const back = page
+      .getByRole("navigation", { name: "Breadcrumb", exact: true })
+      .getByRole("link", { name: "Tournaments", exact: true });
     await expect(back).toHaveAttribute("href", "/admin/tournaments");
-    await captureResponsiveLayout(page, info, "tournament-return");
+    await captureResponsiveLayout(page, info, "tournament-selector");
     await back.focus();
     await page.keyboard.press("Enter");
     await expect(page).toHaveURL(/\/admin\/tournaments$/);
@@ -266,7 +266,7 @@ test.describe("tournament-centered administration", () => {
             name: "← All tournaments",
             exact: true,
           }),
-        ).toBeVisible();
+        ).toHaveCount(0);
         await menu(operator);
         const nav = operator.getByRole("navigation", {
           name: "Tournament navigation",

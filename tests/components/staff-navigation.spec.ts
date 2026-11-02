@@ -15,6 +15,9 @@ test("hamburger collapses the entire sidebar and preserves working content", asy
     if (isMobile) await toggle.click();
     await expect(sidebar).toBeVisible();
     await expect(page.getByLabel("Selected tournament")).toBeVisible();
+    await expect(sidebar.locator('a[href="/admin/tournaments"]')).toHaveCount(
+      0,
+    );
     await expect(toggle).toHaveAccessibleName("Close administration menu");
     const expandedWidth = (await content.boundingBox())!.width;
     const input = page.getByRole("textbox", { name: "Unsaved content" });
@@ -80,7 +83,13 @@ test("edition switching, navigation and Escape keep the mobile menu usable", asy
     await expect(toggle).toBeFocused();
     await toggle.click();
   }
-  await sidebar.getByRole("link", { name: "← All tournaments" }).click();
+  await expect(
+    sidebar.getByRole("link", { name: "← All tournaments" }),
+  ).toHaveCount(0);
+  await page
+    .getByRole("navigation", { name: "Breadcrumb", exact: true })
+    .getByRole("link", { name: "Tournaments", exact: true })
+    .click();
   if (isMobile) await toggle.click();
   await expect(
     sidebar.getByRole("navigation", { name: "Administration navigation" }),

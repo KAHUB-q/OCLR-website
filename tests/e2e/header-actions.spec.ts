@@ -453,7 +453,7 @@ test.describe("role-aware header actions and compact tournament context", () => 
     await expect(sidebar.locator('option[value=""]')).toHaveCount(0);
     await expect(
       sidebar.getByRole("link", { name: "← All tournaments", exact: true }),
-    ).toHaveClass(/button secondary/);
+    ).toHaveCount(0);
     await expect(
       sidebar.getByRole("link", {
         name: /Back to website|Administration overview/,
@@ -480,14 +480,11 @@ test.describe("role-aware header actions and compact tournament context", () => 
     await expect(sidebar.locator(".admin-context .badge")).toHaveText("Draft");
     const contextHeading = sidebar.locator(".admin-context-heading");
     await expect(contextHeading).toContainText("Tournament");
-    const selectorBounds = (await sidebar
-      .getByLabel("Selected tournament")
-      .boundingBox())!;
-    const returnBounds = (await sidebar
-      .getByRole("link", { name: "← All tournaments", exact: true })
-      .boundingBox())!;
-    expect(returnBounds.width).toBeLessThan(selectorBounds.width);
-    expect(returnBounds.x).toBeCloseTo(selectorBounds.x, 0);
+    await expect(
+      page
+        .getByRole("navigation", { name: "Breadcrumb", exact: true })
+        .getByRole("link", { name: "Tournaments", exact: true }),
+    ).toHaveAttribute("href", "/admin/tournaments");
     await db()
       .update(editionState)
       .set({

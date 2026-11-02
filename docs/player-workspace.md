@@ -19,13 +19,15 @@ ineligible applicants and delegated remote sessions.
 published mappool, with tabs for other published pools and each available Mod.
 Changing Mod keeps each map's unsaved inputs mounted; changing pools asks before
 discarding drafts. Hidden pools and historical archives are unavailable.
-Each map has an optional manually entered score and a compact, vertically
-resizable comment field (up to 2,000 characters). The score, comment and save
-action share one row, including at 320px. Pool and Mod selectors use compact
+Each map has an optional manually entered score, an optional **Feel** selection
+(Poor / Okay / Good), and a compact, vertically resizable comment field (up to
+2,000 characters). The score, Feel, comment and save action share one desktop
+row; on mobile, comments use a full-width second row. Pool and Mod selectors use compact
 underlined tabs, and reload/save/delete use labelled utility controls.
 
 Team records use a map-by-player comparison table with fixed map and player
-headers. Scores and comments are visible together. Long comments initially show
+headers. Scores, saved Feel and comments are visible together. Feel is independent
+of the score and never enters the highest-score comparison. Long comments initially show
 three literal lines and expand through a keyboard-accessible disclosure; the
 complete text is retained. The current context's highest saved score is
 emphasized (ties share the emphasis). Missing scores and outdated map contexts
@@ -34,11 +36,16 @@ comparison row; updates and deletions immediately update the comparison. The
 table scrolls horizontally while the editor stays inside the visible container.
 
 Star ratings were retired by organizer request in #731. Current practice
-commands accept only score/comment and reject the retired rating field; read
+commands accept score/feel/comment and reject the retired rating field; read
 projections omit it. The legacy nullable database column and existing private
 audit history remain intact. Reading old records does not rewrite them; a later
 owner save/delete clears the retired value, with the previous value retained in
-the normal private before/after audit. No database migration is required.
+the normal private before/after audit. Feel has separate nullable storage added by
+migration `0072_practice_feel.sql`, constrained to `bad`, `normal`, `good` or NULL.
+Existing records start unset; old ratings are never converted into Feel.
+Omitted Feel in an older score/comment command preserves the stored value and
+the original retry payload hash. Current forms explicitly send NULL to clear it.
+Deletion clears Feel together with score/comment in the same private audit.
 
 Each player edits only their own record. Current active teammates can read each
 other's records; an unassigned player can save and view their own records.

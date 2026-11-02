@@ -37,6 +37,9 @@ comments expand on demand; weekday shortcuts and continuous drag feedback keep
 navigation and painting immediate. Focus the selected day initially and retain
 a full-week overview. Keep focus and reduced-motion behavior clear.
 
-Practice now has score/comment only. Retire rating from current commands and read
+Practice has score/Feel/comment following the organizer's next request. Feel uses
+an optional compact Poor/Okay/Good selection beside the score; on mobile the
+comment occupies a full-width second row. Keep Feel secondary in saved records.
+Retire rating from current commands and read
 projections while retaining legacy storage/audit. Remove stale rating UI and tests;
 verify legacy records still expose score/comment and reject retired command fields.

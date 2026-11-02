@@ -1693,6 +1693,9 @@ export const playerPracticeRecords = pgTable(
     // Legacy storage only; current practice commands and projections omit ACC.
     accuracy: doublePrecision("accuracy"),
     rating: integer("rating"),
+    feel: text("feel").$type<
+      import("@/lib/player-workspace-model").PracticeFeel
+    >(),
     comment: text("comment").notNull().default(""),
     version: integer("version").notNull().default(1),
     // Retain the version after deletion so stale pages cannot recreate/overwrite a record.
@@ -1721,6 +1724,10 @@ export const playerPracticeRecords = pgTable(
       sql`${t.rating} IS NULL OR ${t.rating} BETWEEN 1 AND 5`,
     ),
     check("player_practice_comment_bounded", sql`length(${t.comment}) <= 2000`),
+    check(
+      "player_practice_feel_valid",
+      sql`${t.feel} IS NULL OR ${t.feel} IN ('bad', 'normal', 'good')`,
+    ),
     check("player_practice_version_valid", sql`${t.version} > 0`),
   ],
 );

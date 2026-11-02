@@ -1,6 +1,6 @@
 import { test, expect } from "@playwright/test";
 for (const theme of ["light", "dark"]) {
-  test(`${theme}: score, comment and save stay on one row at 719px and 320px`, async ({
+  test(`${theme}: score, feel and save align above the mobile comment`, async ({
     page,
   }) => {
     const writes: Record<string, unknown>[] = [];
@@ -34,31 +34,39 @@ for (const theme of ["light", "dark"]) {
         name: "Practice comment",
         exact: true,
       });
+      const feel = form.getByRole("combobox", { name: "Feel", exact: true });
+      await expect(feel).toHaveValue("normal");
       const save = form.getByRole("button", {
         name: "Save practice",
         exact: true,
       });
       const boxes = await Promise.all(
-        [score, comment, save].map((control) => control.boundingBox()),
+        [score, feel, save].map((control) => control.boundingBox()),
       );
       expect(boxes.every((box) => box !== null)).toBe(true);
       expect(
         Math.max(...boxes.map((box) => box!.y)) -
           Math.min(...boxes.map((box) => box!.y)),
       ).toBeLessThan(2);
-      expect((await form.boundingBox())!.height).toBeLessThan(90);
+      expect((await form.boundingBox())!.height).toBeLessThan(
+        width === 320 ? 130 : 90,
+      );
+      if (width === 320)
+        expect((await comment.boundingBox())!.y).toBeGreaterThan(boxes[0]!.y);
       expect(
         await page.evaluate(
           () => document.documentElement.scrollWidth <= innerWidth,
         ),
       ).toBe(true);
       await comment.fill("Single-row practice note");
+      await feel.selectOption("good");
       await save.click();
       await expect(form.getByRole("status")).toHaveText("Saved");
       expect(writes.at(-1)).not.toHaveProperty("rating");
       expect(writes.at(-1)).toMatchObject({
         action: "save_practice",
         score: 900000,
+        feel: "good",
         comment: "Single-row practice note",
         expectedVersion: 1,
       });

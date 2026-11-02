@@ -361,6 +361,71 @@ describe.skipIf(!url)("private player workspace #671", () => {
       events.find((event) => event.after.version === 2)?.before,
     ).toMatchObject({ rating: 4, comment: "Team note" });
   });
+  it("saves, shares and clears feel with private audit and compatible retries", async () => {
+    const original = await practice(p, { feel: "good" });
+    await playerPracticeCommand(p, slug, original);
+    expect(await playerPracticeCommand(p, slug, original)).toEqual({
+      saved: true,
+      version: 1,
+    });
+    await expect(
+      playerPracticeCommand(p, slug, { ...original, feel: "bad" }),
+    ).rejects.toMatchObject({ status: 409 });
+    const teamRead = (await playerPracticeWorkspace(q, slug)).pool!.entries[0];
+    expect(teamRead.records[0]).toMatchObject({ feel: "good", score: 900000 });
+    expect(
+      (await playerPracticeWorkspace(b, slug)).pool!.entries[0].records,
+    ).toEqual([]);
+    const legacy = await practice(p, {
+      expectedVersion: 1,
+      comment: "Old page",
+    });
+    await playerPracticeCommand(p, slug, legacy);
+    expect(await playerPracticeCommand(p, slug, legacy)).toEqual({
+      saved: true,
+      version: 2,
+    });
+    expect((await db().select().from(playerPracticeRecords))[0].feel).toBe(
+      "good",
+    );
+    await playerPracticeCommand(
+      p,
+      slug,
+      await practice(p, { expectedVersion: 2, feel: null }),
+    );
+    const cleared = (await db().select().from(playerPracticeRecords))[0];
+    expect(cleared).toMatchObject({ feel: null, version: 3 });
+    const events = await db().select().from(playerWorkspaceEvents);
+    expect(events.find((event) => event.after.version === 3)).toMatchObject({
+      before: { feel: "good" },
+      after: { feel: null },
+    });
+    await playerPracticeCommand(
+      p,
+      slug,
+      await practice(p, { expectedVersion: 3, feel: "bad" }),
+    );
+    await playerPracticeCommand(p, slug, await removePractice());
+    expect((await db().select().from(playerPracticeRecords))[0]).toMatchObject({
+      feel: null,
+      version: 5,
+    });
+    expect(
+      (await playerPracticeWorkspace(q, slug)).pool!.entries[0].records,
+    ).toEqual([]);
+  });
+  it("rejects unknown feel values in the command and database", async () => {
+    await expect(
+      playerPracticeCommand(p, slug, await practice(p, { feel: "excellent" })),
+    ).rejects.toMatchObject({ status: 400 });
+    await playerPracticeCommand(p, slug, await practice());
+    await expect(
+      db().execute(sql`UPDATE player_practice_records SET feel = 'excellent'`),
+    ).rejects.toThrow();
+    expect(
+      (await db().select().from(playerPracticeRecords))[0].feel,
+    ).toBeNull();
+  });
   it("serializes competing creates instead of duplicating records", async () => {
     const cmd = await practice();
     const results = await Promise.allSettled([

@@ -5,6 +5,8 @@ import { useAppTranslations } from "@/i18n/shared";
 import type { PracticeWorkspace } from "@/lib/player-workspace";
 import {
   practiceValueSchema,
+  practiceFeels,
+  type PracticeFeel,
   type PracticeValue,
 } from "@/lib/player-workspace-model";
 import { categories, slotLabel, fmPolicyName } from "@/lib/mappool-model";
@@ -15,7 +17,7 @@ import { useUnsavedWorkspace, useWorkspaceSave } from "./player-workspace-save";
 import styles from "./player-workspace.module.css";
 
 type Entry = NonNullable<PracticeWorkspace["pool"]>["entries"][number];
-const empty: PracticeValue = { score: null, comment: "" };
+const empty: PracticeValue = { score: null, feel: null, comment: "" };
 
 function PracticeTabs({
   id,
@@ -109,9 +111,12 @@ function PracticeEntry({
   onDirty: (id: string, dirty: boolean) => void;
 }) {
   const tr = useAppTranslations();
+  const feelLabels = { bad: tr("Poor"), normal: tr("Okay"), good: tr("Good") };
   const own = entry.records.find((record) => record.userId === data.actorId);
   const initial =
-    own && !own.stale ? { score: own.score, comment: own.comment } : empty;
+    own && !own.stale
+      ? { score: own.score, feel: own.feel, comment: own.comment }
+      : empty;
   const [value, setValue] = useState(initial),
     [saved, setSaved] = useState(initial);
   const [version, setVersion] = useState(entry.ownVersion);
@@ -205,6 +210,12 @@ function PracticeEntry({
                       {record.score?.toLocaleString(tr.locale) ?? "—"}
                     </strong>
 
+                    {record.feel && (
+                      <span className={styles.feel}>
+                        <span className="sr-only">{tr("Feel")}: </span>
+                        {feelLabels[record.feel]}
+                      </span>
+                    )}
                     {player.osuId === data.actorId && !data.readOnly && (
                       <button
                         type="button"
@@ -261,7 +272,7 @@ function PracticeEntry({
                 const parsed = practiceValueSchema.safeParse(value);
                 if (!parsed.success) {
                   setValidation(
-                    tr("Enter a valid practice score and comment."),
+                    tr("Enter a valid practice score, feel and comment."),
                   );
                   return;
                 }
@@ -308,6 +319,27 @@ function PracticeEntry({
                       })
                     }
                   />
+                </label>
+                <label className="field">
+                  <span className="sr-only">{tr("Feel")}</span>
+                  <select
+                    value={value.feel ?? ""}
+                    disabled={disabled}
+                    onChange={(event) =>
+                      setValue({
+                        ...value,
+                        feel: (event.target.value ||
+                          null) as PracticeFeel | null,
+                      })
+                    }
+                  >
+                    <option value="">{tr("Feel")}</option>
+                    {practiceFeels.map((feel) => (
+                      <option key={feel} value={feel}>
+                        {feelLabels[feel]}
+                      </option>
+                    ))}
+                  </select>
                 </label>
                 <label className={`field ${styles.practiceComment}`}>
                   <span className="sr-only">{tr("Practice comment")}</span>

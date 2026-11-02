@@ -88,14 +88,20 @@ silently transfer a score to a new slot.
 
 `/tournaments/[edition]/player/availability` stores up to 200 dated time ranges
 for the whole season, independently of teams and fixtures. The horizontal sheet
-groups real dates within the selected week, with a shared half-hour axis and one
+groups four real dates, Friday through the following Monday, with a shared half-hour axis and one
 row per authorized player. Names stay visible during horizontal scrolling.
 The initial view focuses the selected date and aligns the hour cells to complete
-column boundaries. Weekday shortcuts switch dates, and the Week control restores
-the full seven-day overview. Both modes keep all unsaved intervals in memory;
+column boundaries. Only Friday, Saturday, Sunday and Monday are offered as date
+shortcuts and grid days. Overview shows all four dates in that order, including
+the following Monday across a calendar-week/month/year boundary. Dates chosen
+on Tuesday through Thursday (including Today) locate the upcoming Friday.
+Previous/next-week controls retain the selected weekday. Both modes keep all unsaved intervals in memory;
 view changes do not alter the saved data. Date and previous/next-week controls
 retain the full calendar date in context. Headers and player identities stay
 visible during scrolling, and consecutive states form continuous bands.
+Midweek intervals saved by older pages remain in the saved-range list and in
+subsequent save payloads. This is a display/editing scope change; stored UTC
+instants, service validation and fixture Schedule retain their existing rules.
 
 Date headings show the zone offset once; only ambiguous repeated hours repeat
 the offset in the hour header. Local/UTC controls, compact undo/save and the state

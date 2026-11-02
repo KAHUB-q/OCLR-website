@@ -4,6 +4,7 @@ import {
   daySlots,
   paintAvailability,
   weekStart,
+  selectableTimetableDate,
 } from "../../src/lib/player-timetable-model";
 import {
   seasonAvailabilitySchema,
@@ -103,8 +104,31 @@ describe("local dates and real half-hour columns", () => {
     expect(utc.find((slot) => slot.start === local[0].start)?.time).toBe(
       "16:00",
     );
-    expect(weekStart(local[0].start, "Asia/Taipei")).toBe("2026-11-02");
-    expect(weekStart(local[0].start, "UTC")).toBe("2026-10-26");
+    expect(weekStart(local[0].start, "Asia/Taipei")).toBe("2026-10-30");
+    expect(weekStart(local[0].start, "UTC")).toBe("2026-10-30");
+  });
+  it("keeps Friday through the following Monday together and advances midweek dates", () => {
+    for (const date of [
+      "2026-10-30",
+      "2026-10-31",
+      "2026-11-01",
+      "2026-11-02",
+    ]) {
+      expect(selectableTimetableDate(date)).toBe(date);
+      expect(weekStart(`${date}T12:00:00Z`, "UTC")).toBe("2026-10-30");
+    }
+    for (const date of ["2026-11-03", "2026-11-04", "2026-11-05"])
+      expect(selectableTimetableDate(date)).toBe("2026-11-06");
+    expect(selectableTimetableDate("2026-12-31")).toBe("2027-01-01");
+    expect(weekStart("2027-01-04T12:00:00Z", "UTC")).toBe("2027-01-01");
+  });
+  it("chooses the four-day group in the display zone while keeping original instants", () => {
+    const instant = "2026-11-02T16:00:00Z";
+    expect(weekStart(instant, "UTC")).toBe("2026-10-30");
+    expect(weekStart(instant, "Asia/Taipei")).toBe("2026-11-06");
+    expect(weekStart("2026-11-01T06:30:00Z", "America/New_York")).toBe(
+      "2026-10-30",
+    );
   });
   it("includes both fall-back hours and skips spring-forward hours", () => {
     const fall = daySlots("2026-11-01", "America/New_York");

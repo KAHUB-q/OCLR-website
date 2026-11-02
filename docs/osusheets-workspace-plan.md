@@ -62,3 +62,12 @@ previous map context on demand. Touch controls keep 44px targets.
 The organizer's BID reference uses a purple rounded capsule with a bold literal
 number and copy icon. Keep the number visible through success/error states and
 fit a seven-digit ID into the narrow map column without widening the editor.
+
+## Friday–Monday timetable follow-up — 2026-11-03
+
+Show only Friday, Saturday, Sunday and the following Monday in the shortcuts
+and overview. Use a consecutive four-date group rather than filtering an ISO
+week into a misleading Monday-first order. Midweek date/Today navigation locates
+the upcoming Friday; keep the selected weekday when shifting groups. Apply the
+group in the display timezone without mutating or filtering stored intervals.
+Retain all old midweek ranges and drafts when saving allowed-day edits.

@@ -30,7 +30,14 @@ const owner = { osuId: 676001, username: "Synthetic player" };
 const intervals = [
   { start: "2026-11-01T10:00:00.000Z", end: "2026-11-01T11:00:00.000Z" },
 ];
-const ownIntervals = params.has("empty-own") ? [] : intervals;
+const ownIntervals = params.has("midweek")
+  ? [
+      { start: "2026-11-03T10:00:00.000Z", end: "2026-11-03T11:00:00.000Z" },
+      { start: "2026-11-05T10:00:00.000Z", end: "2026-11-05T11:00:00.000Z" },
+    ]
+  : params.has("empty-own")
+    ? []
+    : intervals;
 const timetable: TimetableWorkspace = {
   actorId: owner.osuId,
   owner,

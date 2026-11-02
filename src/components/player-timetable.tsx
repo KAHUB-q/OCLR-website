@@ -22,6 +22,7 @@ import {
   paintAvailability,
   shiftDate,
   weekStart,
+  selectableTimetableDate,
   type CellState,
 } from "@/lib/player-timetable-model";
 import { useUnsavedWorkspace, useWorkspaceSave } from "./player-workspace-save";
@@ -87,9 +88,12 @@ export function PlayerTimetable({
   const disabled = !data.canEdit || busy;
   const feedback = validation || (failed || !dirty ? message : "");
   const startDate = weekStart(anchor, timeZone);
+  const selectedDate = selectableTimetableDate(
+    localDateTime(anchor, timeZone).slice(0, 10),
+  );
   const dates = useMemo(
     () =>
-      Array.from({ length: 7 }, (_, i) => {
+      Array.from({ length: 4 }, (_, i) => {
         const date = shiftDate(startDate, i);
         return { date, slots: daySlots(date, timeZone) };
       }),
@@ -107,7 +111,13 @@ export function PlayerTimetable({
         strip.scrollLeft = weekView
           ? 0
           : selected.offsetLeft - strip.clientWidth + selected.clientWidth;
-      const date = localDateTime(anchor, timeZone).slice(0, 10);
+      const date = weekView ? startDate : selectedDate;
+      const scrollInstant = weekView
+        ? (zonedInstants(
+            `${date}T${localDateTime(anchor, timeZone).slice(11, 16)}`,
+            timeZone,
+          )[0] ?? anchor)
+        : anchor;
       const day = root?.querySelector<HTMLElement>(`[data-day="${date}"]`);
       if (!root || !day) return;
       root.scrollTop +=
@@ -118,8 +128,12 @@ export function PlayerTimetable({
       const column = columns.reduce<HTMLElement | null>(
         (closest, value) =>
           !closest ||
-          Math.abs(Date.parse(value.dataset.start!) - Date.parse(anchor)) <
-            Math.abs(Date.parse(closest.dataset.start!) - Date.parse(anchor))
+          Math.abs(
+            Date.parse(value.dataset.start!) - Date.parse(scrollInstant),
+          ) <
+            Math.abs(
+              Date.parse(closest.dataset.start!) - Date.parse(scrollInstant),
+            )
             ? value
             : closest,
         null,
@@ -147,8 +161,7 @@ export function PlayerTimetable({
     observer.observe(root);
     observer.observe(strip);
     return () => observer.disconnect();
-  }, [anchor, timeZone, weekView]);
-  const selectedDate = localDateTime(anchor, timeZone).slice(0, 10);
+  }, [anchor, selectedDate, startDate, timeZone, weekView]);
   const visibleDates = weekView
     ? dates
     : dates.filter(({ date }) => date === selectedDate);
@@ -167,7 +180,10 @@ export function PlayerTimetable({
     mixed: tr("Partly filled or mixed states"),
   };
   const goToDate = (date: string) => {
-    const instant = zonedInstants(`${date}T12:00`, timeZone)[0];
+    const instant = zonedInstants(
+      `${selectableTimetableDate(date)}T12:00`,
+      timeZone,
+    )[0];
     if (instant) setAnchor(instant);
   };
   const commit = (next: SeasonAvailabilityInterval[], base = intervals) => {
@@ -205,7 +221,7 @@ export function PlayerTimetable({
             className="secondary"
             aria-label={tr("Previous week")}
             title={tr("Previous week")}
-            onClick={() => goToDate(shiftDate(startDate, -7))}
+            onClick={() => goToDate(shiftDate(selectedDate, -7))}
           >
             ‹
           </button>
@@ -213,7 +229,7 @@ export function PlayerTimetable({
             <span className="sr-only">{tr("Week containing")}</span>
             <input
               type="date"
-              value={localDateTime(anchor, timeZone).slice(0, 10)}
+              value={selectedDate}
               onChange={(event) => {
                 if (event.target.value) goToDate(event.target.value);
               }}
@@ -224,7 +240,7 @@ export function PlayerTimetable({
             className="secondary"
             aria-label={tr("Next week")}
             title={tr("Next week")}
-            onClick={() => goToDate(shiftDate(startDate, 7))}
+            onClick={() => goToDate(shiftDate(selectedDate, 7))}
           >
             ›
           </button>
@@ -300,8 +316,9 @@ export function PlayerTimetable({
         </div>
       </div>
       <div className={styles.context}>
+        <span>{tr("Friday–Monday")}</span>
         <span>
-          {startDate} — {shiftDate(startDate, 6)}
+          {startDate} — {shiftDate(startDate, 3)}
         </span>
         <span>{timeZone}</span>
       </div>
@@ -326,7 +343,7 @@ export function PlayerTimetable({
           aria-pressed={weekView}
           onClick={() => setWeekView(true)}
         >
-          {tr("Week")}
+          {tr("Overview")}
         </button>
         {dates.map(({ date }) => (
           <button

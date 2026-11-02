@@ -26,10 +26,11 @@ Score/Feel/save share the first line inside the owner cell, with comment/delete
 below. The actor's column is ordered first; horizontal scrolling retains the map
 and player headers.
 
-The timetable initially focuses the selected day. Weekday shortcuts and the
-Week control switch between that day and the full seven-day overview while
-retaining all drafts. The selected day remains visible in the shortcut strip,
-and Week stays pinned on narrow screens. Resize/side-panel width changes realign
+The timetable initially focuses the selected allowed day. Friday, Saturday,
+Sunday and the following Monday are the only shortcut/grid dates. Overview
+shows those four dates in sequence while retaining all drafts. The selected day
+remains visible in the shortcut strip, and Overview stays pinned on narrow screens.
+Resize/side-panel width changes realign
 the saved hour and selected day. Names, date and time headers stay readable;
 continuous state bands reduce repeated marks, and UTC offsets appear once per
 date except when a repeated hour needs disambiguation. Compact undo/save and the
@@ -37,6 +38,37 @@ legend stay beside the grid; optional help supports Escape.
 
 All existing ownership, current-captain team visibility, optimistic versions,
 idempotency, chart-context, UTC/DST and unfilled/explicit-state semantics remain.
+
+## Friday–Monday selection — 2026-11-03
+
+The timetable offers only four consecutive dates: Friday through the following
+Monday. Tuesday, Wednesday and Thursday have no shortcut or grid. The Overview
+control replaces the earlier Week label and opens at Friday. A midweek date or
+Today locates the upcoming Friday; previous/next navigation retains the selected
+weekday and shifts seven days. Dates are chosen in the current display timezone,
+including month/year boundaries and local/UTC midnight changes.
+
+This changes only the display/editing scope. Old midweek ranges remain in the
+saved-range disclosure, drafts, undo history and save payloads. No API schema,
+database migration or service-side weekday restriction is added. Existing
+half-hour, UTC instant and DST behavior remains.
+
+Thirty focused Chrome checks passed on desktop/mobile. New cases verify the
+four-day order and absent midweek choices, Tuesday Today, midweek date navigation,
+Monday across the calendar-week boundary, and unchanged Tuesday/Thursday records
+when saving a Friday edit. Existing captain/read-only boundaries, painting, undo,
+retry, resize, UTC/local conversion and repeated DST hour checks also passed.
+Unit cases cover the full seven-day input mapping, year boundaries and a timezone
+change from Monday UTC to Tuesday in Taipei. The new context label is
+周五至周一 / 週五至週一 / Friday–Monday, for organizer wording review.
+
+The complete isolated-DB suite passed **267 files, 2,319 tests, two skipped**.
+Check, production build, catalog extraction and diff checks passed; audit found
+0 vulnerabilities. Full application E2E/all-appearance matrices were not run
+(too slow); the targeted 30-check browser run is recorded above.
+
+![Four-day timetable desktop](timetable-four-desktop-light.png)
+![Four-day timetable mobile](timetable-four-mobile-dark.png)
 
 ## Numeric BID capsule — 2026-11-03
 

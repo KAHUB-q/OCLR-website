@@ -2,6 +2,81 @@ import { expect, test } from "@playwright/test";
 test.use({ timezoneId: "Asia/Taipei" });
 const slot = (hour: string) =>
   `button[data-start="2026-11-01T${hour}:00.000Z"]`;
+test("only Friday through the following Monday are offered across week navigation and Today", async ({
+  page,
+}) => {
+  await page.clock.install({ time: new Date("2026-11-03T04:00:00Z") });
+  await page.goto("/schedule-selection?captain");
+  const shortcuts = page.getByRole("group", { name: "Week", exact: true });
+  expect(
+    await shortcuts
+      .locator("button[aria-label]")
+      .evaluateAll((buttons) =>
+        buttons.map((b) => b.getAttribute("aria-label")),
+      ),
+  ).toEqual([
+    "Friday, October 30, 2026",
+    "Saturday, October 31, 2026",
+    "Sunday, November 1, 2026",
+    "Monday, November 2, 2026",
+  ]);
+  await expect(
+    shortcuts.getByRole("button", { name: /Tuesday|Wednesday|Thursday/ }),
+  ).toHaveCount(0);
+  await shortcuts
+    .getByRole("button", { name: "Overview", exact: true })
+    .click();
+  const days = page
+    .getByRole("region", { name: "Team availability", exact: true })
+    .locator("section");
+  expect(
+    await days.evaluateAll((nodes) =>
+      nodes.map((n) => n.getAttribute("data-day")),
+    ),
+  ).toEqual(["2026-10-30", "2026-10-31", "2026-11-01", "2026-11-02"]);
+  await shortcuts
+    .getByRole("button", { name: "Monday, November 2, 2026", exact: true })
+    .click();
+  const date = page.getByLabel("Week containing", { exact: true });
+  await page.getByRole("button", { name: "Next week", exact: true }).click();
+  await expect(date).toHaveValue("2026-11-09");
+  await page
+    .getByRole("button", { name: "Previous week", exact: true })
+    .click();
+  await expect(date).toHaveValue("2026-11-02");
+  await date.fill("2026-11-04");
+  await expect(date).toHaveValue("2026-11-06");
+  await date.fill("2026-11-02");
+  await page.getByRole("button", { name: "Today", exact: true }).click();
+  await expect(date).toHaveValue("2026-11-06");
+});
+test("hidden midweek records survive saving the four-day timetable", async ({
+  page,
+}) => {
+  const writes: Record<string, unknown>[] = [];
+  await page.route(
+    "**/api/tournaments/synthetic/player/availability",
+    async (route) => {
+      writes.push(route.request().postDataJSON());
+      await route.fulfill({ json: { saved: true, version: 2 } });
+    },
+  );
+  await page.goto("/schedule-selection?midweek&captain");
+  await expect(page.getByLabel("Week containing", { exact: true })).toHaveValue(
+    "2026-11-06",
+  );
+  await page.locator('button[data-start="2026-11-06T10:00:00.000Z"]').click();
+  await page.getByRole("button", { name: "Overview", exact: true }).click();
+  await page
+    .getByRole("button", { name: "Save season timetable", exact: true })
+    .click();
+  await expect(page.getByRole("status")).toContainText("Saved");
+  expect(writes[0].intervals).toEqual([
+    { start: "2026-11-03T10:00:00.000Z", end: "2026-11-03T11:00:00.000Z" },
+    { start: "2026-11-05T10:00:00.000Z", end: "2026-11-05T11:00:00.000Z" },
+    { start: "2026-11-06T10:00:00.000Z", end: "2026-11-06T10:30:00.000Z" },
+  ]);
+});
 for (const theme of ["light", "dark"]) {
   test(`${theme}: captain compares all eligible rows and saves only their own states`, async ({
     page,
@@ -125,12 +200,12 @@ for (const theme of ["light", "dark"]) {
         .getByRole("region", { name: "Team availability", exact: true })
         .locator("tbody tr"),
     ).toHaveCount(3);
-    await page.getByRole("button", { name: "Week", exact: true }).click();
+    await page.getByRole("button", { name: "Overview", exact: true }).click();
     await expect(
       page
         .getByRole("region", { name: "Team availability", exact: true })
         .locator("tbody tr"),
-    ).toHaveCount(21);
+    ).toHaveCount(12);
     await expect(page.locator("button[data-slot]")).toHaveCount(0);
     await expect(
       page.getByRole("button", { name: "Save season timetable", exact: true }),
@@ -141,7 +216,7 @@ for (const theme of ["light", "dark"]) {
         .getByRole("region", { name: "My availability", exact: true })
         .locator("tbody tr"),
     ).toHaveCount(1);
-    await page.getByRole("button", { name: "Week", exact: true }).click();
+    await page.getByRole("button", { name: "Overview", exact: true }).click();
     await expect(
       page.getByRole("region", { name: "Team availability", exact: true }),
     ).toHaveCount(0);
@@ -152,7 +227,7 @@ for (const theme of ["light", "dark"]) {
       page
         .getByRole("region", { name: "My availability", exact: true })
         .locator("tbody tr"),
-    ).toHaveCount(7);
+    ).toHaveCount(4);
   });
 }
 test("local/UTC midnight conversion retains draft instants", async ({
@@ -247,7 +322,7 @@ test("cycles every state, paints backwards and retries the same save", async ({
   expect(writes[0]).toEqual(writes[1]);
 });
 
-test("weekday shortcuts and full-week overview retain every unsaved instant", async ({
+test("Friday–Monday shortcuts and overview retain every unsaved instant", async ({
   page,
 }) => {
   const writes: Record<string, unknown>[] = [];
@@ -265,14 +340,14 @@ test("weekday shortcuts and full-week overview retain every unsaved instant", as
   });
   await expect(region.locator("section")).toHaveCount(1);
   await page.locator(slot("11:00")).click();
-  await page.getByRole("button", { name: "Week", exact: true }).click();
-  await expect(region.locator("section")).toHaveCount(7);
+  await page.getByRole("button", { name: "Overview", exact: true }).click();
+  await expect(region.locator("section")).toHaveCount(4);
   await page
-    .getByRole("button", { name: "Monday, October 26, 2026", exact: true })
+    .getByRole("button", { name: "Monday, November 2, 2026", exact: true })
     .click();
   await expect(region.locator("section")).toHaveCount(1);
   await expect(page.getByLabel("Week containing", { exact: true })).toHaveValue(
-    "2026-10-26",
+    "2026-11-02",
   );
   await page
     .getByRole("button", { name: "Sunday, November 1, 2026", exact: true })
@@ -307,7 +382,7 @@ for (const theme of ["light", "dark"]) {
     );
     expect(selectedDay.x).toBeGreaterThanOrEqual(
       (await shortcuts
-        .getByRole("button", { name: "Week", exact: true })
+        .getByRole("button", { name: "Overview", exact: true })
         .boundingBox())!.x + 43,
     );
     await page.getByRole("button", { name: "Notes", exact: true }).click();

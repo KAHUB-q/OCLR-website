@@ -71,3 +71,13 @@ week into a misleading Monday-first order. Midweek date/Today navigation locates
 the upcoming Friday; keep the selected weekday when shifting groups. Apply the
 group in the display timezone without mutating or filtering stored intervals.
 Retain all old midweek ranges and drafts when saving allowed-day edits.
+
+## Consistent timetable cells — 2026-11-03
+
+Visual thesis: a precise 44px time grid with calm row striping and distinct date
+bands; time and player identity stay clear at every scroll position. Content
+plan: the existing four-day controls, full HH:mm headers, fixed player labels
+and equal owner/read-only lanes. Interaction thesis: fixed column geometry keeps
+hover, focus and drag strokes aligned; restrained inset focus states and pinned
+headers preserve orientation. DST changes the number of real slots, never their
+size. Long names and helper labels truncate within the fixed lane height.

@@ -2,6 +2,56 @@ import { expect, test } from "@playwright/test";
 test.use({ timezoneId: "Asia/Taipei" });
 const slot = (hour: string) =>
   `button[data-start="2026-11-01T${hour}:00.000Z"]`;
+async function expectUniformGrid(page: import("@playwright/test").Page) {
+  const dimensions = await page
+    .locator("[data-day] table")
+    .evaluateAll((tables) =>
+      tables.map((table) => {
+        const cells = [
+          ...table.querySelectorAll("thead th[data-start], tbody td"),
+        ];
+        return {
+          sizes: cells.map((cell) => {
+            const r = cell.getBoundingClientRect();
+            return [r.width, r.height];
+          }),
+          rows: [...table.querySelectorAll("tbody tr")].map(
+            (row) => row.getBoundingClientRect().height,
+          ),
+          targets: [...table.querySelectorAll("td button")].map((button) => {
+            const r = button.getBoundingClientRect();
+            return [r.width, r.height];
+          }),
+        };
+      }),
+    );
+  expect(dimensions.length).toBeGreaterThan(0);
+  for (const day of dimensions) {
+    for (const size of [...day.sizes, ...day.targets])
+      for (const value of size) expect(Math.abs(value - 44)).toBeLessThan(0.2);
+    for (const height of day.rows)
+      expect(Math.abs(height - 44)).toBeLessThan(0.2);
+  }
+}
+for (const theme of ["light", "dark"]) {
+  test(`${theme}: every time cell and player row keeps the same size when resized`, async ({
+    page,
+  }) => {
+    for (const variant of [
+      "captain&readonly",
+      "captain&empty-own&long-names",
+    ]) {
+      await page.goto(`/schedule-selection?${variant}&theme=${theme}`);
+      await page.getByRole("button", { name: "Overview", exact: true }).click();
+      for (const width of [1280, 640, 320]) {
+        await page.setViewportSize({ width, height: 900 });
+        await expectUniformGrid(page);
+      }
+    }
+    await page.locator(slot("11:00")).click();
+    await expectUniformGrid(page);
+  });
+}
 test("only Friday through the following Monday are offered across week navigation and Today", async ({
   page,
 }) => {
@@ -250,6 +300,28 @@ test("local/UTC midnight conversion retains draft instants", async ({
 
 test.describe("clock changes", () => {
   test.use({ timezoneId: "America/New_York" });
+  test("clock-change dates keep equal cells while the actual slot count changes", async ({
+    page,
+  }) => {
+    await page.goto("/schedule-selection?captain&readonly");
+    for (const [date, expected] of [
+      ["2026-11-01", [48, 48, 50, 48]],
+      ["2026-03-08", [48, 48, 46, 48]],
+    ] as const) {
+      await page.getByLabel("Week containing", { exact: true }).fill(date);
+      await page.getByRole("button", { name: "Overview", exact: true }).click();
+      expect(
+        await page
+          .locator("[data-day] table")
+          .evaluateAll((tables) =>
+            tables.map(
+              (table) => table.querySelectorAll("thead th[data-start]").length,
+            ),
+          ),
+      ).toEqual(expected);
+      await expectUniformGrid(page);
+    }
+  });
   test("repeated local hours have distinct offsets and edit different UTC instants", async ({
     page,
   }) => {

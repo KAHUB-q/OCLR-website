@@ -39,6 +39,40 @@ legend stay beside the grid; optional help supports Escape.
 All existing ownership, current-captain team visibility, optimistic versions,
 idempotency, chart-context, UTC/DST and unfilled/explicit-state semantics remain.
 
+## Equal-size timetable grid — 2026-11-03
+
+The latest organizer screenshot showed uneven hour/half-hour widths and player
+row heights. An explicit table width and column group now keep every time header
+and cell at **44 × 44px**, including editable targets and read-only rows. Long
+names and the empty owner's helper text no longer enlarge the row. Names retain
+a separate fixed column (136px desktop, 108px mobile).
+
+Every header displays the complete `HH:mm` value with tabular numerals. Lighter
+half-hour labels, faint grid lines with stronger hour boundaries, alternating
+empty-row surfaces, 40px date bands, offset pills and spacing between dates
+refine the sheet within the existing MainSheet tokens. Friday–Monday selection,
+state bands, scrolling, painting and save behavior remain as recorded below.
+
+- `npm run check` and production `npm run build` passed on Node 24.
+- Full `npm test` on the isolated `oclr_osusheets_test` database: **267 files,
+  2,319 tests passed, two skipped**.
+- All **36 focused Chrome checks passed** across desktop/mobile. New geometry
+  checks measure headers, cells, player rows and editable targets at 1280px,
+  640px and 320px, light/dark, read-only, empty-owner and long-name variants,
+  including after painting. New York clock-change dates retain 46/50 actual
+  columns and the same 44px cells. Existing date, access, drag, undo, retry and
+  timezone cases also passed.
+- `npm audit --omit=dev`: **0 vulnerabilities**; `git diff --check` passed.
+- Manual synthetic desktop and 320px light/dark inspection passed. Screenshots
+  contain synthetic identities only. No messages, schema or services changed.
+- Full application E2E/all-appearance matrices were not run (too slow), following
+  ordinary-development policy. CI and organizer layout review remain separate.
+
+![Equal-size timetable desktop light](timetable-grid-desktop-light.png)
+![Equal-size timetable desktop dark](timetable-grid-desktop-dark.png)
+![Equal-size timetable mobile light](timetable-grid-mobile-light.png)
+![Equal-size timetable mobile dark](timetable-grid-mobile-dark.png)
+
 ## Friday–Monday selection — 2026-11-03
 
 The timetable offers only four consecutive dates: Friday through the following

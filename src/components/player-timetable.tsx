@@ -548,10 +548,22 @@ export function PlayerTimetable({
                 {[...new Set(slots.map((slot) => slot.offset))].join(" → ")}
               </span>
             </h2>
-            <table className={styles.table}>
+            <table
+              className={styles.table}
+              style={{
+                width: `calc(var(--timetable-name-width) + ${slots.length} * var(--timetable-cell-size))`,
+              }}
+            >
               <caption className="sr-only">
                 {dateLabel(date)} · {timeZone}
               </caption>
+              <colgroup>
+                <col style={{ width: "var(--timetable-name-width)" }} />
+                <col
+                  span={slots.length}
+                  style={{ width: "var(--timetable-cell-size)" }}
+                />
+              </colgroup>
               <thead>
                 <tr>
                   <th scope="col">{tr("Player")}</th>
@@ -564,9 +576,7 @@ export function PlayerTimetable({
                       aria-label={`${slot.time} ${slot.offset}`}
                       data-hour={slot.time.endsWith(":00")}
                     >
-                      <span>
-                        {slot.time.endsWith(":00") ? slot.time : ":30"}
-                      </span>
+                      <span>{slot.time}</span>
                       {slots.filter((value) => value.time === slot.time)
                         .length > 1 && <small>{slot.offset}</small>}
                     </th>
@@ -587,11 +597,16 @@ export function PlayerTimetable({
                         <strong title={person.username}>
                           {person.username}
                         </strong>
-                        {person.userId === data.owner.osuId && (
-                          <small>{tr("My availability")}</small>
-                        )}
-                        {!person.intervals.length && (
-                          <small>{tr("Not submitted")}</small>
+                        {(person.userId === data.owner.osuId ||
+                          !person.intervals.length) && (
+                          <small>
+                            {person.userId === data.owner.osuId &&
+                              tr("My availability")}
+                            {person.userId === data.owner.osuId &&
+                              !person.intervals.length &&
+                              " · "}
+                            {!person.intervals.length && tr("Not submitted")}
+                          </small>
                         )}
                       </th>
                       {slots.map((slot, index) => {

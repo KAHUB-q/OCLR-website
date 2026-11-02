@@ -99,6 +99,13 @@ Previous/next-week controls retain the selected weekday. Both modes keep all uns
 view changes do not alter the saved data. Date and previous/next-week controls
 retain the full calendar date in context. Headers and player identities stay
 visible during scrolling, and consecutive states form continuous bands.
+Every half-hour column, time header and player row uses a fixed 44px size, for
+both editable and read-only rows. Headers show complete `HH:mm` times with
+tabular numerals; half-hours have lighter type and each hour ends at a stronger
+grid line. The name column has its own fixed width and truncates long identities
+without changing row height. Date bands, compact offset labels and alternating
+empty-row surfaces separate the four sheets. Clock changes alter the number of
+columns, never their size.
 Midweek intervals saved by older pages remain in the saved-range list and in
 subsequent save payloads. This is a display/editing scope change; stored UTC
 instants, service validation and fixture Schedule retain their existing rules.

@@ -186,13 +186,6 @@ export function StaffNavigation({
                     ))}
                   </select>
                 </label>
-                <Link
-                  href="/admin/tournaments"
-                  className="button secondary admin-return"
-                  onClick={closeMobileMenu}
-                >
-                  {tr("← All tournaments")}
-                </Link>
               </div>
             ) : (
               <h2>{tr("OCLR operations")}</h2>

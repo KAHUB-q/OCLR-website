@@ -22,7 +22,62 @@
   overflow-wrap: anywhere;
 }
 
+.collapsible[data-sidebar-collapsed] {
+  row-gap: 1.25rem;
+}
+
+.toolbar {
+  grid-column: 1 / -1;
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+  min-width: 0;
+}
+
+.toolbar .toggle {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  flex: 0 0 44px;
+  width: 44px;
+  height: 44px;
+  padding: 0;
+}
+
+.toolbar .mobileToggle {
+  display: none;
+}
+
+.workspaceTitle {
+  min-width: 0;
+  overflow-wrap: anywhere;
+  font-weight: 600;
+}
+
+@media (min-width: 761px) {
+  .collapsible[data-sidebar-collapsed="true"] {
+    grid-template-columns: minmax(0, 1fr);
+  }
+
+  .collapsible[data-sidebar-collapsed="true"] > .sidebar {
+    display: none;
+  }
+}
+
 @media (max-width: 760px) {
+  .collapsible > .sidebar,
+  .toolbar .desktopToggle {
+    display: none;
+  }
+
+  .collapsible[data-mobile-open="true"] > .sidebar {
+    display: block;
+  }
+
+  .toolbar .mobileToggle {
+    display: inline-flex;
+  }
+
   .sidebar .captainSection .links {
     display: flex;
     flex-wrap: wrap;

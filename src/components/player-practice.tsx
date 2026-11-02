@@ -364,11 +364,10 @@ function PracticeEntry({
                     }
                   }}
                 >
-                  {copyState === "copied" ? (
-                    <SheetIcon kind="check" />
-                  ) : (
-                    <span aria-hidden="true">{tr("BID")}</span>
-                  )}
+                  <span className={styles.copyValue} aria-hidden="true">
+                    {entry.beatmapId}
+                  </span>
+                  <SheetIcon kind={copyState === "copied" ? "check" : "copy"} />
                 </button>
               </div>
             </div>

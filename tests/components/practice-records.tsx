@@ -79,7 +79,7 @@ function workspace(poolId: string): PracticeWorkspace {
         poolId,
         category: category as "NM" | "HD" | "HR",
         position: 1,
-        beatmapId: 100 + index,
+        beatmapId: (params.has("long-bid") ? 3774074 : 100) + index,
         context: "a".repeat(64),
         ownVersion: one && index === 0 ? 1 : 0,
         metadata: {

@@ -44,7 +44,10 @@ inputs while retaining the same cell for recreation. The table scrolls
 horizontally with fixed map identity and player headers.
 
 Map titles link directly to their official difficulty page. Compact direct and
-Copy BID controls share the identity toolbar. Copy uses the difficulty ID,
+Copy BID controls share the identity toolbar. BID is a purple capsule showing
+the literal difficulty ID and a copy icon; after success the icon becomes a
+check while the number remains visible. On narrow screens direct stays beside
+the slot and the capsule sits under the map title. Copy uses the difficulty ID,
 reports success or clipboard failure, and retains 44px targets for touch input.
 Long titles use a two-line preview and metadata one line with their literal full
 text retained in the DOM/title. Normal desktop controls use 32px rows.

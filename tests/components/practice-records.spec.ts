@@ -39,7 +39,9 @@ for (const theme of ["light", "dark"]) {
       name: "Copy beatmap ID: 100",
       exact: true,
     });
+    await expect(copy).toHaveText("100");
     await copy.click();
+    await expect(copy).toHaveText("100");
     await expect(own.getByRole("status")).toHaveText("Copied");
     expect(
       await page.evaluate(
@@ -91,7 +93,7 @@ for (const theme of ["light", "dark"]) {
     );
     for (const width of [719, 320]) {
       await page.setViewportSize({ width, height: 900 });
-      await page.goto(`/practice-records?theme=${theme}&actor-last`);
+      await page.goto(`/practice-records?theme=${theme}&actor-last&long-bid`);
       const own = page.getByRole("rowgroup", {
         name: "Synthetic Artist — NM Signal",
         exact: true,

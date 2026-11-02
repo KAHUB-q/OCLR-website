@@ -58,3 +58,7 @@ BID controls, the actor's editable cell first, then teammate saved comparisons.
 Interaction thesis: edit in place without mounting a separate row; retain drafts
 across Mods and preserve safe save/delete retries; show copy feedback and reveal
 previous map context on demand. Touch controls keep 44px targets.
+
+The organizer's BID reference uses a purple rounded capsule with a bold literal
+number and copy icon. Keep the number visible through success/error states and
+fit a seven-digit ID into the narrow map column without widening the editor.

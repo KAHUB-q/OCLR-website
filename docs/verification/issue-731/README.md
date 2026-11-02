@@ -38,6 +38,26 @@ legend stay beside the grid; optional help supports Escape.
 All existing ownership, current-captain team visibility, optimistic versions,
 idempotency, chart-context, UTC/DST and unfilled/explicit-state semantics remain.
 
+## Numeric BID capsule — 2026-11-03
+
+The provided reference replaces the BID label with the literal difficulty ID
+and copy icon in a purple capsule. Success retains the number and swaps only
+the icon for a check. On mobile, direct sits beside the slot and the capsule
+below the map metadata; pointer targets remain 44px for touch input.
+
+The full isolated-DB run passed **267 files and 2,317 tests, with two skipped**.
+Check, final production build and diff checks passed; audit found 0 vulnerabilities.
+All **20 focused Chrome checks passed**, including seven-digit IDs in the
+320px/719px compact-row checks and keeping the number visible after copying.
+The initial coarse-pointer mobile row measured 160px; tightening only the map
+padding/gaps retained the existing 155px ceiling and the final run passed.
+Manual light/dark screenshots use synthetic metadata and a seven-digit fixture.
+Full application E2E/all-appearance matrices were not run (too slow).
+
+![Numeric BID detail](practice-bid-detail.png)
+![Numeric BID desktop](practice-bid-desktop-dark.png)
+![Numeric BID mobile](practice-bid-mobile-light.png)
+
 ## In-cell follow-up — 2026-11-03
 
 The separate editor row is removed. Only the actor's writable cell displays inputs;

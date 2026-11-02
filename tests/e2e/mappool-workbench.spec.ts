@@ -613,7 +613,8 @@ test.describe("private Pooler/Tester selection workbench", () => {
       } else {
         expect(commentBox!.y).toBeGreaterThan(mapBox!.y + mapBox!.height);
       }
-      await expect(card.locator("img, .map-card-art")).toHaveCount(0);
+      await expect(card.locator("img, .beatmap-cover")).toHaveCount(0);
+      await expect(card.locator(".map-card-art")).toHaveCount(1);
       const headerBox = await card.locator(".map-card-cover").boundingBox();
       const categoryBox = await cardCategory.boundingBox();
       expect(categoryBox!.y).toBeGreaterThanOrEqual(headerBox!.y);
@@ -622,12 +623,19 @@ test.describe("private Pooler/Tester selection workbench", () => {
       );
       const roundBox = await cardRounds.boundingBox();
       const hpBox = await card
-        .locator(".map-card-values > span")
+        .locator(".map-card-parameters > span")
         .last()
         .boundingBox();
-      expect(roundBox!.y).toBeGreaterThanOrEqual(hpBox!.y + hpBox!.height);
+      expect(
+        Math.abs(
+          roundBox!.y + roundBox!.height / 2 - hpBox!.y - hpBox!.height / 2,
+        ),
+      ).toBeLessThan(2);
 
       for (const control of [cardRounds, cardCategory]) {
+        await control.evaluate((node) =>
+          node.scrollIntoView({ block: "nearest", inline: "nearest" }),
+        );
         const box = await control.boundingBox();
         expect(box!.x).toBeGreaterThanOrEqual(mapBox!.x);
         expect(box!.x + box!.width).toBeLessThanOrEqual(

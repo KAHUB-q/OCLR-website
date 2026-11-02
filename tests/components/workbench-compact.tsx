@@ -34,7 +34,7 @@ const data: SelectionWorkspace = {
       artist: "Crywolf",
       mapper: "Super Creek",
       difficulty: 'Crystal\'s "Ex Nihilo Ad Nihilum"',
-      setId: 0,
+      setId: 12345,
       mode: "osu",
       stars: 6.9,
       bpm: 155,

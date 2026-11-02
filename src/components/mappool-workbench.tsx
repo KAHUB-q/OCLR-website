@@ -1040,7 +1040,7 @@ export function SelectionWorkbench({
                     ar={c.metadata.ar}
                     od={c.metadata.od}
                     showMode={false}
-                    showArtwork={false}
+                    variant="workbench"
                     openHref={`https://osu.ppy.sh/beatmaps/${c.beatmapId}`}
                     openLabel={`${c.metadata.artist} — ${c.metadata.title}`}
                     note={tr("★ base")}
@@ -1124,7 +1124,7 @@ export function SelectionWorkbench({
                         </>
                       ) : undefined
                     }
-                    sidePlacement="values"
+                    sidePlacement="artist"
                     side={
                       <>
                         <span className={`small muted ${styles.attribution}`}>

@@ -69,17 +69,17 @@ the whole selected batch. Successful retries skip already saved candidates even
 when the provider is unavailable. Candidate additions and their audit events
 commit together under the edition lock.
 
-Candidates reuse the historical mappool `MapCardBand` with artwork disabled:
-no cover image, placeholder or decorative background is rendered. A flat tinted
-surface and narrow star-coloured rail frame the Mod category, title/artist/mapper,
-saved base parameters (including HP), copyable BID, official osu! link and
-osu!direct. The Mod selector and BID copy button share a compact card header;
-metadata and actions use the full card width. At a list width of 56rem or more, each row
-places the map on the left and always-visible comments on the right, separated
-by a vertical rule. Narrower lists stack comments below the map. The workbench
-retains the Mod badge as the category selector in the card header; the adder follows
-the parameters. Round selection, pool promotion, history, download and official
-link share a wrapping icon toolbar, keeping long titles clear of controls. Pool promotion opens
+Candidates reuse the historical mappool `MapCardBand` with its workbench variant:
+the cover image and placeholder are omitted while the original faded background
+art remains. Mod, copyable BID and the ellipsized map title share one header row.
+Artist and adder share the credit row, followed by difficulty/mapper and saved
+base parameters (including HP). Parameters and the 44px action icons share one
+row, with actions on the right; narrow cards scroll that row horizontally rather
+than adding an action row. The row is keyboard-focusable and controls remain
+reachable. At a list width of 56rem or more, each candidate places the map on the
+left and always-visible comments on the right, separated by a vertical rule.
+Narrower lists stack comments below the map. Public/historical cards retain their
+existing cover layout. Pool promotion opens
 in a scrollable popover containing round/pool selection, the guarded entry form
 and success feedback; opening it or completing an addition does not grow the card. Pool promotion, round selection and history use compact 44px icon buttons with
 accessible names and hover hints; the round hint retains the saved selection.

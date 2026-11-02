@@ -359,7 +359,7 @@
 /* Dense workbench variant; public and historical cards keep their band layout. */
 .workbenchCard:global(.map-browse-card--band) {
   grid-template-columns: minmax(0, 1fr);
-  background: var(--site-tint);
+  background: var(--site-surface);
   min-height: 0;
   padding-left: 6px;
   border-radius: 0.75rem;
@@ -367,28 +367,38 @@
 .workbenchCard:global(.map-browse-card--band)::before {
   width: 6px;
 }
-.workbenchCard:global(.map-browse-card--band) > :global(.map-card-cover) {
+.workbenchCard:global(.map-browse-card--band) > :global(.map-card-art) {
+  left: 6px;
+}
+.workbenchCard:global(.map-browse-card--band) :global(.map-card-cover) {
   display: flex;
   align-items: center;
-  justify-content: space-between;
   gap: 0.5rem;
+  flex: none;
+  width: auto;
   min-height: 0;
-  padding: 0.5rem 0.75rem 0;
   border-radius: 0;
+  background: transparent;
 }
-.workbenchCard:global(.map-browse-card--band)
-  > :global(.map-card-cover)::before {
+.workbenchCard:global(.map-browse-card--band) :global(.map-card-cover)::before {
   display: none;
 }
 .workbenchCard:global(.map-browse-card--band) > :global(.map-card-copy) {
   min-height: 0;
-  position: static;
+  position: relative;
   z-index: 2;
   gap: 0.25rem;
-  padding: 0.25rem 0.75rem 0.5rem;
+  padding: 0.5rem 0.75rem;
 }
 .workbenchCard:global(.map-browse-card--band) :global(.map-card-title-row) {
+  align-items: center;
+  gap: 0.5rem;
   padding-right: 0;
+}
+.workbenchCard:global(.map-browse-card--band)
+  :global(.map-card-title-row)
+  > h3 {
+  flex: 1 1 auto;
 }
 .workbenchCard:global(.map-browse-card--band) :global(.map-card-title) {
   font-size: 1.125rem;
@@ -397,31 +407,45 @@
   margin-top: 0;
 }
 .workbenchCard:global(.map-browse-card--band) :global(.map-card-values) {
-  flex-wrap: wrap;
+  flex-wrap: nowrap;
   align-items: center;
-  gap: 0.25rem 0.5rem;
+  gap: 0.5rem;
   padding-right: 0;
+  overflow-x: auto;
+  scrollbar-width: thin;
   font-size: 0.8125rem;
 }
-.workbenchCard:global(.map-browse-card--band) :global(.map-card-values) > span {
+.workbenchCard:global(.map-browse-card--band) :global(.map-card-parameters) {
+  display: flex;
+  flex: 1 0 auto;
+  align-items: center;
+  gap: 0.5rem;
   white-space: nowrap;
 }
 .workbenchCard:global(.map-browse-card--band) :global(.map-card-side) {
   min-width: 0;
+  max-width: 60%;
   margin-inline-start: auto;
 }
 .workbenchCard:global(.map-browse-card--band) .attribution {
+  flex-wrap: nowrap;
+  max-width: 100%;
   font-size: 0.75rem;
+  white-space: nowrap;
 }
 .workbenchCard:global(.map-browse-card--band) .attribution a {
-  overflow-wrap: anywhere;
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
 }
 .workbenchCard:global(.map-browse-card--band)
-  :global(.map-card-copy)
+  :global(.map-card-values)
   > :global(.beatmap-actions) {
   position: static;
+  flex: none;
+  flex-wrap: nowrap;
   gap: 0.25rem;
-  margin: 0.25rem 0 0;
+  margin: 0;
 }
 .workbenchCard:global(.map-browse-card--band) :global(.map-slot-badge),
 .workbenchCard:global(.map-browse-card--band) :global(.map-card-id) {

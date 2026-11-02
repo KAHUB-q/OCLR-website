@@ -25,9 +25,11 @@ for (const theme of ["light", "dark"]) {
       });
       await row.scrollIntoViewIfNeeded();
       const card = row.locator(".map-browse-card--band");
-      await expect(
-        card.locator("img, .beatmap-cover, .map-card-art"),
-      ).toHaveCount(0);
+      await expect(card.locator("img, .beatmap-cover")).toHaveCount(0);
+      await expect(card.locator(".map-card-art")).toHaveCSS(
+        "background-image",
+        /12345/,
+      );
       const header = card.locator(".map-card-cover");
       const mod = header.getByRole("combobox", {
         name: "模組類別",
@@ -45,6 +47,14 @@ for (const theme of ["light", "dark"]) {
         Math.abs(modBox.y + modBox.height / 2 - bidBox.y - bidBox.height / 2),
       ).toBeLessThan(2);
       expect(bidBox.x).toBeGreaterThan(modBox.x + modBox.width);
+      const titleBox = (await card.locator(".map-card-title").boundingBox())!;
+      expect(titleBox.width).toBeGreaterThan(40);
+      expect(titleBox.x).toBeGreaterThan(bidBox.x + bidBox.width);
+      expect(
+        Math.abs(
+          titleBox.y + titleBox.height / 2 - modBox.y - modBox.height / 2,
+        ),
+      ).toBeLessThan(2);
       const discussion = row.getByRole("region", {
         name: "評論（0）",
         exact: true,
@@ -99,7 +109,23 @@ for (const theme of ["light", "dark"]) {
           heading.y + heading.height / 2 - refresh.y - refresh.height / 2,
         ),
       ).toBeLessThan(2);
-      const toolbar = card.locator(".beatmap-actions");
+      const values = card.locator(".map-card-values");
+      const toolbar = values.locator(".beatmap-actions");
+      const parameters = (await values
+        .locator(".map-card-parameters")
+        .boundingBox())!;
+      const toolbarBox = (await toolbar.boundingBox())!;
+      expect(toolbarBox.x).toBeGreaterThanOrEqual(
+        parameters.x + parameters.width,
+      );
+      expect(
+        Math.abs(
+          toolbarBox.y +
+            toolbarBox.height / 2 -
+            parameters.y -
+            parameters.height / 2,
+        ),
+      ).toBeLessThan(2);
       const controls = toolbar.locator("button, a.button");
       const rounds = toolbar.getByRole("button", { name: /^指定輪次:/ });
       const promotion = toolbar.getByRole("button", {
@@ -110,6 +136,9 @@ for (const theme of ["light", "dark"]) {
       await expect(promotion).toBeVisible();
       for (const control of await controls.all()) {
         if (!(await control.isVisible())) continue;
+        await control.evaluate((node) =>
+          node.scrollIntoView({ block: "nearest", inline: "nearest" }),
+        );
         const box = (await control.boundingBox())!;
         expect(box.width).toBeGreaterThanOrEqual(44);
         expect(box.height).toBeGreaterThanOrEqual(44);
@@ -140,6 +169,9 @@ for (const theme of ["light", "dark"]) {
           .analyze()
       ).violations;
       expect(violations).toEqual([]);
+      await values.evaluate((node) => {
+        node.scrollLeft = 0;
+      });
       await row.screenshot({
         path: info.outputPath(`workbench-${theme}-${width}.png`),
       });

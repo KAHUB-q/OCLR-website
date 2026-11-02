@@ -45,7 +45,7 @@ export function MapCardBand({
   onOpen,
   openHref,
   showMode = true,
-  showArtwork = true,
+  variant = "band",
   chips,
   note,
   footer,
@@ -78,12 +78,12 @@ export function MapCardBand({
   headingLevel?: 2 | 3 | 4 | 5;
   openLabel: string;
   showMode?: boolean;
-  showArtwork?: boolean;
+  variant?: "band" | "workbench";
   chips?: ReactNode;
   note?: ReactNode;
   footer?: ReactNode;
   side?: ReactNode;
-  sidePlacement?: "panel" | "values";
+  sidePlacement?: "panel" | "values" | "artist";
   slotControl?: ReactNode;
   actions?: ReactNode;
 } & (
@@ -114,6 +114,121 @@ export function MapCardBand({
     }
   }
 
+  const identity = (
+    <div className="map-card-cover">
+      {variant === "band" && (
+        <BeatmapCover setId={setId} fallbackSetId={originalSetId} />
+      )}
+      <span
+        className="map-slot-badge"
+        style={{
+          background: slotMod.bg,
+          color: slotMod.color,
+          padding: slotControl ? 0 : undefined,
+        }}
+      >
+        {slotControl ?? slot}
+      </span>
+      {beatmapId ? (
+        <button
+          type="button"
+          className={[
+            "map-card-id",
+            copyState === "copied" ? "map-card-id--copied" : "",
+          ]
+            .filter(Boolean)
+            .join(" ")}
+          title={
+            copyState === "failed"
+              ? tr("Could not copy the beatmap ID.")
+              : tr("Copy beatmap ID")
+          }
+          aria-label={`${tr("Copy beatmap ID")}: ${beatmapId}`}
+          onClick={(event) => {
+            event.stopPropagation();
+            void copyBeatmapId();
+          }}
+        >
+          <span className="map-card-id-value">{beatmapId}</span>
+          {copyState === "copied" ? (
+            <svg
+              className="map-card-id-icon"
+              viewBox="0 0 24 24"
+              width="12"
+              height="12"
+              fill="none"
+              stroke="currentColor"
+              strokeWidth="2.6"
+              strokeLinecap="round"
+              strokeLinejoin="round"
+              aria-hidden="true"
+              focusable="false"
+            >
+              <path d="M4 12.5 9.5 18 20 6.5" />
+            </svg>
+          ) : copyState === "failed" ? (
+            <span className="map-card-id-error">
+              {tr("Could not copy the beatmap ID.")}
+            </span>
+          ) : (
+            <svg
+              className="map-card-id-icon"
+              viewBox="0 0 24 24"
+              width="12"
+              height="12"
+              fill="none"
+              stroke="currentColor"
+              strokeWidth="1.9"
+              strokeLinecap="round"
+              strokeLinejoin="round"
+              aria-hidden="true"
+              focusable="false"
+            >
+              <rect x="9" y="9" width="12" height="12" rx="2.5" />
+              <path d="M5 15H4a1 1 0 0 1-1-1V4a1 1 0 0 1 1-1h10a1 1 0 0 1 1 1v1" />
+            </svg>
+          )}
+        </button>
+      ) : null}
+      <span className="sr-only" role="status">
+        {copyState === "copied"
+          ? tr("Beatmap ID copied.")
+          : copyState === "failed"
+            ? tr("Could not copy the beatmap ID.")
+            : ""}
+      </span>
+    </div>
+  );
+  const parameters = (
+    <>
+      <span>
+        {formatBeatmapNumber(bpm)} {tr("BPM")}
+      </span>
+      <span>{formatBeatmapDuration(durationSeconds)}</span>
+      <span>
+        {tr("CS")} {formatBeatmapNumber(cs, 1)}
+      </span>
+      <span>
+        {tr("AR")} {formatBeatmapNumber(ar, 1)}
+      </span>
+      <span>
+        {tr("OD")} {formatBeatmapNumber(od, 1)}
+      </span>
+      {chips}
+    </>
+  );
+  const beatmapActions = (
+    <BeatmapActions
+      extra={actions}
+      compact
+      beatmapId={beatmapId}
+      setId={setId}
+      originalBeatmapId={originalBeatmapId}
+      originalSetId={originalSetId}
+      beatmapMissing={beatmapMissing}
+      name={slot}
+    />
+  );
   return (
     <Tag
       className={["map-browse-card", "map-browse-card--band", className]
@@ -128,98 +243,15 @@ export function MapCardBand({
         } as CSSProperties
       }
     >
-      {showArtwork && (
-        <div
-          className="map-card-art"
-          aria-hidden="true"
-          style={art ? { backgroundImage: `url("${art}")` } : undefined}
-        />
-      )}
-      <div className="map-card-cover">
-        {showArtwork && (
-          <BeatmapCover setId={setId} fallbackSetId={originalSetId} />
-        )}
-        <span
-          className="map-slot-badge"
-          style={{
-            background: slotMod.bg,
-            color: slotMod.color,
-            padding: slotControl ? 0 : undefined,
-          }}
-        >
-          {slotControl ?? slot}
-        </span>
-        {beatmapId ? (
-          <button
-            type="button"
-            className={[
-              "map-card-id",
-              copyState === "copied" ? "map-card-id--copied" : "",
-            ]
-              .filter(Boolean)
-              .join(" ")}
-            title={
-              copyState === "failed"
-                ? tr("Could not copy the beatmap ID.")
-                : tr("Copy beatmap ID")
-            }
-            aria-label={`${tr("Copy beatmap ID")}: ${beatmapId}`}
-            onClick={(event) => {
-              event.stopPropagation();
-              void copyBeatmapId();
-            }}
-          >
-            <span className="map-card-id-value">{beatmapId}</span>
-            {copyState === "copied" ? (
-              <svg
-                className="map-card-id-icon"
-                viewBox="0 0 24 24"
-                width="12"
-                height="12"
-                fill="none"
-                stroke="currentColor"
-                strokeWidth="2.6"
-                strokeLinecap="round"
-                strokeLinejoin="round"
-                aria-hidden="true"
-                focusable="false"
-              >
-                <path d="M4 12.5 9.5 18 20 6.5" />
-              </svg>
-            ) : copyState === "failed" ? (
-              <span className="map-card-id-error">
-                {tr("Could not copy the beatmap ID.")}
-              </span>
-            ) : (
-              <svg
-                className="map-card-id-icon"
-                viewBox="0 0 24 24"
-                width="12"
-                height="12"
-                fill="none"
-                stroke="currentColor"
-                strokeWidth="1.9"
-                strokeLinecap="round"
-                strokeLinejoin="round"
-                aria-hidden="true"
-                focusable="false"
-              >
-                <rect x="9" y="9" width="12" height="12" rx="2.5" />
-                <path d="M5 15H4a1 1 0 0 1-1-1V4a1 1 0 0 1 1-1h10a1 1 0 0 1 1 1v1" />
-              </svg>
-            )}
-          </button>
-        ) : null}
-        <span className="sr-only" role="status">
-          {copyState === "copied"
-            ? tr("Beatmap ID copied.")
-            : copyState === "failed"
-              ? tr("Could not copy the beatmap ID.")
-              : ""}
-        </span>
-      </div>
+      <div
+        className="map-card-art"
+        aria-hidden="true"
+        style={art ? { backgroundImage: `url("${art}")` } : undefined}
+      />
+      {variant === "band" ? identity : null}
       <div className="map-card-copy">
         <div className="map-card-title-row">
+          {variant === "workbench" ? identity : null}
           <Heading>
             {openHref ? (
               <a
@@ -245,6 +277,9 @@ export function MapCardBand({
         </div>
         <p className="map-card-meta map-card-meta--artist">
           <span className="map-card-artist">{artist ?? "—"}</span>
+          {side && sidePlacement === "artist" ? (
+            <span className="map-card-side">{side}</span>
+          ) : null}
         </p>
         <div className="map-card-footer">
           <div className="map-card-stats-row">
@@ -301,24 +336,21 @@ export function MapCardBand({
               </div>
             ) : null}
           </div>
-          <div className="map-card-values">
-            <span>
-              {formatBeatmapNumber(bpm)} {tr("BPM")}
-            </span>
-            <span>{formatBeatmapDuration(durationSeconds)}</span>
-            <span>
-              {tr("CS")} {formatBeatmapNumber(cs, 1)}
-            </span>
-            <span>
-              {tr("AR")} {formatBeatmapNumber(ar, 1)}
-            </span>
-            <span>
-              {tr("OD")} {formatBeatmapNumber(od, 1)}
-            </span>
-            {chips}
+          <div
+            className="map-card-values"
+            role={variant === "workbench" ? "group" : undefined}
+            aria-label={variant === "workbench" ? tr("Details") : undefined}
+            tabIndex={variant === "workbench" ? 0 : undefined}
+          >
+            {variant === "workbench" ? (
+              <div className="map-card-parameters">{parameters}</div>
+            ) : (
+              parameters
+            )}
             {side && sidePlacement === "values" ? (
               <div className="map-card-side">{side}</div>
             ) : null}
+            {variant === "workbench" ? beatmapActions : null}
           </div>
         </div>
         {showMode && (
@@ -326,16 +358,7 @@ export function MapCardBand({
             {beatmapModeNames[mode ?? "osu"]}
           </span>
         )}
-        <BeatmapActions
-          extra={actions}
-          compact
-          beatmapId={beatmapId}
-          setId={setId}
-          originalBeatmapId={originalBeatmapId}
-          originalSetId={originalSetId}
-          beatmapMissing={beatmapMissing}
-          name={slot}
-        />
+        {variant === "band" ? beatmapActions : null}
       </div>
       {side && sidePlacement === "panel" ? (
         <div className="map-card-side">{side}</div>

@@ -548,7 +548,7 @@
       "get": {
         "operationId": "getUsernamePlayer",
         "description": "Public evidence maps a participant's current, historical or joined name to one UID. Names claimed by two participants, private applications and withdrawn publications return NOT_FOUND.",
-        "x-oclr-issues": [272],
+        "x-oclr-issues": [269, 272],
         "x-oclr-scopes": ["tournaments:read"],
         "x-oclr-query-model": "UsernameOwner",
         "x-oclr-coverage": "docs/remote-coverage.json",
@@ -674,7 +674,7 @@
       "head": {
         "operationId": "getUsernamePlayerHead",
         "description": "Identical authorization, status and headers; no response body.",
-        "x-oclr-issues": [272],
+        "x-oclr-issues": [269, 272],
         "security": [{}, { "DeveloperBearer": [] }],
         "parameters": [
           {
@@ -699,7 +699,7 @@
       },
       "options": {
         "operationId": "getUsernamePlayerPreflight",
-        "x-oclr-issues": [272],
+        "x-oclr-issues": [269, 272],
         "security": [],
         "responses": {
           "204": { "description": "Read-only preflight, no private data" },

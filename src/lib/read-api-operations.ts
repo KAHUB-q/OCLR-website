@@ -103,7 +103,7 @@ export const readOperations: readonly ReadOperation[] = [
     public: true,
     scope: "tournaments:read",
     query: ["name"],
-    issues: [272],
+    issues: [269, 272],
     description:
       "Public evidence maps a participant's current, historical or joined name to one UID. Names claimed by two participants, private applications and withdrawn publications return NOT_FOUND.",
   },

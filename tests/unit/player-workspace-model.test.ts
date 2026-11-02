@@ -10,10 +10,9 @@ import {
   remotePageSupported,
 } from "../../src/lib/data-source";
 describe("player workspace values", () => {
-  it("requires bounded scores, ratings and comments", () => {
+  it("requires bounded scores and comments and rejects retired practice fields", () => {
     const value = {
       score: 0,
-      rating: 5,
       comment: "  Team note  ",
     };
     expect(practiceValueSchema.parse(value).comment).toBe("Team note");
@@ -24,14 +23,25 @@ describe("player workspace values", () => {
       { accuracy: NaN },
       { accuracy: 101 },
       { accuracy: null },
-      { rating: 0 },
-      { rating: 6 },
+      { rating: 5 },
+      { rating: null },
+      { feel: "excellent" },
+      { feel: 3 },
       { comment: "x".repeat(2001) },
       { userId: 1 },
     ])
       expect(
         practiceValueSchema.safeParse({ ...value, ...extra }).success,
       ).toBe(false);
+  });
+  it("supports optional feel while preserving older score/comment payloads", () => {
+    const value = { score: null, comment: "" };
+    expect(practiceValueSchema.parse(value)).toEqual(value);
+    for (const feel of ["bad", "normal", "good", null])
+      expect(practiceValueSchema.parse({ ...value, feel })).toEqual({
+        ...value,
+        feel,
+      });
   });
   it("supports season slots, rejects reversed/offset-free times and preserves DST instants", () => {
     const slot = {

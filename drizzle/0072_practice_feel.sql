@@ -1,0 +1,2 @@
+ALTER TABLE "player_practice_records" ADD COLUMN "feel" text;--> statement-breakpoint
+ALTER TABLE "player_practice_records" ADD CONSTRAINT "player_practice_feel_valid" CHECK ("player_practice_records"."feel" IS NULL OR "player_practice_records"."feel" IN ('bad', 'normal', 'good'));

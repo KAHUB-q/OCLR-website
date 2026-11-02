@@ -54,7 +54,9 @@ function workspace(poolId: string): PracticeWorkspace {
       id: "67800000-0000-4000-8000-000000000003",
       name: "Synthetic Team",
     },
-    participants: [actor, teammate],
+    participants: params.has("actor-last")
+      ? [teammate, actor]
+      : [actor, teammate],
     readOnly: params.has("readonly"),
     pools: [
       { id: first, name: "Round 1", roundName: "Round 1", stage: "group" },
@@ -77,11 +79,11 @@ function workspace(poolId: string): PracticeWorkspace {
         poolId,
         category: category as "NM" | "HD" | "HR",
         position: 1,
-        beatmapId: 100 + index,
+        beatmapId: (params.has("long-bid") ? 3774074 : 100) + index,
         context: "a".repeat(64),
         ownVersion: one && index === 0 ? 1 : 0,
         metadata: {
-          setId: 1,
+          setId: params.has("missing-cover") ? 0 : 1,
           artist: "Synthetic Artist",
           title: `${category} Signal`,
           difficulty: "Synthetic Insane",
@@ -97,16 +99,16 @@ function workspace(poolId: string): PracticeWorkspace {
                   ...actor,
                   userId: actor.osuId,
                   score: 900000,
-                  rating: 3,
+                  feel: "normal",
                   comment: "My saved comment",
                   version: 1,
                   updatedAt: "2026-11-01T12:00:00Z",
-                  stale: false,
+                  stale: params.has("stale"),
                 },
                 {
                   userId: teammate.osuId,
                   score: 950000,
-                  rating: 5,
+                  feel: "good",
                   comment: params.has("long")
                     ? "合成測試評論WithALongUnbrokenWordABCDEFGHIJKLMNOPQRSTUVWXYZ".repeat(
                         3,

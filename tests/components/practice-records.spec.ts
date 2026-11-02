@@ -1,6 +1,86 @@
 import { test, expect } from "@playwright/test";
 for (const theme of ["light", "dark"]) {
-  test(`${theme}: score, rating, comment and save stay on one row at 719px and 320px`, async ({
+  test(`${theme}: title opens osu and BID copies the difficulty ID with failure feedback`, async ({
+    page,
+  }) => {
+    await page.addInitScript(() => {
+      Object.defineProperty(navigator, "clipboard", {
+        configurable: true,
+        value: {
+          writeText: async (text: string) => {
+            if (location.search.includes("copy-fail"))
+              throw new Error("Synthetic denial");
+            (window as Window & { copiedBID?: string }).copiedBID = text;
+          },
+        },
+      });
+    });
+    await page.goto(`/practice-records?theme=${theme}`);
+    const own = page.getByRole("rowgroup", {
+      name: "Synthetic Artist — NM Signal",
+      exact: true,
+    });
+    await expect(
+      own.getByRole("link", {
+        name: "Synthetic Artist — NM Signal",
+        exact: true,
+      }),
+    ).toHaveAttribute("href", "https://osu.ppy.sh/beatmaps/100");
+    await expect(
+      own.locator('a[href="https://osu.ppy.sh/beatmaps/100"]'),
+    ).toHaveCount(1);
+    await expect(
+      own.getByRole("link", {
+        name: "osu!direct · NM1 NM Signal",
+        exact: true,
+      }),
+    ).toHaveAttribute("href", "osu://b/100");
+    const copy = own.getByRole("button", {
+      name: "Copy beatmap ID: 100",
+      exact: true,
+    });
+    await expect(copy).toHaveText("100");
+    await copy.click();
+    await expect(copy).toHaveText("100");
+    await expect(own.getByRole("status")).toHaveText("Copied");
+    expect(
+      await page.evaluate(
+        () => (window as Window & { copiedBID?: string }).copiedBID,
+      ),
+    ).toBe("100");
+    await page.goto(`/practice-records?theme=${theme}&copy-fail`);
+    await copy.click();
+    await expect(own.getByRole("alert")).toHaveText(
+      "Could not copy the beatmap ID.",
+    );
+  });
+  test(`${theme}: replaced-map history remains available beside the new inline form`, async ({
+    page,
+  }) => {
+    await page.route("**/api/tournaments/synthetic/player/practice", (route) =>
+      route.fulfill({ json: { saved: true, version: 2 } }),
+    );
+    await page.goto(`/practice-records?theme=${theme}&stale`);
+    const own = page.getByRole("rowgroup", {
+      name: "Synthetic Artist — NM Signal",
+      exact: true,
+    });
+    const form = own.getByRole("form");
+    await expect(
+      form.getByLabel("Practice score", { exact: true }),
+    ).toHaveValue("");
+    const history = form.locator("details");
+    await history.locator("summary").click();
+    await expect(history).toContainText("900,000");
+    await expect(history).toContainText("My saved comment");
+    await form.getByLabel("Practice score", { exact: true }).fill("910000");
+    await form
+      .getByRole("button", { name: "Save practice", exact: true })
+      .click();
+    await expect(form.getByRole("status")).toHaveText("Saved");
+    await expect(history).toHaveCount(0);
+  });
+  test(`${theme}: owner edits inside a single compact record row`, async ({
     page,
   }) => {
     const writes: Record<string, unknown>[] = [];
@@ -13,7 +93,7 @@ for (const theme of ["light", "dark"]) {
     );
     for (const width of [719, 320]) {
       await page.setViewportSize({ width, height: 900 });
-      await page.goto(`/practice-records?theme=${theme}`);
+      await page.goto(`/practice-records?theme=${theme}&actor-last&long-bid`);
       const own = page.getByRole("rowgroup", {
         name: "Synthetic Artist — NM Signal",
         exact: true,
@@ -26,69 +106,54 @@ for (const theme of ["light", "dark"]) {
         name: "Practice score",
         exact: true,
       });
-      const rating = form.getByRole("group", {
-        name: "Practice rating",
-        exact: true,
-      });
+      await expect(
+        page.getByRole("group", { name: "Practice rating", exact: true }),
+      ).toHaveCount(0);
+      await expect(page.getByRole("radio")).toHaveCount(0);
       const comment = form.getByRole("textbox", {
         name: "Practice comment",
         exact: true,
       });
+      const feel = form.getByRole("combobox", { name: "Feel", exact: true });
+      await expect(feel).toHaveValue("normal");
       const save = form.getByRole("button", {
         name: "Save practice",
         exact: true,
       });
       const boxes = await Promise.all(
-        [score, rating, comment, save].map((control) => control.boundingBox()),
+        [score, feel, save].map((control) => control.boundingBox()),
       );
       expect(boxes.every((box) => box !== null)).toBe(true);
       expect(
         Math.max(...boxes.map((box) => box!.y)) -
           Math.min(...boxes.map((box) => box!.y)),
       ).toBeLessThan(2);
-      expect((await form.boundingBox())!.height).toBeLessThan(90);
+      await expect(own.getByRole("row")).toHaveCount(1);
+      await expect(own.locator('td[data-own="true"] form')).toHaveCount(1);
+      expect((await own.boundingBox())!.height).toBeLessThan(
+        width === 320 ? 155 : 135,
+      );
+      expect((await form.boundingBox())!.height).toBeLessThan(110);
+      expect((await comment.boundingBox())!.y).toBeGreaterThan(boxes[0]!.y);
+      if (width === 320) {
+        expect(
+          (await save.boundingBox())!.x + (await save.boundingBox())!.width,
+        ).toBeLessThanOrEqual(320);
+      }
       expect(
         await page.evaluate(
           () => document.documentElement.scrollWidth <= innerWidth,
         ),
       ).toBe(true);
-      const toggle = rating.getByRole("button", { name: /^Practice rating/ });
-      const compact = await toggle.isVisible();
-      if (compact) {
-        await toggle.click();
-        await expect(toggle).toHaveAttribute("aria-expanded", "true");
-        await page.keyboard.press("Tab");
-        await expect(
-          rating.getByRole("radio", { name: "3 out of 5 stars", exact: true }),
-        ).toBeFocused();
-        await page.keyboard.press("Escape");
-        await expect(toggle).toBeFocused();
-        await expect(toggle).toHaveAttribute("aria-expanded", "false");
-        await toggle.click();
-        await score.click();
-        await expect(toggle).toHaveAttribute("aria-expanded", "false");
-        await toggle.click();
-      }
-      await rating
-        .getByRole("radio", { name: "5 out of 5 stars", exact: true })
-        .check();
-      if (compact) {
-        await expect(toggle).toHaveAccessibleName(
-          "Practice rating: 5 out of 5 stars",
-        );
-        await expect(toggle).toHaveAttribute("aria-expanded", "false");
-        await toggle.click();
-      }
-      await rating
-        .getByRole("button", { name: "Clear rating", exact: true })
-        .click();
       await comment.fill("Single-row practice note");
+      await feel.selectOption("good");
       await save.click();
       await expect(form.getByRole("status")).toHaveText("Saved");
+      expect(writes.at(-1)).not.toHaveProperty("rating");
       expect(writes.at(-1)).toMatchObject({
         action: "save_practice",
-        rating: null,
         score: 900000,
+        feel: "good",
         comment: "Single-row practice note",
         expectedVersion: 1,
       });
@@ -108,7 +173,24 @@ for (const theme of ["light", "dark"]) {
       exact: true,
     });
     await expect(own.getByText("Visible teammate comment")).toHaveCount(0);
-    await expect(own.getByText(/合成測試評論WithALong/)).toBeVisible();
+    const disclosure = own.locator("details");
+    await expect(
+      disclosure.locator("summary").getByText(/合成測試評論WithALong/),
+    ).toBeVisible();
+    const collapsedHeight = (await own.boundingBox())!.height;
+    await disclosure
+      .getByRole("button", { name: "Read full comment", exact: true })
+      .click();
+    await expect(disclosure.locator("p")).toContainText(
+      "合成測試評論WithALong",
+    );
+    expect((await own.boundingBox())!.height).toBeGreaterThan(collapsedHeight);
+    await disclosure
+      .getByRole("button", { name: "Read full comment", exact: true })
+      .click();
+    expect(
+      Math.abs((await own.boundingBox())!.height - collapsedHeight),
+    ).toBeLessThan(2);
     await expect(page.getByText("Accuracy (%)", { exact: true })).toHaveCount(
       0,
     );
@@ -129,16 +211,14 @@ for (const theme of ["light", "dark"]) {
       exact: true,
     });
     const before = (await mapHeading.boundingBox())!.x;
-    const formBefore = (await own.getByRole("form").boundingBox())!.x;
+
     await comparison.evaluate((element) => {
       element.scrollLeft = element.scrollWidth;
     });
     expect(Math.abs((await mapHeading.boundingBox())!.x - before)).toBeLessThan(
       2,
     );
-    expect(
-      Math.abs((await own.getByRole("form").boundingBox())!.x - formBefore),
-    ).toBeLessThan(2);
+
     await comparison.evaluate((element) => {
       element.scrollLeft = 0;
     });

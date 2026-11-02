@@ -13,9 +13,17 @@ export function shiftDate(date: string, days: number) {
   return value.toISOString().slice(0, 10);
 }
 export function weekStart(instant: string, timeZone: string) {
-  const date = localDateTime(instant, timeZone).slice(0, 10);
+  const date = selectableTimetableDate(
+    localDateTime(instant, timeZone).slice(0, 10),
+  );
   const weekday = new Date(`${date}T12:00:00Z`).getUTCDay();
-  return shiftDate(date, -((weekday + 6) % 7));
+  return shiftDate(date, -((weekday + 2) % 7));
+}
+
+/** Friday through the following Monday; midweek navigation locates the next Friday. */
+export function selectableTimetableDate(date: string) {
+  const weekday = new Date(`${date}T12:00:00Z`).getUTCDay();
+  return weekday >= 2 && weekday <= 4 ? shiftDate(date, 5 - weekday) : date;
 }
 
 const dayCache = new Map<string, ReturnType<typeof makeDaySlots>>();

@@ -2,6 +2,131 @@ import { expect, test } from "@playwright/test";
 test.use({ timezoneId: "Asia/Taipei" });
 const slot = (hour: string) =>
   `button[data-start="2026-11-01T${hour}:00.000Z"]`;
+async function expectUniformGrid(page: import("@playwright/test").Page) {
+  const dimensions = await page
+    .locator("[data-day] table")
+    .evaluateAll((tables) =>
+      tables.map((table) => {
+        const cells = [
+          ...table.querySelectorAll("thead th[data-start], tbody td"),
+        ];
+        return {
+          sizes: cells.map((cell) => {
+            const r = cell.getBoundingClientRect();
+            return [r.width, r.height];
+          }),
+          rows: [...table.querySelectorAll("tbody tr")].map(
+            (row) => row.getBoundingClientRect().height,
+          ),
+          targets: [...table.querySelectorAll("td button")].map((button) => {
+            const r = button.getBoundingClientRect();
+            return [r.width, r.height];
+          }),
+        };
+      }),
+    );
+  expect(dimensions.length).toBeGreaterThan(0);
+  for (const day of dimensions) {
+    for (const size of [...day.sizes, ...day.targets])
+      for (const value of size) expect(Math.abs(value - 44)).toBeLessThan(0.2);
+    for (const height of day.rows)
+      expect(Math.abs(height - 44)).toBeLessThan(0.2);
+  }
+}
+for (const theme of ["light", "dark"]) {
+  test(`${theme}: every time cell and player row keeps the same size when resized`, async ({
+    page,
+  }) => {
+    for (const variant of [
+      "captain&readonly",
+      "captain&empty-own&long-names",
+    ]) {
+      await page.goto(`/schedule-selection?${variant}&theme=${theme}`);
+      await page.getByRole("button", { name: "Overview", exact: true }).click();
+      for (const width of [1280, 640, 320]) {
+        await page.setViewportSize({ width, height: 900 });
+        await expectUniformGrid(page);
+      }
+    }
+    await page.locator(slot("11:00")).click();
+    await expectUniformGrid(page);
+  });
+}
+test("only Friday through the following Monday are offered across week navigation and Today", async ({
+  page,
+}) => {
+  await page.clock.install({ time: new Date("2026-11-03T04:00:00Z") });
+  await page.goto("/schedule-selection?captain");
+  const shortcuts = page.getByRole("group", { name: "Week", exact: true });
+  expect(
+    await shortcuts
+      .locator("button[aria-label]")
+      .evaluateAll((buttons) =>
+        buttons.map((b) => b.getAttribute("aria-label")),
+      ),
+  ).toEqual([
+    "Friday, October 30, 2026",
+    "Saturday, October 31, 2026",
+    "Sunday, November 1, 2026",
+    "Monday, November 2, 2026",
+  ]);
+  await expect(
+    shortcuts.getByRole("button", { name: /Tuesday|Wednesday|Thursday/ }),
+  ).toHaveCount(0);
+  await shortcuts
+    .getByRole("button", { name: "Overview", exact: true })
+    .click();
+  const days = page
+    .getByRole("region", { name: "Team availability", exact: true })
+    .locator("section");
+  expect(
+    await days.evaluateAll((nodes) =>
+      nodes.map((n) => n.getAttribute("data-day")),
+    ),
+  ).toEqual(["2026-10-30", "2026-10-31", "2026-11-01", "2026-11-02"]);
+  await shortcuts
+    .getByRole("button", { name: "Monday, November 2, 2026", exact: true })
+    .click();
+  const date = page.getByLabel("Week containing", { exact: true });
+  await page.getByRole("button", { name: "Next week", exact: true }).click();
+  await expect(date).toHaveValue("2026-11-09");
+  await page
+    .getByRole("button", { name: "Previous week", exact: true })
+    .click();
+  await expect(date).toHaveValue("2026-11-02");
+  await date.fill("2026-11-04");
+  await expect(date).toHaveValue("2026-11-06");
+  await date.fill("2026-11-02");
+  await page.getByRole("button", { name: "Today", exact: true }).click();
+  await expect(date).toHaveValue("2026-11-06");
+});
+test("hidden midweek records survive saving the four-day timetable", async ({
+  page,
+}) => {
+  const writes: Record<string, unknown>[] = [];
+  await page.route(
+    "**/api/tournaments/synthetic/player/availability",
+    async (route) => {
+      writes.push(route.request().postDataJSON());
+      await route.fulfill({ json: { saved: true, version: 2 } });
+    },
+  );
+  await page.goto("/schedule-selection?midweek&captain");
+  await expect(page.getByLabel("Week containing", { exact: true })).toHaveValue(
+    "2026-11-06",
+  );
+  await page.locator('button[data-start="2026-11-06T10:00:00.000Z"]').click();
+  await page.getByRole("button", { name: "Overview", exact: true }).click();
+  await page
+    .getByRole("button", { name: "Save season timetable", exact: true })
+    .click();
+  await expect(page.getByRole("status")).toContainText("Saved");
+  expect(writes[0].intervals).toEqual([
+    { start: "2026-11-03T10:00:00.000Z", end: "2026-11-03T11:00:00.000Z" },
+    { start: "2026-11-05T10:00:00.000Z", end: "2026-11-05T11:00:00.000Z" },
+    { start: "2026-11-06T10:00:00.000Z", end: "2026-11-06T10:30:00.000Z" },
+  ]);
+});
 for (const theme of ["light", "dark"]) {
   test(`${theme}: captain compares all eligible rows and saves only their own states`, async ({
     page,
@@ -124,12 +249,24 @@ for (const theme of ["light", "dark"]) {
       page
         .getByRole("region", { name: "Team availability", exact: true })
         .locator("tbody tr"),
-    ).toHaveCount(21);
+    ).toHaveCount(3);
+    await page.getByRole("button", { name: "Overview", exact: true }).click();
+    await expect(
+      page
+        .getByRole("region", { name: "Team availability", exact: true })
+        .locator("tbody tr"),
+    ).toHaveCount(12);
     await expect(page.locator("button[data-slot]")).toHaveCount(0);
     await expect(
       page.getByRole("button", { name: "Save season timetable", exact: true }),
     ).toHaveCount(0);
     await page.goto(`/schedule-selection?theme=${theme}`);
+    await expect(
+      page
+        .getByRole("region", { name: "My availability", exact: true })
+        .locator("tbody tr"),
+    ).toHaveCount(1);
+    await page.getByRole("button", { name: "Overview", exact: true }).click();
     await expect(
       page.getByRole("region", { name: "Team availability", exact: true }),
     ).toHaveCount(0);
@@ -140,7 +277,7 @@ for (const theme of ["light", "dark"]) {
       page
         .getByRole("region", { name: "My availability", exact: true })
         .locator("tbody tr"),
-    ).toHaveCount(7);
+    ).toHaveCount(4);
   });
 }
 test("local/UTC midnight conversion retains draft instants", async ({
@@ -163,6 +300,28 @@ test("local/UTC midnight conversion retains draft instants", async ({
 
 test.describe("clock changes", () => {
   test.use({ timezoneId: "America/New_York" });
+  test("clock-change dates keep equal cells while the actual slot count changes", async ({
+    page,
+  }) => {
+    await page.goto("/schedule-selection?captain&readonly");
+    for (const [date, expected] of [
+      ["2026-11-01", [48, 48, 50, 48]],
+      ["2026-03-08", [48, 48, 46, 48]],
+    ] as const) {
+      await page.getByLabel("Week containing", { exact: true }).fill(date);
+      await page.getByRole("button", { name: "Overview", exact: true }).click();
+      expect(
+        await page
+          .locator("[data-day] table")
+          .evaluateAll((tables) =>
+            tables.map(
+              (table) => table.querySelectorAll("thead th[data-start]").length,
+            ),
+          ),
+      ).toEqual(expected);
+      await expectUniformGrid(page);
+    }
+  });
   test("repeated local hours have distinct offsets and edit different UTC instants", async ({
     page,
   }) => {
@@ -233,4 +392,106 @@ test("cycles every state, paints backwards and retries the same save", async ({
     .click();
   await expect(page.getByRole("status")).toContainText("Saved");
   expect(writes[0]).toEqual(writes[1]);
+});
+
+test("Friday–Monday shortcuts and overview retain every unsaved instant", async ({
+  page,
+}) => {
+  const writes: Record<string, unknown>[] = [];
+  await page.route(
+    "**/api/tournaments/synthetic/player/availability",
+    async (route) => {
+      writes.push(route.request().postDataJSON());
+      await route.fulfill({ json: { saved: true, version: 2 } });
+    },
+  );
+  await page.goto("/schedule-selection?captain");
+  const region = page.getByRole("region", {
+    name: "Team availability",
+    exact: true,
+  });
+  await expect(region.locator("section")).toHaveCount(1);
+  await page.locator(slot("11:00")).click();
+  await page.getByRole("button", { name: "Overview", exact: true }).click();
+  await expect(region.locator("section")).toHaveCount(4);
+  await page
+    .getByRole("button", { name: "Monday, November 2, 2026", exact: true })
+    .click();
+  await expect(region.locator("section")).toHaveCount(1);
+  await expect(page.getByLabel("Week containing", { exact: true })).toHaveValue(
+    "2026-11-02",
+  );
+  await page
+    .getByRole("button", { name: "Sunday, November 1, 2026", exact: true })
+    .click();
+  await expect(page.locator(slot("11:00"))).toHaveAccessibleName(/Available$/);
+  await page
+    .getByRole("button", { name: "Save season timetable", exact: true })
+    .click();
+  await expect(page.getByRole("status")).toContainText("Saved");
+  expect(writes[0].intervals).toEqual([
+    { start: "2026-11-01T10:00:00.000Z", end: "2026-11-01T11:30:00.000Z" },
+  ]);
+});
+for (const theme of ["light", "dark"]) {
+  test(`${theme}: narrow timetable keeps controls and optional help inside 320px`, async ({
+    page,
+  }) => {
+    await page.setViewportSize({ width: 320, height: 900 });
+    await page.goto(`/schedule-selection?captain&theme=${theme}`);
+    expect(
+      await page.evaluate(
+        () => document.documentElement.scrollWidth <= innerWidth,
+      ),
+    ).toBe(true);
+    const shortcuts = page.getByRole("group", { name: "Week", exact: true });
+    const selectedDay = (await shortcuts
+      .locator('button[aria-pressed="true"]')
+      .boundingBox())!;
+    const strip = (await shortcuts.boundingBox())!;
+    expect(selectedDay.x + selectedDay.width).toBeLessThanOrEqual(
+      strip.x + strip.width + 1,
+    );
+    expect(selectedDay.x).toBeGreaterThanOrEqual(
+      (await shortcuts
+        .getByRole("button", { name: "Overview", exact: true })
+        .boundingBox())!.x + 43,
+    );
+    await page.getByRole("button", { name: "Notes", exact: true }).click();
+    await expect(page.getByRole("note")).toBeVisible();
+    expect(
+      await page.evaluate(
+        () => document.documentElement.scrollWidth <= innerWidth,
+      ),
+    ).toBe(true);
+    await page.keyboard.press("Escape");
+    await expect(page.getByRole("note")).not.toBeVisible();
+    await expect(
+      page.getByRole("button", { name: "Notes", exact: true }),
+    ).toBeFocused();
+  });
+}
+
+test("resizing keeps the selected day and its saved hour visible", async ({
+  page,
+}) => {
+  await page.setViewportSize({ width: 1280, height: 900 });
+  await page.goto("/schedule-selection?captain");
+  await page.setViewportSize({ width: 320, height: 900 });
+  const shortcuts = page.getByRole("group", { name: "Week", exact: true });
+  await expect(async () => {
+    const selected = (await shortcuts
+      .locator('button[aria-pressed="true"]')
+      .boundingBox())!;
+    const strip = (await shortcuts.boundingBox())!;
+    expect(selected.x + selected.width).toBeLessThanOrEqual(
+      strip.x + strip.width + 1,
+    );
+    const cell = (await page.locator(slot("10:00")).boundingBox())!;
+    const region = (await page
+      .getByRole("region", { name: "Team availability", exact: true })
+      .boundingBox())!;
+    expect(cell.x).toBeGreaterThanOrEqual(region.x + 107);
+    expect(cell.x + cell.width).toBeLessThanOrEqual(region.x + region.width);
+  }).toPass();
 });

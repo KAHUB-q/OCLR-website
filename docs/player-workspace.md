@@ -19,18 +19,50 @@ ineligible applicants and delegated remote sessions.
 published mappool, with tabs for other published pools and each available Mod.
 Changing Mod keeps each map's unsaved inputs mounted; changing pools asks before
 discarding drafts. Hidden pools and historical archives are unavailable.
-Each map has optional manually entered
-score, a 1–5 star rating and a compact, vertically resizable comment field (up to
-2,000 characters). Score, rating, comment and the save action share one compact
-row. Narrow containers show the current rating in a button that opens the same
-five-star controls; choosing a value, clearing it, Escape or leaving the control
-closes the picker. Team records use a map-by-player comparison table with fixed map and player
-headers. Scores, ratings and comments are visible together, and the current
-context's highest saved score is emphasized (ties share the emphasis). Missing
-scores and outdated map contexts never enter that comparison. Each map retains
-its compact personal form below the comparison row; updates and deletions
-immediately update that map's comparison. The table scrolls horizontally while
-the editor stays within the visible container.
+Each map has an optional manually entered score, an optional **Feel** selection
+(Poor / Okay / Good), and a compact, vertically resizable comment field (up to
+2,000 characters). Players fill in their own record cell directly, with score,
+Feel and save above the comment and delete control. There is no separate editor
+row. The actor's column appears first beside the fixed map column, including
+when saved roster order differs. Pool and Mod selectors use compact
+underlined tabs, and reload/save/delete use labelled utility controls.
+
+Team records use a map-by-player comparison table with fixed map and player
+headers. The map identity column reuses the official beatmapset cover as a
+subdued decorative background behind the title, metadata and download controls.
+It follows the MainSheet surface in light/dark, has no pointer targets or extra
+screen-reader text, and falls back to the original surface when unavailable.
+Scores, saved Feel and comments are visible together. Feel is independent
+of the score and never enters the highest-score comparison. Long comments initially show
+three literal lines and expand through a keyboard-accessible disclosure; the
+complete text is retained. The current context's highest saved score is
+emphasized (ties share the emphasis). Missing scores and outdated map contexts
+never enter that comparison. Only the owner's cell is editable; read-only
+workspaces retain the saved-value display. Outdated own records remain available
+in a Previous map context disclosure beside the fresh form. Deletion clears the
+inputs while retaining the same cell for recreation. The table scrolls
+horizontally with fixed map identity and player headers.
+
+Map titles link directly to their official difficulty page. Compact direct and
+Copy BID controls share the identity toolbar. BID is a purple capsule showing
+the literal difficulty ID and a copy icon; after success the icon becomes a
+check while the number remains visible. On narrow screens direct stays beside
+the slot and the capsule sits under the map title. Copy uses the difficulty ID,
+reports success or clipboard failure, and retains 44px targets for touch input.
+Long titles use a two-line preview and metadata one line with their literal full
+text retained in the DOM/title. Normal desktop controls use 32px rows.
+
+Star ratings were retired by organizer request in #731. Current practice
+commands accept score/feel/comment and reject the retired rating field; read
+projections omit it. The legacy nullable database column and existing private
+audit history remain intact. Reading old records does not rewrite them; a later
+owner save/delete clears the retired value, with the previous value retained in
+the normal private before/after audit. Feel has separate nullable storage added by
+migration `0072_practice_feel.sql`, constrained to `bad`, `normal`, `good` or NULL.
+Existing records start unset; old ratings are never converted into Feel.
+Omitted Feel in an older score/comment command preserves the stored value and
+the original retry payload hash. Current forms explicitly send NULL to clear it.
+Deletion clears Feel together with score/comment in the same private audit.
 
 Each player edits only their own record. Current active teammates can read each
 other's records; an unassigned player can save and view their own records.
@@ -56,10 +88,33 @@ silently transfer a score to a new slot.
 
 `/tournaments/[edition]/player/availability` stores up to 200 dated time ranges
 for the whole season, independently of teams and fixtures. The horizontal sheet
-groups real dates within the selected week, with a shared half-hour axis and one
+groups four real dates, Friday through the following Monday, with a shared half-hour axis and one
 row per authorized player. Names stay visible during horizontal scrolling.
-The initial view scrolls to the selected date/time; date and previous/next-week
-controls keep the full calendar date in context.
+The initial view focuses the selected date and aligns the hour cells to complete
+column boundaries. Only Friday, Saturday, Sunday and Monday are offered as date
+shortcuts and grid days. Overview shows all four dates in that order, including
+the following Monday across a calendar-week/month/year boundary. Dates chosen
+on Tuesday through Thursday (including Today) locate the upcoming Friday.
+Previous/next-week controls retain the selected weekday. Both modes keep all unsaved intervals in memory;
+view changes do not alter the saved data. Date and previous/next-week controls
+retain the full calendar date in context. Headers and player identities stay
+visible during scrolling, and consecutive states form continuous bands.
+Every half-hour column, time header and player row uses a fixed 44px size, for
+both editable and read-only rows. Headers show complete `HH:mm` times with
+tabular numerals; half-hours have lighter type and each hour ends at a stronger
+grid line. The name column has its own fixed width and truncates long identities
+without changing row height. Date bands, compact offset labels and alternating
+empty-row surfaces separate the four sheets. Clock changes alter the number of
+columns, never their size.
+Midweek intervals saved by older pages remain in the saved-range list and in
+subsequent save payloads. This is a display/editing scope change; stored UTC
+instants, service validation and fixture Schedule retain their existing rules.
+
+Date headings show the zone offset once; only ambiguous repeated hours repeat
+the offset in the hour header. Local/UTC controls, compact undo/save and the state
+legend stay near the grid. Supplemental access/keyboard help is available from
+the Notes disclosure, which supports Escape. Unsaved status and failures remain
+visible; a stale Saved message is hidden when a new edit is made.
 
 Clicking a cell cycles available → unsure → unavailable → unfilled. Dragging
 copies the starting cell's existing state across the continuous range, including

@@ -30,10 +30,12 @@ export const seasonAvailabilitySchema = z
       ),
     "Conflicting availability states",
   );
+export const practiceFeels = ["bad", "normal", "good"] as const;
+export type PracticeFeel = (typeof practiceFeels)[number];
 export const practiceValueSchema = z
   .object({
     score: z.number().int().min(0).max(Number.MAX_SAFE_INTEGER).nullable(),
-    rating: z.number().int().min(1).max(5).nullable(),
+    feel: z.enum(practiceFeels).nullable().optional(),
     comment: z.string().trim().max(2000),
   })
   .strict();

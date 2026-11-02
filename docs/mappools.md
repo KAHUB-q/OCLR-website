@@ -92,9 +92,11 @@ conflicts keep the draft open for review. Read-only viewers see the saved rounds
 Candidate creation time and the separate footer stay hidden.
 Mode/status and snapshot details stay hidden; saved metadata is not a live lookup,
 and unknown fields stay unknown. Comment headings and refresh actions share one
-line, with a compact visible composer and limits/send controls below it. Comment
-history uses a bounded scrolling area inspired by player messages and loads near
-the viewport.
+line. A single-line composer remains visible, grows with its text up to a bounded
+height, and shares its row with Send; limits remain below and are associated with
+the input for assistive technology. Author/timestamp and edit/delete icon actions
+share a compact comment header. History uses a bounded scrolling area inspired by
+player messages and loads near the viewport.
 Comments preserve author identity/name and their original UTC posting time.
 Authors with a current edition-scoped write grant can edit or delete only their
 own comments; Admin/Pooler roles do not override authorship. Editing is inline

@@ -88,7 +88,24 @@ for (const theme of ["light", "dark"]) {
         exact: true,
       });
       await expect(composer).toBeVisible();
+      const compactHeight = (await composer.boundingBox())!.height;
+      expect(compactHeight).toBeLessThanOrEqual(50);
+      await composer.fill("Long feedback line\n".repeat(12));
+      await expect
+        .poll(async () => (await composer.boundingBox())!.height)
+        .toBeGreaterThan(compactHeight);
+      expect((await composer.boundingBox())!.height).toBeLessThanOrEqual(130);
       await composer.fill("Synthetic unsaved comment");
+      await expect
+        .poll(async () => (await composer.boundingBox())!.height)
+        .toBeLessThanOrEqual(50);
+      const sendBox = (await discussion
+        .getByRole("button", { name: "發表評論", exact: true })
+        .boundingBox())!;
+      const inputBox = (await composer.boundingBox())!;
+      expect(Math.abs(sendBox.y - inputBox.y)).toBeLessThan(2);
+      expect(sendBox.x).toBeGreaterThan(inputBox.x + inputBox.width);
+      if (rowBox.width >= 896) expect(commentBox.height).toBeLessThan(190);
       await expect(
         discussion.getByRole("button", { name: "發表評論", exact: true }),
       ).toBeEnabled();
@@ -195,13 +212,17 @@ for (const theme of ["light", "dark"]) {
 test("populated comments scroll while the composer stays visible", async ({
   page,
 }) => {
+  let count = 8;
   await page.route("**/api/**/comments", (route) =>
     route.fulfill({
-      json: Array.from({ length: 8 }, (_, index) => ({
+      json: Array.from({ length: count }, (_, index) => ({
         id: `comment-${index}`,
         authorId: 1,
         authorName: "Synthetic Pooler",
-        body: "Synthetic feedback with a long phrase. ".repeat(5),
+        body:
+          count === 1
+            ? "Short feedback."
+            : "Synthetic feedback with a long phrase. ".repeat(5),
         version: "1",
         createdAt: "2026-01-01T00:00:00.000Z",
       })),
@@ -228,6 +249,12 @@ test("populated comments scroll while the composer stays visible", async ({
   });
   await composer.fill("Preserved comment draft");
   const first = comments.getByRole("listitem").first();
+  for (const name of ["Edit", "Delete"]) {
+    const action = first.getByRole("button", { name, exact: true });
+    await expect(action).toHaveText("");
+    await expect(action).toHaveAttribute("title", name);
+    await expect(action.locator("svg")).toHaveCount(1);
+  }
   await first.getByRole("button", { name: "Edit", exact: true }).click();
   await first
     .getByRole("textbox", { name: "Edit comment", exact: true })
@@ -242,4 +269,22 @@ test("populated comments scroll while the composer stays visible", async ({
   await expect(
     discussion.getByRole("button", { name: "Post comment", exact: true }),
   ).toBeEnabled();
+  await expect(
+    first.getByRole("button", { name: "Delete", exact: true }),
+  ).toBeFocused();
+  count = 1;
+  await discussion
+    .getByRole("button", { name: "Refresh comments", exact: true })
+    .click();
+  const single = row.getByRole("region", { name: "Comments (1)", exact: true });
+  await expect(
+    single.getByText("Short feedback.", { exact: true }),
+  ).toBeVisible();
+  expect((await single.boundingBox())!.height).toBeLessThan(250);
+  await expect(
+    single.getByRole("textbox", { name: "Your comment", exact: true }),
+  ).toHaveValue("Preserved comment draft");
+  await single.screenshot({
+    path: test.info().outputPath("single-comment.png"),
+  });
 });

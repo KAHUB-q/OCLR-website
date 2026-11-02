@@ -191,17 +191,45 @@ function CommentItem({
   }
   return (
     <li>
-      <p className="small">
-        <a
-          className="text-link"
-          href={`https://osu.ppy.sh/users/${c.authorId}`}
-        >
-          <strong>{c.authorName}</strong>
-        </a>{" "}
-        <span className="muted">
-          · <Stamp value={c.createdAt} />
-        </span>
-      </p>
+      <div className={styles.commentHeading}>
+        <p className="small">
+          <a
+            className="text-link"
+            href={`https://osu.ppy.sh/users/${c.authorId}`}
+          >
+            <strong>{c.authorName}</strong>
+          </a>{" "}
+          <span className="muted">
+            · <Stamp value={c.createdAt} />
+          </span>
+        </p>
+        {canManage && mode === null && (
+          <div className={styles.commentActions}>
+            <button
+              type="button"
+              className="secondary mappool-icon-action"
+              disabled={busy}
+              aria-label={tr("Edit")}
+              title={tr("Edit")}
+              ref={editTrigger}
+              onClick={() => begin("edit")}
+            >
+              <MappoolActionIcon kind="edit" />
+            </button>
+            <button
+              type="button"
+              className="secondary mappool-icon-action"
+              disabled={busy}
+              aria-label={tr("Delete")}
+              title={tr("Delete")}
+              ref={deleteTrigger}
+              onClick={() => begin("delete")}
+            >
+              <MappoolActionIcon kind="remove" />
+            </button>
+          </div>
+        )}
+      </div>
       {mode === "edit" ? (
         <form
           onSubmit={(event) => {
@@ -238,28 +266,6 @@ function CommentItem({
         </form>
       ) : (
         <p className={styles.commentBody}>{c.body}</p>
-      )}
-      {canManage && mode === null && (
-        <div className={styles.commentActions}>
-          <button
-            type="button"
-            className="secondary"
-            disabled={busy}
-            ref={editTrigger}
-            onClick={() => begin("edit")}
-          >
-            {tr("Edit")}
-          </button>
-          <button
-            type="button"
-            className="secondary"
-            disabled={busy}
-            ref={deleteTrigger}
-            onClick={() => begin("delete")}
-          >
-            {tr("Delete")}
-          </button>
-        </div>
       )}
       {mode === "delete" && (
         <div role="group" aria-label={tr("Delete this comment?")}>
@@ -312,6 +318,8 @@ function Comments({
   onChange: () => Promise<void>;
 }) {
   const tr = useAppTranslations();
+  const hintId = useId();
+  const composer = useRef<HTMLTextAreaElement>(null);
   const [comments, setComments] = useState<CandidateComments | null>(null);
   const [body, setBody] = useState("");
   const [busy, setBusy] = useState(false);
@@ -321,6 +329,12 @@ function Comments({
   const readGeneration = useRef(0);
   const pending = useRef(false);
   const submission = useRef<{ body: string; id: string } | null>(null);
+  useEffect(() => {
+    const input = composer.current;
+    if (!input) return;
+    input.style.height = "auto";
+    input.style.height = `${input.scrollHeight + 2}px`;
+  }, [body]);
   const base = `/api/admin/tournaments/${slug}/mappool-workbench`;
   const load = async () => {
     const generation = ++readGeneration.current;
@@ -423,6 +437,7 @@ function Comments({
         </ol>
         {writable && (
           <form
+            className={styles.composer}
             onSubmit={async (event) => {
               event.preventDefault();
               if (pending.current) return;
@@ -457,27 +472,28 @@ function Comments({
             }}
           >
             <label className={`field ${styles.composerField}`}>
-              <span>{tr("Your comment")}</span>
+              <span className="sr-only">{tr("Your comment")}</span>
               <textarea
+                ref={composer}
+                placeholder={tr("Your comment")}
+                aria-describedby={hintId}
                 value={body}
                 disabled={busy}
                 onChange={(event) => setBody(event.target.value)}
                 required
                 maxLength={commentLength}
-                rows={2}
+                rows={1}
               />
             </label>
-            <div className={styles.composerFooter}>
-              <p className="small muted">
-                {tr(
-                  "Up to {count} characters per comment; {limit} comments per map.",
-                  { count: commentLength, limit: commentLimit },
-                )}
-              </p>
-              <button disabled={busy || !body.trim()}>
-                {busy ? tr("Working…") : tr("Post comment")}
-              </button>
-            </div>
+            <button disabled={busy || !body.trim()}>
+              {busy ? tr("Working…") : tr("Post comment")}
+            </button>
+            <p id={hintId} className={`small muted ${styles.composerHint}`}>
+              {tr(
+                "Up to {count} characters per comment; {limit} comments per map.",
+                { count: commentLength, limit: commentLimit },
+              )}
+            </p>
           </form>
         )}
         {busy && <p role="status">{tr("Working…")}</p>}

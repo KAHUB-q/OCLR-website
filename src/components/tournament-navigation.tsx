@@ -162,6 +162,16 @@ export function TournamentShell({
   const base = `/tournaments/${slug}`;
   const captainSection = captainWorkspaceSection(path, base);
   const playerSection = playerWorkspaceSection(path, base);
+  const collapsible = captainSection !== null || playerSection !== null;
+  const [sidebarCollapsed, setSidebarCollapsed] = useState(false);
+  const [openPath, setOpenPath] = useState<string | null>(null);
+  const mobileOpen = openPath === path;
+  const mobileToggle = useRef<HTMLButtonElement>(null);
+  const sidebarId = useId();
+  function closeMobileSidebar() {
+    setOpenPath(null);
+    mobileToggle.current?.focus({ preventScroll: true });
+  }
   const privateView =
     (path === `${base}/draft` && search.get("presenter") === "1") ||
     captainSection !== null ||
@@ -203,8 +213,72 @@ export function TournamentShell({
   }, [privateView]);
   if (privateView)
     return (
-      <div className="container page workspace tournament-workspace">
-        <aside className={`sidebar ${styles.sidebar}`}>
+      <div
+        className={`container page workspace tournament-workspace${collapsible ? ` ${styles.collapsible}` : ""}`}
+        data-sidebar-collapsed={collapsible ? sidebarCollapsed : undefined}
+        data-mobile-open={collapsible ? mobileOpen : undefined}
+      >
+        {collapsible && (
+          <div
+            className={styles.toolbar}
+            onKeyDown={(event) => {
+              if (event.key === "Escape" && mobileOpen) {
+                event.preventDefault();
+                closeMobileSidebar();
+              }
+            }}
+          >
+            {[
+              { mobile: false, expanded: !sidebarCollapsed },
+              { mobile: true, expanded: mobileOpen },
+            ].map(({ mobile, expanded }) => (
+              <button
+                key={String(mobile)}
+                ref={mobile ? mobileToggle : undefined}
+                type="button"
+                className={`secondary ${styles.toggle} ${mobile ? styles.mobileToggle : styles.desktopToggle}`}
+                data-workspace-toggle={mobile ? "mobile" : "desktop"}
+                aria-label={tr("Menu")}
+                title={tr("Menu")}
+                aria-controls={sidebarId}
+                aria-expanded={expanded}
+                onClick={() =>
+                  mobile
+                    ? setOpenPath(mobileOpen ? null : path)
+                    : setSidebarCollapsed((collapsed) => !collapsed)
+                }
+              >
+                <svg
+                  width="20"
+                  height="20"
+                  viewBox="0 0 24 24"
+                  fill="none"
+                  stroke="currentColor"
+                  strokeWidth="2"
+                  strokeLinecap="round"
+                  aria-hidden="true"
+                >
+                  <path d="M4 6h16M4 12h16M4 18h16" />
+                </svg>
+              </button>
+            ))}
+            <span className={styles.workspaceTitle}>{name}</span>
+          </div>
+        )}
+        <aside
+          id={sidebarId}
+          className={`sidebar ${styles.sidebar}`}
+          onClick={(event) => {
+            if (collapsible && (event.target as Element).closest("a[href]"))
+              closeMobileSidebar();
+          }}
+          onKeyDown={(event) => {
+            if (collapsible && event.key === "Escape" && mobileOpen) {
+              event.preventDefault();
+              closeMobileSidebar();
+            }
+          }}
+        >
           <Link href="/tournaments" className="eyebrow">
             {tr("Tournaments")}
           </Link>

@@ -20,6 +20,7 @@ import { assertRemoteSubject, frontendResource } from "./frontend-resource";
 import { HttpError } from "./http";
 import { fetchBeatmaps } from "./osu-beatmaps";
 import type { BeatmapSnapshot } from "./mappool-model";
+import { canonicalSkillsets, skillsetTags } from "./mappool-skillsets";
 import {
   candidateCategories,
   candidateLimit,
@@ -39,6 +40,8 @@ async function databaseSelectionWorkspace(actor: User, slug: string) {
           id: mappoolCandidates.id,
           beatmapId: mappoolCandidates.beatmapId,
           category: mappoolCandidates.category,
+          skillsetTags: mappoolCandidates.skillsetTags,
+          skillsetVersion: mappoolCandidates.skillsetVersion,
           metadata: mappoolCandidates.metadata,
           metadataFetchedAt: mappoolCandidates.metadataFetchedAt,
           authorId: mappoolCandidates.authorId,
@@ -212,6 +215,17 @@ const roundIdsSchema = z
   .max(500)
   .refine((ids) => new Set(ids).size === ids.length);
 const commandSchema = z.discriminatedUnion("action", [
+  z
+    .object({
+      action: z.literal("skillsets"),
+      candidateId: z.uuid(),
+      tags: z
+        .array(z.enum(skillsetTags))
+        .max(skillsetTags.length)
+        .refine((tags) => new Set(tags).size === tags.length),
+      expectedVersion: z.number().int().positive().max(Number.MAX_SAFE_INTEGER),
+    })
+    .strict(),
   z
     .object({
       action: z.literal("assign_rounds"),
@@ -416,6 +430,39 @@ export async function selectionCommand(
         ),
       );
     if (!candidate) throw new HttpError(404, "Candidate not found.");
+    if (c.action === "skillsets") {
+      if (candidate.skillsetVersion !== c.expectedVersion)
+        throw new HttpError(
+          409,
+          "Skillset tags changed. Reopen the editor before trying again.",
+        );
+      const tags = canonicalSkillsets(c.tags);
+      if (JSON.stringify(tags) === JSON.stringify(candidate.skillsetTags))
+        return { added: 0, skipped: 1 };
+      await tx
+        .update(mappoolCandidates)
+        .set({
+          skillsetTags: tags,
+          skillsetVersion: candidate.skillsetVersion + 1,
+        })
+        .where(eq(mappoolCandidates.id, candidate.id));
+      await tx.insert(mappoolEvents).values({
+        editionSlug: slug,
+        actorId: actor.osuId,
+        action: "candidate_skillsets",
+        before: {
+          candidateId: candidate.id,
+          tags: candidate.skillsetTags,
+          version: candidate.skillsetVersion,
+        },
+        after: {
+          candidateId: candidate.id,
+          tags,
+          version: candidate.skillsetVersion + 1,
+        },
+      });
+      return { added: 0, skipped: 0 };
+    }
     if (c.action === "assign_rounds") {
       const links = await tx
         .select({ roundId: mappoolCandidateRounds.roundId })

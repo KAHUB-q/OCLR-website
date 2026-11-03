@@ -1,5 +1,25 @@
 # Mappool implementation and workflows
 
+## Candidate skillset tags (#735)
+
+The private selection workbench displays Skillset Tags between each candidate map
+and its comments. Staff with edition-scoped `select_mappools` write access may open
+the editor and select any combination of 29 literal skill names grouped under Aim,
+Tapping, Control, Technical, Reading and Special. Apply saves the whole set; clear
+selection is saved only on Apply. Cancel, Escape and backdrop dismissal discard the
+draft. Header/footer remain visible while choices scroll on narrow screens.
+Archived and Developer/remote views remain read-only.
+
+Migration `0073_candidate_skillsets` adds an empty tag set and independent version
+1 to existing candidates. Apply checks the version under the existing edition lock,
+rechecks capability and archive state, and records a transactional
+`candidate_skillsets` event for changes. Conflicting drafts cannot overwrite a newer
+set; reopen the editor after the list refreshes before retrying. Tags belong to
+candidates and are not copied into official/public pools when promoting a map.
+Deployments must apply the reviewed migration before running the updated backend;
+no live migration is performed by this implementation task. Saved read contract
+1.18.0 includes the new fields; older read backends omit the summary data.
+
 Public presentation, official metadata, mod-specific attributes, staff operations, batch editing, audit and publication guarantees. See [competition workflows](competition-operations.md) for fixture/result integration.
 
 ## Competition mappools

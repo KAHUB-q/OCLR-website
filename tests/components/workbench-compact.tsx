@@ -24,6 +24,8 @@ const data: SelectionWorkspace = {
     category: "unassigned",
     beatmapId: 5722290 + id,
     roundIds: ["round"],
+    skillsetTags: ["jump", "tech"],
+    skillsetVersion: 1,
     authorId: 1,
     authorName: "Synthetic Pooler With A Long Name",
     createdAt: date,

@@ -72,6 +72,52 @@ const add = (ids = [75]) => ({
   rows: ids.map((beatmapId) => ({ beatmapId, fingerprint: "a".repeat(64) })),
 });
 describe.skipIf(!url)("private selection collaboration", () => {
+  it("persists skillsets, serializes concurrent edits, and preserves edition boundaries", async () => {
+    await selectionCommand(tester, slug, add());
+    const candidate = (await selectionWorkspace(tester, slug)).candidates[0];
+    expect(candidate.skillsetTags).toEqual([]);
+    expect(candidate.skillsetVersion).toBe(1);
+    const command = {
+      action: "skillsets",
+      candidateId: candidate.id,
+      tags: ["tech", "jump"],
+      expectedVersion: 1,
+    };
+    const results = await Promise.allSettled([
+      selectionCommand(tester, slug, command),
+      selectionCommand(pooler, slug, { ...command, tags: ["stream"] }),
+    ]);
+    expect(results.filter((r) => r.status === "fulfilled")).toHaveLength(1);
+    expect(
+      (results.find((r) => r.status === "rejected") as PromiseRejectedResult)
+        .reason,
+    ).toMatchObject({ status: 409 });
+    expect(
+      (await selectionWorkspace(tester, slug)).candidates[0].skillsetVersion,
+    ).toBe(2);
+    const events = await db()
+      .select()
+      .from(mappoolEvents)
+      .where(eq(mappoolEvents.action, "candidate_skillsets"));
+    expect(events).toHaveLength(1);
+    await expect(
+      selectionCommand(developer, slug, { ...command, expectedVersion: 2 }),
+    ).rejects.toMatchObject({ status: 403 });
+    await expect(
+      selectionCommand(admin, "other-test-cup", {
+        ...command,
+        expectedVersion: 2,
+      }),
+    ).rejects.toMatchObject({ status: 404 });
+    await selectionCommand(pooler, slug, {
+      ...command,
+      tags: [],
+      expectedVersion: 2,
+    });
+    expect(
+      (await selectionWorkspace(tester, slug)).candidates[0],
+    ).toMatchObject({ skillsetTags: [], skillsetVersion: 3 });
+  });
   beforeAll(() => {
     assertTestDatabase(url);
     vi.stubEnv("DATABASE_URL", url!);

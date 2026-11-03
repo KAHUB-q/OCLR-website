@@ -3813,6 +3813,15 @@
     "m94dfd46d9dae": "Poor",
     "m16584052fd33": "Okay",
     "mc939327ca16d": "Good",
-    "maa0ecc6ae662": "Friday–Monday"
+    "maa0ecc6ae662": "Friday–Monday",
+    "m4687da851c22": "Edit tags",
+    "m4acc9fb364b6": "No skillset tags yet.",
+    "me1fae6c8a458": "Edit skillset tags",
+    "m5c22b74d977e": "Select multiple tags.",
+    "m61ca998e5d30": "{count} tags selected",
+    "m68bc4cb41d4c": "Apply tags",
+    "m6ca52f783788": "Skillset tags changed. Reopen the editor before trying again.",
+    "maf7890cd5f8d": "Skillset Tags",
+    "m93aa8c8fe6bf": "Tags saved, but the list could not refresh. Reload this page."
   }
 }

@@ -8560,6 +8560,43 @@
                   { "type": "string", "const": "unassigned" }
                 ]
               },
+              "skillsetTags": {
+                "type": "array",
+                "items": {
+                  "anyOf": [
+                    { "type": "string", "const": "precision" },
+                    { "type": "string", "const": "jump" },
+                    { "type": "string", "const": "wide-angle" },
+                    { "type": "string", "const": "awkward-aim" },
+                    { "type": "string", "const": "snap-aim" },
+                    { "type": "string", "const": "aim-consistency" },
+                    { "type": "string", "const": "stream" },
+                    { "type": "string", "const": "burst" },
+                    { "type": "string", "const": "speed" },
+                    { "type": "string", "const": "stamina" },
+                    { "type": "string", "const": "deathstream" },
+                    { "type": "string", "const": "flow-aim" },
+                    { "type": "string", "const": "aim-control" },
+                    { "type": "string", "const": "alternating" },
+                    { "type": "string", "const": "finger-control" },
+                    { "type": "string", "const": "slider-aim" },
+                    { "type": "string", "const": "tech" },
+                    { "type": "string", "const": "slider-tech" },
+                    { "type": "string", "const": "rhythm-complexity" },
+                    { "type": "string", "const": "complex-patterns" },
+                    { "type": "string", "const": "low-ar" },
+                    { "type": "string", "const": "high-ar" },
+                    { "type": "string", "const": "hd-reading" },
+                    { "type": "string", "const": "density" },
+                    { "type": "string", "const": "overlap" },
+                    { "type": "string", "const": "gimmick" },
+                    { "type": "string", "const": "hybrid" },
+                    { "type": "string", "const": "marathon" },
+                    { "type": "string", "const": "antimod" }
+                  ]
+                }
+              },
+              "skillsetVersion": { "type": "number" },
               "metadata": { "$ref": "#/$defs/Read04063581a56c" },
               "metadataFetchedAt": {
                 "type": "string",
@@ -8580,6 +8617,8 @@
               "id",
               "beatmapId",
               "category",
+              "skillsetTags",
+              "skillsetVersion",
               "metadata",
               "metadataFetchedAt",
               "authorId",

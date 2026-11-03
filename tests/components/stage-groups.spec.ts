@@ -190,6 +190,7 @@ test("resizes existing groups without losing stable identities and confirms retu
 test("keeps read-only controls and drag sources disabled", async ({ page }) => {
   await page.goto("/stage-groups?saved=1&readonly=1");
   await expect(page.getByLabel("Group count", { exact: true })).toBeDisabled();
+  await expect(page.getByRole("switch")).toBeDisabled();
   await expect(
     page.getByRole("button", { name: "Select team Atlas", exact: true }),
   ).toBeDisabled();
@@ -202,6 +203,86 @@ test("keeps read-only controls and drag sources disabled", async ({ page }) => {
   expect(await page.locator('.group-team-card[draggable="true"]').count()).toBe(
     0,
   );
+});
+test("keeps the publication switch at the top and applies changes only after save confirmation", async ({
+  page,
+}, info) => {
+  const writes: Record<string, unknown>[] = [];
+  await page.route(
+    "**/api/admin/tournaments/synthetic/matches",
+    async (route) => {
+      writes.push(route.request().postDataJSON());
+      await route.fulfill({ json: {} });
+    },
+  );
+  for (const initiallyPublished of [false, true]) {
+    await page.goto(
+      `/stage-groups?saved=1${initiallyPublished ? "&published=1" : ""}`,
+    );
+    const publication = page.getByRole("switch", {
+      name: "Publish approved group assignments",
+      exact: true,
+    });
+    const save = page.getByRole("button", {
+      name: "Save group assignments",
+      exact: true,
+    });
+    await expect(publication).toBeChecked({ checked: initiallyPublished });
+    await expect(save).toBeDisabled();
+    expect(
+      await publication.evaluate((element) =>
+        element
+          .closest(".team-group-manager")!
+          .firstElementChild!.contains(element),
+      ),
+    ).toBe(true);
+    await publication.focus();
+    await page.keyboard.press("Space");
+    await expect(publication).toBeChecked({ checked: !initiallyPublished });
+    await expect(save).toBeEnabled();
+    await expect(
+      page.getByText("Unsaved changes", { exact: true }),
+    ).toBeVisible();
+    expect(writes).toHaveLength(initiallyPublished ? 1 : 0);
+    await save.click();
+    await page
+      .getByRole("dialog")
+      .getByRole("button", { name: "Cancel", exact: true })
+      .click();
+    expect(writes).toHaveLength(initiallyPublished ? 1 : 0);
+    for (const theme of ["light", "dark"]) {
+      await page.evaluate(
+        (value) => (document.documentElement.dataset.theme = value),
+        theme,
+      );
+      await page.evaluate(() => window.scrollTo(0, 0));
+      expect(
+        await page.evaluate(
+          () => document.documentElement.scrollWidth <= innerWidth,
+        ),
+      ).toBe(true);
+      await page.screenshot({
+        path: info.outputPath(
+          `publication-${!initiallyPublished}-${theme}.png`,
+        ),
+        fullPage: true,
+        animations: "disabled",
+      });
+    }
+    await save.click();
+    await page
+      .getByRole("dialog")
+      .getByRole("button", { name: "Confirm", exact: true })
+      .click();
+    expect(writes.at(-1)).toMatchObject({
+      action: "stage_groups",
+      stageId: "00000000-0000-4000-8000-000000000010",
+      expectedVersion: 7,
+      published: !initiallyPublished,
+      confirmed: true,
+    });
+    expect(writes).toHaveLength(initiallyPublished ? 2 : 1);
+  }
 });
 test("supports native card dragging", async ({ page, isMobile }) => {
   test.skip(isMobile, "Pointer handle and picker cover touch devices");

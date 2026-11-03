@@ -39,7 +39,9 @@ const stage = {
         ],
       }
     : null,
-  groupsPublishedAt: null,
+  groupsPublishedAt: params.has("published")
+    ? new Date("2026-11-03T00:00:00Z")
+    : null,
 } as unknown as Parameters<typeof StageGroups>[0]["stage"];
 const router = {
   back() {},

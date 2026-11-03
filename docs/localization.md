@@ -44,6 +44,9 @@ on 2026-11-02 (#718), including registration, results, records and related
 notices. Keep this wording consistent in `messages/zh-Hant.json` and the
 Traditional Chinese README.
 
+On 2026-11-03 (#761), the organizer also selected 核對 and 審核 for
+Traditional Chinese interface text. Use 核 consistently in these terms.
+
 ## Staff role terminology
 
 The organizer confirmed the following Chinese role labels on 2026-10-29:

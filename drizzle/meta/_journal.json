@@ -512,6 +512,13 @@
       "when": 1793631520853,
       "tag": "0072_practice_feel",
       "breakpoints": true
+    },
+    {
+      "idx": 73,
+      "version": "7",
+      "when": 1793664758666,
+      "tag": "0073_candidate_skillsets",
+      "breakpoints": true
     }
   ]
 }

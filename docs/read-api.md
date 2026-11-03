@@ -400,3 +400,8 @@ The v1.17.0 follow-up adds multiple private commentary bookings to
 reconfirmation and conflicts across broadcast roles. Schedule review includes
 commentary conflicts. Streamer-only API credentials and public fixture projections
 retain their existing authorization. See [commentary tasks](streaming.md#commentary-tasks-667).
+
+The v1.18.0 follow-up adds `skillsetTags` (stable English skill IDs) and
+`skillsetVersion` to private `selectionWorkspace` candidates. Existing candidates
+start with no tags and version 1. These fields are saved staff collaboration data;
+they do not change public pools or grant Developer/remote write access.

@@ -10,6 +10,56 @@ test.beforeEach(async ({ page }) => {
   );
   await page.route("https://assets.ppy.sh/**", (route) => route.abort());
 });
+
+test("skillset dialog keeps drafts local and submits a versioned multi-selection", async ({
+  page,
+}) => {
+  const writes: Record<string, unknown>[] = [];
+  await page.route(
+    "**/api/admin/tournaments/synthetic/mappool-workbench",
+    async (route) => {
+      writes.push(route.request().postDataJSON());
+      await route.fulfill({
+        status: 400,
+        json: { error: "Enter a valid selection workbench change." },
+      });
+    },
+  );
+  await page.goto("/workbench-compact?locale=en");
+  const row = page.getByRole("article", { name: "BID 5722291", exact: true });
+  const edit = row.getByRole("button", { name: "Edit tags", exact: true });
+  await edit.click();
+  const dialog = page.getByRole("dialog", {
+    name: "Edit skillset tags",
+    exact: true,
+  });
+  await expect(dialog.getByRole("button", { pressed: true })).toHaveCount(2);
+  await dialog.getByRole("button", { name: "Stream", exact: true }).click();
+  await page.keyboard.press("Escape");
+  await expect(edit).toBeFocused();
+  expect(writes).toHaveLength(0);
+  await edit.click();
+  await expect(
+    dialog.getByRole("button", { name: "Stream", exact: true }),
+  ).toHaveAttribute("aria-pressed", "false");
+  await dialog
+    .getByRole("button", { name: "Clear selection", exact: true })
+    .click();
+  await expect(dialog.getByRole("button", { pressed: true })).toHaveCount(0);
+  await dialog.getByRole("button", { name: "Cancel", exact: true }).click();
+  await edit.click();
+  await dialog.getByRole("button", { name: "Stream", exact: true }).click();
+  await dialog.getByRole("button", { name: "Apply tags", exact: true }).click();
+  await expect(dialog.getByRole("alert")).toBeVisible();
+  expect(writes).toEqual([
+    {
+      action: "skillsets",
+      candidateId: "candidate-1",
+      tags: ["jump", "stream", "tech"],
+      expectedVersion: 1,
+    },
+  ]);
+});
 for (const theme of ["light", "dark"]) {
   test(`compact map and visible comments (${theme})`, async ({
     page,
@@ -86,24 +136,16 @@ for (const theme of ["light", "dark"]) {
       ).toBeVisible();
       const mapBox = (await card.boundingBox())!;
       const commentBox = (await discussion.boundingBox())!;
-      const rowBox = (await row.boundingBox())!;
-      if (rowBox.width >= 896) {
-        expect(commentBox.x).toBeGreaterThan(mapBox.x + mapBox.width);
-        expect(commentBox.y).toBe(mapBox.y);
-        expect(
-          await discussion.evaluate(
-            (el) => getComputedStyle(el).borderInlineStartWidth,
-          ),
-        ).toBe("1px");
-        expect(rowBox.height).toBeLessThan(340);
-      } else {
-        expect(commentBox.y).toBeGreaterThan(mapBox.y + mapBox.height);
-        expect(
-          await discussion.evaluate(
-            (el) => getComputedStyle(el).borderTopWidth,
-          ),
-        ).toBe("1px");
-      }
+      const tags = row.getByRole("region", {
+        name: "Skillset Tags",
+        exact: true,
+      });
+      const tagsBox = (await tags.boundingBox())!;
+      expect(tagsBox.y).toBeGreaterThanOrEqual(mapBox.y + mapBox.height);
+      expect(commentBox.y).toBeGreaterThan(tagsBox.y + tagsBox.height);
+      expect(
+        await discussion.evaluate((el) => getComputedStyle(el).borderTopWidth),
+      ).toBe("1px");
       expect(mapBox.height).toBeLessThan(350);
       const composer = discussion.getByRole("textbox", {
         name: "你的評論",
@@ -127,7 +169,7 @@ for (const theme of ["light", "dark"]) {
       const inputBox = (await composer.boundingBox())!;
       expect(Math.abs(sendBox.y - inputBox.y)).toBeLessThan(2);
       expect(sendBox.x).toBeGreaterThan(inputBox.x + inputBox.width);
-      if (rowBox.width >= 896) expect(commentBox.height).toBeLessThan(190);
+      expect(commentBox.height).toBeLessThan(190);
       await expect(
         discussion.getByRole("button", { name: "發表評論", exact: true }),
       ).toBeEnabled();

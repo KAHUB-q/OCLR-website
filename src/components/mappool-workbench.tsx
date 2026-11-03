@@ -24,6 +24,7 @@ import { WorkspaceTabs } from "./workspace-tabs";
 import { WorkbenchActionIcon } from "./workbench-action-icon";
 import { MappoolActionIcon } from "./mappool-action-icon";
 import { CandidateHistory } from "./candidate-history";
+import { CandidateSkillsets } from "./candidate-skillsets";
 import { MapCardBand } from "./map-card-band";
 import { BeatmapCover } from "./beatmap-cover";
 import { BeatmapActions } from "./beatmap-actions";
@@ -1157,6 +1158,16 @@ export function SelectionWorkbench({
                         </span>
                       </>
                     }
+                  />
+                  <CandidateSkillsets
+                    key={`${c.id}:${writable}`}
+                    candidateId={c.id}
+                    title={c.metadata.title ?? `BID ${c.beatmapId}`}
+                    tags={c.skillsetTags ?? []}
+                    version={c.skillsetVersion}
+                    url={base}
+                    writable={writable}
+                    onChange={reload}
                   />
                   <Comments
                     slug={slug}

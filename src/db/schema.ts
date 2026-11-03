@@ -1503,6 +1503,12 @@ export const mappoolCandidates = pgTable(
     })
       .notNull()
       .default("unassigned"),
+    skillsetTags: text("skillset_tags")
+      .array()
+      .$type<import("../lib/mappool-skillsets").SkillsetTag[]>()
+      .notNull()
+      .default(sql`'{}'::text[]`),
+    skillsetVersion: integer("skillset_version").notNull().default(1),
     beatmapId: bigint("beatmap_id", { mode: "number" }).notNull(),
     metadata: jsonb("metadata")
       .$type<import("../lib/mappool-model").BeatmapMetadata>()
@@ -1521,6 +1527,7 @@ export const mappoolCandidates = pgTable(
       "candidate_category_valid",
       sql`${t.category} in ('unassigned', 'NM', 'HD', 'DT', 'HR', 'FM', 'TB')`,
     ),
+    check("candidate_skillset_version_valid", sql`${t.skillsetVersion} > 0`),
     unique("candidate_edition_category_bid_unique").on(
       t.editionSlug,
       t.category,

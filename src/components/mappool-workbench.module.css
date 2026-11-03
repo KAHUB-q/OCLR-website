@@ -215,22 +215,6 @@
   align-items: start;
   gap: 0.75rem;
 }
-.candidates {
-  container-type: inline-size;
-}
-@container (min-width: 56rem) {
-  .candidateRow {
-    grid-template-columns: minmax(0, 1.4fr) minmax(18rem, 1fr);
-    gap: 1rem;
-  }
-  .discussion {
-    align-self: stretch;
-    border-top: 0;
-    border-inline-start: 1px solid var(--color-border);
-    padding-top: 0;
-    padding-inline-start: 1rem;
-  }
-}
 .candidateRow > * {
   min-width: 0;
 }
@@ -611,4 +595,125 @@
 
 .promotionContent {
   padding: 1rem;
+}
+
+.skillsets {
+  border-top: 1px solid var(--color-border);
+  padding-top: 0.75rem;
+}
+.skillsets h3 {
+  margin: 0;
+}
+.skillsetSummary,
+.skillsetChoices,
+.skillsetActions {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 0.5rem;
+}
+.skillsetSummary {
+  margin-top: 0.5rem;
+}
+.skillsetSummary > span {
+  border: 1px solid var(--site-control-border);
+  border-radius: 999px;
+  background: var(--site-tint);
+  color: var(--site-accent);
+  padding: 0.2rem 0.65rem;
+  font-size: 0.8125rem;
+}
+.skillsetDialog {
+  width: min(680px, calc(100% - 2rem));
+  max-height: calc(100dvh - 2rem);
+  padding: 0;
+  overflow: hidden;
+  border: 1px solid var(--site-border);
+  border-radius: 1rem;
+  color: var(--site-foreground);
+  background: var(--site-surface);
+  box-shadow: 0 1.5rem 4rem var(--site-dialog-shadow);
+}
+.skillsetDialog[open] {
+  display: flex;
+  flex-direction: column;
+}
+.skillsetDialog::backdrop {
+  background: var(--site-backdrop);
+}
+.skillsetHeading,
+.skillsetFooter {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.75rem;
+  padding: 1rem 1.25rem;
+  flex-shrink: 0;
+}
+.skillsetHeading {
+  align-items: start;
+  border-bottom: 1px solid var(--site-border);
+}
+.skillsetHeading > div {
+  min-width: 0;
+  overflow-wrap: anywhere;
+}
+.skillsetHeading h2,
+.skillsetHeading p {
+  margin: 0;
+}
+.skillsetHeading button {
+  flex: none;
+}
+.skillsetBody {
+  min-height: 0;
+  overflow-y: auto;
+  padding: 0.75rem 1.25rem 1.25rem;
+}
+.skillsetClear {
+  display: flex;
+  justify-content: end;
+  margin-bottom: 0.75rem;
+}
+.skillsetFields {
+  display: grid;
+  gap: 1rem;
+}
+.skillsetFields,
+.skillsetGroup {
+  min-width: 0;
+  padding: 0;
+  border: 0;
+  margin: 0;
+}
+.skillsetGroup legend {
+  margin-bottom: 0.5rem;
+  font-size: 0.8125rem;
+  color: var(--site-muted);
+}
+.skillsetChoices {
+  padding: 0.5rem;
+  margin: -0.5rem;
+}
+.skillsetDialog .skillsetChoice {
+  min-height: 36px;
+  padding: 0.35rem 0.75rem;
+  font-size: 0.8125rem;
+}
+.skillsetDialog .skillsetChoice[aria-pressed="true"] {
+  background: var(--site-primary);
+  color: var(--site-on-primary);
+  border-color: var(--site-primary);
+}
+.skillsetFooter {
+  border-top: 1px solid var(--site-border);
+  flex-wrap: wrap;
+}
+.skillsetActions {
+  margin-inline-start: auto;
+}
+@media (pointer: coarse) {
+  .skillsetDialog .skillsetChoice {
+    min-height: 44px;
+  }
 }

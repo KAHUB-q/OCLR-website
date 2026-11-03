@@ -96,7 +96,7 @@ Candidates reuse the historical mappool `MapCardBand` with its workbench variant
 the cover image and placeholder are omitted while the original faded background
 art remains. Mod, copyable BID and the ellipsized map title share one header row.
 Artist and adder share the credit row, followed by difficulty/mapper and saved
-base parameters (including HP). Parameters and the 44px action icons share one
+base parameters (including HP). Parameters and four compact actions share one
 row, with actions on the right; narrow cards scroll that row horizontally rather
 than adding an action row. The row is keyboard-focusable and controls remain
 reachable. At a list width of 52rem or more, each candidate places the map on the
@@ -104,7 +104,9 @@ left, skillsets in the middle and always-visible comments on the right, separate
 by vertical rules. Narrower lists stack all three sections. Public/historical cards retain their
 existing cover layout. Pool promotion opens
 in a scrollable popover containing round/pool selection, the guarded entry form
-and success feedback; opening it or completing an addition does not grow the card. Pool promotion, round selection and history use compact 44px icon buttons with
+and success feedback; opening it or completing an addition does not grow the card. History, round selection, pool promotion and osu!direct use 32px toolbar controls
+with 16px icons (44px touch targets on coarse pointers). The redundant osu! web
+action is omitted from candidate toolbars; the map title retains its web link. These controls have
 accessible names and hover hints; the round hint retains the saved selection.
 The round selector opens a checkbox dropdown in
 the browser's top layer, with Save/Cancel and Escape/outside dismissal; opening

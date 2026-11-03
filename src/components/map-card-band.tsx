@@ -221,6 +221,7 @@ export function MapCardBand({
     <BeatmapActions
       extra={actions}
       compact
+      showWeb={variant !== "workbench"}
       beatmapId={beatmapId}
       setId={setId}
       originalBeatmapId={originalBeatmapId}

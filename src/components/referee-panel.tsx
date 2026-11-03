@@ -654,11 +654,11 @@ export function RefereePanel({
               >
                 {tr("Discard unsaved order")}
               </button>
-              <span className="small muted">
-                {dirtyOrder
-                  ? tr("Order preview — not saved")
-                  : tr("Showing applied order")}
-              </span>
+              {dirtyOrder && (
+                <span className="small muted">
+                  {tr("Order preview — not saved")}
+                </span>
+              )}
             </div>
             {conflicts.length > 0 && (
               <p role="status">
@@ -670,10 +670,6 @@ export function RefereePanel({
             {data.policy && (
               <details className={styles.sequencePreview}>
                 <summary>{tr("Preview Ban / Pick sequence")}</summary>
-                <div className={styles.sequenceHeading}>
-                  <span data-team="red">{tr("Red team")}</span>
-                  <span data-team="blue">{tr("Blue team")}</span>
-                </div>
                 <ol
                   className={styles.sequence}
                   role="list"

@@ -46,30 +46,19 @@
   --sequence-red: #fca5a5;
   --sequence-blue: #93c5fd;
 }
-.sequenceHeading,
 .sequenceRow {
-  display: grid;
-  grid-template-columns: repeat(2, minmax(0, 1fr));
-  gap: 0.75rem;
+  min-width: 0;
 }
-.sequenceHeading {
-  margin-block: 0.75rem 0.375rem;
-  padding-inline: 0.625rem;
-  font-size: 0.75rem;
-  font-weight: 650;
-}
-.sequenceHeading [data-team="red"],
 .sequenceRow[data-team="red"] {
   color: var(--sequence-red);
 }
-.sequenceHeading [data-team="blue"],
 .sequenceRow[data-team="blue"] {
   color: var(--sequence-blue);
 }
 .sequence {
   display: grid;
   gap: 0.125rem;
-  margin: 0;
+  margin: 0.75rem 0 0;
   padding: 0;
   list-style: none;
 }
@@ -93,15 +82,8 @@
 .sequenceTeam {
   overflow-wrap: anywhere;
 }
-.sequenceRow[data-team="blue"] .sequenceStep {
-  grid-column: 2;
-  border-inline-start: 0;
-  border-inline-end: 2px solid currentColor;
-}
 .sequenceRow[data-team="neutral"] .sequenceStep {
-  grid-column: 1 / -1;
-  justify-self: center;
-  border: 0;
+  border-color: transparent;
   color: var(--site-muted);
 }
 .columns {
@@ -693,18 +675,24 @@
   }
 }
 .ircLaunchActions {
-  display: grid;
-  grid-template-columns: repeat(2, minmax(0, 1fr));
-  gap: 0.5rem;
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.375rem;
 }
-.ircLaunchActions a {
+.irc .ircLaunchActions a {
   min-width: 0;
-  white-space: normal;
+  min-height: 2rem;
+  padding: 0.375rem 0.625rem;
+  font-size: 0.75rem;
+  line-height: 1.25;
+  white-space: nowrap;
   text-align: center;
   justify-content: center;
 }
-.ircLaunchActions a:only-child {
-  grid-column: 1 / -1;
+@media (pointer: coarse) {
+  .irc .ircLaunchActions a {
+    min-height: 2.75rem;
+  }
 }
 .ircConnection {
   display: flex;

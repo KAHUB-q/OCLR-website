@@ -276,11 +276,13 @@ test("new command IDs scroll even with a full 50-row history, while receipt upda
 });
 for (const locale of ["en", "zh-Hans", "zh-Hant"] as const) {
   for (const theme of ["light", "dark"]) {
-    test(`BP preview keeps red left and blue right in chronological rows — ${locale} ${theme}`, async ({
+    test(`BP preview keeps team colors in one chronological column — ${locale} ${theme}`, async ({
       page,
       isMobile,
     }, info) => {
-      if (isMobile) await page.setViewportSize({ width: 320, height: 844 });
+      await page.setViewportSize(
+        isMobile ? { width: 320, height: 844 } : { width: 877, height: 819 },
+      );
       const catalog =
         locale === "zh-Hans" ? hans : locale === "zh-Hant" ? hant : en;
       const text = (source: string) =>
@@ -297,6 +299,12 @@ for (const locale of ["en", "zh-Hans", "zh-Hant"] as const) {
       await page.goto(
         `/referee-panel?locale=${locale}&theme=${theme}&longnames`,
       );
+      await expect(
+        page.getByText(text("Showing applied order"), { exact: true }),
+      ).toHaveCount(0);
+      await expect(
+        page.getByText(text("Order preview — not saved"), { exact: true }),
+      ).toHaveCount(0);
       await page
         .getByText(text("Preview Ban / Pick sequence"), { exact: true })
         .click();
@@ -312,9 +320,8 @@ for (const locale of ["en", "zh-Hans", "zh-Hant"] as const) {
       await expect(rows.nth(3)).toContainText(/4\s*PICK\s*Red Team/);
       await expect(rows.nth(4)).toContainText(/5\s*TB/);
       await expect(rows.nth(4)).toContainText("1:1");
-      async function checkColumns(sides: string[]) {
+      async function checkRows(sides: string[]) {
         const bounds = await list.boundingBox();
-        const middle = bounds!.x + bounds!.width / 2;
         let bottom = -Infinity;
         for (const [index, side] of sides.entries()) {
           const row = rows.nth(index);
@@ -322,10 +329,20 @@ for (const locale of ["en", "zh-Hans", "zh-Hant"] as const) {
           const box = await row.locator(":scope > div").boundingBox();
           expect(box!.y).toBeGreaterThanOrEqual(bottom);
           bottom = box!.y + box!.height;
-          if (side === "red") expect(box!.x + box!.width).toBeLessThan(middle);
-          else if (side === "blue") expect(box!.x).toBeGreaterThan(middle);
-          else
-            expect(Math.abs(box!.x + box!.width / 2 - middle)).toBeLessThan(1);
+          expect(bottom).toBeLessThanOrEqual(bounds!.y + bounds!.height + 1);
+          expect(Math.abs(box!.x - bounds!.x)).toBeLessThan(1);
+          expect(Math.abs(box!.width - bounds!.width)).toBeLessThan(1);
+          if (side !== "neutral") {
+            const color =
+              side === "red"
+                ? theme === "dark"
+                  ? "rgb(252, 165, 165)"
+                  : "rgb(185, 28, 28)"
+                : theme === "dark"
+                  ? "rgb(147, 197, 253)"
+                  : "rgb(29, 78, 216)";
+            await expect(row).toHaveCSS("color", color);
+          }
         }
         expect(
           await page.evaluate(
@@ -334,22 +351,37 @@ for (const locale of ["en", "zh-Hans", "zh-Hant"] as const) {
         ).toBe(true);
       }
       // Consecutive steps by the same team must each occupy their own row.
-      await checkColumns(["blue", "blue", "red", "red", "neutral"]);
+      await checkRows(["blue", "blue", "red", "red", "neutral"]);
       const accessibility = await new AxeBuilder({ page })
         .include("details:has(ol[role='list'])")
         .analyze();
       expect(accessibility.violations).toEqual([]);
-      await list.locator("..").screenshot({
+      await list.screenshot({
         path: info.outputPath(`${locale}-${theme}-preview.png`),
       });
       await page
         .getByLabel(text("First Ban team"), { exact: true })
         .selectOption(id(11));
-      await checkColumns(["red", "blue", "blue", "red", "neutral"]);
+      await checkRows(["red", "blue", "blue", "red", "neutral"]);
+      await expect(
+        page.getByText(text("Order preview — not saved"), { exact: true }),
+      ).toBeVisible();
       await page
         .getByLabel(text("First Ban team"), { exact: true })
         .selectOption("");
       await expect(rows.nth(0)).toHaveAttribute("data-team", "neutral");
+      await page
+        .getByRole("button", {
+          name: text("Discard unsaved order"),
+          exact: true,
+        })
+        .click();
+      await expect(
+        page.getByText(text("Order preview — not saved"), { exact: true }),
+      ).toHaveCount(0);
+      await expect(
+        page.getByText(text("Showing applied order"), { exact: true }),
+      ).toHaveCount(0);
       expect(state.writes).toHaveLength(0);
       expect(state.queues).toHaveLength(0);
     });
@@ -604,11 +636,13 @@ test("many MP review issues scroll within the scoreboard and remain keyboard acc
   expect(accessibility.violations).toEqual([]);
 });
 for (const locale of ["en", "zh-Hans", "zh-Hant"] as const) {
-  test(`IRC help keeps launch and management buttons side by side — ${locale}`, async ({
+  test(`IRC help keeps compact launch and management buttons side by side — ${locale}`, async ({
     page,
     isMobile,
   }, info) => {
-    if (isMobile) await page.setViewportSize({ width: 320, height: 844 });
+    await page.setViewportSize(
+      isMobile ? { width: 320, height: 844 } : { width: 877, height: 819 },
+    );
     const en = (
       await import("../../messages/en.json", { with: { type: "json" } })
     ).default;
@@ -656,8 +690,15 @@ for (const locale of ["en", "zh-Hans", "zh-Hant"] as const) {
         right = (await manage.boundingBox())!;
       expect(right.x).toBeGreaterThanOrEqual(left.x + left.width);
       expect(Math.abs(left.y - right.y)).toBeLessThan(1);
-      expect(left.height).toBeGreaterThanOrEqual(44);
-      expect(right.height).toBeGreaterThanOrEqual(44);
+      for (const [control, box] of [
+        [launch, left],
+        [manage, right],
+      ] as const) {
+        expect(box.height).toBeGreaterThanOrEqual(isMobile ? 44 : 32);
+        expect(box.height).toBeLessThanOrEqual(isMobile ? 44 : 32);
+        await expect(control).toHaveCSS("font-size", "12px");
+        await expect(control).toHaveCSS("white-space", "nowrap");
+      }
       await console
         .getByText(text("Connection setup"), { exact: true })
         .click();

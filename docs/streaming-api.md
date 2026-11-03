@@ -12,6 +12,12 @@ credential once into the local application's server-side credential input. Never
 put it in an OBS URL, browser storage, source code, screenshots or logs. The page
 lists only the current user's credentials for that edition and supports revocation.
 
+The account menu entry (`/streaming`) opens the current accessible, published
+edition directly, preferring a live edition and then an upcoming edition, as on
+the homepage. Completed historical editions are excluded from this entry. If
+none is available for the user's Streamer grant, it shows the existing empty
+state. Explicit edition URLs keep their own authorization checks.
+
 A live edition-scoped or global `streamer` grant is required. Admin, Developer and
 repository access alone do not qualify. The credential has only `streaming:read`,
 is bound to one edition and cannot access other Developer resources or mutations.

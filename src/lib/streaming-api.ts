@@ -1,4 +1,4 @@
-import { getEditionChoices } from "./content";
+import { getEditions } from "./content";
 import { and, desc, eq, gt, isNull, lt, or, sql } from "drizzle-orm";
 import { z } from "zod";
 import { db } from "@/db";
@@ -48,14 +48,17 @@ export async function streamingAccessEditions(osuId: number) {
       "FORBIDDEN",
       "An active Streamer grant is required.",
     );
-  return (await getEditionChoices())
-    .filter((edition) =>
-      grants.some(
-        (grant) =>
-          grant.editionSlug === null || grant.editionSlug === edition.slug,
-      ),
+  return (await getEditions())
+    .filter(
+      (edition) =>
+        edition.published &&
+        edition.status !== "completed" &&
+        grants.some(
+          (grant) =>
+            grant.editionSlug === null || grant.editionSlug === edition.slug,
+        ),
     )
-    .map(({ slug, name }) => ({ slug, name }));
+    .map(({ slug, name, status }) => ({ slug, name, status }));
 }
 export async function hasStreamingAccess(
   osuId: number,

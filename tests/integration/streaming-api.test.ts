@@ -155,6 +155,10 @@ describe.skipIf(!url)("streaming read channel #540", () => {
     vi.unstubAllEnvs();
   });
   it("lists only live Streamer editions and never infers API access from Admin or Developer", async () => {
+    await seedEditions([
+      { ...edition, slug: "history-test", status: "completed" },
+      { ...edition, slug: "unpublished-test", published: false },
+    ]);
     expect(await hasStreamingMenuAccess(ownerId)).toBe(true);
     expect((await streamingAccessEditions(ownerId)).map((e) => e.slug)).toEqual(
       [slug],

@@ -28,8 +28,7 @@ test.describe("streaming API credentials", () => {
     await page
       .getByRole("menuitem", { name: "Streaming API access", exact: true })
       .click();
-    await expect(page).toHaveURL(/\/streaming$/);
-    await page.locator('a[href="/streaming/test-cup"]').click();
+    await expect(page).toHaveURL(/\/streaming\/test-cup$/);
     await expect(
       page.getByRole("heading", { name: "Streaming API access", exact: true }),
     ).toBeVisible();

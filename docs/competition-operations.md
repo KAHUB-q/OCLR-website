@@ -369,8 +369,10 @@ page both use the real relay contract; development mode no longer silently enabl
 
 ### Automatic provisional MP scores
 
-The referee workspace can bind an official MP link and poll while the panel is
-open (foreground 30 seconds, background 60). Complete, uniquely matched first
+The scoreboard's **Automatic sync** button uses the fixture's saved IRC room
+number to bind its MP link and polls while the panel is open (foreground 30
+seconds, background 60). Enabled sync follows room changes; the server verifies
+the saved room before fetching and before applying a response. Complete, uniquely matched first
 plays with verified saved roster/rule/Mods evidence update the private ledger and
 scoreboard automatically. Replays, ties, Free Mod verification, changed sources
 and other uncertain results remain for manual review. Only owned automatic

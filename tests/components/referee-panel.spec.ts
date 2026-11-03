@@ -2,6 +2,11 @@ import { test, expect, type Page } from "@playwright/test";
 import { bpSyncSource } from "../../src/lib/referee-sync";
 import { workspace, id } from "./referee-panel-data";
 import { validateRefereeAction } from "../../src/lib/referee-model";
+import type { RefereeMpView } from "../../src/lib/referee-mp";
+import AxeBuilder from "@axe-core/playwright";
+import en from "../../messages/en.json" with { type: "json" };
+import hans from "../../messages/zh-Hans.json" with { type: "json" };
+import hant from "../../messages/zh-Hant.json" with { type: "json" };
 const api = "**/api/admin/tournaments/synthetic/matches/*/referee";
 async function setup(
   page: Page,
@@ -9,6 +14,7 @@ async function setup(
     connected?: boolean;
     failure?: "lost" | "conflict" | "syncLost";
     delay?: boolean;
+    roomId?: number;
   } = {},
 ) {
   let current = workspace();
@@ -67,7 +73,7 @@ async function setup(
       } else {
         queues.push(body);
         commands.push({
-          id: id(500),
+          id: id(500 + commands.length),
           requestKey: body.requestKey,
           text: body.text,
           target: "#mp_123",
@@ -79,17 +85,18 @@ async function setup(
     }
     await r.fulfill({
       json: {
-        connection: options.connected
-          ? {
-              id: id(400),
-              roomId: 123,
-              ircUsername: "SyntheticRef",
-              status: "connected",
-              connected: true,
-              bpSync: true,
-              lastSeenAt: new Date().toISOString(),
-            }
-          : null,
+        connection:
+          options.connected || options.roomId !== undefined
+            ? {
+                id: id(400),
+                roomId: options.roomId ?? 123,
+                ircUsername: "SyntheticRef",
+                status: options.connected ? "connected" : "disconnected",
+                connected: !!options.connected,
+                bpSync: true,
+                lastSeenAt: new Date().toISOString(),
+              }
+            : null,
         messages: [],
         commands,
         workspace: current,
@@ -148,6 +155,579 @@ function pool(page: Page) {
 function records(page: Page) {
   return page.getByRole("region", { name: "Referee records", exact: true });
 }
+function savedIrcCommand(
+  number: number,
+  text = `Synthetic command ${number}: https://osu.ppy.sh/b/10001`,
+) {
+  return {
+    id: id(8000 + number),
+    requestKey: id(9000 + number),
+    text,
+    target: "#mp_123",
+    status: "queued",
+    recordError: null,
+    createdAt: new Date().toISOString(),
+  };
+}
+async function expectLatestCommand(page: Page) {
+  const log = page.getByRole("log", {
+    name: "IRC room projection",
+    exact: true,
+  });
+  await expect
+    .poll(() =>
+      log.evaluate((el) => el.scrollHeight - el.clientHeight - el.scrollTop),
+    )
+    .toBeLessThanOrEqual(2);
+  await expect
+    .poll(() =>
+      log.evaluate((el) => {
+        const pane = el.getBoundingClientRect();
+        const latest = el.querySelector("details > div:last-child");
+        if (!latest) return false;
+        const row = latest.getBoundingClientRect();
+        return (
+          pane.height >= 96 && row.top >= pane.top && row.bottom <= pane.bottom
+        );
+      }),
+    )
+    .toBe(true);
+  return log;
+}
+test("new manual commands and automatic BP notices scroll command status to the newest entry", async ({
+  page,
+}) => {
+  const state = await setup(page, { connected: true });
+  state.commands.push(
+    ...Array.from({ length: 20 }, (_, i) => savedIrcCommand(i)),
+  );
+  await page.goto("/referee-panel?theme=light");
+  const log = await expectLatestCommand(page);
+  expect(await log.evaluate((el) => el.scrollHeight > el.clientHeight)).toBe(
+    true,
+  );
+  await log.evaluate((el) => {
+    el.scrollTop = 0;
+  });
+  await page.getByLabel("IRC command", { exact: true }).fill("!mp timer 30");
+  await page
+    .getByRole("button", { name: "Send to local IRC", exact: true })
+    .click();
+  await expect(log.locator("details code").last()).toHaveText("!mp timer 30");
+  await expectLatestCommand(page);
+  await log.evaluate((el) => {
+    el.scrollTop = 0;
+  });
+  await pool(page)
+    .getByRole("button", { name: "Blue team BAN", exact: true })
+    .first()
+    .click();
+  await expect.poll(() => state.autos.length).toBe(1);
+  await expect(log.locator("details code").last()).toHaveText(
+    state.commands.at(-1)!.text,
+  );
+  await expectLatestCommand(page);
+});
+test("new command IDs scroll even with a full 50-row history, while receipt updates preserve reading position", async ({
+  page,
+}, info) => {
+  const state = await setup(page, { connected: true });
+  state.commands.push(
+    ...Array.from({ length: 50 }, (_, i) => savedIrcCommand(i)),
+  );
+  await page.goto("/referee-panel");
+  const log = await expectLatestCommand(page);
+  expect(await log.evaluate((el) => el.scrollHeight > el.clientHeight)).toBe(
+    true,
+  );
+  await log.evaluate((el) => {
+    el.scrollTop = 0;
+  });
+  const scrollY = await page.evaluate(() => window.scrollY);
+  state.commands.shift();
+  state.commands.push(savedIrcCommand(51, "Newest polled command"));
+  await expect(log.locator("details code").last()).toHaveText(
+    "Newest polled command",
+  );
+  await expectLatestCommand(page);
+  expect(state.commands).toHaveLength(50);
+  expect(await page.evaluate(() => window.scrollY)).toBe(scrollY);
+  await log.evaluate((el) => {
+    el.scrollTop = 0;
+  });
+  state.commands.at(-1)!.status = "confirmed";
+  await expect(
+    log.locator("details > div").last().locator("small").first(),
+  ).toHaveText("Confirmed by IRC");
+  expect(await log.evaluate((el) => el.scrollTop)).toBe(0);
+  await log.locator("details").evaluate((el) => {
+    (el as HTMLDetailsElement).open = false;
+  });
+  state.commands.shift();
+  state.commands.push(
+    savedIrcCommand(52, "Newest command after collapsed history"),
+  );
+  await expect(log.locator("details code").last()).toHaveText(
+    "Newest command after collapsed history",
+  );
+  await expect(log.locator("details")).toHaveJSProperty("open", true);
+  await expectLatestCommand(page);
+  await log.screenshot({ path: info.outputPath("latest-command.png") });
+});
+for (const locale of ["en", "zh-Hans", "zh-Hant"] as const) {
+  for (const theme of ["light", "dark"]) {
+    test(`BP preview keeps red left and blue right in chronological rows — ${locale} ${theme}`, async ({
+      page,
+      isMobile,
+    }, info) => {
+      if (isMobile) await page.setViewportSize({ width: 320, height: 844 });
+      const catalog =
+        locale === "zh-Hans" ? hans : locale === "zh-Hant" ? hant : en;
+      const text = (source: string) =>
+        catalog.ui[
+          Object.entries(en.ui).find(
+            ([, value]) => value === source,
+          )![0] as keyof typeof en.ui
+        ];
+      const state = await setup(page);
+      state.current().teams[0].name =
+        "Blue Team · 超長隊伍名稱ABCDEFGHIJKLMNOPQRSTUVWXYZ";
+      state.current().teams[1].name =
+        "Red Team · 超長隊伍名稱ABCDEFGHIJKLMNOPQRSTUVWXYZ";
+      await page.goto(
+        `/referee-panel?locale=${locale}&theme=${theme}&longnames`,
+      );
+      await page
+        .getByText(text("Preview Ban / Pick sequence"), { exact: true })
+        .click();
+      const list = page.getByRole("list", {
+        name: text("Preview Ban / Pick sequence"),
+        exact: true,
+      });
+      const rows = list.getByRole("listitem");
+      await expect(rows).toHaveCount(5);
+      await expect(rows.nth(0)).toContainText(/1\s*BAN\s*Blue Team/);
+      await expect(rows.nth(1)).toContainText(/2\s*PICK\s*Blue Team/);
+      await expect(rows.nth(2)).toContainText(/3\s*BAN\s*Red Team/);
+      await expect(rows.nth(3)).toContainText(/4\s*PICK\s*Red Team/);
+      await expect(rows.nth(4)).toContainText(/5\s*TB/);
+      await expect(rows.nth(4)).toContainText("1:1");
+      async function checkColumns(sides: string[]) {
+        const bounds = await list.boundingBox();
+        const middle = bounds!.x + bounds!.width / 2;
+        let bottom = -Infinity;
+        for (const [index, side] of sides.entries()) {
+          const row = rows.nth(index);
+          await expect(row).toHaveAttribute("data-team", side);
+          const box = await row.locator(":scope > div").boundingBox();
+          expect(box!.y).toBeGreaterThanOrEqual(bottom);
+          bottom = box!.y + box!.height;
+          if (side === "red") expect(box!.x + box!.width).toBeLessThan(middle);
+          else if (side === "blue") expect(box!.x).toBeGreaterThan(middle);
+          else
+            expect(Math.abs(box!.x + box!.width / 2 - middle)).toBeLessThan(1);
+        }
+        expect(
+          await page.evaluate(
+            () => document.documentElement.scrollWidth <= innerWidth,
+          ),
+        ).toBe(true);
+      }
+      // Consecutive steps by the same team must each occupy their own row.
+      await checkColumns(["blue", "blue", "red", "red", "neutral"]);
+      const accessibility = await new AxeBuilder({ page })
+        .include("details:has(ol[role='list'])")
+        .analyze();
+      expect(accessibility.violations).toEqual([]);
+      await list.locator("..").screenshot({
+        path: info.outputPath(`${locale}-${theme}-preview.png`),
+      });
+      await page
+        .getByLabel(text("First Ban team"), { exact: true })
+        .selectOption(id(11));
+      await checkColumns(["red", "blue", "blue", "red", "neutral"]);
+      await page
+        .getByLabel(text("First Ban team"), { exact: true })
+        .selectOption("");
+      await expect(rows.nth(0)).toHaveAttribute("data-team", "neutral");
+      expect(state.writes).toHaveLength(0);
+      expect(state.queues).toHaveLength(0);
+    });
+  }
+}
+async function setupMp(page: Page, roomId = 880001) {
+  const room = { roomId };
+  const state = await setup(page, room);
+  const changes: Record<string, unknown>[] = [];
+  let binding: RefereeMpView["binding"] = null;
+  let loseBind = false,
+    failStatus = false;
+  let heldStatus: { started: () => void; wait: Promise<void> } | null = null;
+  await page.route(`${api}/mp`, async (route) => {
+    const command = route.request().postDataJSON();
+    if (command.action === "status" && heldStatus) {
+      const held = heldStatus;
+      held.started();
+      await held.wait;
+    }
+    if (command.action === "status" && failStatus) {
+      await route.fulfill({ status: 503, json: { error: "Unavailable" } });
+      return;
+    }
+    if (command.action === "bind_room") {
+      changes.push(command);
+      expect(command.expectedRoomId).toBe(room.roomId);
+      expect(command.match).toBeUndefined();
+      binding = {
+        matchId: room.roomId,
+        revision: (binding?.revision ?? 0) + 1,
+        enabled: true,
+        lastCheckedAt: null,
+        nextPollAt: new Date(Date.now() + 60000).toISOString(),
+        error: null,
+        issues: [],
+        issueCount: 0,
+        syncing: false,
+      };
+      if (loseBind) {
+        loseBind = false;
+        await route.abort("failed");
+        return;
+      }
+    } else if (command.action === "unbind") {
+      changes.push(command);
+      binding = {
+        ...binding!,
+        revision: binding!.revision + 1,
+        enabled: false,
+      };
+    }
+    await route.fulfill({ json: { binding, workspace: state.current() } });
+  });
+  return {
+    room,
+    changes,
+    loseNextBind: () => {
+      loseBind = true;
+    },
+    failStatus: (value: boolean) => {
+      failStatus = value;
+    },
+    reviewIssues: (count: number) => {
+      binding!.issueCount = count;
+      binding!.issues = Array.from({ length: count }, (_, index) => ({
+        gameId: 880001 + index,
+        beatmapId: 10001,
+        reason: "replay" as const,
+      }));
+    },
+    holdNextStatus: () => {
+      let started!: () => void, release!: () => void;
+      const ready = new Promise<void>((done) => {
+        started = done;
+      });
+      const wait = new Promise<void>((done) => {
+        release = done;
+      });
+      heldStatus = { started, wait };
+      return {
+        ready,
+        release: () => {
+          heldStatus = null;
+          release();
+        },
+      };
+    },
+  };
+}
+test("scoreboard automatic sync uses the saved offline IRC room, survives reload and stops with the same button", async ({
+  page,
+}, info) => {
+  const mp = await setupMp(page);
+  await page.goto("/referee-panel");
+  const sync = records(page).getByRole("button", {
+    name: "Automatic sync",
+    exact: true,
+  });
+  await expect(sync).toBeEnabled();
+  await expect(page.getByLabel("MP link", { exact: true })).toHaveCount(0);
+  await expect(page.getByText("MP result sync", { exact: true })).toHaveCount(
+    0,
+  );
+  await expect(
+    records(page).getByRole("link", { name: "MP 880001", exact: true }),
+  ).toHaveAttribute("href", "https://osu.ppy.sh/community/matches/880001");
+  await sync.click();
+  await expect(sync).toHaveAttribute("aria-pressed", "true");
+  expect(mp.changes.map((c) => c.action)).toEqual(["bind_room"]);
+  await records(page).screenshot({
+    path: info.outputPath("score-auto-sync.png"),
+  });
+  await page.reload();
+  await expect(sync).toHaveAttribute("aria-pressed", "true");
+  expect(mp.changes).toHaveLength(1);
+  await sync.click();
+  await expect(sync).toHaveAttribute("aria-pressed", "false");
+  expect(mp.changes.map((c) => c.action)).toEqual(["bind_room", "unbind"]);
+});
+test("enabled sync follows a new saved IRC room and pauses without an MP room", async ({
+  page,
+}) => {
+  const mp = await setupMp(page);
+  await page.goto("/referee-panel");
+  const sync = records(page).getByRole("button", {
+    name: "Automatic sync",
+    exact: true,
+  });
+  await sync.click();
+  await expect(sync).toHaveAttribute("aria-pressed", "true");
+  mp.room.roomId = 880002;
+  await expect(
+    records(page).getByRole("link", { name: "MP 880002", exact: true }),
+  ).toBeVisible();
+  await expect
+    .poll(() => mp.changes.map((c) => c.expectedRoomId))
+    .toEqual([880001, 880002]);
+  mp.room.roomId = 0;
+  await expect(
+    page.getByRole("link", { name: "Rejoin room", exact: true }),
+  ).toHaveCount(0);
+  await expect(
+    records(page).getByRole("link", { name: "MP 880002", exact: true }),
+  ).toHaveCount(0);
+  await sync.click();
+  await expect(sync).toHaveAttribute("aria-pressed", "false");
+  await expect(sync).toBeDisabled();
+});
+test("stopping automatic sync remains effective when the IRC room changes during its request", async ({
+  page,
+}) => {
+  const mp = await setupMp(page);
+  await page.goto("/referee-panel");
+  const sync = records(page).getByRole("button", {
+    name: "Automatic sync",
+    exact: true,
+  });
+  await sync.click();
+  await expect(sync).toHaveAttribute("aria-pressed", "true");
+  const held = mp.holdNextStatus();
+  await sync.click();
+  await expect(
+    records(page).getByRole("button", { name: "Saving…", exact: true }),
+  ).toBeVisible();
+  await held.ready;
+  mp.room.roomId = 880002;
+  await expect(
+    records(page).getByRole("link", { name: "MP 880002", exact: true }),
+  ).toBeVisible();
+  held.release();
+  await expect(sync).toHaveAttribute("aria-pressed", "false");
+  expect(mp.changes.map((c) => c.action)).toEqual(["bind_room", "unbind"]);
+});
+test("automatic sync recovers an accepted bind with a lost response without a second bind", async ({
+  page,
+}) => {
+  const mp = await setupMp(page);
+  mp.loseNextBind();
+  await page.goto("/referee-panel");
+  const sync = records(page).getByRole("button", {
+    name: "Automatic sync",
+    exact: true,
+  });
+  await sync.click();
+  await expect(sync).toHaveAttribute("aria-pressed", "true");
+  expect(mp.changes).toHaveLength(1);
+});
+test("automatic sync reports a failed status read and can be retried without a manual MP link", async ({
+  page,
+}) => {
+  const mp = await setupMp(page);
+  mp.failStatus(true);
+  await page.goto("/referee-panel");
+  await expect(records(page).getByRole("alert")).toBeVisible();
+  mp.failStatus(false);
+  const sync = records(page).getByRole("button", {
+    name: "Automatic sync",
+    exact: true,
+  });
+  await sync.click();
+  await expect(sync).toHaveAttribute("aria-pressed", "true");
+  expect(mp.changes).toHaveLength(1);
+});
+test("automatic sync waits for a room and stays absent in read-only and simulation views", async ({
+  page,
+}) => {
+  await setup(page);
+  await page.goto("/referee-panel");
+  await expect(
+    records(page).getByRole("button", { name: "Automatic sync", exact: true }),
+  ).toBeDisabled();
+  for (const query of ["readonly", "simulation"]) {
+    await page.goto(`/referee-panel?${query}`);
+    await expect(
+      page.getByRole("button", { name: "Automatic sync", exact: true }),
+    ).toHaveCount(0);
+  }
+});
+test("many MP review issues scroll within the scoreboard and remain keyboard accessible", async ({
+  page,
+}) => {
+  const mp = await setupMp(page);
+  await page.goto("/referee-panel");
+  const sync = records(page).getByRole("button", {
+    name: "Automatic sync",
+    exact: true,
+  });
+  await sync.click();
+  await expect(sync).toHaveAttribute("aria-pressed", "true");
+  mp.reviewIssues(40);
+  await page.reload();
+  await records(page)
+    .getByText("Manual review required: 40", { exact: true })
+    .click();
+  const issues = records(page).getByRole("list", {
+    name: "Manual review required: 40",
+    exact: true,
+  });
+  expect(await issues.evaluate((el) => el.scrollHeight > el.clientHeight)).toBe(
+    true,
+  );
+  expect((await issues.boundingBox())!.height).toBeLessThanOrEqual(193);
+  await issues.focus();
+  await page.keyboard.press("End");
+  await expect
+    .poll(() => issues.evaluate((el) => el.scrollTop))
+    .toBeGreaterThan(0);
+  const accessibility = await new AxeBuilder({ page })
+    .include('[aria-label="Referee records"]')
+    .analyze();
+  expect(accessibility.violations).toEqual([]);
+});
+for (const locale of ["en", "zh-Hans", "zh-Hant"] as const) {
+  test(`IRC help keeps launch and management buttons side by side — ${locale}`, async ({
+    page,
+    isMobile,
+  }, info) => {
+    if (isMobile) await page.setViewportSize({ width: 320, height: 844 });
+    const en = (
+      await import("../../messages/en.json", { with: { type: "json" } })
+    ).default;
+    const catalog =
+      locale === "zh-Hans"
+        ? (
+            await import("../../messages/zh-Hans.json", {
+              with: { type: "json" },
+            })
+          ).default
+        : locale === "zh-Hant"
+          ? (
+              await import("../../messages/zh-Hant.json", {
+                with: { type: "json" },
+              })
+            ).default
+          : en;
+    const text = (source: string) =>
+      catalog.ui[
+        Object.entries(en.ui).find(
+          ([, value]) => value === source,
+        )![0] as keyof typeof en.ui
+      ];
+    for (const theme of ["light", "dark"]) {
+      await setup(page);
+      await page.goto(`/referee-panel?locale=${locale}&theme=${theme}`);
+      const console = page.getByRole("complementary", {
+        name: text("IRC console"),
+        exact: true,
+      });
+      const launch = console.getByRole("link", {
+        name: text("Open OCLR IRC"),
+        exact: true,
+      });
+      const manage = console.getByRole("link", {
+        name: text("Manage connections"),
+        exact: true,
+      });
+      await expect(launch).toHaveAttribute("href", /^oclr-irc:/);
+      await expect(manage).toHaveAttribute("href", "/desktop/sessions");
+      await expect(manage).toHaveClass(/\bbutton\b/);
+      await manage.focus();
+      await expect(manage).toBeFocused();
+      const left = (await launch.boundingBox())!,
+        right = (await manage.boundingBox())!;
+      expect(right.x).toBeGreaterThanOrEqual(left.x + left.width);
+      expect(Math.abs(left.y - right.y)).toBeLessThan(1);
+      expect(left.height).toBeGreaterThanOrEqual(44);
+      expect(right.height).toBeGreaterThanOrEqual(44);
+      await console
+        .getByText(text("Connection setup"), { exact: true })
+        .click();
+      const help = console.locator("details").filter({
+        has: page.getByText(text("Connection setup"), { exact: true }),
+      });
+      await expect(help.getByRole("listitem")).toHaveCount(3);
+      for (const source of [
+        "Open oclr-irc and sign in to osu! IRC locally.",
+        "Authorize OCLR in the browser and select this assigned match.",
+        "Confirm the accounts and enable website IRC. You can then create a room from this page.",
+      ])
+        await expect(help).toContainText(text(source));
+      await expect(help).toContainText(
+        text(
+          "If the app does not open, install the latest OCLR IRC and launch it once, then try again.",
+        ),
+      );
+      await expect(
+        help.getByRole("link", { name: text("Get OCLR IRC"), exact: true }),
+      ).toHaveAttribute(
+        "href",
+        "https://github.com/OCLR-dev/OCLR-IRC/actions/workflows/test-builds.yml",
+      );
+      for (const source of [
+        "BP saves sync automatically: Ban announces; Pick announces, changes the map and applies saved Mods.",
+        "IRC credentials stay in the desktop app. The launch link does not sign you in or send commands.",
+        "Manage desktop sessions",
+      ])
+        await expect(
+          console.getByText(text(source), { exact: true }),
+        ).toHaveCount(0);
+      expect(
+        await page.evaluate(
+          () => document.documentElement.scrollWidth <= innerWidth,
+        ),
+      ).toBe(true);
+      const accessibility = await new AxeBuilder({ page })
+        .include('[class*="ircLaunchActions"]')
+        .analyze();
+      expect(accessibility.violations).toEqual([]);
+      await console.screenshot({
+        path: info.outputPath(`${locale}-${theme}-irc-help.png`),
+      });
+    }
+  });
+}
+test("IRC help keeps connection management available when connected and hidden in simulation", async ({
+  page,
+}) => {
+  await setup(page, { connected: true });
+  await page.goto("/referee-panel");
+  const console = page.getByRole("complementary", {
+    name: "IRC console",
+    exact: true,
+  });
+  await expect(
+    console.getByText("IRC connected", { exact: true }),
+  ).toBeVisible();
+  await expect(
+    console.getByRole("link", { name: "Open OCLR IRC", exact: true }),
+  ).toHaveCount(0);
+  await expect(
+    console.getByRole("link", { name: "Manage connections", exact: true }),
+  ).toBeVisible();
+  await page.goto("/referee-panel?simulation");
+  await expect(
+    page.getByRole("link", { name: "Manage connections", exact: true }),
+  ).toHaveCount(0);
+});
 test("records Ban and Pick without an IRC connection or queue request", async ({
   page,
 }) => {
@@ -324,7 +904,7 @@ for (const locale of ["en", "zh-Hans", "zh-Hant"]) {
         )![0] as keyof typeof en.ui
       ];
     for (const theme of ["light", "dark"]) {
-      await setup(page);
+      await setupMp(page);
       await page.goto(`/referee-panel?locale=${locale}&theme=${theme}`);
       const maps = page.getByRole("region", {
         name: text("Round mappool"),
@@ -347,6 +927,23 @@ for (const locale of ["en", "zh-Hans", "zh-Hant"]) {
           () => document.documentElement.scrollWidth <= innerWidth,
         ),
       ).toBe(true);
+      const score = page.getByRole("region", {
+        name: text("Referee records"),
+        exact: true,
+      });
+      const sync = score.getByRole("button", {
+        name: text("Automatic sync"),
+        exact: true,
+      });
+      await sync.click();
+      await expect(sync).toHaveAttribute("aria-pressed", "true");
+      const accessibility = await new AxeBuilder({ page })
+        .include(`[aria-label="${text("Referee records")}"]`)
+        .analyze();
+      expect(accessibility.violations).toEqual([]);
+      await score.screenshot({
+        path: info.outputPath(`sync-${locale}-${theme}.png`),
+      });
       if (theme === "dark")
         await maps.screenshot({
           path: info.outputPath(`${locale}-recorded.png`),
@@ -424,7 +1021,7 @@ test("retrying an accepted automatic sync uses the same event and never duplicat
 test("bound MP sync updates the red-left scoreboard, fences stale IRC reads and opens manual review", async ({
   page,
 }) => {
-  const state = await setup(page);
+  const state = await setup(page, { roomId: 880001 });
   let binding: null | {
     matchId: number;
     revision: number;
@@ -444,7 +1041,9 @@ test("bound MP sync updates the red-left scoreboard, fences stale IRC reads and 
   });
   await page.route(`${api}/mp`, async (r) => {
     const c = r.request().postDataJSON();
-    if (c.action === "bind")
+    if (c.action === "bind_room") {
+      expect(c.expectedRoomId).toBe(880001);
+      expect(c.match).toBeUndefined();
       binding = {
         matchId: 880001,
         revision: 1,
@@ -456,6 +1055,7 @@ test("bound MP sync updates the red-left scoreboard, fences stale IRC reads and 
         issueCount: 0,
         syncing: false,
       };
+    }
     if (c.action === "sync") {
       syncs++;
       const before = state.current(),
@@ -513,11 +1113,9 @@ test("bound MP sync updates the red-left scoreboard, fences stale IRC reads and 
     .getByRole("button", { name: "Blue team PICK", exact: true })
     .first()
     .click();
-  await page.getByText("MP result sync", { exact: true }).click();
-  await page
-    .getByLabel("MP link", { exact: true })
-    .fill("https://osu.ppy.sh/community/matches/880001");
-  await page.getByRole("button", { name: "Bind MP link", exact: true }).click();
+  await records(page)
+    .getByRole("button", { name: "Automatic sync", exact: true })
+    .click();
   await expect.poll(() => syncs).toBeGreaterThan(0);
   await expect(records(page).locator("strong")).toHaveText(["0", "1"]);
   const count = ircReads;

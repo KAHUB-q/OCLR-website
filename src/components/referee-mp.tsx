@@ -1,33 +1,50 @@
 "use client";
-import { useEffect, useRef, useState } from "react";
+import { useCallback, useEffect, useRef, useState } from "react";
 import { useAppTranslations } from "@/i18n/shared";
 import type { RefereeWorkspace } from "@/lib/referee";
 import type { RefereeMpView } from "@/lib/referee-mp";
+import styles from "./referee-panel.module.css";
+
+async function request(
+  endpoint: string,
+  command: Record<string, unknown>,
+  signal?: AbortSignal,
+): Promise<RefereeMpView> {
+  const response = await fetch(endpoint, {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify(command),
+    signal,
+    cache: "no-store",
+  });
+  if (!response.ok) throw Error();
+  return response.json();
+}
 
 export function RefereeMp({
   endpoint,
-  workspace,
   disabled,
+  roomId,
   onWorkspace,
 }: {
   endpoint: string;
-  workspace: RefereeWorkspace;
   disabled: boolean;
+  roomId: number | null;
   onWorkspace: (w: RefereeWorkspace) => void;
 }) {
   const tr = useAppTranslations();
   const [binding, setBinding] = useState<RefereeMpView["binding"]>(null);
-  const [match, setMatch] = useState("");
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState(false);
-  const current = useRef({ workspace, onWorkspace, disabled });
+  const current = useRef({ onWorkspace, disabled });
   const flight = useRef(false);
   const manual = useRef(false);
   const generation = useRef(0);
+  const invalidate = useCallback(() => ++generation.current, []);
   const [refresh, setRefresh] = useState(0);
   useEffect(() => {
-    current.current = { workspace, onWorkspace, disabled };
-  }, [workspace, onWorkspace, disabled]);
+    current.current = { onWorkspace, disabled };
+  }, [onWorkspace, disabled]);
   useEffect(() => {
     let stopped = false,
       timer: ReturnType<typeof setTimeout>;
@@ -42,31 +59,47 @@ export function RefereeMp({
       const run = generation.current;
       let delay = 30000;
       try {
-        const response = await fetch(endpoint, {
-          method: "POST",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({ action: "status" }),
-          signal: controller.signal,
-          cache: "no-store",
-        });
-        if (!response.ok) throw Error();
-        let result = (await response.json()) as RefereeMpView;
-        if (stopped || run !== generation.current) return;
+        let result = await request(
+          endpoint,
+          { action: "status" },
+          controller.signal,
+        );
+        if (stopped || run !== generation.current || current.current.disabled)
+          return;
         if (
           result.binding?.enabled &&
+          roomId &&
+          result.binding.matchId !== roomId
+        ) {
+          result = await request(
+            endpoint,
+            {
+              action: "bind_room",
+              expectedRoomId: roomId,
+              expectedRevision: result.binding.revision,
+              expectedSessionRevision: result.workspace.session?.revision ?? 0,
+              dependencyFingerprint: result.workspace.dependencyFingerprint,
+            },
+            controller.signal,
+          );
+        }
+        if (stopped || run !== generation.current || current.current.disabled)
+          return;
+        if (
+          result.binding?.enabled &&
+          roomId &&
+          result.binding.matchId === roomId &&
           Date.parse(result.binding.nextPollAt) <= Date.now()
         ) {
-          const sync = await fetch(endpoint, {
-            method: "POST",
-            headers: { "Content-Type": "application/json" },
-            body: JSON.stringify({
+          result = await request(
+            endpoint,
+            {
               action: "sync",
               expectedRevision: result.binding.revision,
-            }),
-            signal: controller.signal,
-          });
-          if (!sync.ok) throw Error();
-          result = (await sync.json()) as RefereeMpView;
+              expectedRoomId: roomId,
+            },
+            controller.signal,
+          );
         }
         if (stopped || run !== generation.current) return;
         setBinding(result.binding);
@@ -94,171 +127,166 @@ export function RefereeMp({
     void poll();
     return () => {
       stopped = true;
+      invalidate();
       controller.abort();
       clearTimeout(timer);
     };
-  }, [endpoint, refresh]);
-  async function change(action: "bind" | "unbind") {
+  }, [endpoint, refresh, roomId, invalidate]);
+  async function change() {
     if (manual.current || disabled) return;
+    const enable = !binding?.enabled;
+    if (enable && !roomId) return;
     manual.current = true;
-    generation.current++;
+    const run = invalidate();
     setBusy(true);
     setError(false);
     try {
-      const response = await fetch(endpoint, {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          action,
-          expectedRevision: binding?.revision ?? 0,
-          ...(action === "bind"
-            ? {
-                match,
-                expectedSessionRevision: workspace.session?.revision ?? 0,
-                dependencyFingerprint: workspace.dependencyFingerprint,
-              }
-            : {}),
-        }),
-      });
-      if (!response.ok) throw Error();
-      const result = (await response.json()) as RefereeMpView;
+      let result = await request(endpoint, { action: "status" });
+      // A room change cancels starting an obsolete room, but an explicit stop
+      // must still disable this fixture's binding.
+      if (enable && run !== generation.current) return;
+      if (
+        enable &&
+        (!result.binding?.enabled || result.binding.matchId !== roomId)
+      ) {
+        result = await request(endpoint, {
+          action: "bind_room",
+          expectedRoomId: roomId,
+          expectedRevision: result.binding?.revision ?? 0,
+          expectedSessionRevision: result.workspace.session?.revision ?? 0,
+          dependencyFingerprint: result.workspace.dependencyFingerprint,
+        });
+      } else if (!enable && result.binding?.enabled) {
+        result = await request(endpoint, {
+          action: "unbind",
+          expectedRevision: result.binding.revision,
+        });
+      }
+      if (run !== generation.current) return;
       setBinding(result.binding);
-      onWorkspace(result.workspace);
-      setMatch("");
+      current.current.onWorkspace(result.workspace);
       setRefresh((n) => n + 1);
     } catch {
-      setError(true);
+      if (run === generation.current) {
+        setError(true);
+        setRefresh((n) => n + 1);
+      }
     } finally {
       manual.current = false;
       setBusy(false);
     }
   }
   return (
-    <details className="panel" open={binding?.enabled || undefined}>
-      <summary>
-        {tr("MP result sync")}
-        {!!binding?.issues.length && (
-          <>
-            {" "}
-            ·{" "}
-            {tr("Manual review required: {count}", {
-              count: binding.issueCount,
-            })}
-          </>
-        )}
-      </summary>
-      <div className="form-stack">
-        {binding?.enabled ? (
-          <div className="actions">
-            <a
-              href={`https://osu.ppy.sh/community/matches/${binding.matchId}`}
-              target="_blank"
-              rel="noreferrer"
+    <div className={styles.mpSync}>
+      <div className={styles.mpSyncActions}>
+        <button
+          type="button"
+          className="secondary"
+          aria-pressed={Boolean(binding?.enabled)}
+          title={
+            binding?.enabled
+              ? tr("Stop MP sync")
+              : !roomId
+                ? tr("Connect the local IRC app to this fixture first.")
+                : tr("Automatic sync")
+          }
+          disabled={disabled || busy || (!binding?.enabled && !roomId)}
+          onClick={() => void change()}
+        >
+          {binding?.enabled && (
+            <svg
+              width="14"
+              height="14"
+              viewBox="0 0 16 16"
+              fill="none"
+              aria-hidden="true"
             >
-              MP {binding.matchId}
-            </a>
-            <button
-              type="button"
-              className="secondary"
-              disabled={disabled || busy}
-              onClick={() => void change("unbind")}
-            >
-              {tr("Stop MP sync")}
-            </button>
-          </div>
-        ) : (
-          <form
-            className="actions"
-            onSubmit={(e) => {
-              e.preventDefault();
-              void change("bind");
-            }}
-          >
-            <label className="field">
-              <span>{tr("MP link")}</span>
-              <input
-                type="url"
-                placeholder="https://osu.ppy.sh/community/matches/…"
-                value={match}
-                onChange={(e) => setMatch(e.target.value)}
-                disabled={disabled || busy}
+              <path
+                d="m3 8 3 3 7-7"
+                stroke="currentColor"
+                strokeWidth="2"
+                strokeLinecap="round"
+                strokeLinejoin="round"
               />
-            </label>
-            <button type="submit" disabled={disabled || busy || !match.trim()}>
-              {tr("Bind MP link")}
-            </button>
-          </form>
+            </svg>
+          )}
+          {busy ? tr("Saving…") : tr("Automatic sync")}
+        </button>
+        {!!roomId && (
+          <a
+            href={`https://osu.ppy.sh/community/matches/${roomId}`}
+            target="_blank"
+            rel="noreferrer"
+          >
+            MP {roomId}
+          </a>
         )}
-        {binding?.enabled && (
-          <p className="small muted">
-            {tr(
-              "Finished games sync while this panel is open. Replays and unusual results need manual review.",
-            )}
-          </p>
-        )}
-        {binding?.lastCheckedAt && (
-          <p className="small muted">
+        {binding?.lastCheckedAt && binding.matchId === roomId && (
+          <span className="small muted">
             {tr("Last checked: {time}", {
               time: new Date(binding.lastCheckedAt).toLocaleTimeString(),
             })}
-          </p>
-        )}
-        {(error || binding?.error === "provider") && (
-          <p role="alert">
-            {tr(
-              "MP sync is unavailable. Check the link or connection; saved results are retained.",
-            )}
-          </p>
-        )}
-        {binding?.error === "dependencies" && (
-          <p role="alert">
-            {tr(
-              "Match settings changed. Review the referee records and bind the MP link again.",
-            )}
-          </p>
-        )}
-        {!!binding?.issues.length && (
-          <details>
-            <summary>
-              {tr("Manual review required: {count}", {
-                count: binding.issueCount,
-              })}
-            </summary>
-            <a
-              href="#referee-record-editor"
-              onClick={() => {
-                const records = document.getElementById(
-                  "referee-record-editor",
-                );
-                if (records instanceof HTMLDetailsElement) records.open = true;
-              }}
-            >
-              {tr("Review referee records")}
-            </a>
-            <ul>
-              {binding.issues.map((issue, index) => (
-                <li key={index}>
-                  {issue.gameId ? `Game ${issue.gameId}` : "MP"}
-                  {issue.beatmapId ? ` · BID ${issue.beatmapId}` : ""} ·{" "}
-                  {issue.reason === "replay"
-                    ? tr("Replay or repeated beatmap")
-                    : issue.reason === "source_changed"
-                      ? tr("Source changed; automatic point withdrawn")
-                      : issue.reason === "unmatched"
-                        ? tr("No matching recorded pick")
-                        : issue.reason === "incomplete"
-                          ? tr("Incomplete MP data")
-                          : issue.reason === "already_used"
-                            ? tr("This MP game is already counted")
-                            : tr(
-                                "Check the map, rosters, Mods and scoring rules",
-                              )}
-                </li>
-              ))}
-            </ul>
-          </details>
+          </span>
         )}
       </div>
-    </details>
+      {(error || binding?.error === "provider") && (
+        <p role="alert">
+          {tr(
+            "MP sync is unavailable. Check the link or connection; saved results are retained.",
+          )}
+        </p>
+      )}
+      {binding?.error === "dependencies" && (
+        <p role="alert">
+          {tr(
+            "Refresh the referee workspace and resolve its readiness issues first.",
+          )}
+        </p>
+      )}
+      {!!binding?.issues.length && (
+        <details>
+          <summary>
+            {tr("Manual review required: {count}", {
+              count: binding.issueCount,
+            })}
+          </summary>
+          <a
+            href="#referee-record-editor"
+            onClick={() => {
+              const records = document.getElementById("referee-record-editor");
+              if (records instanceof HTMLDetailsElement) records.open = true;
+            }}
+          >
+            {tr("Review referee records")}
+          </a>
+          <ul
+            tabIndex={0}
+            aria-label={tr("Manual review required: {count}", {
+              count: binding.issueCount,
+            })}
+          >
+            {binding.issues.map((issue, index) => (
+              <li key={index}>
+                {issue.gameId ? `Game ${issue.gameId}` : "MP"}
+                {issue.beatmapId ? ` · BID ${issue.beatmapId}` : ""} ·{" "}
+                {issue.reason === "replay"
+                  ? tr("Replay or repeated beatmap")
+                  : issue.reason === "source_changed"
+                    ? tr("Source changed; automatic point withdrawn")
+                    : issue.reason === "unmatched"
+                      ? tr("No matching recorded pick")
+                      : issue.reason === "incomplete"
+                        ? tr("Incomplete MP data")
+                        : issue.reason === "already_used"
+                          ? tr("This MP game is already counted")
+                          : tr(
+                              "Check the map, rosters, Mods and scoring rules",
+                            )}
+              </li>
+            ))}
+          </ul>
+        </details>
+      )}
+    </div>
   );
 }

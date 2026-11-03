@@ -1,8 +1,10 @@
 # 裁判面板 MP 比分同步
 
-裁判在執裁工作臺展開「MP 比分同步」，貼上官方 MP 連結並綁定。可在 BP 開始前綁定；綁定不會自行建立選圖或決定先 Ban／先 Pick。來源預覽與暫記比分均屬工作人員私人資料，正式賽果仍經 MP 審核、提交及 Admin 核准／發佈。
+裁判在 BP 比分視窗按「自動同步」啟用或停止。MP 連結由本場 IRC 面板已保存的 `#mp_房間號` 取得，不需要貼上連結；已有房間號但暫時離線仍可使用。沒有房間號、房間號為 0 或連線已撤銷時等待有效房間。可在 BP 開始前啟用；綁定不會自行建立選圖或決定先 Ban／先 Pick。來源預覽與暫記比分均屬工作人員私人資料，正式賽果仍經 MP 審核、提交及 Admin 核准／發佈。
 
 面板開啟時自動檢查：前景約 30 秒、背景約 60 秒。重載會恢復保存的綁定及比分，重新讀取來源；關閉頁面後沒有獨立排程持續抓取，已送出的同步請求仍可能完成。停止同步保留已有紀錄；重新綁定不重播舊局或自動修改人工裁決。
+
+啟用後，IRC 重新綁定到另一個房間會更新 MP 綁定。前端顯示的房間號只作版本核對；伺服器在同一裁判寫入鎖下自行讀取本場保存的有效連線，不接受前端指定其他 MP 來源。取得來源前後都核對目前房間；換房或撤銷後的舊回覆不入分。未啟用時只顯示房間對應連結，不自行啟用同步。
 
 ## 哪些結果會自動入分
 
@@ -29,11 +31,12 @@ Free Mod／Force Mod 的個人限制仍需人工核對，因此列為待核對�
 `POST /api/admin/tournaments/{edition}/matches/{fixture}/referee/mp` 接受有限 action：
 
 - `status`：只讀取保存的綁定及工作臺，沒有 provider I/O 或業務寫入。
-- `bind`：官方 MP ID／連結、目前綁定 revision、session revision 與 dependency fingerprint。
+- `bind_room`：前端目前看到的 `expectedRoomId`、綁定 revision、session revision 與 dependency fingerprint；伺服器從本場 IRC 連線推導 MP ID，房間不同則拒絕。
+- `bind`：既有官方 MP ID／連結綁定接口，保留相容性；新版面板改用 `bind_room`。
 - `unbind`：目前綁定 revision，停用並隔離尚未回覆的同步。
-- `sync`：目前綁定 revision；伺服器自行抓取並計分，不接受 client winner、分數或來源內容。
+- `sync`：目前綁定 revision；新版面板另傳 `expectedRoomId`，取得來源前後都與本場 IRC 房間核對。伺服器自行抓取並計分，不接受 client winner、分數或來源內容。
 
-全部要求同源 cookie、有效登入及本場權限；bind／sync／unbind 重新檢查工作人員、版次及場次狀態。唯讀 Developer／remote channel 無此業務入口。provider 請求只走固定 osu! client，不對輸入網址發任意 HTTP 請求。
+全部要求同源 cookie、有效登入及本場權限；bind／bind_room／sync／unbind 重新檢查工作人員、版次及場次狀態。唯讀 Developer／remote channel 無此業務入口。provider 請求只走固定 osu! client，不對輸入網址發任意 HTTP 請求。
 
 短交易按既有裁判鎖順序取得跨程序 lease 與 30 秒冷卻，再於交易外抓取。回覆落庫前重新驗權、版本、lease 及依賴；取消、重新綁定或其他 worker 取得新 lease 後，舊回覆不能寫入。逐局唯一索引、來源去重與 ledger／receipt／稽核同一交易，避免多頁籤、重試或遺失回應重複加分。前端也忽略較舊 revision，防止慢速 IRC 投影覆蓋新比分。
 

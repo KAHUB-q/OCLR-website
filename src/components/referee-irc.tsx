@@ -59,6 +59,7 @@ export function RefereeIrc({
   onWorkspace,
   onQueued,
   onConfirmed,
+  onRoomChange,
 }: {
   syncEvents?: readonly { id: string; text: string }[];
   onSynced?: (eventId: string) => void;
@@ -77,6 +78,7 @@ export function RefereeIrc({
   onWorkspace: (workspace: RefereeWorkspace) => void;
   onQueued: () => void;
   onConfirmed: (commands: string[]) => void;
+  onRoomChange?: (roomId: number | null) => void;
 }) {
   const tr = useAppTranslations();
   const [history, setHistory] = useState<
@@ -88,12 +90,37 @@ export function RefereeIrc({
   const [retry, setRetry] = useState<QueueRequest | null>(null);
   const inFlight = useRef(false),
     log = useRef<HTMLDivElement>(null);
-  const callbacks = useRef({ onWorkspace, onConfirmed });
+  const commandStatus = useRef<HTMLDetailsElement>(null);
+  const seenCommands = useRef(new Set<string>());
   useEffect(() => {
-    callbacks.current = { onWorkspace, onConfirmed };
-  }, [onWorkspace, onConfirmed]);
+    const commands = relay?.commands ?? [];
+    const latest = commands.at(-1);
+    if (!latest) return;
+    const isNew = !seenCommands.current.has(latest.id);
+    // Retain recent IDs across failed or stale polls without growing forever.
+    const recent = new Set([
+      ...seenCommands.current,
+      ...commands.map((command) => command.id),
+    ]);
+    seenCommands.current = new Set([...recent].slice(-100));
+    if (!isNew) return;
+    if (commandStatus.current) commandStatus.current.open = true;
+    const pane = log.current;
+    pane?.scrollTo({ top: pane.scrollHeight, behavior: "auto" });
+  }, [relay?.commands]);
+  const callbacks = useRef({ onWorkspace, onConfirmed, onRoomChange });
+  useEffect(() => {
+    callbacks.current = { onWorkspace, onConfirmed, onRoomChange };
+  }, [onWorkspace, onConfirmed, onRoomChange]);
   function applyView(view: RelayView) {
     setRelay(view);
+    callbacks.current.onRoomChange?.(
+      view.connection &&
+        view.connection.status !== "revoked" &&
+        view.connection.roomId > 0
+        ? view.connection.roomId
+        : null,
+    );
     callbacks.current.onWorkspace(view.workspace);
     callbacks.current.onConfirmed(
       view.commands.filter((c) => c.status === "confirmed").map((c) => c.text),
@@ -113,6 +140,13 @@ export function RefereeIrc({
         const view = (await response.json()) as RelayView;
         if (controller.signal.aborted) return;
         setRelay(view);
+        callbacks.current.onRoomChange?.(
+          view.connection &&
+            view.connection.status !== "revoked" &&
+            view.connection.roomId > 0
+            ? view.connection.roomId
+            : null,
+        );
         callbacks.current.onWorkspace(view.workspace);
         callbacks.current.onConfirmed(
           view.commands
@@ -123,6 +157,7 @@ export function RefereeIrc({
       } catch {
         if (!controller.signal.aborted) {
           setRelay(null);
+          callbacks.current.onRoomChange?.(null);
           setError((value) => value ?? "load");
         }
       } finally {
@@ -377,13 +412,16 @@ export function RefereeIrc({
         </p>
       ) : (
         <>
-          {!connected && launchUrl && (
-            <p>
+          <div className={styles.ircLaunchActions}>
+            {!connected && launchUrl && (
               <a className="button secondary" href={launchUrl}>
                 {tr("Open OCLR IRC")}
               </a>
-            </p>
-          )}
+            )}
+            <a className="button secondary" href="/desktop/sessions">
+              {tr("Manage connections")}
+            </a>
+          </div>
           {relay?.connection && (
             <div className={styles.ircConnection}>
               <span className="small">
@@ -411,11 +449,6 @@ export function RefereeIrc({
           )}
           <details className={styles.ircHelp}>
             <summary>{tr("Connection setup")}</summary>
-            <p className="small muted">
-              {tr(
-                "BP saves sync automatically: Ban announces; Pick announces, changes the map and applies saved Mods.",
-              )}
-            </p>
             {!connected && (
               <p className="small muted">
                 {tr(
@@ -443,12 +476,6 @@ export function RefereeIrc({
                 )}
               </li>
             </ol>
-            <p>
-              {tr(
-                "IRC credentials stay in the desktop app. The launch link does not sign you in or send commands.",
-              )}
-            </p>
-            <a href="/desktop/sessions">{tr("Manage desktop sessions")}</a>
           </details>
         </>
       )}
@@ -485,7 +512,7 @@ export function RefereeIrc({
               </div>
             ))}
             {relay?.commands.length ? (
-              <details open className={styles.ircReceipts}>
+              <details ref={commandStatus} open className={styles.ircReceipts}>
                 <summary>{tr("Command status")}</summary>
                 {relay.commands.map((command) => (
                   <div className={styles.ircMessage} key={command.id}>

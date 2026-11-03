@@ -52,6 +52,13 @@ async function latest(tx: Tx, fixtureId: string) {
       .limit(1)
   )[0];
 }
+/** Called under the shared referee write lock by authorized fixture services. */
+export async function refereeIrcRoomId(tx: Tx, fixtureId: string) {
+  const connection = await latest(tx, fixtureId);
+  return connection && connection.status !== "revoked" && connection.roomId > 0
+    ? connection.roomId
+    : null;
+}
 async function expire(tx: Tx, connectionId: string) {
   const rows = await tx
     .select()

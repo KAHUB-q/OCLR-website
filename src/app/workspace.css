@@ -81,12 +81,7 @@
   color: var(--site-accent);
 }
 .themed-site.private-site
-  :is(
-    .settings-card,
-    .settings-save,
-    .time-zone-search,
-    .mappool-inline-editor
-  ) {
+  :is(.settings-card, .time-zone-search, .mappool-inline-editor) {
   background: var(--site-raised);
   border-color: var(--site-border);
   border-radius: 1rem;

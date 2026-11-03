@@ -330,6 +330,7 @@ function Save({
         {dirty ? tr("Unsaved changes") : tr("Saved settings")}
       </p>
       <ConfirmMutation
+        className=""
         requireConfirmation={confirmation}
         disabled={disabled}
         label={label}

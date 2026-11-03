@@ -654,11 +654,11 @@ export function RefereePanel({
               >
                 {tr("Discard unsaved order")}
               </button>
-              <span className="small muted">
-                {dirtyOrder
-                  ? tr("Order preview — not saved")
-                  : tr("Showing applied order")}
-              </span>
+              {dirtyOrder && (
+                <span className="small muted">
+                  {tr("Order preview — not saved")}
+                </span>
+              )}
             </div>
             {conflicts.length > 0 && (
               <p role="status">
@@ -670,10 +670,6 @@ export function RefereePanel({
             {data.policy && (
               <details className={styles.sequencePreview}>
                 <summary>{tr("Preview Ban / Pick sequence")}</summary>
-                <div className={styles.sequenceHeading}>
-                  <span data-team="red">{tr("Red team")}</span>
-                  <span data-team="blue">{tr("Blue team")}</span>
-                </div>
                 <ol
                   className={styles.sequence}
                   role="list"
@@ -808,10 +804,23 @@ export function RefereePanel({
               <dl className={styles.summaryRows}>
                 <div>
                   <dt>{tr("BP sequence")}</dt>
-                  <dd>
+                  <dd
+                    tabIndex={state.activeSelections.length ? 0 : undefined}
+                    aria-label={tr("BP sequence")}
+                  >
                     {state.activeSelections.length
                       ? state.activeSelections.map((s) => (
-                          <span key={s.id}>
+                          <span
+                            key={s.id}
+                            className={styles.bpStep}
+                            data-team={
+                              s.teamId && s.teamId === data.teams[1]?.id
+                                ? "red"
+                                : s.teamId && s.teamId === data.teams[0]?.id
+                                  ? "blue"
+                                  : "neutral"
+                            }
+                          >
                             {teamName(s.teamId)} {s.kind.toUpperCase()}{" "}
                             {s.category}
                             {
@@ -826,7 +835,7 @@ export function RefereePanel({
                 {state.activeSelections.some((s) => s.attempts.length > 1) && (
                   <div>
                     <dt>{tr("Replay history")}</dt>
-                    <dd>
+                    <dd tabIndex={0} aria-label={tr("Replay history")}>
                       {state.activeSelections.some((s) => s.attempts.length > 1)
                         ? state.activeSelections
                             .filter((s) => s.attempts.length > 1)
@@ -851,7 +860,7 @@ export function RefereePanel({
                 {state.activeSelections.some((s) => s.kind !== "ban") && (
                   <div>
                     <dt>{tr("Map outcomes")}</dt>
-                    <dd>
+                    <dd tabIndex={0} aria-label={tr("Map outcomes")}>
                       {state.activeSelections.some((s) => s.kind !== "ban")
                         ? state.activeSelections
                             .filter((s) => s.kind !== "ban")

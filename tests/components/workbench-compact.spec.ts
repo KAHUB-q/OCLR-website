@@ -42,9 +42,14 @@ test("skillset dialog keeps drafts local and submits a versioned multi-selection
   await expect(
     dialog.getByRole("button", { name: "Stream", exact: true }),
   ).toHaveAttribute("aria-pressed", "false");
-  await dialog
-    .getByRole("button", { name: "Clear selection", exact: true })
-    .click();
+  const clear = dialog
+    .locator("footer")
+    .getByRole("button", { name: "Clear selection", exact: true });
+  await expect(clear).toHaveText("");
+  await expect(clear).toHaveAttribute("title", "Clear selection");
+  await expect(clear.locator("svg")).toHaveCount(1);
+  await clear.click();
+  await expect(clear).toBeDisabled();
   await expect(dialog.getByRole("button", { pressed: true })).toHaveCount(0);
   await dialog.getByRole("button", { name: "Cancel", exact: true }).click();
   await edit.click();

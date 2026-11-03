@@ -9,6 +9,8 @@ the editor and select any combination of 29 literal skill names grouped under Ai
 Tapping, Control, Technical, Reading and Special. Apply saves the whole set; clear
 selection is saved only on Apply. Cancel, Escape and backdrop dismissal discard the
 draft. Header/footer remain visible while choices scroll on narrow screens.
+Clear selection uses the eraser icon in the lower-right footer action group, with
+an accessible name and hover hint; it is disabled while saving or when nothing is selected.
 Archived and Developer/remote views remain read-only.
 
 Migration `0073_candidate_skillsets` adds an empty tag set and independent version

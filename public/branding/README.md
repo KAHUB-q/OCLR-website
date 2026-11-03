@@ -49,7 +49,6 @@ background raster layers were re-encoded to WebP at their original dimensions
 longer resolve. SVG wordmarks, fonts and the PNG Apple Touch Icon are unchanged.
 The older swirl wordmark and the source studies remain historical alternatives.
 
-
 ## Layered homepage hero — 2026-10-31 (#233)
 
 `home-hero/` holds the artwork for the layered homepage hero in
@@ -57,15 +56,26 @@ The older swirl wordmark and the source studies remain historical alternatives.
 `home-s11/oclr-layer.svg`, `season-layer.svg` and `katu-cropped.svg`; the glow,
 the S11 colour and the sparkle are CSS over those files.
 
-| File | Use | Source |
-| --- | --- | --- |
-| `nebula-v2-1600.webp`, `nebula-v2-2560.webp` | Hero background (CSS) | Generated with Grok by JerrYamada (1168×784), enlarged with Lanczos. |
-| `liru-cn-v3-480.webp`, `liru-cn-v3-800.webp`, `liru-cn-v3-1111.webp` | Liru, `<picture>` with `srcset` | Liru in her Chinese-style outfit, generated with Grok by JerrYamada and cut out by hand (1333×2000 PNG). The white left between the loose strands right of the tassel was removed with difference matting against the same image on black and on a checkerboard; cropped to 1111×1986. |
-| `ink-mist.webp` | Ink mist at 12 % opacity | Generated locally with DreamShaper XL Lightning (CreativeML Open RAIL++-M) and keyed to transparency. |
-| `liru-chibi-wave-400.webp`, `liru-chibi-wave-600.webp` | Chibi on Liru's character-sheet card (#638) | Generated locally with Animagine XL 4.0 (CreativeML Open RAIL++-M) from the same prompt as the chibi stickers in `public/mascot/liru/stickers/`, refined with a light img2img pass and an inpainted pair of white boots, then cut out with a white sticker outline. |
+| File                                                                 | Use                                         | Source                                                                                                                                                                                                                                                                                 |
+| -------------------------------------------------------------------- | ------------------------------------------- | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `nebula-v2-1600.webp`, `nebula-v2-2560.webp`                         | Hero background (CSS)                       | Generated with Grok by JerrYamada (1168×784), enlarged with Lanczos.                                                                                                                                                                                                                   |
+| `liru-cn-v3-480.webp`, `liru-cn-v3-800.webp`, `liru-cn-v3-1111.webp` | Liru, `<picture>` with `srcset`             | Liru in her Chinese-style outfit, generated with Grok by JerrYamada and cut out by hand (1333×2000 PNG). The white left between the loose strands right of the tassel was removed with difference matting against the same image on black and on a checkerboard; cropped to 1111×1986. |
+| `ink-mist.webp`                                                      | Ink mist at 12 % opacity                    | Generated locally with DreamShaper XL Lightning (CreativeML Open RAIL++-M) and keyed to transparency.                                                                                                                                                                                  |
+| `liru-chibi-wave-400.webp`, `liru-chibi-wave-600.webp`               | Chibi on Liru's character-sheet card (#638) | Generated locally with Animagine XL 4.0 (CreativeML Open RAIL++-M) from the same prompt as the chibi stickers in `public/mascot/liru/stickers/`, refined with a light img2img pass and an inpainted pair of white boots, then cut out with a white sticker outline.                    |
 
 Liru is **CC BY 4.0, "Liru by JerrYamada"**, AI-assisted (Grok for the hero art,
 Animagine XL 4.0 for the chibi) and retouched, like the existing material in
 `public/mascot/liru/`. The previous hero layers in
 `home-s11/` (`nebula-only`, `foreground`, `liru-refined-v2`, `liru`) are no
 longer used by the homepage and stay as the earlier S11 asset family.
+
+## Tournament artwork synchronized with the homepage — 2026-11-03 (#754)
+
+The organizer selected this current homepage family for the S11 website
+background and key visual. The existing `/oclr-s11-website-background.webp`,
+`/oclr-s11-key-visual.webp` and six responsive `key-visual-enhanced-*` URLs
+now flatten the current nebula, Chinese-outfit Liru, ink mist and homepage
+wordmark layers. Existing branding selections keep their paths. Source artwork,
+credits and the square logo remain as recorded above. The reproducible
+[current hero export](../../design/home-visual/s11-assets/README.md#current-homepage-artwork--2026-11-03-754)
+preserves the existing output dimensions.

@@ -1,6 +1,13 @@
 # S11 artwork resolution investigation (#173)
 
-## Current winter artwork — 2026-10-29
+## Current source — 2026-11-03
+
+The organizer selected the current homepage's nebula and Chinese-outfit Liru
+for tournament background/key-visual exports (#754). See the
+[current source and export ledger](../design/home-visual/s11-assets/README.md#current-homepage-artwork--2026-11-03-754).
+The earlier investigation below is retained as dated history.
+
+## Previous winter artwork — 2026-10-29
 
 The organizer requested updating the S11 Logo, visual and banner assets based on
 PR #421, without changing the interface. The current exports, unchanged public

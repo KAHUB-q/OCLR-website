@@ -484,6 +484,131 @@ test("many MP review issues scroll within the scoreboard and remain keyboard acc
     .analyze();
   expect(accessibility.violations).toEqual([]);
 });
+for (const locale of ["en", "zh-Hans", "zh-Hant"] as const) {
+  test(`IRC help keeps launch and management buttons side by side — ${locale}`, async ({
+    page,
+    isMobile,
+  }, info) => {
+    if (isMobile) await page.setViewportSize({ width: 320, height: 844 });
+    const en = (
+      await import("../../messages/en.json", { with: { type: "json" } })
+    ).default;
+    const catalog =
+      locale === "zh-Hans"
+        ? (
+            await import("../../messages/zh-Hans.json", {
+              with: { type: "json" },
+            })
+          ).default
+        : locale === "zh-Hant"
+          ? (
+              await import("../../messages/zh-Hant.json", {
+                with: { type: "json" },
+              })
+            ).default
+          : en;
+    const text = (source: string) =>
+      catalog.ui[
+        Object.entries(en.ui).find(
+          ([, value]) => value === source,
+        )![0] as keyof typeof en.ui
+      ];
+    for (const theme of ["light", "dark"]) {
+      await setup(page);
+      await page.goto(`/referee-panel?locale=${locale}&theme=${theme}`);
+      const console = page.getByRole("complementary", {
+        name: text("IRC console"),
+        exact: true,
+      });
+      const launch = console.getByRole("link", {
+        name: text("Open OCLR IRC"),
+        exact: true,
+      });
+      const manage = console.getByRole("link", {
+        name: text("Manage connections"),
+        exact: true,
+      });
+      await expect(launch).toHaveAttribute("href", /^oclr-irc:/);
+      await expect(manage).toHaveAttribute("href", "/desktop/sessions");
+      await expect(manage).toHaveClass(/\bbutton\b/);
+      await manage.focus();
+      await expect(manage).toBeFocused();
+      const left = (await launch.boundingBox())!,
+        right = (await manage.boundingBox())!;
+      expect(right.x).toBeGreaterThanOrEqual(left.x + left.width);
+      expect(Math.abs(left.y - right.y)).toBeLessThan(1);
+      expect(left.height).toBeGreaterThanOrEqual(44);
+      expect(right.height).toBeGreaterThanOrEqual(44);
+      await console
+        .getByText(text("Connection setup"), { exact: true })
+        .click();
+      const help = console.locator("details").filter({
+        has: page.getByText(text("Connection setup"), { exact: true }),
+      });
+      await expect(help.getByRole("listitem")).toHaveCount(3);
+      for (const source of [
+        "Open oclr-irc and sign in to osu! IRC locally.",
+        "Authorize OCLR in the browser and select this assigned match.",
+        "Confirm the accounts and enable website IRC. You can then create a room from this page.",
+      ])
+        await expect(help).toContainText(text(source));
+      await expect(help).toContainText(
+        text(
+          "If the app does not open, install the latest OCLR IRC and launch it once, then try again.",
+        ),
+      );
+      await expect(
+        help.getByRole("link", { name: text("Get OCLR IRC"), exact: true }),
+      ).toHaveAttribute(
+        "href",
+        "https://github.com/OCLR-dev/OCLR-IRC/actions/workflows/test-builds.yml",
+      );
+      for (const source of [
+        "BP saves sync automatically: Ban announces; Pick announces, changes the map and applies saved Mods.",
+        "IRC credentials stay in the desktop app. The launch link does not sign you in or send commands.",
+        "Manage desktop sessions",
+      ])
+        await expect(
+          console.getByText(text(source), { exact: true }),
+        ).toHaveCount(0);
+      expect(
+        await page.evaluate(
+          () => document.documentElement.scrollWidth <= innerWidth,
+        ),
+      ).toBe(true);
+      const accessibility = await new AxeBuilder({ page })
+        .include('[class*="ircLaunchActions"]')
+        .analyze();
+      expect(accessibility.violations).toEqual([]);
+      await console.screenshot({
+        path: info.outputPath(`${locale}-${theme}-irc-help.png`),
+      });
+    }
+  });
+}
+test("IRC help keeps connection management available when connected and hidden in simulation", async ({
+  page,
+}) => {
+  await setup(page, { connected: true });
+  await page.goto("/referee-panel");
+  const console = page.getByRole("complementary", {
+    name: "IRC console",
+    exact: true,
+  });
+  await expect(
+    console.getByText("IRC connected", { exact: true }),
+  ).toBeVisible();
+  await expect(
+    console.getByRole("link", { name: "Open OCLR IRC", exact: true }),
+  ).toHaveCount(0);
+  await expect(
+    console.getByRole("link", { name: "Manage connections", exact: true }),
+  ).toBeVisible();
+  await page.goto("/referee-panel?simulation");
+  await expect(
+    page.getByRole("link", { name: "Manage connections", exact: true }),
+  ).toHaveCount(0);
+});
 test("records Ban and Pick without an IRC connection or queue request", async ({
   page,
 }) => {

@@ -394,13 +394,16 @@ export function RefereeIrc({
         </p>
       ) : (
         <>
-          {!connected && launchUrl && (
-            <p>
+          <div className={styles.ircLaunchActions}>
+            {!connected && launchUrl && (
               <a className="button secondary" href={launchUrl}>
                 {tr("Open OCLR IRC")}
               </a>
-            </p>
-          )}
+            )}
+            <a className="button secondary" href="/desktop/sessions">
+              {tr("Manage connections")}
+            </a>
+          </div>
           {relay?.connection && (
             <div className={styles.ircConnection}>
               <span className="small">
@@ -428,11 +431,6 @@ export function RefereeIrc({
           )}
           <details className={styles.ircHelp}>
             <summary>{tr("Connection setup")}</summary>
-            <p className="small muted">
-              {tr(
-                "BP saves sync automatically: Ban announces; Pick announces, changes the map and applies saved Mods.",
-              )}
-            </p>
             {!connected && (
               <p className="small muted">
                 {tr(
@@ -460,12 +458,6 @@ export function RefereeIrc({
                 )}
               </li>
             </ol>
-            <p>
-              {tr(
-                "IRC credentials stay in the desktop app. The launch link does not sign you in or send commands.",
-              )}
-            </p>
-            <a href="/desktop/sessions">{tr("Manage desktop sessions")}</a>
           </details>
         </>
       )}

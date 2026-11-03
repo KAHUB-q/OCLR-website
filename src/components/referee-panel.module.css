@@ -672,6 +672,20 @@
     min-height: 1.75rem;
   }
 }
+.ircLaunchActions {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 0.5rem;
+}
+.ircLaunchActions a {
+  min-width: 0;
+  white-space: normal;
+  text-align: center;
+  justify-content: center;
+}
+.ircLaunchActions a:only-child {
+  grid-column: 1 / -1;
+}
 .ircConnection {
   display: flex;
   gap: 0.5rem;

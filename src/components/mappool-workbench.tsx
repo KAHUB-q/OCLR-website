@@ -1063,6 +1063,29 @@ export function SelectionWorkbench({
                     openHref={`https://osu.ppy.sh/beatmaps/${c.beatmapId}`}
                     openLabel={`${c.metadata.artist} — ${c.metadata.title}`}
                     note={tr("★ base")}
+                    footer={
+                      <div
+                        className={styles.assignedRounds}
+                        role="group"
+                        aria-label={tr("Intended rounds")}
+                      >
+                        <span>{tr("Intended rounds")}:</span>
+                        {c.roundIds.length ? (
+                          data.rounds
+                            .filter((round) => c.roundIds.includes(round.id))
+                            .map((round) => (
+                              <span
+                                key={round.id}
+                                className={styles.assignedRound}
+                              >
+                                {round.name}
+                              </span>
+                            ))
+                        ) : (
+                          <span>{tr("Unassigned")}</span>
+                        )}
+                      </div>
+                    }
                     actions={
                       <>
                         <CandidateHistory
@@ -1070,13 +1093,15 @@ export function SelectionWorkbench({
                           candidateId={c.id}
                           beatmapId={c.beatmapId}
                         />
-                        <CandidateRounds
-                          candidate={c}
-                          rounds={data.rounds}
-                          writable={writable}
-                          base={base}
-                          onChange={reload}
-                        />
+                        {writable && (
+                          <CandidateRounds
+                            candidate={c}
+                            rounds={data.rounds}
+                            writable={writable}
+                            base={base}
+                            onChange={reload}
+                          />
+                        )}
                         {officialPools && (
                           <PromoteCandidate
                             slug={slug}

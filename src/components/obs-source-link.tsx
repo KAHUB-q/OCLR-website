@@ -11,9 +11,11 @@ const serverOrigin = () => "";
 export function ObsSourceLink({
   slug,
   origin,
+  showDescription = true,
 }: {
   slug: string;
   origin?: string;
+  showDescription?: boolean;
 }) {
   const tr = useAppTranslations();
   const id = useId();
@@ -60,11 +62,13 @@ export function ObsSourceLink({
           </button>
         </div>
       </div>
-      <InfoNote>
-        <p className="muted small">
-          {tr("Only released draft information appears in the overlay.")}
-        </p>
-      </InfoNote>
+      {showDescription && (
+        <InfoNote>
+          <p className="muted small">
+            {tr("Only released draft information appears in the overlay.")}
+          </p>
+        </InfoNote>
+      )}
       <p className="small obs-copy-feedback" role="status">
         {feedback}
       </p>

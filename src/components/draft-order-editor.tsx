@@ -88,12 +88,7 @@ export function DraftOrderEditor({
               <strong>{team.name}</strong>
               <span className="muted small">
                 {tr("Captain ")}
-                {captainName} ·{" "}
-                {team.capacity === null
-                  ? tr("Capacity not configured")
-                  : tr("Capacity {value0}, including captain", {
-                      value0: team.capacity,
-                    })}
+                {captainName}
               </span>
             </li>
           ))}

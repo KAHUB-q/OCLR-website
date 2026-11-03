@@ -239,10 +239,14 @@ test.describe("streaming workspace through real HTTP sessions", () => {
       ).toBeFocused();
       await page.getByRole("button", { name: "Confirm", exact: true }).click();
       await expect(
-        card.getByText("Self-selected", { exact: false }),
+        card.getByRole("group", {
+          name: `Synthetic Player ${streamerId}`,
+          exact: true,
+        }),
       ).toBeVisible();
       const saved = await (await context.request.get(endpoint)).json();
       expect(saved.fixtures[0].assignment.userId).toBe(streamerId);
+      expect(saved.fixtures[0].assignment.source).toBe("self");
       expect(
         (
           await other.request.post(endpoint, {
@@ -300,12 +304,18 @@ test.describe("streaming workspace through real HTTP sessions", () => {
         .getByRole("button", { name: "Confirm", exact: true })
         .click();
       await expect(
-        managerCard.getByText("Staff-assigned", { exact: false }),
+        managerCard.getByRole("group", {
+          name: `Synthetic Player ${streamerId}`,
+          exact: true,
+        }),
       ).toBeVisible();
       await captureResponsiveLayout(managerPage, info, "streaming-manager");
       await page.reload();
       await expect(
-        card.getByText("Staff-assigned", { exact: false }),
+        card.getByRole("group", {
+          name: `Synthetic Player ${streamerId}`,
+          exact: true,
+        }),
       ).toBeVisible();
       expect(
         (
@@ -610,7 +620,12 @@ test.describe("streaming workspace through real HTTP sessions", () => {
           name: /^Synthetic Player \d+$/,
         }),
       ).toHaveCount(2);
-      await expect(target).toContainText("Staff-assigned");
+      await expect(
+        target.getByRole("button", {
+          name: "Cancel commentary task",
+          exact: true,
+        }),
+      ).toBeVisible();
       await db()
         .update(fixtures)
         .set({ scheduledAt: new Date("2030-02-02T12:00:00Z"), version: 1 })

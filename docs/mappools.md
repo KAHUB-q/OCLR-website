@@ -2,8 +2,9 @@
 
 ## Candidate skillset tags (#735)
 
-The private selection workbench displays Skillset Tags between each candidate map
-and its comments. Staff with edition-scoped `select_mappools` write access may open
+The private selection workbench displays each candidate in three columns at list
+widths of 52rem or more: beatmap card, Skillset Tags, comments. Narrower lists stack
+the same three sections in that order. Staff with edition-scoped `select_mappools` write access may open
 the editor and select any combination of 29 literal skill names grouped under Aim,
 Tapping, Control, Technical, Reading and Special. Apply saves the whole set; clear
 selection is saved only on Apply. Cancel, Escape and backdrop dismissal discard the
@@ -96,9 +97,9 @@ Artist and adder share the credit row, followed by difficulty/mapper and saved
 base parameters (including HP). Parameters and the 44px action icons share one
 row, with actions on the right; narrow cards scroll that row horizontally rather
 than adding an action row. The row is keyboard-focusable and controls remain
-reachable. At a list width of 56rem or more, each candidate places the map on the
-left and always-visible comments on the right, separated by a vertical rule.
-Narrower lists stack comments below the map. Public/historical cards retain their
+reachable. At a list width of 52rem or more, each candidate places the map on the
+left, skillsets in the middle and always-visible comments on the right, separated
+by vertical rules. Narrower lists stack all three sections. Public/historical cards retain their
 existing cover layout. Pool promotion opens
 in a scrollable popover containing round/pool selection, the guarded entry form
 and success feedback; opening it or completing an addition does not grow the card. Pool promotion, round selection and history use compact 44px icon buttons with

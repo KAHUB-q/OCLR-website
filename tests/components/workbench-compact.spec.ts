@@ -141,11 +141,21 @@ for (const theme of ["light", "dark"]) {
         exact: true,
       });
       const tagsBox = (await tags.boundingBox())!;
-      expect(tagsBox.y).toBeGreaterThanOrEqual(mapBox.y + mapBox.height);
-      expect(commentBox.y).toBeGreaterThan(tagsBox.y + tagsBox.height);
-      expect(
-        await discussion.evaluate((el) => getComputedStyle(el).borderTopWidth),
-      ).toBe("1px");
+      const rowBox = (await row.boundingBox())!;
+      if (rowBox.width >= 832) {
+        expect(Math.abs(tagsBox.y - mapBox.y)).toBeLessThan(2);
+        expect(Math.abs(commentBox.y - mapBox.y)).toBeLessThan(2);
+        expect(tagsBox.x).toBeGreaterThan(mapBox.x + mapBox.width);
+        expect(commentBox.x).toBeGreaterThan(tagsBox.x + tagsBox.width);
+        for (const panel of [tags, discussion]) {
+          await expect(panel).toHaveCSS("border-top-width", "0px");
+          await expect(panel).toHaveCSS("border-inline-start-width", "1px");
+        }
+      } else {
+        expect(tagsBox.y).toBeGreaterThanOrEqual(mapBox.y + mapBox.height);
+        expect(commentBox.y).toBeGreaterThan(tagsBox.y + tagsBox.height);
+        await expect(discussion).toHaveCSS("border-top-width", "1px");
+      }
       expect(mapBox.height).toBeLessThan(350);
       const composer = discussion.getByRole("textbox", {
         name: "你的評論",

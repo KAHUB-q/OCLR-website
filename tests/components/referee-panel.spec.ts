@@ -73,7 +73,7 @@ async function setup(
       } else {
         queues.push(body);
         commands.push({
-          id: id(500),
+          id: id(500 + commands.length),
           requestKey: body.requestKey,
           text: body.text,
           target: "#mp_123",
@@ -155,6 +155,112 @@ function pool(page: Page) {
 function records(page: Page) {
   return page.getByRole("region", { name: "Referee records", exact: true });
 }
+function savedIrcCommand(
+  number: number,
+  text = `Synthetic command ${number}: https://osu.ppy.sh/b/10001`,
+) {
+  return {
+    id: id(8000 + number),
+    requestKey: id(9000 + number),
+    text,
+    target: "#mp_123",
+    status: "queued",
+    recordError: null,
+    createdAt: new Date().toISOString(),
+  };
+}
+async function expectLatestCommand(page: Page) {
+  const log = page.getByRole("log", {
+    name: "IRC room projection",
+    exact: true,
+  });
+  await expect
+    .poll(() =>
+      log.evaluate((el) => el.scrollHeight - el.clientHeight - el.scrollTop),
+    )
+    .toBeLessThanOrEqual(2);
+  return log;
+}
+test("new manual commands and automatic BP notices scroll command status to the newest entry", async ({
+  page,
+}) => {
+  const state = await setup(page, { connected: true });
+  state.commands.push(
+    ...Array.from({ length: 20 }, (_, i) => savedIrcCommand(i)),
+  );
+  await page.goto("/referee-panel?theme=light");
+  const log = await expectLatestCommand(page);
+  expect(await log.evaluate((el) => el.scrollHeight > el.clientHeight)).toBe(
+    true,
+  );
+  await log.evaluate((el) => {
+    el.scrollTop = 0;
+  });
+  await page.getByLabel("IRC command", { exact: true }).fill("!mp timer 30");
+  await page
+    .getByRole("button", { name: "Send to local IRC", exact: true })
+    .click();
+  await expect(log.locator("details code").last()).toHaveText("!mp timer 30");
+  await expectLatestCommand(page);
+  await log.evaluate((el) => {
+    el.scrollTop = 0;
+  });
+  await pool(page)
+    .getByRole("button", { name: "Blue team BAN", exact: true })
+    .first()
+    .click();
+  await expect.poll(() => state.autos.length).toBe(1);
+  await expect(log.locator("details code").last()).toHaveText(
+    state.commands.at(-1)!.text,
+  );
+  await expectLatestCommand(page);
+});
+test("new command IDs scroll even with a full 50-row history, while receipt updates preserve reading position", async ({
+  page,
+}, info) => {
+  const state = await setup(page, { connected: true });
+  state.commands.push(
+    ...Array.from({ length: 50 }, (_, i) => savedIrcCommand(i)),
+  );
+  await page.goto("/referee-panel");
+  const log = await expectLatestCommand(page);
+  expect(await log.evaluate((el) => el.scrollHeight > el.clientHeight)).toBe(
+    true,
+  );
+  await log.evaluate((el) => {
+    el.scrollTop = 0;
+  });
+  const scrollY = await page.evaluate(() => window.scrollY);
+  state.commands.shift();
+  state.commands.push(savedIrcCommand(51, "Newest polled command"));
+  await expect(log.locator("details code").last()).toHaveText(
+    "Newest polled command",
+  );
+  await expectLatestCommand(page);
+  expect(state.commands).toHaveLength(50);
+  expect(await page.evaluate(() => window.scrollY)).toBe(scrollY);
+  await log.evaluate((el) => {
+    el.scrollTop = 0;
+  });
+  state.commands.at(-1)!.status = "confirmed";
+  await expect(
+    log.locator("details > div").last().locator("small").first(),
+  ).toHaveText("Confirmed by IRC");
+  expect(await log.evaluate((el) => el.scrollTop)).toBe(0);
+  await log.locator("details").evaluate((el) => {
+    (el as HTMLDetailsElement).open = false;
+  });
+  state.commands.shift();
+  state.commands.push(
+    savedIrcCommand(52, "Newest command after collapsed history"),
+  );
+  await expect(log.locator("details code").last()).toHaveText(
+    "Newest command after collapsed history",
+  );
+  await expect(log.locator("details")).toHaveJSProperty("open", true);
+  await expectLatestCommand(page);
+  await log.screenshot({ path: info.outputPath("latest-command.png") });
+});
 for (const locale of ["en", "zh-Hans", "zh-Hant"] as const) {
   for (const theme of ["light", "dark"]) {
     test(`BP preview keeps red left and blue right in chronological rows — ${locale} ${theme}`, async ({

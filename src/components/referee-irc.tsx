@@ -90,6 +90,24 @@ export function RefereeIrc({
   const [retry, setRetry] = useState<QueueRequest | null>(null);
   const inFlight = useRef(false),
     log = useRef<HTMLDivElement>(null);
+  const commandStatus = useRef<HTMLDetailsElement>(null);
+  const seenCommands = useRef(new Set<string>());
+  useEffect(() => {
+    const commands = relay?.commands ?? [];
+    const latest = commands.at(-1);
+    if (!latest) return;
+    const isNew = !seenCommands.current.has(latest.id);
+    // Retain recent IDs across failed or stale polls without growing forever.
+    const recent = new Set([
+      ...seenCommands.current,
+      ...commands.map((command) => command.id),
+    ]);
+    seenCommands.current = new Set([...recent].slice(-100));
+    if (!isNew) return;
+    if (commandStatus.current) commandStatus.current.open = true;
+    const pane = log.current;
+    pane?.scrollTo({ top: pane.scrollHeight, behavior: "auto" });
+  }, [relay?.commands]);
   const callbacks = useRef({ onWorkspace, onConfirmed, onRoomChange });
   useEffect(() => {
     callbacks.current = { onWorkspace, onConfirmed, onRoomChange };
@@ -494,7 +512,7 @@ export function RefereeIrc({
               </div>
             ))}
             {relay?.commands.length ? (
-              <details open className={styles.ircReceipts}>
+              <details ref={commandStatus} open className={styles.ircReceipts}>
                 <summary>{tr("Command status")}</summary>
                 {relay.commands.map((command) => (
                   <div className={styles.ircMessage} key={command.id}>

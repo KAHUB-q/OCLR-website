@@ -179,6 +179,19 @@ async function expectLatestCommand(page: Page) {
       log.evaluate((el) => el.scrollHeight - el.clientHeight - el.scrollTop),
     )
     .toBeLessThanOrEqual(2);
+  await expect
+    .poll(() =>
+      log.evaluate((el) => {
+        const pane = el.getBoundingClientRect();
+        const latest = el.querySelector("details > div:last-child");
+        if (!latest) return false;
+        const row = latest.getBoundingClientRect();
+        return (
+          pane.height >= 96 && row.top >= pane.top && row.bottom <= pane.bottom
+        );
+      }),
+    )
+    .toBe(true);
   return log;
 }
 test("new manual commands and automatic BP notices scroll command status to the newest entry", async ({

@@ -10,9 +10,17 @@ scrolling remains in place.
 Four focused Chrome cases passed across desktop/mobile, including a full
 50-command history where the count stays unchanged as a new ID arrives.
 They verify manual sends, BP notices, polled commands, receipt-only updates,
-reopening collapsed status, and unchanged page scroll position. The complete
-affected referee component suite passed all 38 cases, including the preceding
-IRC copy/button changes, simulation, retry, read-only, score and IRC behavior.
+reopening collapsed status, and unchanged page scroll position. The final
+integrated referee component suite passed all 64 cases, including BP preview,
+MP automatic sync, IRC copy/buttons, simulation, retry and read-only behavior.
+
+The mobile console grows with its controls and keeps a bounded log height.
+This prevents controls from squeezing the log down to padding alone. The
+scroll checks also require at least 96px of visible log space and the entire
+latest command inside it; the final mobile capture below replaces the earlier
+padding-only capture. Final lint/types and production build passed. The full
+unit/integration run before this CSS-only follow-up passed 2,349 tests with two
+skipped in the isolated test database, which was stopped afterward.
 
 - [Desktop latest entry](desktop-latest-command.png)
 - [Mobile latest entry](mobile-latest-command.png)

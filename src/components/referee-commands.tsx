@@ -305,11 +305,6 @@ export function RefereeCommands({
           <details className={styles.setupSettings}>
             <summary>{tr("Room settings")}</summary>
             <div className={styles.stack}>
-              <p className="small muted">
-                {tr(
-                  "Room settings use the saved round rules. The Streamer comes from this fixture's streaming task.",
-                )}
-              </p>
               <dl className={styles.settings}>
                 {[
                   [tr("Room name"), settings.roomName || tr("Not set")],

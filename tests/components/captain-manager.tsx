@@ -35,13 +35,24 @@ const initial: Setup = {
   version: 4,
   locked: params.has("locked"),
   availabilityLocked: params.has("locked"),
-  poolPublished: false,
-  captains: [],
+  poolPublished: params.has("publication"),
+  captains: params.has("publication")
+    ? [
+        {
+          userId: 399999999,
+          username: "Synthetic Captain",
+          position: 1,
+          published: false,
+          teamId: null,
+          teamName: null,
+        },
+      ]
+    : [],
   candidates,
   pool: candidates,
 };
 const identities = Object.fromEntries(
-  candidates.map((p) => [
+  [...initial.captains, ...candidates].map((p) => [
     p.userId,
     {
       avatarUrl: null,

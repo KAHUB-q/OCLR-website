@@ -10,6 +10,7 @@ import { LoadingRegion } from "./loading-region";
 import { CaptainPlayerCard, type CaptainIdentity } from "./captain-player-card";
 import type { captainSetup } from "@/lib/captains";
 import { ConfirmMutation } from "./confirm-mutation";
+import { PublicationSwitch } from "./publication-switch";
 import styles from "./captain-manager.module.css";
 type Setup = Awaited<ReturnType<typeof captainSetup>>;
 const poolPageSize = 10;
@@ -478,24 +479,18 @@ export function CaptainManager({
         aria-labelledby="captain-publication-heading"
       >
         <h2 id="captain-publication-heading">{tr("Publication settings")}</h2>
-        <label className="check-field">
-          <input
-            disabled={readOnly}
-            type="checkbox"
-            checked={published}
-            onChange={(e) => setPublished(e.target.checked)}
-          />
-          <span>{tr("Publish captains & order")}</span>
-        </label>
-        <label className="check-field">
-          <input
-            disabled={readOnly}
-            type="checkbox"
-            checked={poolPublished}
-            onChange={(e) => setPoolPublished(e.target.checked)}
-          />
-          <span>{tr("Publish eligible draft pool")}</span>
-        </label>
+        <PublicationSwitch
+          label={tr("Publish captains & order")}
+          checked={published}
+          onChange={setPublished}
+          disabled={readOnly}
+        />
+        <PublicationSwitch
+          label={tr("Publish eligible draft pool")}
+          checked={poolPublished}
+          onChange={setPoolPublished}
+          disabled={readOnly}
+        />
         <ConfirmMutation
           label={tr("Save publication settings")}
           title={tr("Change public visibility?")}

@@ -12,7 +12,7 @@ import type { FixtureWorkspace } from "@/lib/fixtures";
 import { ReadOnlyFields, useStaffReadOnly } from "./staff-read-only";
 import { ConfirmMutation } from "./confirm-mutation";
 import { TeamAvatar } from "./team-avatar";
-import styles from "./stage-groups.module.css";
+import { PublicationSwitch } from "./publication-switch";
 
 type Group = { key?: string; name: string; teamIds: string[] };
 type Team = FixtureWorkspace["teams"][number];
@@ -262,19 +262,11 @@ export function StageGroups({
   return (
     <ReadOnlyFields>
       <section className="form-stack team-group-manager group-assignment">
-        <label className={styles.publication}>
-          <span>{tr("Publish approved group assignments")}</span>
-          <span className={styles.switch}>
-            <input
-              className={styles.input}
-              type="checkbox"
-              role="switch"
-              checked={published}
-              onChange={(event) => setPublished(event.target.checked)}
-            />
-            <span className={styles.track} aria-hidden="true" />
-          </span>
-        </label>
+        <PublicationSwitch
+          label={tr("Publish approved group assignments")}
+          checked={published}
+          onChange={setPublished}
+        />
         <p id={`${id}-help`} className="small muted">
           {tr(
             "Choose the number of groups, then drag teams into a group or use its team selector.",

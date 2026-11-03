@@ -122,6 +122,14 @@ for (const mode of ["readonly", "locked"]) {
     page,
   }) => {
     await page.goto(`/captain-manager?${mode}`);
+    const publication = page.locator(
+      'section[aria-labelledby="captain-publication-heading"]',
+    );
+    await expect(publication.getByRole("switch")).toHaveCount(2);
+    for (const control of await publication.getByRole("switch").all()) {
+      if (mode === "readonly") await expect(control).toBeDisabled();
+      else await expect(control).toBeEnabled();
+    }
     const pool = page.locator(
       'section[aria-labelledby="eligible-pool-heading"]',
     );
@@ -149,14 +157,72 @@ for (const mode of ["readonly", "locked"]) {
   });
 }
 
-test("pagination fits narrow screens in the three locales and both themes", async ({
+test("publication switches keep changes local until saving and confirming", async ({
+  page,
+}) => {
+  const writes: unknown[] = [];
+  await page.route(
+    "**/api/admin/tournaments/synthetic/captains",
+    async (route) => {
+      writes.push(route.request().postDataJSON());
+      await route.fulfill({ json: {} });
+    },
+  );
+  await page.goto("/captain-manager?count=1&publication");
+  const publication = page.locator(
+    'section[aria-labelledby="captain-publication-heading"]',
+  );
+  const captains = publication.getByRole("switch", {
+    name: "Publish captains & order",
+    exact: true,
+  });
+  const pool = publication.getByRole("switch", {
+    name: "Publish eligible draft pool",
+    exact: true,
+  });
+  const save = publication.getByRole("button", {
+    name: "Save publication settings",
+    exact: true,
+  });
+  await expect(captains).not.toBeChecked();
+  await expect(pool).toBeChecked();
+  await expect(save).toBeDisabled();
+  await captains.focus();
+  await page.keyboard.press("Space");
+  await expect(captains).toBeChecked();
+  await publication
+    .getByText("Publish eligible draft pool", { exact: true })
+    .click();
+  await expect(pool).not.toBeChecked();
+  expect(writes).toHaveLength(0);
+  await save.click();
+  const dialog = page.getByRole("dialog");
+  await expect(dialog).toBeVisible();
+  await dialog.getByRole("button", { name: "Cancel", exact: true }).click();
+  await expect(dialog).not.toBeVisible();
+  expect(writes).toHaveLength(0);
+  await save.click();
+  await dialog.getByRole("button", { name: "Confirm", exact: true }).click();
+  await expect(dialog).not.toBeVisible();
+  expect(writes).toEqual([
+    {
+      command: { action: "publish", published: true, poolPublished: false },
+      expectedVersion: 4,
+      confirmed: true,
+    },
+  ]);
+});
+
+test("publication switches and pagination fit narrow screens in the three locales and both themes", async ({
   page,
   isMobile,
 }, info) => {
   if (isMobile) await page.setViewportSize({ width: 320, height: 812 });
   for (const locale of ["en", "zh-Hans", "zh-Hant"]) {
     for (const theme of ["light", "dark"]) {
-      await page.goto(`/captain-manager?locale=${locale}&theme=${theme}`);
+      await page.goto(
+        `/captain-manager?publication&locale=${locale}&theme=${theme}`,
+      );
       const pool = page.locator(
         'section[aria-labelledby="eligible-pool-heading"]',
       );
@@ -169,10 +235,30 @@ test("pagination fits narrow screens in the three locales and both themes", asyn
           (element) => element.scrollWidth <= element.clientWidth,
         ),
       ).toBe(true);
+      const publication = page.locator(
+        'section[aria-labelledby="captain-publication-heading"]',
+      );
+      await expect(publication.getByRole("switch")).toHaveCount(2);
+      await expect(publication.getByRole("switch").first()).not.toBeChecked();
+      await expect(publication.getByRole("switch").last()).toBeChecked();
+      expect(
+        await publication.evaluate(
+          (element) => element.scrollWidth <= element.clientWidth,
+        ),
+      ).toBe(true);
+      for (const control of await publication.getByRole("switch").all()) {
+        const bounds = await control.boundingBox();
+        expect(bounds!.width).toBeGreaterThanOrEqual(44);
+        expect(bounds!.height).toBeGreaterThanOrEqual(44);
+      }
       if (locale === "zh-Hant") {
         await pool.scrollIntoViewIfNeeded();
         await page.screenshot({
           path: info.outputPath(`captain-pool-${theme}.png`),
+          animations: "disabled",
+        });
+        await publication.screenshot({
+          path: info.outputPath(`captain-publication-${theme}.png`),
           animations: "disabled",
         });
       }

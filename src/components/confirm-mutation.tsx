@@ -21,6 +21,7 @@ export function ConfirmMutation({
   requireConfirmation = true,
   canConfirm = true,
   disabled = false,
+  loadingFeedback = "region",
   icon,
   errorTarget,
   children,
@@ -36,6 +37,7 @@ export function ConfirmMutation({
   requireConfirmation?: boolean;
   canConfirm?: boolean;
   disabled?: boolean;
+  loadingFeedback?: "region" | "button";
   icon?: ReactNode;
   errorTarget?: HTMLElement | null;
   children?: ReactNode;
@@ -49,7 +51,8 @@ export function ConfirmMutation({
   const [requestPending, setPending] = useState(false);
   const [error, setError] = useState("");
   const pending = requestPending || refreshing;
-  const inlineLoading = !!icon && !requireConfirmation;
+  const inlineLoading =
+    loadingFeedback === "button" || (!!icon && !requireConfirmation);
   useEffect(() => {
     if (readOnly || disabled) dialog.current?.close();
   }, [readOnly, disabled]);
@@ -112,7 +115,18 @@ export function ConfirmMutation({
           else void confirm();
         }}
       >
-        {pending && inlineLoading ? <Spinner compact /> : (icon ?? tr(label))}
+        {pending && inlineLoading ? (
+          icon ? (
+            <Spinner compact />
+          ) : (
+            <span className="inline-flex items-center gap-2">
+              <Spinner compact />
+              {tr(label)}
+            </span>
+          )
+        ) : (
+          (icon ?? tr(label))
+        )}
       </button>
       {feedback &&
         (errorTarget ? createPortal(feedback, errorTarget) : feedback)}

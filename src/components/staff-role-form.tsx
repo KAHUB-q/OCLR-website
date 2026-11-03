@@ -237,6 +237,7 @@ function StaffRoleFields({
         </p>
         <ConfirmMutation
           className="staff-role-save"
+          loadingFeedback="button"
           label={existing ? tr("Save roles") : tr("Review role grant")}
           title={
             existing ? tr("Update staff roles?") : tr("Grant staff access?")

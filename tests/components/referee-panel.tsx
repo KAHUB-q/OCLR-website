@@ -12,6 +12,10 @@ const params = new URLSearchParams(location.search),
   locale = params.get("locale") ?? "en";
 document.documentElement.dataset.theme = params.get("theme") ?? "dark";
 const data = workspace();
+if (params.has("longnames")) {
+  data.teams[0].name = "Blue Team · 超長隊伍名稱ABCDEFGHIJKLMNOPQRSTUVWXYZ";
+  data.teams[1].name = "Red Team · 超長隊伍名稱ABCDEFGHIJKLMNOPQRSTUVWXYZ";
+}
 data.canRecord = !params.has("readonly");
 createRoot(document.getElementById("root")!).render(
   <NextIntlClientProvider

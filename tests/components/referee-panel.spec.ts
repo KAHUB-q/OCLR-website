@@ -2,6 +2,10 @@ import { test, expect, type Page } from "@playwright/test";
 import { bpSyncSource } from "../../src/lib/referee-sync";
 import { workspace, id } from "./referee-panel-data";
 import { validateRefereeAction } from "../../src/lib/referee-model";
+import AxeBuilder from "@axe-core/playwright";
+import en from "../../messages/en.json" with { type: "json" };
+import hans from "../../messages/zh-Hans.json" with { type: "json" };
+import hant from "../../messages/zh-Hant.json" with { type: "json" };
 const api = "**/api/admin/tournaments/synthetic/matches/*/referee";
 async function setup(
   page: Page,
@@ -147,6 +151,87 @@ function pool(page: Page) {
 }
 function records(page: Page) {
   return page.getByRole("region", { name: "Referee records", exact: true });
+}
+for (const locale of ["en", "zh-Hans", "zh-Hant"] as const) {
+  for (const theme of ["light", "dark"]) {
+    test(`BP preview keeps red left and blue right in chronological rows — ${locale} ${theme}`, async ({
+      page,
+      isMobile,
+    }, info) => {
+      if (isMobile) await page.setViewportSize({ width: 320, height: 844 });
+      const catalog =
+        locale === "zh-Hans" ? hans : locale === "zh-Hant" ? hant : en;
+      const text = (source: string) =>
+        catalog.ui[
+          Object.entries(en.ui).find(
+            ([, value]) => value === source,
+          )![0] as keyof typeof en.ui
+        ];
+      const state = await setup(page);
+      state.current().teams[0].name =
+        "Blue Team · 超長隊伍名稱ABCDEFGHIJKLMNOPQRSTUVWXYZ";
+      state.current().teams[1].name =
+        "Red Team · 超長隊伍名稱ABCDEFGHIJKLMNOPQRSTUVWXYZ";
+      await page.goto(
+        `/referee-panel?locale=${locale}&theme=${theme}&longnames`,
+      );
+      await page
+        .getByText(text("Preview Ban / Pick sequence"), { exact: true })
+        .click();
+      const list = page.getByRole("list", {
+        name: text("Preview Ban / Pick sequence"),
+        exact: true,
+      });
+      const rows = list.getByRole("listitem");
+      await expect(rows).toHaveCount(5);
+      await expect(rows.nth(0)).toContainText(/1\s*BAN\s*Blue Team/);
+      await expect(rows.nth(1)).toContainText(/2\s*PICK\s*Blue Team/);
+      await expect(rows.nth(2)).toContainText(/3\s*BAN\s*Red Team/);
+      await expect(rows.nth(3)).toContainText(/4\s*PICK\s*Red Team/);
+      await expect(rows.nth(4)).toContainText(/5\s*TB/);
+      await expect(rows.nth(4)).toContainText("1:1");
+      async function checkColumns(sides: string[]) {
+        const bounds = await list.boundingBox();
+        const middle = bounds!.x + bounds!.width / 2;
+        let bottom = -Infinity;
+        for (const [index, side] of sides.entries()) {
+          const row = rows.nth(index);
+          await expect(row).toHaveAttribute("data-team", side);
+          const box = await row.locator(":scope > div").boundingBox();
+          expect(box!.y).toBeGreaterThanOrEqual(bottom);
+          bottom = box!.y + box!.height;
+          if (side === "red") expect(box!.x + box!.width).toBeLessThan(middle);
+          else if (side === "blue") expect(box!.x).toBeGreaterThan(middle);
+          else
+            expect(Math.abs(box!.x + box!.width / 2 - middle)).toBeLessThan(1);
+        }
+        expect(
+          await page.evaluate(
+            () => document.documentElement.scrollWidth <= innerWidth,
+          ),
+        ).toBe(true);
+      }
+      // Consecutive steps by the same team must each occupy their own row.
+      await checkColumns(["blue", "blue", "red", "red", "neutral"]);
+      const accessibility = await new AxeBuilder({ page })
+        .include("details:has(ol[role='list'])")
+        .analyze();
+      expect(accessibility.violations).toEqual([]);
+      await list.locator("..").screenshot({
+        path: info.outputPath(`${locale}-${theme}-preview.png`),
+      });
+      await page
+        .getByLabel(text("First Ban team"), { exact: true })
+        .selectOption(id(11));
+      await checkColumns(["red", "blue", "blue", "red", "neutral"]);
+      await page
+        .getByLabel(text("First Ban team"), { exact: true })
+        .selectOption("");
+      await expect(rows.nth(0)).toHaveAttribute("data-team", "neutral");
+      expect(state.writes).toHaveLength(0);
+      expect(state.queues).toHaveLength(0);
+    });
+  }
 }
 test("records Ban and Pick without an IRC connection or queue request", async ({
   page,

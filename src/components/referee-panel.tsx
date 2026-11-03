@@ -588,28 +588,58 @@ export function RefereePanel({
               </p>
             )}
             {data.policy && (
-              <details>
+              <details className={styles.sequencePreview}>
                 <summary>{tr("Preview Ban / Pick sequence")}</summary>
-                <ol>
-                  {data.policy.steps.map((step, index) => (
-                    <li key={index}>
-                      {step.kind.toUpperCase()} ·{" "}
-                      {teamName(
-                        resolveRefereeActor(
-                          step.actor,
-                          {
-                            firstBanTeamId: firstBan || null,
-                            firstPickTeamId: firstPick || null,
-                          },
-                          data.teams.map((t) => t.id),
-                        ),
-                        step.actor === "neutral",
-                      )}
-                      {step.kind === "tb"
-                        ? ` · ${step.tiedAt}:${step.tiedAt}`
-                        : ""}
-                    </li>
-                  ))}
+                <div className={styles.sequenceHeading}>
+                  <span data-team="red">{tr("Red team")}</span>
+                  <span data-team="blue">{tr("Blue team")}</span>
+                </div>
+                <ol
+                  className={styles.sequence}
+                  role="list"
+                  aria-label={tr("Preview Ban / Pick sequence")}
+                >
+                  {data.policy.steps.map((step, index) => {
+                    const actor = resolveRefereeActor(
+                      step.actor,
+                      {
+                        firstBanTeamId: firstBan || null,
+                        firstPickTeamId: firstPick || null,
+                      },
+                      data.teams.map((t) => t.id),
+                    );
+                    const side =
+                      actor && actor === data.teams[1]?.id
+                        ? "red"
+                        : actor && actor === data.teams[0]?.id
+                          ? "blue"
+                          : "neutral";
+                    return (
+                      <li
+                        key={index}
+                        className={styles.sequenceRow}
+                        data-team={side}
+                      >
+                        <div className={styles.sequenceStep}>
+                          <span
+                            className={styles.sequenceNumber}
+                            aria-hidden="true"
+                          >
+                            {index + 1}
+                          </span>
+                          <span className={styles.sequenceKind}>
+                            {step.kind.toUpperCase()}
+                          </span>
+                          <span className={styles.sequenceTeam}>
+                            {teamName(actor, step.actor === "neutral")}
+                            {step.kind === "tb"
+                              ? ` · ${step.tiedAt}:${step.tiedAt}`
+                              : ""}
+                          </span>
+                        </div>
+                      </li>
+                    );
+                  })}
                 </ol>
               </details>
             )}

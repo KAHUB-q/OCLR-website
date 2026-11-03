@@ -538,16 +538,20 @@
   font-variant-numeric: tabular-nums;
   line-height: 1.1;
 }
-.summaryTeam[data-team="blue"] {
+.summaryTeam[data-team="blue"],
+.bpStep[data-team="blue"] {
   color: #1d4ed8;
 }
-.summaryTeam[data-team="red"] {
+.summaryTeam[data-team="red"],
+.bpStep[data-team="red"] {
   color: #b91c1c;
 }
-:global(html[data-theme="dark"]) .summaryTeam[data-team="blue"] {
+:global(html[data-theme="dark"]) .summaryTeam[data-team="blue"],
+:global(html[data-theme="dark"]) .bpStep[data-team="blue"] {
   color: #93c5fd;
 }
-:global(html[data-theme="dark"]) .summaryTeam[data-team="red"] {
+:global(html[data-theme="dark"]) .summaryTeam[data-team="red"],
+:global(html[data-theme="dark"]) .bpStep[data-team="red"] {
   color: #fca5a5;
 }
 .scoreDivider {

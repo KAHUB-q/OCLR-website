@@ -951,6 +951,17 @@ for (const locale of ["en", "zh-Hans", "zh-Hant"]) {
         name: text("Round mappool"),
         exact: true,
       });
+      const score = page.getByRole("region", {
+        name: text("Referee records"),
+        exact: true,
+      });
+      const process = score
+        .locator("dl > div")
+        .filter({
+          has: page.getByText(text("BP sequence"), { exact: true }),
+        })
+        .locator("dd");
+      await expect(process).toHaveText("—");
       await maps
         .getByRole("button", { name: `${text("Blue team")} BAN`, exact: true })
         .first()
@@ -968,10 +979,69 @@ for (const locale of ["en", "zh-Hans", "zh-Hant"]) {
           () => document.documentElement.scrollWidth <= innerWidth,
         ),
       ).toBe(true);
-      const score = page.getByRole("region", {
-        name: text("Referee records"),
-        exact: true,
-      });
+      await maps
+        .getByRole("button", { name: `${text("Blue team")} PICK`, exact: true })
+        .first()
+        .click();
+      await page
+        .getByText(text("Record and correct outcomes"), { exact: true })
+        .click();
+      await page
+        .getByRole("button", {
+          name: text("Record win: {team}").replace("{team}", "Blue"),
+          exact: true,
+        })
+        .click();
+      await maps
+        .getByRole("button", { name: `${text("Red team")} BAN`, exact: true })
+        .first()
+        .click();
+      await maps
+        .getByRole("button", { name: `${text("Red team")} PICK`, exact: true })
+        .first()
+        .click();
+      await page
+        .getByRole("button", {
+          name: text("Record win: {team}").replace("{team}", "Red"),
+          exact: true,
+        })
+        .click();
+      await maps
+        .getByRole("button", { name: `${text("Blue team")} PICK`, exact: true })
+        .first()
+        .click();
+      const entries = process.locator(":scope > span");
+      await expect(entries).toHaveText([
+        "Blue BAN NM1",
+        "Blue PICK NM2",
+        "Red BAN NM3",
+        "Red PICK NM4",
+        `${text("Neutral tiebreaker")} TB TB1`,
+      ]);
+      const blue = theme === "dark" ? "rgb(147, 197, 253)" : "rgb(29, 78, 216)";
+      const red = theme === "dark" ? "rgb(252, 165, 165)" : "rgb(185, 28, 28)";
+      for (let index = 0; index < 4; index++)
+        await expect(entries.nth(index)).toHaveCSS(
+          "color",
+          index < 2 ? blue : red,
+        );
+      await expect(entries.last()).not.toHaveCSS("color", blue);
+      await expect(entries.last()).not.toHaveCSS("color", red);
+      if (isMobile) {
+        expect(
+          await process.evaluate((el) => el.scrollWidth > el.clientWidth),
+        ).toBe(true);
+        await process.focus();
+        await page.keyboard.press("ArrowRight");
+        await expect
+          .poll(() => process.evaluate((el) => el.scrollLeft))
+          .toBeGreaterThan(0);
+      }
+      expect(
+        await page.evaluate(
+          () => document.documentElement.scrollWidth <= innerWidth,
+        ),
+      ).toBe(true);
       const sync = score.getByRole("button", {
         name: text("Automatic sync"),
         exact: true,

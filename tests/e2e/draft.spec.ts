@@ -128,11 +128,8 @@ test.describe("isolated multi-captain rehearsal", () => {
     await expect(
       staff.page
         .locator(".obs-source-link")
-        .getByRole("note", { name: "Notes", exact: true })
-        .getByText("Only released draft information appears in the overlay.", {
-          exact: true,
-        }),
-    ).toBeVisible();
+        .getByRole("note", { name: "Notes", exact: true }),
+    ).toHaveCount(0);
     await spectator.page.goto(`/tournaments/${slug}/draft`);
     const closedRegistration = await spectator.context.newPage();
     await closedRegistration.goto(`/tournaments/${slug}/register`);

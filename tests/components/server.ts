@@ -31,6 +31,7 @@ const bundle = await build({
     "tests/components/workbench-compact.tsx",
     "tests/components/stage-groups.tsx",
     "tests/components/streaming-manager.tsx",
+    "tests/components/captain-manager.tsx",
     "tests/components/archive-bracket.tsx",
     "tests/components/ocl-chess.tsx",
     "tests/components/s3-bracket.tsx",
@@ -66,6 +67,7 @@ const themedStyles = new Map(
       "practice-records.css",
       "schedule-selection.css",
       "streaming-manager.css",
+      "captain-manager.css",
     ].map(async (name) => {
       const file = bundle.outputFiles.find(
         (file) => basename(file.path) === name,
@@ -172,7 +174,11 @@ createServer((request, response) => {
                                                     "/streaming-manager",
                                                   )
                                                 ? "streaming-manager"
-                                                : "player-message-board";
+                                                : request.url?.startsWith(
+                                                      "/captain-manager",
+                                                    )
+                                                  ? "captain-manager"
+                                                  : "player-message-board";
     const fixture = request.url?.startsWith("/staff-role-form")
       ? "staff-role-form"
       : request.url?.startsWith("/player-sidebar")

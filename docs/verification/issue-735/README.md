@@ -2,6 +2,12 @@
 
 2026-11-03 (Asia/Taipei), based on main `39c25d65`.
 
+Layout correction #737 supersedes the vertical desktop layout recorded below:
+the organizer required desktop map, tags and comments in one horizontal row.
+The corrected layout uses three columns at list widths of 52rem or more and stacks
+only narrower lists. The original entry below is implementation evidence, not
+organizer acceptance of the mistaken desktop arrangement.
+
 Each private candidate now shows its skillset summary between the map and comments.
 The editor is a native modal with 29 multi-select choices in six literal skill
 groups, clear/cancel/apply, Escape/backdrop dismissal and focus restoration. Its

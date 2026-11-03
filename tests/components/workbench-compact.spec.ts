@@ -222,7 +222,11 @@ for (const theme of ["light", "dark"]) {
             parameters.height / 2,
         ),
       ).toBeLessThan(2);
-      const controls = toolbar.locator("button, a.button");
+      const controls = toolbar.locator("button:visible, a.button:visible");
+      await expect(controls).toHaveCount(4);
+      await expect(
+        toolbar.locator('a[href^="https://osu.ppy.sh/"]'),
+      ).toHaveCount(0);
       const rounds = toolbar.getByRole("button", { name: /^指定輪次:/ });
       const promotion = toolbar.getByRole("button", {
         name: "加入正式圖池",
@@ -236,8 +240,12 @@ for (const theme of ["light", "dark"]) {
           node.scrollIntoView({ block: "nearest", inline: "nearest" }),
         );
         const box = (await control.boundingBox())!;
-        expect(box.width).toBeGreaterThanOrEqual(44);
-        expect(box.height).toBeGreaterThanOrEqual(44);
+        const touch = await page.evaluate(
+          () => matchMedia("(pointer: coarse)").matches,
+        );
+        expect(box.width).toBe(touch ? 44 : 32);
+        expect(box.height).toBe(touch ? 44 : 32);
+        await expect(control.locator("svg")).toHaveCSS("width", "16px");
         expect(box.x + box.width).toBeLessThanOrEqual(
           mapBox.x + mapBox.width + 1,
         );

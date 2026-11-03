@@ -89,6 +89,7 @@ export function RefereePanel({
       });
   }
   const [ircDraft, setIrcDraft] = useState("");
+  const [ircRoomId, setIrcRoomId] = useState<number | null>(null);
   const [ircSelection, setIrcSelection] = useState<{
     entryId: string;
     text: string;
@@ -664,19 +665,6 @@ export function RefereePanel({
               </div>
             )}
           </div>
-          {!simulation && data.canRecord && !readOnly && (
-            <RefereeMp
-              endpoint={`${endpoint}/mp`}
-              workspace={data}
-              disabled={disabled}
-              onWorkspace={(next) => {
-                if ((next.session?.revision ?? 0) < newestRevision.current)
-                  return;
-                newestRevision.current = next.session?.revision ?? 0;
-                setData(next);
-              }}
-            />
-          )}
           <div className={styles.columns}>
             <section
               className={`panel ${styles.pinnedSummary}`}
@@ -814,6 +802,19 @@ export function RefereePanel({
                   </div>
                 )}
               </dl>
+              {!simulation && data.canRecord && !readOnly && (
+                <RefereeMp
+                  endpoint={`${endpoint}/mp`}
+                  disabled={disabled}
+                  roomId={ircRoomId}
+                  onWorkspace={(next) => {
+                    if ((next.session?.revision ?? 0) < newestRevision.current)
+                      return;
+                    newestRevision.current = next.session?.revision ?? 0;
+                    setData(next);
+                  }}
+                />
+              )}
             </section>
             <section
               className={`panel ${styles.pool}`}
@@ -1121,6 +1122,7 @@ export function RefereePanel({
         fixtureId={data.fixture.id}
         key={simulationEpoch}
         endpoint={`${endpoint}/irc`}
+        onRoomChange={setIrcRoomId}
         onWorkspace={(next) => {
           const incomingRevision = next.session?.revision ?? 0;
           const currentRevision = data.session?.revision ?? 0;

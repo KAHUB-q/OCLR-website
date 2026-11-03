@@ -59,6 +59,7 @@ export function RefereeIrc({
   onWorkspace,
   onQueued,
   onConfirmed,
+  onRoomChange,
 }: {
   syncEvents?: readonly { id: string; text: string }[];
   onSynced?: (eventId: string) => void;
@@ -77,6 +78,7 @@ export function RefereeIrc({
   onWorkspace: (workspace: RefereeWorkspace) => void;
   onQueued: () => void;
   onConfirmed: (commands: string[]) => void;
+  onRoomChange?: (roomId: number | null) => void;
 }) {
   const tr = useAppTranslations();
   const [history, setHistory] = useState<
@@ -88,12 +90,19 @@ export function RefereeIrc({
   const [retry, setRetry] = useState<QueueRequest | null>(null);
   const inFlight = useRef(false),
     log = useRef<HTMLDivElement>(null);
-  const callbacks = useRef({ onWorkspace, onConfirmed });
+  const callbacks = useRef({ onWorkspace, onConfirmed, onRoomChange });
   useEffect(() => {
-    callbacks.current = { onWorkspace, onConfirmed };
-  }, [onWorkspace, onConfirmed]);
+    callbacks.current = { onWorkspace, onConfirmed, onRoomChange };
+  }, [onWorkspace, onConfirmed, onRoomChange]);
   function applyView(view: RelayView) {
     setRelay(view);
+    callbacks.current.onRoomChange?.(
+      view.connection &&
+        view.connection.status !== "revoked" &&
+        view.connection.roomId > 0
+        ? view.connection.roomId
+        : null,
+    );
     callbacks.current.onWorkspace(view.workspace);
     callbacks.current.onConfirmed(
       view.commands.filter((c) => c.status === "confirmed").map((c) => c.text),
@@ -113,6 +122,13 @@ export function RefereeIrc({
         const view = (await response.json()) as RelayView;
         if (controller.signal.aborted) return;
         setRelay(view);
+        callbacks.current.onRoomChange?.(
+          view.connection &&
+            view.connection.status !== "revoked" &&
+            view.connection.roomId > 0
+            ? view.connection.roomId
+            : null,
+        );
         callbacks.current.onWorkspace(view.workspace);
         callbacks.current.onConfirmed(
           view.commands
@@ -123,6 +139,7 @@ export function RefereeIrc({
       } catch {
         if (!controller.signal.aborted) {
           setRelay(null);
+          callbacks.current.onRoomChange?.(null);
           setError((value) => value ?? "load");
         }
       } finally {

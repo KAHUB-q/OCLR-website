@@ -32,6 +32,7 @@ import {
   type MpReceipt,
 } from "./referee-mp-model";
 import type { RefereeEventPayload } from "./referee-model";
+import { refereeIrcRoomId } from "./referee-irc";
 
 type Tx = Parameters<Parameters<ReturnType<typeof db>["transaction"]>[0]>[0];
 const version = z.number().int().nonnegative();
@@ -46,8 +47,28 @@ const commandSchema = z.discriminatedUnion("action", [
       dependencyFingerprint: z.string().regex(/^[a-f0-9]{64}$/),
     })
     .strict(),
+  z
+    .object({
+      action: z.literal("bind_room"),
+      expectedRoomId: z.number().int().positive().max(Number.MAX_SAFE_INTEGER),
+      expectedRevision: version,
+      expectedSessionRevision: version,
+      dependencyFingerprint: z.string().regex(/^[a-f0-9]{64}$/),
+    })
+    .strict(),
   z.object({ action: z.literal("unbind"), expectedRevision: version }).strict(),
-  z.object({ action: z.literal("sync"), expectedRevision: version }).strict(),
+  z
+    .object({
+      action: z.literal("sync"),
+      expectedRevision: version,
+      expectedRoomId: z
+        .number()
+        .int()
+        .positive()
+        .max(Number.MAX_SAFE_INTEGER)
+        .optional(),
+    })
+    .strict(),
 ]);
 async function lock(tx: Tx, actor: User, slug: string, fixtureId: string) {
   await tx.execute(sql`SELECT pg_advisory_xact_lock(17301)`);
@@ -181,7 +202,6 @@ export async function refereeMpCommand(
       accessMode: "read only",
       isolationLevel: "repeatable read",
     });
-  const matchId = c.action === "bind" ? parseMatchId(c.match) : null;
   const lease = randomUUID();
   const claim = await db().transaction(async (tx) => {
     const w = await lock(tx, actor, slug, fixtureId);
@@ -210,7 +230,13 @@ export async function refereeMpCommand(
       });
       return null;
     }
-    if (c.action === "bind") {
+    if (c.action === "bind" || c.action === "bind_room") {
+      const matchId =
+        c.action === "bind"
+          ? parseMatchId(c.match)
+          : await refereeIrcRoomId(tx, fixtureId);
+      if (c.action === "bind_room" && matchId !== c.expectedRoomId)
+        throw new HttpError(409, "The IRC room binding changed.");
       if (
         !w.canRecord ||
         w.readiness.length ||
@@ -259,6 +285,12 @@ export async function refereeMpCommand(
     }
     if (!old?.enabled)
       throw new HttpError(409, "Bind an MP link before syncing results.");
+    if (
+      c.expectedRoomId !== undefined &&
+      (old.matchId !== c.expectedRoomId ||
+        (await refereeIrcRoomId(tx, fixtureId)) !== c.expectedRoomId)
+    )
+      throw new HttpError(409, "The IRC room binding changed.");
     const rows = await tx
       .select()
       .from(refereeMpScores)
@@ -336,6 +368,17 @@ export async function refereeMpCommand(
       binding.leaseId !== lease
     )
       return;
+    if (
+      c.action === "sync" &&
+      c.expectedRoomId !== undefined &&
+      (await refereeIrcRoomId(tx, fixtureId)) !== c.expectedRoomId
+    ) {
+      await tx
+        .update(refereeMpBindings)
+        .set({ leaseId: null, leaseUntil: null })
+        .where(eq(refereeMpBindings.fixtureId, fixtureId));
+      return;
+    }
     const rows = await tx
       .select()
       .from(refereeMpScores)
@@ -392,20 +435,18 @@ export async function refereeMpCommand(
             data: game,
           })),
         );
-      await tx
-        .insert(resultAuditEvents)
-        .values({
-          fixtureId,
-          actorId: actor.osuId,
-          action: "referee_mp_source_imported",
-          detail: {
-            importId: saved.id,
-            matchId: source.match.id,
-            fingerprint: source.fingerprint,
-            complete: source.complete,
-            gameCount: source.games.length,
-          },
-        });
+      await tx.insert(resultAuditEvents).values({
+        fixtureId,
+        actorId: actor.osuId,
+        action: "referee_mp_source_imported",
+        detail: {
+          importId: saved.id,
+          matchId: source.match.id,
+          fingerprint: source.fingerprint,
+          complete: source.complete,
+          gameCount: source.games.length,
+        },
+      });
     }
     const claimed = source.games.length
       ? await tx

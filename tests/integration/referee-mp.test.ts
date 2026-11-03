@@ -21,6 +21,7 @@ import {
   resultRevisions,
   resultAuditEvents,
   refereeReconciliations,
+  refereeIrcConnections,
 } from "../../src/db/schema";
 import {
   refereeCommand,
@@ -36,6 +37,7 @@ import {
   refereeTestUser as actor,
 } from "../fixtures/referee";
 import { assertTestDatabase } from "../database";
+import { refereeIrcRelay } from "../../src/lib/referee-irc";
 vi.mock("../../src/lib/osu-matches", async (importOriginal) => ({
   ...(await importOriginal<typeof import("../../src/lib/osu-matches")>()),
   fetchMatchSource: vi.fn(),
@@ -92,6 +94,115 @@ describe.skipIf(!url)("MP binding and atomic provisional scores", () => {
       dependencyFingerprint: w.dependencyFingerprint,
     });
   }
+  const desktopActor = { ...actor, sessionId: randomUUID() };
+  async function bindRoom(roomId = 880001) {
+    return refereeIrcRelay(desktopActor, w.fixture.id, {
+      action: "bind",
+      roomId,
+      ircUsername: actor.username.replace(/ /g, "_"),
+    });
+  }
+  async function autoBind(expectedRoomId = 880001, expectedRevision = 0) {
+    return call({
+      action: "bind_room",
+      expectedRoomId,
+      expectedRevision,
+      expectedSessionRevision: w.session?.revision ?? 0,
+      dependencyFingerprint: w.dependencyFingerprint,
+    });
+  }
+  it("derives the MP ID from this fixture's saved IRC room, including offline rooms, without fetching or writing results", async () => {
+    await expect(autoBind()).rejects.toMatchObject({ status: 409 });
+    await bindRoom(0);
+    await expect(autoBind()).rejects.toMatchObject({ status: 409 });
+    await bindRoom();
+    const before = w.session!.revision;
+    const result = await autoBind();
+    expect(result.binding).toMatchObject({
+      matchId: 880001,
+      enabled: true,
+      revision: 1,
+    });
+    expect(result.workspace.session!.revision).toBe(before);
+    expect(fetchMatchSource).not.toHaveBeenCalled();
+    expect(await db().select().from(refereeMpScores)).toHaveLength(0);
+    await expect(autoBind(880002, 1)).rejects.toMatchObject({ status: 409 });
+    await expect(
+      call({
+        action: "bind_room",
+        expectedRoomId: 880001,
+        expectedRevision: 1,
+        expectedSessionRevision: before,
+        dependencyFingerprint: w.dependencyFingerprint,
+        match: "https://osu.ppy.sh/community/matches/880002",
+      }),
+    ).rejects.toMatchObject({ status: 400 });
+  });
+  it("rebinds to the new IRC room with revision checks and rejects stale-room syncs before provider access", async () => {
+    await bindRoom();
+    await autoBind();
+    await bindRoom(880002);
+    const result = await autoBind(880002, 1);
+    expect(result.binding).toMatchObject({
+      matchId: 880002,
+      enabled: true,
+      revision: 2,
+    });
+    await expect(
+      call({ action: "sync", expectedRevision: 2, expectedRoomId: 880001 }),
+    ).rejects.toMatchObject({ status: 409 });
+    await expect(autoBind(880002, 1)).rejects.toMatchObject({ status: 409 });
+    expect(fetchMatchSource).not.toHaveBeenCalled();
+  });
+  it.each(["room change", "revocation"])(
+    "discards an in-flight room result after %s",
+    async (change) => {
+      const connection = await bindRoom();
+      await autoBind();
+      let resolve!: (source: ReturnType<typeof mpSource>) => void;
+      vi.mocked(fetchMatchSource).mockImplementation(
+        () =>
+          new Promise((done) => {
+            resolve = done;
+          }),
+      );
+      const pending = call({
+        action: "sync",
+        expectedRevision: 1,
+        expectedRoomId: 880001,
+      });
+      await vi.waitFor(() => expect(resolve).toBeTypeOf("function"));
+      if (change === "room change") await bindRoom(880002);
+      else
+        await refereeIrcRelay(desktopActor, w.fixture.id, {
+          action: "disconnect",
+          connectionId: connection.connectionId,
+        });
+      resolve(mpSource(w));
+      const result = await pending;
+      expect(result.workspace.projection.score[w.teams[0].id]).toBe(0);
+      expect(await db().select().from(refereeMpScores)).toHaveLength(0);
+      expect(
+        (await db().select().from(refereeMpBindings))[0].leaseId,
+      ).toBeNull();
+      if (change === "revocation") {
+        await expect(autoBind(880001, 1)).rejects.toMatchObject({
+          status: 409,
+        });
+        expect(
+          (await db().select().from(refereeIrcConnections))[0].status,
+        ).toBe("revoked");
+      }
+    },
+  );
+  it("requires the assigned referee's current capability for automatic room binding", async () => {
+    await bindRoom();
+    await db()
+      .delete(fixtureReferees)
+      .where(eq(fixtureReferees.fixtureId, w.fixture.id));
+    await expect(autoBind()).rejects.toMatchObject({ status: 403 });
+    expect(await db().select().from(refereeMpBindings)).toHaveLength(0);
+  });
   async function sync() {
     await db()
       .update(refereeMpBindings)

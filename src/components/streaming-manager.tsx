@@ -16,14 +16,12 @@ function StreamingMutation(
     <ConfirmMutation {...props} payload={{ ...props.payload, requestKey }} />
   );
 }
-function BookingDetails({
+function BookingSummary({
   assignment: task,
-  fixture: f,
   commentary,
   conflicts,
 }: {
   assignment: Assignment;
-  fixture: Fixture;
   commentary: boolean;
   conflicts: Fixture["conflicts"];
 }) {
@@ -33,18 +31,6 @@ function BookingDetails({
       <p>
         <strong>{task.username}</strong>
       </p>
-      <p className="small muted">
-        {task.source === "self" ? tr("Self-selected") : tr("Staff-assigned")}
-      </p>
-      <details>
-        <summary className="small muted">{tr("Assignment details")}</summary>
-        <p className="small muted">
-          {tr("Arranged by {value0} at {value1}", {
-            value0: task.assignedByName,
-            value1: formatDate(task.assignedAt, f.timeZone, tr.locale),
-          })}
-        </p>
-      </details>
       {!task.eligible && (
         <p className="notice small">
           {commentary
@@ -141,10 +127,13 @@ function BroadcastBookings({
       <ul className={styles.bookedPeople}>
         {assignments.map((task) => (
           <li key={task.userId}>
-            <div role="group" aria-label={task.username}>
-              <BookingDetails
+            <div
+              className={styles.person}
+              role="group"
+              aria-label={task.username}
+            >
+              <BookingSummary
                 assignment={task}
-                fixture={f}
                 commentary={commentary}
                 conflicts={task.conflicts}
               />
@@ -178,34 +167,30 @@ function BroadcastBookings({
           (canSelect && (commentary ? !own : !f.assignment))) && (
           <div className={styles.controls}>
             {data.canManage && (
-              <label className="field">
-                <span>
+              <select
+                aria-label={
+                  commentary ? tr("Assign Commentator") : tr("Assign Streamer")
+                }
+                value={target}
+                onChange={(event) => setTarget(event.target.value)}
+              >
+                <option value="">
                   {commentary
-                    ? tr("Assign Commentator")
-                    : tr("Assign Streamer")}
-                </span>
-                <select
-                  value={target}
-                  onChange={(event) => setTarget(event.target.value)}
-                >
-                  <option value="">
-                    {commentary
-                      ? tr("Choose Commentator")
-                      : tr("Choose Streamer")}
-                  </option>
-                  {candidates
-                    .filter(
-                      (u) =>
-                        !commentary ||
-                        !assignments.some((task) => task.userId === u.osuId),
-                    )
-                    .map((u) => (
-                      <option key={u.osuId} value={u.osuId}>
-                        {u.username} · {u.osuId}
-                      </option>
-                    ))}
-                </select>
-              </label>
+                    ? tr("Choose Commentator")
+                    : tr("Choose Streamer")}
+                </option>
+                {candidates
+                  .filter(
+                    (u) =>
+                      !commentary ||
+                      !assignments.some((task) => task.userId === u.osuId),
+                  )
+                  .map((u) => (
+                    <option key={u.osuId} value={u.osuId}>
+                      {u.username} · {u.osuId}
+                    </option>
+                  ))}
+              </select>
             )}
             {!!conflicts.length &&
               !assignments.some((task) => task.userId === selectedId) && (
@@ -280,7 +265,6 @@ function StreamingTask({
               ? formatDate(f.scheduledAt, f.timeZone, tr.locale)
               : tr("Match time TBA")}
           </p>
-          <p className="small muted">{f.timeZone}</p>
           <span className="badge">
             {f.completed ? tr("Completed") : tr(f.status)}
           </span>
@@ -309,11 +293,6 @@ export function StreamingManager({
       className={`form-stack ${styles.workspace}`}
       aria-label={tr("Streaming tasks")}
     >
-      <p className="small muted">
-        {tr(
-          "Bookings stay private and do not publish stream links. Conflict notices compare start times in this edition only and do not block booking.",
-        )}
-      </p>
       {detail ? (
         <Link href={`/admin/tournaments/${slug}/streaming?view=mine`}>
           {tr("My broadcast tasks")}

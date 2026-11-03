@@ -30,6 +30,7 @@ const bundle = await build({
     "tests/components/mappool-actions.tsx",
     "tests/components/workbench-compact.tsx",
     "tests/components/stage-groups.tsx",
+    "tests/components/streaming-manager.tsx",
     "tests/components/archive-bracket.tsx",
     "tests/components/ocl-chess.tsx",
     "tests/components/s3-bracket.tsx",
@@ -64,6 +65,7 @@ const themedStyles = new Map(
       "country-flags.css",
       "practice-records.css",
       "schedule-selection.css",
+      "streaming-manager.css",
     ].map(async (name) => {
       const file = bundle.outputFiles.find(
         (file) => basename(file.path) === name,
@@ -166,7 +168,11 @@ createServer((request, response) => {
                                                   "/mappool-actions",
                                                 )
                                               ? "mappool-actions"
-                                              : "player-message-board";
+                                              : request.url?.startsWith(
+                                                    "/streaming-manager",
+                                                  )
+                                                ? "streaming-manager"
+                                                : "player-message-board";
     const fixture = request.url?.startsWith("/staff-role-form")
       ? "staff-role-form"
       : request.url?.startsWith("/player-sidebar")

@@ -208,16 +208,10 @@ export function RefereeCommands({
     {
       title: tr("Room creation and rules"),
       kinds: ["make", "set"],
-      hint: tr(
-        "Send make to BanchoBot to create the room, then set its team mode, scoring and capacity.",
-      ),
     },
     {
       title: tr("Players and room staff"),
       kinds: ["addref", "invite"],
-      hint: tr(
-        "The room creator adds the Streamer as a referee. Invite every player from both saved rosters by username, including substitutes.",
-      ),
     },
     {
       title: tr("Map and Mods"),
@@ -298,10 +292,12 @@ export function RefereeCommands({
                           />
                         ))}
                     </div>
-                    <div className={styles.commandHint}>
-                      <p>{module.hint}</p>
-                      {module.kinds.includes("map") && mapSelector}
-                    </div>
+                    {module.hint && (
+                      <div className={styles.commandHint}>
+                        <p>{module.hint}</p>
+                        {module.kinds.includes("map") && mapSelector}
+                      </div>
+                    )}
                   </div>
                 </section>
               ))}

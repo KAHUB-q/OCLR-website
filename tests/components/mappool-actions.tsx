@@ -1,4 +1,5 @@
 import { createRoot } from "react-dom/client";
+import { useEffect, useRef, useState } from "react";
 import { NextIntlClientProvider } from "next-intl";
 import {
   AppRouterContext,
@@ -19,15 +20,6 @@ document.documentElement.lang = locale;
 document.documentElement.dataset.theme = params.get("theme") ?? "light";
 document.documentElement.dataset.appearance =
   params.get("appearance") ?? "default";
-const router: AppRouterInstance = {
-  back() {},
-  forward() {},
-  refresh() {},
-  push() {},
-  replace() {},
-  prefetch() {},
-  bfcacheId: "synthetic",
-};
 const date = new Date("2026-01-01T00:00:00Z");
 const data: MappoolWorkspace = {
   rounds: [
@@ -47,8 +39,8 @@ const data: MappoolWorkspace = {
       fmMode: null,
       fmRestrictions: "",
       version: 7,
-      publishedAt: null,
-      lockedAt: null,
+      publishedAt: params.has("published") ? date : null,
+      lockedAt: params.has("completed") ? date : null,
       selectionLockedAt: params.has("locked") ? date : null,
       showcaseAt: null,
       updatedAt: date,
@@ -78,21 +70,59 @@ const data: MappoolWorkspace = {
     },
   })),
 };
-createRoot(document.getElementById("root")!).render(
-  <AppRouterContext.Provider value={router}>
-    <NextIntlClientProvider
-      locale={locale}
-      messages={locale === "zh-Hant" ? hant : locale === "zh-Hans" ? hans : en}
-      timeZone="UTC"
-    >
-      <main className="themed-site private-site" style={{ padding: 16 }}>
-        <MappoolEditor
-          slug="synthetic"
-          data={data}
-          readOnlyMaps={params.has("readonly")}
-          canManageReplays={params.has("manage")}
-        />
-      </main>
-    </NextIntlClientProvider>
-  </AppRouterContext.Provider>,
-);
+function Fixture() {
+  const [workspace, setWorkspace] = useState(data);
+  const savedPublication = useRef<{ published: boolean } | null>(null);
+  useEffect(() => {
+    const receive = (event: Event) => {
+      savedPublication.current = (
+        event as CustomEvent<{ published: boolean }>
+      ).detail;
+    };
+    window.addEventListener("synthetic-pool-publication", receive);
+    return () =>
+      window.removeEventListener("synthetic-pool-publication", receive);
+  }, []);
+  const router: AppRouterInstance = {
+    back() {},
+    forward() {},
+    refresh() {
+      const saved = savedPublication.current;
+      if (!saved) return;
+      savedPublication.current = null;
+      setWorkspace((previous) => ({
+        ...previous,
+        pools: previous.pools.map((pool) => ({
+          ...pool,
+          publishedAt: saved.published ? date : null,
+          version: pool.version + 1,
+        })),
+      }));
+    },
+    push() {},
+    replace() {},
+    prefetch() {},
+    bfcacheId: "synthetic",
+  };
+  return (
+    <AppRouterContext.Provider value={router}>
+      <NextIntlClientProvider
+        locale={locale}
+        messages={
+          locale === "zh-Hant" ? hant : locale === "zh-Hans" ? hans : en
+        }
+        timeZone="UTC"
+      >
+        <main className="themed-site private-site" style={{ padding: 16 }}>
+          <MappoolEditor
+            slug="synthetic"
+            data={workspace}
+            readOnlyMaps={params.has("readonly")}
+            canManageReplays={params.has("manage")}
+          />
+        </main>
+      </NextIntlClientProvider>
+    </AppRouterContext.Provider>
+  );
+}
+createRoot(document.getElementById("root")!).render(<Fixture />);

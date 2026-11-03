@@ -9,6 +9,7 @@ import { createPortal } from "react-dom";
 import { usePendingRefresh } from "./use-pending-refresh";
 import { LoadingRegion } from "./loading-region";
 import { Spinner } from "./spinner";
+import { PublicationSwitch } from "./publication-switch";
 export function ConfirmMutation({
   label,
   className = "secondary",
@@ -25,6 +26,7 @@ export function ConfirmMutation({
   icon,
   errorTarget,
   children,
+  switchChecked,
 }: {
   label: string;
   className?: string;
@@ -41,6 +43,7 @@ export function ConfirmMutation({
   icon?: ReactNode;
   errorTarget?: HTMLElement | null;
   children?: ReactNode;
+  switchChecked?: boolean;
 }) {
   const readOnly = useStaffReadOnly();
   const tr = useAppTranslations();
@@ -92,42 +95,49 @@ export function ConfirmMutation({
         {tr(error)}
       </p>
     ) : null;
+  const triggerDisabled =
+    readOnly || disabled || pending || (!requireConfirmation && !canConfirm);
+  function activate() {
+    setError("");
+    if (requireConfirmation) dialog.current?.showModal();
+    else void confirm();
+  }
   return (
     <>
       {pending &&
         !inlineLoading &&
         (!requireConfirmation || (refreshing && !error)) && <LoadingRegion />}
-      <button
-        type="button"
-        aria-busy={pending}
-        aria-label={icon ? tr(label) : undefined}
-        title={icon ? tr(label) : undefined}
-        className={className}
-        disabled={
-          readOnly ||
-          disabled ||
-          pending ||
-          (!requireConfirmation && !canConfirm)
-        }
-        onClick={() => {
-          setError("");
-          if (requireConfirmation) dialog.current?.showModal();
-          else void confirm();
-        }}
-      >
-        {pending && inlineLoading ? (
-          icon ? (
-            <Spinner compact />
-          ) : (
-            <span className="inline-flex items-center gap-2">
+      {switchChecked !== undefined ? (
+        <PublicationSwitch
+          label={tr(label)}
+          checked={switchChecked}
+          disabled={triggerDisabled}
+          onChange={activate}
+        />
+      ) : (
+        <button
+          type="button"
+          aria-busy={pending}
+          aria-label={icon ? tr(label) : undefined}
+          title={icon ? tr(label) : undefined}
+          className={className}
+          disabled={triggerDisabled}
+          onClick={activate}
+        >
+          {pending && inlineLoading ? (
+            icon ? (
               <Spinner compact />
-              {tr(label)}
-            </span>
-          )
-        ) : (
-          (icon ?? tr(label))
-        )}
-      </button>
+            ) : (
+              <span className="inline-flex items-center gap-2">
+                <Spinner compact />
+                {tr(label)}
+              </span>
+            )
+          ) : (
+            (icon ?? tr(label))
+          )}
+        </button>
+      )}
       {feedback &&
         (errorTarget ? createPortal(feedback, errorTarget) : feedback)}
       {requireConfirmation && (

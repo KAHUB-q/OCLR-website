@@ -1,4 +1,5 @@
 import { InfoNote } from "@/components/info-note";
+import { Avatar } from "@/components/avatar";
 import { StaffReadOnlyContext } from "@/components/staff-read-only";
 import {
   RevokeRole,
@@ -13,6 +14,7 @@ import { requireUser } from "@/lib/auth/user";
 import { getEditionChoices } from "@/lib/content";
 import { remotePage } from "@/lib/remote-page";
 import { listStaffRoles } from "@/lib/staff-roles";
+import { groupStaffRoleAssignments } from "@/lib/staff-role-groups";
 import { notFound } from "next/navigation";
 async function Issue271Page({
   searchParams,
@@ -51,11 +53,7 @@ async function Issue271Page({
         grant.editionSlug === null ||
         grant.editionSlug === selected.slug,
     );
-    const groups = new Map<string, typeof grants>();
-    for (const row of visible.filter(({ grant }) => !grant.revokedAt)) {
-      const key = `${row.grant.userId}:${row.grant.editionSlug ?? "global"}`;
-      groups.set(key, [...(groups.get(key) ?? []), row]);
-    }
+    const groups = groupStaffRoleAssignments(visible);
 
     return (
       <>
@@ -84,31 +82,34 @@ async function Issue271Page({
               )}
             </EmptyState>
           )}
-          {[...groups].map(([key, rows]) => {
+          {groups.map(([key, rows]) => {
             const { grant: first, username } = rows[0];
             return (
               <article className="panel staff-role-group" key={key}>
                 <header className="staff-role-identity">
-                  <h3>
-                    {username} · {first.userId}
-                  </h3>
-                  <p className="staff-role-scope">
-                    <span className="muted">{tr("Scope")}</span>{" "}
-                    <strong>
-                      {first.editionSlug
-                        ? (editions.find((e) => e.slug === first.editionSlug)
-                            ?.name ?? first.editionSlug)
-                        : tr("Global — all editions")}
-                    </strong>
-                  </p>
-                  <p className="staff-role-summary">
-                    <span className="muted">{tr("Saved roles")}</span>
-                    <strong>
-                      {rows
-                        .map(({ grant }) => roleLabels[grant.role])
-                        .join(" / ")}
-                    </strong>
-                  </p>
+                  <Avatar osuId={first.userId} username={username} />
+                  <div className="staff-role-identity-details">
+                    <h3>
+                      {username} · {first.userId}
+                    </h3>
+                    <p className="staff-role-scope">
+                      <span className="muted">{tr("Scope")}</span>{" "}
+                      <strong>
+                        {first.editionSlug
+                          ? (editions.find((e) => e.slug === first.editionSlug)
+                              ?.name ?? first.editionSlug)
+                          : tr("Global — all editions")}
+                      </strong>
+                    </p>
+                    <p className="staff-role-summary">
+                      <span className="muted">{tr("Saved roles")}</span>
+                      <strong>
+                        {rows
+                          .map(({ grant }) => roleLabels[grant.role])
+                          .join(" / ")}
+                      </strong>
+                    </p>
+                  </div>
                 </header>
                 <StaffReadOnlyContext
                   value={
@@ -195,9 +196,14 @@ async function Issue271Page({
             .filter(({ grant }) => grant.revokedAt)
             .map(({ grant: g, username }) => (
               <article className="panel spaced" key={g.id}>
-                <h3>
-                  {username} · {g.userId}
-                </h3>
+                <header className="staff-role-identity">
+                  <Avatar osuId={g.userId} username={username} />
+                  <div className="staff-role-identity-details">
+                    <h3>
+                      {username} · {g.userId}
+                    </h3>
+                  </div>
+                </header>
                 <p>
                   {g.role} · {g.editionSlug ?? tr("Global")} ·{" "}
                   {g.revokedAt ? tr("Revoked") : tr("Active")}

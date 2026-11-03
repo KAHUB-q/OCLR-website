@@ -3,6 +3,7 @@ import { chromium } from "playwright";
 import sharp from "sharp";
 import { readFile, writeFile } from "node:fs/promises";
 import { fileURLToPath } from "node:url";
+import { exportCurrentHero } from "./export-current-hero.mjs";
 
 const root = new URL("../../../", import.meta.url);
 const studio = new URL("design/home-visual/layer-studio/assets/", root);
@@ -13,11 +14,6 @@ const assets = Object.fromEntries(
   await Promise.all(
     [
       ["sky", "nebula-only.png", "image/png"],
-      ["ground", "foreground.png", "image/png"],
-      ["person", "liru-refined-v2.png", "image/png"],
-      ["logo", "oclr-layer.svg", "image/svg+xml"],
-      ["season", "season-layer.svg", "image/svg+xml"],
-      ["katu", "katu-cropped.svg", "image/svg+xml"],
       ["wordmark", "logo.svg", "image/svg+xml"],
     ].map(async ([key, name, type]) => [key, await data(name, type)]),
   ),
@@ -51,18 +47,6 @@ const sky = img(
   "sky",
   "inset:0;width:100%;height:100%;object-fit:cover;object-position:center top;filter:saturate(.78) brightness(1.8)",
 );
-const scene =
-  sky +
-  img("ground", "left:-29.1%;top:89.2%;width:94.4%") +
-  '<div style="position:absolute;inset:0;background:linear-gradient(90deg,#0c0a1b 0%,#0c0a1b99 43%,transparent 100%)"></div>' +
-  img(
-    "person",
-    "left:63%;top:28%;width:53.97609%;transform:perspective(1200px) rotateY(12deg)",
-  );
-const lettering =
-  img("logo", "left:4.3788%;top:14.4727%;width:46.4545%") +
-  img("season", "left:-32.0428%;top:-7.97239%;width:90.5268%") +
-  img("katu", "left:41.4881%;top:22.0044%;width:4.68417%");
 async function webp(buffer, filename, width, height) {
   await sharp(buffer)
     .resize(width, height)
@@ -70,21 +54,7 @@ async function webp(buffer, filename, width, height) {
     .toFile(fileURLToPath(new URL(filename, publicDir)));
 }
 try {
-  const visual = await render(1280, 720, scene + lettering);
-  await webp(visual, "oclr-s11-key-visual.webp", 1920, 1080);
-  for (const width of [640, 960, 1280, 1920, 2560, 3840])
-    await webp(
-      visual,
-      `oclr-s11-key-visual-enhanced-${width}.webp`,
-      width,
-      (width * 9) / 16,
-    );
-  await webp(
-    await render(1280, 600, scene),
-    "oclr-s11-website-background.webp",
-    3840,
-    1800,
-  );
+  await exportCurrentHero(browser);
   const square = await render(
     400,
     400,

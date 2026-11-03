@@ -121,7 +121,7 @@ test.describe("dense Admin mappool workspace", () => {
     });
     await page.reload();
     await expect(
-      page.getByRole("button", { name: "Unpublish pool", exact: true }),
+      page.getByRole("switch", { name: "Publish pool", exact: true }),
     ).toBeVisible();
     const publicApi = `/api/tournaments/test-cup/mappools/${pool.id}`;
     const before = await (await context.request.get(publicApi)).json();
@@ -150,7 +150,7 @@ test.describe("dense Admin mappool workspace", () => {
       page.getByRole("button", { name: "Move NM1 down", exact: true }),
     ).toHaveCount(0);
     await expect(
-      page.getByRole("button", { name: "Unpublish pool", exact: true }),
+      page.getByRole("switch", { name: "Publish pool", exact: true }),
     ).toHaveCount(0);
     await page.screenshot({
       path: info.outputPath("locked-admin-mappool.png"),

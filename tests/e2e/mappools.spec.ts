@@ -222,7 +222,7 @@ test.describe("published mappools and restricted editing", () => {
         page.getByRole("heading", { name: /Synthetic Browser Song/ }),
       ).toBeVisible();
       await page
-        .getByRole("button", { name: "Publish pool", exact: true })
+        .getByRole("switch", { name: "Publish pool", exact: true })
         .click();
       await page.getByRole("button", { name: "Confirm", exact: true }).click();
       await expect(
@@ -298,7 +298,7 @@ test.describe("published mappools and restricted editing", () => {
         animations: "disabled",
       });
       await page
-        .getByRole("button", { name: "Unpublish pool", exact: true })
+        .getByRole("switch", { name: "Publish pool", exact: true })
         .click();
       await page.getByRole("button", { name: "Confirm", exact: true }).click();
       await expect(
@@ -497,7 +497,7 @@ test.describe("published mappools and restricted editing", () => {
       .click();
     await page.getByRole("tab", { name: "Pool settings", exact: true }).click();
     await page
-      .getByRole("button", { name: "Publish pool", exact: true })
+      .getByRole("switch", { name: "Publish pool", exact: true })
       .click();
     await page.getByRole("button", { name: "Confirm", exact: true }).click();
     await expect(

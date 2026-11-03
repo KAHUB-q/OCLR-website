@@ -8,7 +8,6 @@ import {
 
 import { useAppTranslations } from "@/i18n/shared";
 
-import Link from "next/link";
 import { WorkspaceTabs } from "./workspace-tabs";
 import { useEffect, useId, useRef, useState, type ReactNode } from "react";
 import type { MappoolWorkspace } from "@/lib/mappools";
@@ -640,14 +639,11 @@ function MappoolEditorContent({
             </div>
             <div className="actions mappool-pool-actions">
               {!pool.lockedAt && (
-                <Save
-                  change={change}
-                  className={
-                    pool.publishedAt
-                      ? "secondary destructive-action"
-                      : "secondary"
-                  }
-                  label={
+                <ConfirmMutation
+                  url={change.url}
+                  label={tr("Publish pool")}
+                  switchChecked={Boolean(pool.publishedAt)}
+                  title={
                     pool.publishedAt ? tr("Unpublish pool") : tr("Publish pool")
                   }
                   description={
@@ -664,16 +660,9 @@ function MappoolEditorContent({
                     poolId: pool.id,
                     expectedVersion: pool.version,
                     published: !pool.publishedAt,
+                    confirmed: true,
                   }}
                 />
-              )}
-              {pool.publishedAt && (
-                <Link
-                  className="button secondary"
-                  href={`/tournaments/${slug}/mappools/${pool.id}`}
-                >
-                  {tr("View public pool")}
-                </Link>
               )}
             </div>
           </div>

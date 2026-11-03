@@ -10,7 +10,10 @@ import { LoadingRegion } from "./loading-region";
 import { CaptainPlayerCard, type CaptainIdentity } from "./captain-player-card";
 import type { captainSetup } from "@/lib/captains";
 import { ConfirmMutation } from "./confirm-mutation";
+import { PublicationSwitch } from "./publication-switch";
+import styles from "./captain-manager.module.css";
 type Setup = Awaited<ReturnType<typeof captainSetup>>;
+const poolPageSize = 10;
 export function CaptainManager({
   slug,
   setup,
@@ -28,6 +31,7 @@ export function CaptainManager({
   const [previousUserId, setPrevious] = useState("");
   const [order, setOrder] = useState(setup.captains.map((c) => c.userId));
   const [search, setSearch] = useState("");
+  const [poolPage, setPoolPage] = useState(1);
   const [requestPending, setPending] = useState(false),
     [error, setError] = useState("");
   const [activeMutation, setActiveMutation] = useState<number | "order" | null>(
@@ -59,6 +63,13 @@ export function CaptainManager({
   );
   const pool = setup.pool.filter((p) =>
     `${p.username} ${p.userId}`.toLowerCase().includes(search.toLowerCase()),
+  );
+  const poolPages = Math.max(1, Math.ceil(pool.length / poolPageSize));
+  const currentPoolPage = Math.min(poolPage, poolPages);
+  if (poolPage !== currentPoolPage) setPoolPage(currentPoolPage);
+  const visiblePool = pool.slice(
+    (currentPoolPage - 1) * poolPageSize,
+    currentPoolPage * poolPageSize,
   );
   const changed = order.some((id, i) => id !== setup.captains[i]?.userId);
   const editable = !readOnly && !setup.locked && !pending;
@@ -377,13 +388,45 @@ export function CaptainManager({
             <span>{tr("Search players")}</span>
             <input
               value={search}
-              onChange={(event) => setSearch(event.target.value)}
+              onChange={(event) => {
+                setSearch(event.target.value);
+                setPoolPage(1);
+              }}
               placeholder={tr("Username or osu! ID")}
             />
           </label>
+          {poolPages > 1 && (
+            <nav
+              className={styles.pagination}
+              aria-label={tr("Eligible remaining pool")}
+            >
+              <button
+                className="secondary"
+                type="button"
+                disabled={currentPoolPage === 1}
+                onClick={() => setPoolPage(currentPoolPage - 1)}
+              >
+                {tr("← Previous")}
+              </button>
+              <p role="status">
+                {tr("Page {page} of {pages}", {
+                  page: currentPoolPage,
+                  pages: poolPages,
+                })}
+              </p>
+              <button
+                className="secondary"
+                type="button"
+                disabled={currentPoolPage === poolPages}
+                onClick={() => setPoolPage(currentPoolPage + 1)}
+              >
+                {tr("Next →")}
+              </button>
+            </nav>
+          )}
           {pool.length ? (
             <div className="captain-player-grid">
-              {pool.map((p) => (
+              {visiblePool.map((p) => (
                 <article
                   className="captain-player-card"
                   key={p.userId}
@@ -436,24 +479,18 @@ export function CaptainManager({
         aria-labelledby="captain-publication-heading"
       >
         <h2 id="captain-publication-heading">{tr("Publication settings")}</h2>
-        <label className="check-field">
-          <input
-            disabled={readOnly}
-            type="checkbox"
-            checked={published}
-            onChange={(e) => setPublished(e.target.checked)}
-          />
-          <span>{tr("Publish captains & order")}</span>
-        </label>
-        <label className="check-field">
-          <input
-            disabled={readOnly}
-            type="checkbox"
-            checked={poolPublished}
-            onChange={(e) => setPoolPublished(e.target.checked)}
-          />
-          <span>{tr("Publish eligible draft pool")}</span>
-        </label>
+        <PublicationSwitch
+          label={tr("Publish captains & order")}
+          checked={published}
+          onChange={setPublished}
+          disabled={readOnly}
+        />
+        <PublicationSwitch
+          label={tr("Publish eligible draft pool")}
+          checked={poolPublished}
+          onChange={setPoolPublished}
+          disabled={readOnly}
+        />
         <ConfirmMutation
           label={tr("Save publication settings")}
           title={tr("Change public visibility?")}

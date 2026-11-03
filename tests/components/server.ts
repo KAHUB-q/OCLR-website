@@ -12,6 +12,11 @@ import { bundledSeasonThemes } from "../fixtures/theme-assets";
 const themeAssets = new Set(
   bundledSeasonThemes.flatMap((theme) => theme.assets),
 );
+const tournamentArtwork = new Set([
+  "/oclr-s11-square-logo.webp",
+  "/oclr-s11-website-background.webp",
+  "/oclr-s11-key-visual.webp",
+]);
 
 const bundle = await build({
   entryPoints: [
@@ -31,6 +36,8 @@ const bundle = await build({
     "tests/components/workbench-compact.tsx",
     "tests/components/stage-groups.tsx",
     "tests/components/streaming-manager.tsx",
+    "tests/components/captain-manager.tsx",
+    "tests/components/tournament-settings.tsx",
     "tests/components/archive-bracket.tsx",
     "tests/components/ocl-chess.tsx",
     "tests/components/s3-bracket.tsx",
@@ -66,6 +73,8 @@ const themedStyles = new Map(
       "practice-records.css",
       "schedule-selection.css",
       "streaming-manager.css",
+      "captain-manager.css",
+      "tournament-settings.css",
     ].map(async (name) => {
       const file = bundle.outputFiles.find(
         (file) => basename(file.path) === name,
@@ -89,7 +98,10 @@ createServer((request, response) => {
         : "text/javascript; charset=utf-8",
     );
     response.end(themedStyles.get(file) ?? file.contents);
-  } else if (themeAssets.has(request.url ?? "")) {
+  } else if (
+    themeAssets.has(request.url ?? "") ||
+    tournamentArtwork.has(request.url ?? "")
+  ) {
     response.setHeader(
       "Content-Type",
       request.url!.endsWith(".svg") ? "image/svg+xml" : "image/webp",
@@ -172,7 +184,15 @@ createServer((request, response) => {
                                                     "/streaming-manager",
                                                   )
                                                 ? "streaming-manager"
-                                                : "player-message-board";
+                                                : request.url?.startsWith(
+                                                      "/captain-manager",
+                                                    )
+                                                  ? "captain-manager"
+                                                  : request.url?.startsWith(
+                                                        "/tournament-settings",
+                                                      )
+                                                    ? "tournament-settings"
+                                                    : "player-message-board";
     const fixture = request.url?.startsWith("/staff-role-form")
       ? "staff-role-form"
       : request.url?.startsWith("/player-sidebar")

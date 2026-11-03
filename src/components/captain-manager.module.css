@@ -1,0 +1,19 @@
+.pagination {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.5rem;
+}
+
+.pagination p {
+  margin: 0;
+  font-variant-numeric: tabular-nums;
+}
+
+@media (max-width: 400px) {
+  .pagination p {
+    flex-basis: 100%;
+    order: -1;
+  }
+}

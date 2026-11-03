@@ -5171,18 +5171,27 @@ html:lang(zh-Hant) .eyebrow {
   display: flex;
   flex-wrap: wrap;
   align-items: center;
+  justify-content: space-between;
   gap: 0.75rem;
-  background: #141929;
-  padding: 0.75rem;
+  background: transparent;
+  padding-block-start: 1rem;
   border-top: 1px solid var(--color-border);
-  border-radius: 0.5rem;
-  z-index: 2;
 }
 .settings-save > p {
   margin: 0;
 }
 .settings-save > [role="alert"] {
   flex-basis: 100%;
+}
+@media (max-width: 480px) {
+  .settings-save {
+    flex-direction: column;
+    flex-wrap: nowrap;
+    align-items: stretch;
+  }
+  .settings-save > [role="alert"] {
+    flex-basis: auto;
+  }
 }
 .tournament-settings > [role="tabpanel"] > div > .panel {
   margin-top: 0;

@@ -37,14 +37,6 @@ async function Issue271Page({
             readiness: data.readiness,
           }}
         />
-        <p id="competition">
-          <a
-            className="text-link"
-            href={`/admin/tournaments/${edition}/rounds#competition`}
-          >
-            {tr("Competition configuration")}
-          </a>
-        </p>
       </>
     );
   });

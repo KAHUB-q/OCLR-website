@@ -1,4 +1,39 @@
-# S11 winter asset exports
+# S11 tournament asset exports
+
+## Current homepage artwork — 2026-11-03 (#754)
+
+The organizer selected the current homepage's nebula and Chinese-outfit Liru
+for the tournament background and key visual. `export-current-hero.mjs` renders
+the checked-in `public/branding/home-hero/nebula-v2-2560.webp`,
+`liru-cn-v3-1111.webp`, `ink-mist.webp` and the homepage's unchanged
+`home-s11/oclr-layer.svg`, `season-layer.svg`, `katu-cropped.svg` layers.
+It uses the homepage's dark left-side shading, 12% ink mist and logo colours,
+with the character on the right and an artwork-only layout.
+
+The existing branding URLs remain the delivery paths: the key visual is
+1920×1080, its six `enhanced-{width}` variants remain 640, 960, 1280, 1920,
+2560 and 3840 pixels wide at 16:9, and the text-free website background is
+3840×1800. The `enhanced` filename is a compatibility name; these exports
+flatten existing layers and interpolate their source resolution.
+The square logo, standalone wordmarks, promotional banner and other seasons
+are outside this refresh.
+
+With Node 24 LTS and the existing npm dependencies, reproduce only these eight
+outputs using a configured Playwright browser:
+
+```sh
+PLAYWRIGHT_CHANNEL=chrome node design/home-visual/s11-assets/export-current-hero.mjs
+```
+
+The complete exporter below delegates its hero outputs to the same function,
+so it also retains the current artwork. Both commands read only checked-in
+assets and do not run the app or access a database. No new illustration is
+generated. Sources and credits follow the
+[current homepage asset ledger](../../../public/branding/README.md#layered-homepage-hero--2026-10-31-233):
+Liru by **JerrYamada**, **CC BY 4.0**, AI-assisted with Grok and retouched;
+the nebula and ink mist retain their recorded provenance.
+
+## Original winter family — 2026-10-29
 
 Organizer-requested asset-only follow-up to [PR #421](https://github.com/OCLR-dev/OCLR-website/pull/421), based on merged main `01263bb` (export branch starts at `9e10f72`). Reuses the approved winter nebula, corrected Liru, pastel OCL, constellation R, timing bar, independent 喝 and S11 layers. No new illustration is generated.
 

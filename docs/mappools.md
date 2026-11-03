@@ -99,7 +99,11 @@ Artist and adder share the credit row, followed by difficulty/mapper and saved
 base parameters (including HP). Parameters and four compact actions share one
 row, with actions on the right; narrow cards scroll that row horizontally rather
 than adding an action row. The row is keyboard-focusable and controls remain
-reachable. At a list width of 52rem or more, each candidate places the map on the
+reachable. Saved intended rounds appear as wrapping name chips directly below
+the parameters; all selected round names stay literal, and empty selections show
+the localized Unassigned state. The summary is also visible to read-only staff
+and updates after saving the existing multi-select editor. Unsaved drafts do not
+change the summary. At a list width of 52rem or more, each candidate places the map on the
 left, skillsets in the middle and always-visible comments on the right, separated
 by vertical rules. Narrower lists stack all three sections. Public/historical cards retain their
 existing cover layout. Pool promotion opens

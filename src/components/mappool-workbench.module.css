@@ -437,6 +437,23 @@
 .workbenchCard:global(.map-browse-card--band) :global(.map-card-footer) {
   margin-top: 0;
 }
+.assignedRounds {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: baseline;
+  gap: 0.25rem 0.5rem;
+  padding: 0 0.75rem 0.5rem;
+  color: var(--site-muted);
+  font-size: 0.8125rem;
+  overflow-wrap: anywhere;
+}
+.assignedRound {
+  max-width: 100%;
+  padding: 0.1rem 0.5rem;
+  border-radius: 999px;
+  background: var(--site-tint);
+  color: var(--site-accent);
+}
 .workbenchCard:global(.map-browse-card--band) :global(.map-card-values) {
   flex-wrap: nowrap;
   align-items: center;

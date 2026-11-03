@@ -184,7 +184,7 @@ for (const theme of ["light", "dark"]) {
       const inputBox = (await composer.boundingBox())!;
       expect(Math.abs(sendBox.y - inputBox.y)).toBeLessThan(2);
       expect(sendBox.x).toBeGreaterThan(inputBox.x + inputBox.width);
-      expect(commentBox.height).toBeLessThan(190);
+      expect(commentBox.height).toBeLessThan(230);
       await expect(
         discussion.getByRole("button", { name: "發表評論", exact: true }),
       ).toBeEnabled();
@@ -206,6 +206,18 @@ for (const theme of ["light", "dark"]) {
         ),
       ).toBeLessThan(2);
       const values = card.locator(".map-card-values");
+      const roundSummary = card
+        .locator(".map-card-extension")
+        .getByRole("group", {
+          name: "指定輪次",
+          exact: true,
+        });
+      await expect(roundSummary).toContainText("Grand Final");
+      const summaryBox = (await roundSummary.boundingBox())!;
+      const valuesBox = (await values.boundingBox())!;
+      expect(summaryBox.y).toBeGreaterThanOrEqual(
+        valuesBox.y + valuesBox.height,
+      );
       const toolbar = values.locator(".beatmap-actions");
       const parameters = (await values
         .locator(".map-card-parameters")

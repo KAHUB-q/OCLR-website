@@ -18,12 +18,26 @@ const data: SelectionWorkspace = {
   asOf: date,
   rounds: [
     { id: "round", name: "Grand Final", stage: "knockout", position: 1 },
+    ...(params.has("multipleRounds")
+      ? [
+          {
+            id: "round-extra",
+            name: "Synthetic Extended Round Name",
+            stage: "knockout" as const,
+            position: 2,
+          },
+        ]
+      : []),
   ],
   candidates: [1, 2].map((id) => ({
     id: `candidate-${id}`,
     category: "unassigned",
     beatmapId: 5722290 + id,
-    roundIds: ["round"],
+    roundIds: params.has("unassignedRounds")
+      ? []
+      : params.has("multipleRounds")
+        ? ["round-extra", "round"]
+        : ["round"],
     skillsetTags: ["jump", "tech"],
     skillsetVersion: 1,
     authorId: 1,
@@ -61,9 +75,11 @@ createRoot(document.getElementById("root")!).render(
       <SelectionWorkbench
         slug="synthetic"
         initialData={data}
-        writable
+        writable={!params.has("readOnly")}
         viewerId={1}
-        officialPools={{ rounds: [], pools: [], entries: [] }}
+        officialPools={
+          params.has("readOnly") ? null : { rounds: [], pools: [], entries: [] }
+        }
       />
     </main>
   </NextIntlClientProvider>,

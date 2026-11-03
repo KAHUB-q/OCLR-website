@@ -9,6 +9,7 @@ import {
   type SkillsetTag,
 } from "@/lib/mappool-skillsets";
 import { Spinner } from "./spinner";
+import { WorkbenchActionIcon } from "./workbench-action-icon";
 import styles from "./mappool-workbench.module.css";
 
 export function CandidateSkillsets({
@@ -166,16 +167,6 @@ export function CandidateSkillsets({
             </button>
           </header>
           <div className={styles.skillsetBody}>
-            <div className={styles.skillsetClear}>
-              <button
-                type="button"
-                className="secondary"
-                disabled={busy || !draft.length}
-                onClick={() => setDraft([])}
-              >
-                {tr("Clear selection")}
-              </button>
-            </div>
             <fieldset disabled={busy} className={styles.skillsetFields}>
               <legend className="sr-only">{tr("Skillset Tags")}</legend>
               {skillsetGroups.map((group) => (
@@ -217,6 +208,16 @@ export function CandidateSkillsets({
               {tr("{count} tags selected", { count: draft.length })}
             </span>
             <div className={styles.skillsetActions}>
+              <button
+                type="button"
+                className="secondary mappool-icon-action"
+                aria-label={tr("Clear selection")}
+                title={tr("Clear selection")}
+                disabled={busy || !draft.length}
+                onClick={() => setDraft([])}
+              >
+                <WorkbenchActionIcon kind="clear" />
+              </button>
               <button
                 type="button"
                 className="secondary"

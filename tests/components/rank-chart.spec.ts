@@ -1,4 +1,32 @@
 import { test, expect } from "@playwright/test";
+test("snapshot dates stay fixed across midnight and repeated pointer visits", async ({
+  page,
+}) => {
+  await page.clock.setFixedTime(new Date("2026-11-02T00:00:00Z"));
+  await page.goto("/rank-chart");
+  const chart = page.locator(".rank-chart-svg");
+  await expect(chart).toBeVisible();
+  const box = (await chart.boundingBox())!;
+  const hover = () =>
+    page.mouse.move(box.x + box.width - 10, box.y + box.height / 2);
+  await hover();
+  await expect(page.locator(".rank-chart-tip")).toContainText("Nov 1, 2026");
+  await page.mouse.move(0, 0);
+  await page.clock.setFixedTime(new Date("2026-11-04T00:00:00Z"));
+  await hover();
+  await expect(page.locator(".rank-chart-tip")).toContainText("Nov 1, 2026");
+});
+test("undated history shows ranks without inventing a calendar date", async ({
+  page,
+}) => {
+  await page.goto("/rank-chart?undated");
+  const chart = page.locator(".rank-chart-svg");
+  await expect(chart).toBeVisible();
+  const box = (await chart.boundingBox())!;
+  await page.mouse.move(box.x + box.width - 10, box.y + box.height / 2);
+  await expect(page.locator(".rank-chart-tip")).toContainText("#12,345");
+  await expect(page.locator(".rank-chart-tip span")).toHaveCount(0);
+});
 for (const theme of ["light", "dark"]) {
   test(`rank chart renders and inspects points (${theme})`, async ({
     page,

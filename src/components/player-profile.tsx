@@ -120,7 +120,11 @@ export function PlayerProfile({
         {badges && <ProfileBadges badges={badges} />}
         {history && history.length > 1 && (
           <div className="rank-chart-card">
-            <RankChart data={history} globalRank={s.globalRank} />
+            <RankChart
+              data={history}
+              globalRank={s.globalRank}
+              observedAt={p.fetchedAt}
+            />
           </div>
         )}
         <dl className="profile-statistics">

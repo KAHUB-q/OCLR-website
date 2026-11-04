@@ -21,7 +21,15 @@ createRoot(document.getElementById("root")!).render(
         <section className="panel profile-summary">
           <div className="profile-body">
             <div className="rank-chart-card">
-              <RankChart data={history} globalRank={12345} />
+              <RankChart
+                data={history}
+                globalRank={12345}
+                observedAt={
+                  new URLSearchParams(location.search).has("undated")
+                    ? null
+                    : "2026-11-01T23:30:00Z"
+                }
+              />
             </div>
             <dl className="profile-statistics">
               {[

@@ -20,8 +20,9 @@ refresh or database migration is required. Individual score views expose the raw
 score, multiplier and statistical score when an adjustment applies. Existing
 low-score appearance filtering continues to use the original MP score.
 
-These validation/rounding defaults and the new Chinese interface wording await
-organizer review with the implementation PR.
+The organizer confirmed whole-number rounding and immediate recalculation on
+settings save on 2026-11-05 (Asia/Taipei). The proposed validation range/precision
+and new Chinese interface wording await review with the implementation PR.
 
 ## Tournament content
 

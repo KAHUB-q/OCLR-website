@@ -51,18 +51,18 @@ function tickRanks(lo: number, hi: number) {
 export function RankChart({
   data,
   globalRank,
+  observedAt,
 }: {
   data: readonly number[];
   globalRank: number | null;
+  observedAt?: string | null;
 }) {
   const tr = useAppTranslations();
   const gradientId = useId();
   const hostRef = useRef<HTMLDivElement>(null);
   const [width, setWidth] = useState(0);
   const [height, setHeight] = useState(MIN_HEIGHT);
-  const [active, setActive] = useState<{ index: number; at: number } | null>(
-    null,
-  );
+  const [active, setActive] = useState<{ index: number } | null>(null);
 
   useEffect(() => {
     const host = hostRef.current;
@@ -126,10 +126,13 @@ export function RankChart({
       value,
     );
 
-  const formattedDay = (day: number, at: number) => {
+  const formattedDay = (day: number) => {
+    const at = observedAt ? Date.parse(observedAt) : NaN;
+    if (!Number.isFinite(at)) return null;
     const date = new Date(at);
-    date.setDate(date.getDate() + day);
+    date.setUTCDate(date.getUTCDate() + day);
     return new Intl.DateTimeFormat(tr.locale, {
+      timeZone: "UTC",
       year: "numeric",
       month: "short",
       day: "numeric",
@@ -153,7 +156,7 @@ export function RankChart({
         nearest = index;
       }
     });
-    setActive({ index: nearest, at: Date.now() });
+    setActive({ index: nearest });
   };
 
   const activePoint = active ? points[active.index] : null;
@@ -244,7 +247,9 @@ export function RankChart({
           }}
         >
           <strong>#{number(activePoint.rank)}</strong>
-          <span>{formattedDay(activePoint.day, active!.at)}</span>
+          {formattedDay(activePoint.day) && (
+            <span>{formattedDay(activePoint.day)}</span>
+          )}
         </div>
       )}
     </div>

@@ -16,3 +16,10 @@ html[data-appearance="glassmorphism"] .themed-site > main {
   width: min(calc(var(--content-max) + 2 * var(--gutter) + 2px), 100%);
   margin-inline: auto;
 }
+
+@media (max-width: 760px) {
+  .themed-site .site-header .mobile-menu-backdrop {
+    left: calc((100% - 100vw) / 2);
+    width: 100vw;
+  }
+}

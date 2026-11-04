@@ -10,7 +10,7 @@ import { usePendingRefresh } from "./use-pending-refresh";
 import { LoadingRegion } from "./loading-region";
 import { Spinner } from "./spinner";
 import { PublicationSwitch } from "./publication-switch";
-import styles from "./confirm-mutation.module.css";
+import { PendingButtonLabel } from "./pending-button-label";
 export function ConfirmMutation({
   label,
   className = "secondary",
@@ -113,6 +113,7 @@ export function ConfirmMutation({
           label={tr(label)}
           checked={switchChecked}
           disabled={triggerDisabled}
+          pending={pending}
           onChange={activate}
         />
       ) : (
@@ -129,10 +130,7 @@ export function ConfirmMutation({
             icon ? (
               <Spinner compact />
             ) : (
-              <span className={styles.pendingLabel}>
-                <Spinner compact />
-                {tr(label)}
-              </span>
+              <PendingButtonLabel pending>{tr(label)}</PendingButtonLabel>
             )
           ) : (
             (icon ?? tr(label))

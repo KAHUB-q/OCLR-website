@@ -54,6 +54,7 @@ function Save({
   return (
     <ConfirmMutation
       className={className}
+      loadingFeedback={icon ? "button" : "region"}
       icon={icon}
       errorTarget={errorTarget}
       disabled={disabled}
@@ -640,6 +641,7 @@ function MappoolEditorContent({
             <div className="actions mappool-pool-actions">
               {!pool.lockedAt && (
                 <ConfirmMutation
+                  loadingFeedback="button"
                   url={change.url}
                   label={tr("Publish pool")}
                   switchChecked={Boolean(pool.publishedAt)}

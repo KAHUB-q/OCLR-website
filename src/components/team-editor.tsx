@@ -7,6 +7,7 @@ import { useEffect, useRef, useState, type FormEvent } from "react";
 import Image from "next/image";
 import { usePendingRefresh } from "./use-pending-refresh";
 import { LoadingRegion } from "./loading-region";
+import { PendingButtonLabel } from "./pending-button-label";
 import { useAppTranslations } from "@/i18n/shared";
 import type { staffTeams } from "@/lib/teams";
 import { TeamAvatar } from "./team-avatar";
@@ -74,7 +75,6 @@ export function TeamEditor({
   }
   return (
     <>
-      {refreshing && !error && <LoadingRegion />}
       <button
         disabled={pending}
         aria-busy={pending}
@@ -88,7 +88,9 @@ export function TeamEditor({
           dialog.current?.showModal();
         }}
       >
-        {tr("Edit team")}
+        <PendingButtonLabel pending={pending}>
+          {tr("Edit team")}
+        </PendingButtonLabel>
       </button>
       <dialog
         ref={dialog}

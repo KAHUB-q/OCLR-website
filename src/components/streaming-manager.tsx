@@ -13,7 +13,11 @@ function StreamingMutation(
 ) {
   const [requestKey] = useState(() => crypto.randomUUID());
   return (
-    <ConfirmMutation {...props} payload={{ ...props.payload, requestKey }} />
+    <ConfirmMutation
+      loadingFeedback="button"
+      {...props}
+      payload={{ ...props.payload, requestKey }}
+    />
   );
 }
 function BookingSummary({

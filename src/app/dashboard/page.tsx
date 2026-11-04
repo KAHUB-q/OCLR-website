@@ -300,6 +300,7 @@ async function Issue271Page({
                         )}
                         {withdrawable && (
                           <ConfirmMutation
+                            loadingFeedback="button"
                             label={tr("Withdraw application")}
                             title={tr("Withdraw your application?")}
                             description={tr(

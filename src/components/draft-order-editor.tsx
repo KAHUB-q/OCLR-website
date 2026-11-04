@@ -235,6 +235,7 @@ export function DraftOrderEditor({
         )}
         <div className="actions">
           <ConfirmMutation
+            loadingFeedback="button"
             requireConfirmation={false}
             label={tr("Save draft configuration")}
             title={tr("Save draft configuration")}
@@ -252,6 +253,7 @@ export function DraftOrderEditor({
             }}
           />
           <ConfirmMutation
+            loadingFeedback="button"
             requireConfirmation={false}
             label={
               data.session?.state === "paused"

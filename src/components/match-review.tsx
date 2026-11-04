@@ -39,6 +39,7 @@ function Operation({
   const needsExplanation = action === "reject" || action === "void";
   return (
     <ConfirmMutation
+      loadingFeedback="button"
       canConfirm={!needsExplanation || Boolean(decisionNote.trim())}
       label={label}
       title={label}

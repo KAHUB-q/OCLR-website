@@ -481,6 +481,7 @@ export function StageGroups({
         </p>
         <div className="group-save-controls">
           <ConfirmMutation
+            loadingFeedback="button"
             disabled={!changed || invalid || unappliedCount}
             label={tr("Save group assignments")}
             title={tr("Save approved Group Stage configuration?")}

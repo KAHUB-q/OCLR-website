@@ -153,6 +153,7 @@ async function Issue271Page({
                         team={t}
                       />
                       <ConfirmMutation
+                        loadingFeedback="button"
                         label={
                           t.identityPublished
                             ? tr("Hide team identity")
@@ -177,6 +178,7 @@ async function Issue271Page({
                       />
                       {t.finalizedAt && t.identityPublished && (
                         <ConfirmMutation
+                          loadingFeedback="button"
                           label={
                             t.rosterPublished
                               ? tr("Hide roster")

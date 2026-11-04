@@ -683,6 +683,7 @@ export function StatisticsManager({
           {data.canPublish && (
             <div className="actions">
               <ConfirmMutation
+                loadingFeedback="button"
                 label={tr("Approve & publish statistics")}
                 title={tr("Approve & publish statistics")}
                 description={tr(
@@ -710,6 +711,7 @@ export function StatisticsManager({
                 }}
               />
               <ConfirmMutation
+                loadingFeedback="button"
                 label={tr("Withdraw statistics")}
                 title={tr("Withdraw statistics")}
                 description={tr(

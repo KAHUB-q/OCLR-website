@@ -397,6 +397,7 @@ export function MappoolBatch({
               )}
               <div className="actions">
                 <ConfirmMutation
+                  loadingFeedback="button"
                   requireConfirmation={false}
                   label={tr("Move / renumber selected")}
                   title={tr("Move map slots")}
@@ -418,6 +419,7 @@ export function MappoolBatch({
                   }}
                 />
                 <ConfirmMutation
+                  loadingFeedback="button"
                   requireConfirmation={false}
                   label={tr("Refresh selected metadata")}
                   title={tr("Refresh metadata")}
@@ -433,6 +435,7 @@ export function MappoolBatch({
                   }}
                 />
                 <ConfirmMutation
+                  loadingFeedback="button"
                   label={tr("Remove selected maps")}
                   title={tr("Remove selected maps")}
                   description={tr(

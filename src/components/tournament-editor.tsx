@@ -330,6 +330,7 @@ function Save({
         {dirty ? tr("Unsaved changes") : tr("Saved settings")}
       </p>
       <ConfirmMutation
+        loadingFeedback="button"
         className=""
         requireConfirmation={confirmation}
         disabled={disabled}
@@ -770,6 +771,7 @@ function Registration({ data, saved }: EditorProps) {
               {tr("Registration remains paused by tournament operations.")}
             </p>
             <ConfirmMutation
+              loadingFeedback="button"
               requireConfirmation={false}
               label={tr("Resume registration")}
               title={tr("Resume registration")}

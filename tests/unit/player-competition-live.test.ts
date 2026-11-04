@@ -110,3 +110,40 @@ it("keeps semifinal match records without awarding a podium before the public fi
     runnerUps: 0,
   });
 });
+
+it.each(["2026-11-03T12:00:00Z", null])(
+  "ignores a cancelled final with scheduledAt=%s when awarding the completed final",
+  async (scheduledAt) => {
+    vi.mocked(getPublicEdition).mockResolvedValue({
+      ...edition,
+      status: "live",
+    });
+    const cancelled = fixture(
+      "Grand Final reset",
+      "a",
+      "b",
+      null,
+      "2026-11-03T12:00:00Z",
+    );
+    cancelled.status = "cancelled";
+    cancelled.scheduledAt = scheduledAt;
+    vi.mocked(publicCompetition).mockResolvedValue({
+      fixtures: [
+        fixture("Grand Final", "a", "b", "a", "2026-11-02T12:00:00Z"),
+        cancelled,
+      ],
+      groups: [],
+      databaseAuthority: true,
+    });
+    expect(await playerCompetitionRecord([person("a")])).toMatchObject({
+      matches: 1,
+      championships: 1,
+      runnerUps: 0,
+    });
+    expect(await playerCompetitionRecord([person("b")])).toMatchObject({
+      matches: 1,
+      championships: 0,
+      runnerUps: 1,
+    });
+  },
+);

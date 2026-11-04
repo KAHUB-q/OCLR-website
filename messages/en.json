@@ -3863,6 +3863,18 @@
     "mf8bb5c414245": "EZ statistics score multiplier (optional)",
     "mb8a34c244cdc": "Uses MP score × multiplier for EZ, including combined mods. Blank uses 1. Saving recalculates statistics from published scores.",
     "m735182e60e1a": "Adjusted scores are rounded to the nearest whole number.",
-    "m4a145d9dcdfd": "Enter a multiplier from 0.0001 to 100 with up to 4 decimal places."
+    "m4a145d9dcdfd": "Enter a multiplier from 0.0001 to 100 with up to 4 decimal places.",
+    "m0a7b172626bd": "Members: ",
+    "m5211d4511260": "Mod usage",
+    "mbb874e9f9b53": "Slot count",
+    "mea95000316d4": "Mappool average effective rating",
+    "mc5b82aaf837e": "No mods recorded yet.",
+    "mb4437631c61e": "No mappool appearances yet.",
+    "md36195844c1f": "No pool ratings yet.",
+    "m6a906922458e": "Mods overview",
+    "mc21ea9590b3f": "First-place map count",
+    "m84b8d63e2636": "Second-place map count",
+    "m58f9aee51fa8": "Third-place map count",
+    "m2bf61a3bc850": "times"
   }
 }

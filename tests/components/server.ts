@@ -20,6 +20,7 @@ const tournamentArtwork = new Set([
 
 const bundle = await build({
   entryPoints: [
+    "tests/components/event-players.tsx",
     "tests/components/public-results.tsx",
     "tests/components/exhibition-pool-import.tsx",
     "tests/components/action-loading.tsx",
@@ -226,9 +227,11 @@ createServer((request, response) => {
                     : request.url?.startsWith("/country-flags")
                       ? "country-flags"
                       : entry;
-    const fixtureName = request.url?.startsWith("/backup-manager")
-      ? "backup-manager"
-      : fixture;
+    const fixtureName = request.url?.startsWith("/event-players")
+      ? "event-players"
+      : request.url?.startsWith("/backup-manager")
+        ? "backup-manager"
+        : fixture;
     response.end(
       `<!doctype html><html><head><meta name="viewport" content="width=device-width, initial-scale=1"><link rel="stylesheet" href="/${fixtureName}.css"></head><body><div id="root"></div><script nonce="${nonce}" src="/${fixtureName}.js"></script></body></html>`,
     );

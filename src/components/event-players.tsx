@@ -3,7 +3,7 @@ import { useAppTranslations } from "@/i18n/shared";
 import type { EventPlayer } from "@/lib/event-preview";
 import type { DirectoryPlayer } from "@/lib/player-directory";
 import Link from "./pending-link";
-import { Fragment, useState } from "react";
+import { Fragment, useEffect, useRef, useState } from "react";
 import {
   PlayerDirectoryTools,
   usePlayerDirectory,
@@ -52,6 +52,30 @@ export function EventPlayers({
     setLimit(pageSize);
   }
   const visible = rows.slice(0, limit);
+  const hasMore = !preview && rows.length > visible.length;
+  const more = useRef<HTMLDivElement>(null);
+  useEffect(() => {
+    const target = more.current;
+    if (!hasMore || !target || typeof IntersectionObserver === "undefined")
+      return;
+    let active = true;
+    const observer = new IntersectionObserver(
+      (entries) => {
+        if (!active || !entries.some((entry) => entry.isIntersecting)) return;
+        active = false;
+        observer.disconnect();
+        setLimit((current) =>
+          Math.max(current, Math.min(limit + PAGE_SIZE, rows.length)),
+        );
+      },
+      { rootMargin: "400px 0px" },
+    );
+    observer.observe(target);
+    return () => {
+      active = false;
+      observer.disconnect();
+    };
+  }, [filterKey, hasMore, limit, rows.length]);
   return (
     <section className="event-players">
       <PlayerDirectoryTools
@@ -162,11 +186,13 @@ export function EventPlayers({
           </Fragment>
         ))}
       </div>
-      {!preview && rows.length > visible.length && (
-        <div className="event-player-more">
+      {hasMore && (
+        <div className="event-player-more" ref={more}>
           <button
             type="button"
-            onClick={() => setLimit((current) => current + PAGE_SIZE)}
+            onClick={() =>
+              setLimit((current) => Math.min(current + PAGE_SIZE, rows.length))
+            }
           >
             {tr("Show more players")}
           </button>

@@ -85,9 +85,9 @@ selection-policy evidence.
 
 `npm ci` / `npm run dev` / `npm run build` generate minified public styles from
 `src/app/*-theme.css`. Root rendering emits only the resolved authorized
-appearance; default needs no optional stylesheet. A manual choice is applied
-only after its stylesheet loads successfully. Failed loads retain the previous
-appearance and preference. Route-inherited choices load before applying their
+appearance; default needs no optional stylesheet. A manual choice records the preference immediately so a reload retains the
+request; the visual appearance changes only after its stylesheet loads. Failed
+loads retain the previous appearance and restore the previous preference. Route-inherited choices load before applying their
 selector; visitor and edition authorization rules use the existing resolver.
 
 The same generator derives the homepage shell class inventory from its actual

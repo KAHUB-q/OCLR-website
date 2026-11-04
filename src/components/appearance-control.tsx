@@ -165,11 +165,30 @@ export function AppearanceControl({
               disabled={loading}
               onClick={async () => {
                 const effective = value === "site" ? inheritedDefault : value;
+                const previous = document.cookie
+                  .split("; ")
+                  .find((entry) => entry.startsWith(`${appearanceCookie}=`))
+                  ?.slice(appearanceCookie.length + 1);
+                const requested = value === "site" ? undefined : value;
+                const persist = (choice: string | undefined) => {
+                  document.cookie = `${appearanceCookie}=${choice ?? ""}; Path=/; Max-Age=${choice ? 31536000 : 0}; SameSite=Lax${location.protocol === "https:" ? "; Secure" : ""}`;
+                };
+                // Navigation/reload must retain the explicit choice even if
+                // the CSS request is still in flight. Failed loads roll it back.
+                persist(requested);
                 setLoading(true);
                 setLoadError(false);
                 try {
                   await ensureAppearanceStylesheet(effective);
                 } catch {
+                  const current = document.cookie
+                    .split("; ")
+                    .find((entry) => entry.startsWith(`${appearanceCookie}=`))
+                    ?.slice(appearanceCookie.length + 1);
+                  if (current === requested)
+                    persist(
+                      isPublicAppearance(previous) ? previous : undefined,
+                    );
                   setLoadError(true);
                   setLoading(false);
                   return;
@@ -177,7 +196,6 @@ export function AppearanceControl({
                 scope?.choose(value === "site" ? undefined : value);
                 activateAppearanceStylesheet(effective);
                 setLoading(false);
-                document.cookie = `${appearanceCookie}=${value === "site" ? "" : value}; Path=/; Max-Age=${value === "site" ? 0 : 31536000}; SameSite=Lax${location.protocol === "https:" ? "; Secure" : ""}`;
                 setPreference(value);
                 setAppearance(effective);
                 setOpen(false);

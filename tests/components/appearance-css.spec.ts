@@ -15,6 +15,11 @@ test("loads a requested appearance before applying it and retains the previous c
   await page.locator(".appearance-trigger").click();
   await page.locator('[data-appearance-option="swiss-minimal"]').click();
   await expect.poll(() => Boolean(release)).toBe(true);
+  expect(
+    (await page.context().cookies()).find(
+      (cookie) => cookie.name === "oclr-appearance",
+    )?.value,
+  ).toBe("swiss-minimal");
   await expect(page.locator("html")).toHaveAttribute(
     "data-appearance",
     "default",

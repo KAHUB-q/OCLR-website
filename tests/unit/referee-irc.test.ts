@@ -10,6 +10,38 @@ import {
 } from "../../src/lib/referee-irc-model";
 describe("IRC relay boundary", () => {
   it.each([
+    ["!mp mods NF Freemod", "Disabled all mods, enabled FreeMod"],
+    ["!mp mods NF DT Freemod", "Enabled DoubleTime, enabled FreeMod"],
+    ["!mp mods NF Freemod", "Enabled NoFail, enabled FreeMod"],
+  ])("confirms scoped FreeMod room acknowledgement for %s", (command, text) => {
+    const evidence = { sender: "BanchoBot", target: "#mp_123", text };
+    expect(confirmsIrcCommand(command, "#mp_123", evidence)).toBe(true);
+    for (const patch of [
+      { sender: "Player" },
+      { target: "#mp_124" },
+      { text: "Player says " + text },
+    ])
+      expect(
+        confirmsIrcCommand(command, "#mp_123", { ...evidence, ...patch }),
+      ).toBe(false);
+  });
+  it.each([
+    ["!mp mods NF", "Disabled all mods, disabled FreeMod"],
+    ["!mp mods NF DT Freemod", "Disabled all mods, enabled FreeMod"],
+    ["!mp mods NF Freemod", "Disabled all mods, disabled FreeMod"],
+    ["!mp mods Freemod", "Enabled NoFail, enabled FreeMod"],
+    ["!mp mods NF HR Freemod", "Disabled all mods, enabled FreeMod"],
+    ["!mp mods NF Freemod", "Enabled Unknown, enabled FreeMod"],
+  ])("rejects mismatched room Mods for %s", (command, text) => {
+    expect(
+      confirmsIrcCommand(command, "#mp_123", {
+        sender: "BanchoBot",
+        target: "#mp_123",
+        text,
+      }),
+    ).toBe(false);
+  });
+  it.each([
     "!mp map 123 0",
     "!mp timer 30",
     "!mp mods NF HD",

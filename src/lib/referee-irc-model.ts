@@ -229,10 +229,20 @@ export function confirmsMods(command: string, reply: string): boolean {
     .filter((m) => !["None", "Freemod"].includes(m))
     .map(normalize);
   const actual = observed[1] ? observed[1].split(/,\s*/).map(normalize) : [];
+  if (
+    desired.includes(null) ||
+    actual.includes(null) ||
+    new Set(actual).size !== actual.length
+  )
+    return false;
+  const matches = (expected: (string | null)[]) =>
+    expected.sort().join(",") === actual.sort().join(",");
+  // FreeMod can omit NF from global room Mods. This confirms the room setting,
+  // never the individual players' NF selection or scoring compliance.
   return (
-    !desired.includes(null) &&
-    !actual.includes(null) &&
-    new Set(actual).size === actual.length &&
-    desired.sort().join(",") === actual.sort().join(",")
+    matches(desired) ||
+    (freemod &&
+      desired.includes("NF") &&
+      matches(desired.filter((mod) => mod !== "NF")))
   );
 }

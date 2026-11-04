@@ -25,23 +25,36 @@ export function appearanceStylesheet(appearance: Appearance) {
     : `/appearance-styles/${appearance}.css`;
 }
 const pending = new Map<string, Promise<void>>();
+function hasAppearanceRules(link: HTMLLinkElement) {
+  try {
+    return Boolean(link.sheet?.cssRules.length);
+  } catch {
+    // A failed request can leave a sheet whose rules cannot be read.
+    return false;
+  }
+}
 /** Load a new appearance before changing its selector, keeping the current paint. */
 export function ensureAppearanceStylesheet(
   appearance: Appearance,
 ): Promise<void> {
   const href = appearanceStylesheet(appearance);
   if (!href) return Promise.resolve();
-  const existing = document.querySelector<HTMLLinkElement>(
-    `link[data-oclr-appearance-style="${appearance}"]`,
-  );
-  if (existing?.sheet) {
+  const existing = [
+    ...document.querySelectorAll<HTMLLinkElement>(
+      `link[data-oclr-appearance-style="${appearance}"]`,
+    ),
+  ].find(hasAppearanceRules);
+  if (existing) {
     existing.disabled = false;
     return Promise.resolve();
   }
   const current = pending.get(href);
   if (current) return current;
   const promise = new Promise<void>((resolve, reject) => {
-    const link = existing ?? document.createElement("link");
+    // An SSR link may already have emitted its error before hydration. Chromium
+    // can retain an inaccessible sheet in that case. Retry with a client-owned
+    // link so this promise observes a new load without removing React's node.
+    const link = document.createElement("link");
     link.rel = "stylesheet";
     link.href = href;
     link.dataset.oclrAppearanceStyle = appearance;
@@ -57,10 +70,8 @@ export function ensureAppearanceStylesheet(
     };
     link.addEventListener("load", loaded, { once: true });
     link.addEventListener("error", failed, { once: true });
-    if (!existing) {
-      link.media = "not all";
-      document.head.append(link);
-    }
+    link.media = "not all";
+    document.head.append(link);
   });
   pending.set(href, promise);
   return promise;
@@ -68,7 +79,16 @@ export function ensureAppearanceStylesheet(
 export function activateAppearanceStylesheet(appearance: Appearance) {
   for (const link of document.querySelectorAll<HTMLLinkElement>(
     "link[data-oclr-appearance-style]",
-  ))
-    link.disabled = link.dataset.oclrAppearanceStyle !== appearance;
+  )) {
+    if (!hasAppearanceRules(link)) {
+      link.disabled = true;
+      continue;
+    }
+    // Keep successful sheets loaded for later choices. Toggling disabled can
+    // discard their sheet and retry a failed SSR link when re-enabling it.
+    link.media =
+      link.dataset.oclrAppearanceStyle === appearance ? "all" : "not all";
+    link.disabled = false;
+  }
   document.documentElement.dataset.appearance = appearance;
 }

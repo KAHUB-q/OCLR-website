@@ -16,7 +16,14 @@ for (const stale of ["success", "error"]) {
       uploaderId: 42,
       createdAt: "2026-11-01T00:00:00Z",
       description: "",
-      metadata: null,
+      summary: {
+        playerName: "Synthetic player",
+        mode: "osu",
+        mods: "NM",
+        version: 20260101,
+        beatmapMd5: "a".repeat(32),
+      },
+      verification: "matched",
     });
     await page.route("https://assets.ppy.sh/**", (route) => route.abort());
     await page.route("**/api/**/replays", async (route) => {
@@ -50,7 +57,7 @@ for (const stale of ["success", "error"]) {
     release!();
     await expect.poll(() => Boolean(finish)).toBe(true);
     await finish;
-    await expect(dialog.locator(".replay-filename")).toHaveText([
+    await expect(dialog.locator("strong.replay-filename")).toHaveText([
       "one.osr",
       "two.osr",
     ]);

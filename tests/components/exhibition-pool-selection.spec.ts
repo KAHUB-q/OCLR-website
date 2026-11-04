@@ -44,7 +44,7 @@ test("select-all merges filtered maps, deduplicates and preserves the selection 
   await search.fill("");
   await expect(page.getByRole("checkbox").first()).toBeChecked();
   await expect(page.getByRole("checkbox").nth(1)).not.toBeChecked();
-  await search.fill("NM2 ");
+  await search.fill("NM2 2");
   await all.click();
   await all.click();
   await search.fill("");

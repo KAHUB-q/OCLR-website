@@ -1,5 +1,5 @@
 /* S1 Chromatic Origins: approved ink-diffusion artwork. */
-html[data-appearance="chromatic-origins"] .themed-site {
+html[data-appearance="chromatic-origins"] {
   --site-background: #f6f4f7;
   --site-surface: #ffffff;
   --site-raised: #eee8f8;
@@ -27,6 +27,8 @@ html[data-appearance="chromatic-origins"] .themed-site {
   --site-panel-shadow: #34204b20;
   --site-dialog-shadow: #34204b38;
   --site-backdrop: #21173380;
+}
+html[data-appearance="chromatic-origins"] .themed-site {
   --button-radius: 8px;
   --radius-panel: 12px;
   --chromatic-violet: #8060bd;
@@ -40,7 +42,7 @@ html[data-appearance="chromatic-origins"] .themed-site {
   --chromatic-edge-light: #ffffffa6;
   background: var(--site-background);
 }
-html[data-appearance="chromatic-origins"][data-theme="dark"] .themed-site {
+html[data-appearance="chromatic-origins"][data-theme="dark"] {
   --site-background: #211c29;
   --site-surface: #2c2535;
   --site-raised: #32294e;
@@ -68,6 +70,8 @@ html[data-appearance="chromatic-origins"][data-theme="dark"] .themed-site {
   --site-panel-shadow: #09051266;
   --site-dialog-shadow: #09051299;
   --site-backdrop: #090512b0;
+}
+html[data-appearance="chromatic-origins"][data-theme="dark"] .themed-site {
   --chromatic-violet: #bc9ce8;
   --chromatic-violet-ink: #e2c9ff;
   --chromatic-peach: #f1b4bc;

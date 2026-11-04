@@ -1,5 +1,5 @@
 /* S4 Azure Brush: paper-white editorial surfaces and Chinese ink-wash brushwork. */
-html[data-appearance="azure-brush"] .themed-site {
+html[data-appearance="azure-brush"] {
   --site-background: #f2f8fa;
   --site-surface: #ffffff;
   --site-raised: #e3eef2;
@@ -27,6 +27,8 @@ html[data-appearance="azure-brush"] .themed-site {
   --site-panel-shadow: #17394e20;
   --site-dialog-shadow: #17394e38;
   --site-backdrop: #0b203180;
+}
+html[data-appearance="azure-brush"] .themed-site {
   --button-radius: 3px;
   --radius-panel: 4px;
   --azure-blue: #267ab5;
@@ -38,7 +40,7 @@ html[data-appearance="azure-brush"] .themed-site {
   --azure-mobile-wash: #f7fbfdad;
   background: var(--site-background);
 }
-html[data-appearance="azure-brush"][data-theme="dark"] .themed-site {
+html[data-appearance="azure-brush"][data-theme="dark"] {
   --site-background: #0f2132;
   --site-surface: #172e42;
   --site-raised: #213e54;
@@ -66,6 +68,8 @@ html[data-appearance="azure-brush"][data-theme="dark"] .themed-site {
   --site-panel-shadow: #06121e66;
   --site-dialog-shadow: #06121e99;
   --site-backdrop: #06121eb0;
+}
+html[data-appearance="azure-brush"][data-theme="dark"] .themed-site {
   --azure-blue: #80bee6;
   --azure-number-ink: #b4dcf6;
   --azure-mark: #80bee6;

@@ -35,7 +35,7 @@ html[data-appearance="frutiger-aero"][data-theme="dark"]:not(
   background: #112331;
 }
 
-html[data-appearance="frutiger-aero"] .themed-site {
+html[data-appearance="frutiger-aero"] {
   --site-background: #eef8ff;
   --site-surface: #ffffff;
   --site-raised: #e1f1fb;
@@ -63,6 +63,12 @@ html[data-appearance="frutiger-aero"] .themed-site {
   --site-panel-shadow: #17213720;
   --site-dialog-shadow: #17213745;
   --site-backdrop: #10131d80;
+  --site-button-shadow:
+    inset 0 1px 0 #ffffffc4, inset 0 -2px 5px #c22a6b2e,
+    0 6px 14px -6px #ff5f9b73;
+}
+
+html[data-appearance="frutiger-aero"] .themed-site {
   /* Decorative only. Never reused as success/warning/danger or mod semantics. */
   --frutiger-mint: #2f7d22;
   --frutiger-mint-light: #4f9f33;
@@ -98,9 +104,6 @@ html[data-appearance="frutiger-aero"] .themed-site {
   );
   --frutiger-well: inset 0 1px 2px #0b3a5721;
   --frutiger-chevron: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='8' viewBox='0 0 12 8' fill='none'%3E%3Cpath d='M1.5 1.75 6 6.25l4.5-4.5' stroke='%23577c90' stroke-width='1.75' stroke-linecap='round' stroke-linejoin='round'/%3E%3C/svg%3E");
-  --site-button-shadow:
-    inset 0 1px 0 #ffffffc4, inset 0 -2px 5px #c22a6b2e,
-    0 6px 14px -6px #ff5f9b73;
   --button-radius: 999px;
   --radius-panel: 20px;
   color-scheme: light;
@@ -109,7 +112,7 @@ html[data-appearance="frutiger-aero"] .themed-site {
   color: var(--site-foreground);
   line-height: 1.65;
 }
-html[data-appearance="frutiger-aero"][data-theme="dark"] .themed-site {
+html[data-appearance="frutiger-aero"][data-theme="dark"] {
   --site-background: #112331;
   --site-surface: #203646;
   --site-raised: #2a4759;
@@ -137,6 +140,11 @@ html[data-appearance="frutiger-aero"][data-theme="dark"] .themed-site {
   --site-panel-shadow: #0005;
   --site-dialog-shadow: #0009;
   --site-backdrop: #050810b3;
+  --site-button-shadow:
+    inset 0 1px 0 #ffffff9e, inset 0 -2px 6px #8f1f4d47,
+    0 8px 18px -8px #00000099;
+}
+html[data-appearance="frutiger-aero"][data-theme="dark"] .themed-site {
   --frutiger-mint: #a7e86a;
   --frutiger-mint-light: #c4f294;
   --frutiger-mint-edge: #6fae3a;
@@ -157,9 +165,6 @@ html[data-appearance="frutiger-aero"][data-theme="dark"] .themed-site {
   );
   --frutiger-well: inset 0 1px 2px #00000059;
   --frutiger-chevron: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='8' viewBox='0 0 12 8' fill='none'%3E%3Cpath d='M1.5 1.75 6 6.25l4.5-4.5' stroke='%2380a8bf' stroke-width='1.75' stroke-linecap='round' stroke-linejoin='round'/%3E%3C/svg%3E");
-  --site-button-shadow:
-    inset 0 1px 0 #ffffff9e, inset 0 -2px 6px #8f1f4d47,
-    0 8px 18px -8px #00000099;
   color-scheme: dark;
 }
 /* Fixed sky behind the whole page; decoration only, never a click target. */
@@ -309,10 +314,7 @@ html[data-appearance="frutiger-aero"] .themed-site .site-footer {
   box-shadow: none;
   color: var(--site-secondary-text);
 }
-html[data-appearance="frutiger-aero"]
-  .themed-site
-  .site-footer
-  .footer-credit {
+html[data-appearance="frutiger-aero"] .themed-site .site-footer .footer-credit {
   color: var(--site-accent);
   text-decoration-color: color-mix(
     in srgb,
@@ -534,9 +536,7 @@ html[data-appearance="frutiger-aero"]
   text-decoration-thickness: 2px;
   text-underline-offset: 0.22em;
 }
-html[data-appearance="frutiger-aero"]
-  .themed-site
-  button.map-open-button {
+html[data-appearance="frutiger-aero"] .themed-site button.map-open-button {
   display: flex;
   align-items: center;
   min-height: 44px;
@@ -569,9 +569,7 @@ html[data-appearance="frutiger-aero"]
   text-underline-offset: 0.2em;
   transform: none;
 }
-html[data-appearance="frutiger-aero"]
-  .themed-site
-  button.statistics-player {
+html[data-appearance="frutiger-aero"] .themed-site button.statistics-player {
   min-height: 44px;
   padding: 0.25rem 0;
   border: 0;
@@ -1056,12 +1054,14 @@ html[data-appearance="frutiger-aero"] .themed-site .notice {
   html[data-appearance="frutiger-aero"] .themed-site::before {
     display: none;
   }
-  html[data-appearance="frutiger-aero"] .themed-site {
+  html[data-appearance="frutiger-aero"] {
     --site-surface: Canvas;
     --site-raised: Canvas;
     --site-tint: Canvas;
-    --frutiger-gloss: none;
     --site-button-shadow: none;
+  }
+  html[data-appearance="frutiger-aero"] .themed-site {
+    --frutiger-gloss: none;
     background: Canvas;
     color: CanvasText;
   }

@@ -36,7 +36,7 @@ html[data-appearance="manga-halftone"][data-theme="dark"]:not(
   background: #171418;
 }
 
-html[data-appearance="manga-halftone"] .themed-site {
+html[data-appearance="manga-halftone"] {
   --site-background: #fbfaf8;
   --site-surface: #fff;
   --site-raised: #f3edf1;
@@ -64,6 +64,10 @@ html[data-appearance="manga-halftone"] .themed-site {
   --site-panel-shadow: #17151520;
   --site-dialog-shadow: #171515;
   --site-backdrop: #10131d80;
+  --site-button-shadow: 3px 3px 0 var(--manga-offset);
+}
+
+html[data-appearance="manga-halftone"] .themed-site {
   /* Ink for every line; screentone pink is decoration, never a state. */
   --manga-ink: #171515;
   --manga-tone: #ff4f9a;
@@ -81,7 +85,6 @@ html[data-appearance="manga-halftone"] .themed-site {
     var(--manga-ink) 0 2px,
     transparent 2px 5px
   );
-  --site-button-shadow: 3px 3px 0 var(--manga-offset);
   --button-radius: 2px;
   --radius-panel: 2px;
   color-scheme: light;
@@ -89,7 +92,7 @@ html[data-appearance="manga-halftone"] .themed-site {
   color: var(--site-foreground);
   line-height: 1.65;
 }
-html[data-appearance="manga-halftone"][data-theme="dark"] .themed-site {
+html[data-appearance="manga-halftone"][data-theme="dark"] {
   --site-background: #171418;
   --site-surface: #251e25;
   --site-raised: #352b34;
@@ -117,6 +120,8 @@ html[data-appearance="manga-halftone"][data-theme="dark"] .themed-site {
   --site-panel-shadow: #0005;
   --site-dialog-shadow: #000;
   --site-backdrop: #050810b3;
+}
+html[data-appearance="manga-halftone"][data-theme="dark"] .themed-site {
   /* Warm-white ink, never a pure-white page frame. */
   --manga-ink: #e9dccb;
   --manga-tone: #c94a85;

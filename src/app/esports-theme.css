@@ -36,7 +36,7 @@ html[data-appearance="esports-broadcast"][data-theme="dark"]:not(
   background: #0b0e14;
 }
 
-html[data-appearance="esports-broadcast"] .themed-site {
+html[data-appearance="esports-broadcast"] {
   --site-background: #eef1f6;
   --site-surface: #fff;
   --site-raised: #e4e8f0;
@@ -64,6 +64,10 @@ html[data-appearance="esports-broadcast"] .themed-site {
   --site-panel-shadow: #1117221f;
   --site-dialog-shadow: #11172247;
   --site-backdrop: #0d111880;
+  --site-button-shadow: 3px 3px 0 var(--esports-offset);
+}
+
+html[data-appearance="esports-broadcast"] .themed-site {
   /* Cyan is the data/selected-slot colour, never a status colour. */
   --esports-cyan: #14d8f5;
   --esports-on-cyan: #06121a;
@@ -80,7 +84,6 @@ html[data-appearance="esports-broadcast"] .themed-site {
   --esports-head-text: #eef2f7;
   --esports-dot: #1117221c;
   --esports-offset: #0d1118;
-  --site-button-shadow: 3px 3px 0 var(--esports-offset);
   --button-radius: 4px;
   --radius-panel: 6px;
   color-scheme: light;
@@ -95,7 +98,7 @@ html[data-appearance="esports-broadcast"] .themed-site {
   color: var(--site-foreground);
   line-height: 1.65;
 }
-html[data-appearance="esports-broadcast"][data-theme="dark"] .themed-site {
+html[data-appearance="esports-broadcast"][data-theme="dark"] {
   --site-background: #0b0e14;
   --site-surface: #141922;
   --site-raised: #1d2430;
@@ -123,6 +126,8 @@ html[data-appearance="esports-broadcast"][data-theme="dark"] .themed-site {
   --site-panel-shadow: #0006;
   --site-dialog-shadow: #000a;
   --site-backdrop: #000000b3;
+}
+html[data-appearance="esports-broadcast"][data-theme="dark"] .themed-site {
   --esports-cyan: #19e3ff;
   --esports-on-cyan: #04121a;
   --esports-cyan-ink: #4fe3fb;

@@ -1,5 +1,5 @@
 /* S2 Verdant Prelude: spring paper, refined swallows and botanical leaf studies. */
-html[data-appearance="verdant-prelude"] .themed-site {
+html[data-appearance="verdant-prelude"] {
   --site-background: #f5faf7;
   --site-surface: #ffffff;
   --site-raised: #e8f3ed;
@@ -27,6 +27,8 @@ html[data-appearance="verdant-prelude"] .themed-site {
   --site-panel-shadow: #203b2e20;
   --site-dialog-shadow: #203b2e38;
   --site-backdrop: #13251c80;
+}
+html[data-appearance="verdant-prelude"] .themed-site {
   --button-radius: 8px;
   --radius-panel: 12px;
   --verdant-leaf: #7da991;
@@ -40,7 +42,7 @@ html[data-appearance="verdant-prelude"] .themed-site {
   --verdant-edge-light: #ffffffa6;
   background: var(--site-background);
 }
-html[data-appearance="verdant-prelude"][data-theme="dark"] .themed-site {
+html[data-appearance="verdant-prelude"][data-theme="dark"] {
   --site-background: #12231f;
   --site-surface: #1b302a;
   --site-raised: #274138;
@@ -68,6 +70,8 @@ html[data-appearance="verdant-prelude"][data-theme="dark"] .themed-site {
   --site-panel-shadow: #08181066;
   --site-dialog-shadow: #08181099;
   --site-backdrop: #081810b0;
+}
+html[data-appearance="verdant-prelude"][data-theme="dark"] .themed-site {
   --verdant-leaf: #93c8ad;
   --verdant-leaf-ink: #c1e4d3;
   --verdant-sage: #b7ce9f;

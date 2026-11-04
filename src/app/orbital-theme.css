@@ -1,6 +1,6 @@
 /* S6 Orbital Pulse: red/blue MainSheet surfaces and a static music spectrum.
  * Scope every rule to ordinary themed pages; broadcast layouts stay isolated. */
-html[data-appearance="orbital-pulse"] .themed-site {
+html[data-appearance="orbital-pulse"] {
   --site-background: #f4f6fc;
   --site-surface: #ffffff;
   --site-raised: #e9eef9;
@@ -28,6 +28,8 @@ html[data-appearance="orbital-pulse"] .themed-site {
   --site-panel-shadow: #102b461c;
   --site-dialog-shadow: #102b4633;
   --site-backdrop: #0c142877;
+}
+html[data-appearance="orbital-pulse"] .themed-site {
   --button-radius: 6px;
   --radius-panel: 8px;
   --orbital-blue: #2455d6;
@@ -41,7 +43,7 @@ html[data-appearance="orbital-pulse"] .themed-site {
   --orbital-edge-shade: #b9c8e233;
   background: var(--site-background);
 }
-html[data-appearance="orbital-pulse"][data-theme="dark"] .themed-site {
+html[data-appearance="orbital-pulse"][data-theme="dark"] {
   --site-background: #0c1428;
   --site-surface: #14213b;
   --site-raised: #1d2e4b;
@@ -69,6 +71,8 @@ html[data-appearance="orbital-pulse"][data-theme="dark"] .themed-site {
   --site-panel-shadow: #0006;
   --site-dialog-shadow: #0009;
   --site-backdrop: #000a;
+}
+html[data-appearance="orbital-pulse"][data-theme="dark"] .themed-site {
   --orbital-blue: #6792ff;
   --orbital-blue-ink: #a8bfff;
   --orbital-red: #ff657b;

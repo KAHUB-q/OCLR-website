@@ -1,5 +1,5 @@
 /* S8 Sakura Circuit: approved banner, half portrait, refined blossoms and warm hairlines. */
-html[data-appearance="sakura-circuit"] .themed-site {
+html[data-appearance="sakura-circuit"] {
   --site-background: #fff8fa;
   --site-surface: #ffffff;
   --site-raised: #fff0f5;
@@ -27,6 +27,8 @@ html[data-appearance="sakura-circuit"] .themed-site {
   --site-panel-shadow: #49273824;
   --site-dialog-shadow: #49273833;
   --site-backdrop: #49273866;
+}
+html[data-appearance="sakura-circuit"] .themed-site {
   --button-radius: 8px;
   --radius-panel: 8px;
   --sakura-pink: #f175af;
@@ -38,7 +40,7 @@ html[data-appearance="sakura-circuit"] .themed-site {
   --sakura-banner: url("/themes/sakura-circuit/source-rules-banner.png");
   background: var(--site-background);
 }
-html[data-appearance="sakura-circuit"][data-theme="dark"] .themed-site {
+html[data-appearance="sakura-circuit"][data-theme="dark"] {
   --site-background: #241a22;
   --site-surface: #30212b;
   --site-raised: #3c2a36;
@@ -66,6 +68,8 @@ html[data-appearance="sakura-circuit"][data-theme="dark"] .themed-site {
   --site-panel-shadow: #0006;
   --site-dialog-shadow: #0009;
   --site-backdrop: #0009;
+}
+html[data-appearance="sakura-circuit"][data-theme="dark"] .themed-site {
   --sakura-ink: #d58ba9;
   --sakura-orange: #edaa7a;
   --sakura-orange-soft: #896048;

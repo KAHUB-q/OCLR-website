@@ -224,11 +224,13 @@ test.describe("appearance and language preferences", () => {
         await expect(
           page.getByRole("heading", { name: title, exact: true }),
         ).toBeVisible();
+        await openHeaderPreferences(page);
         await expect(page.locator(".theme-control")).toBeVisible();
         await expect(page.locator(".themed-site")).toHaveCSS(
           "color-scheme",
           (await page.locator("html").getAttribute("data-theme"))!,
         );
+        await closeHeaderPreferences(page);
         expect(
           await page.evaluate(
             () => document.documentElement.scrollWidth <= innerWidth,

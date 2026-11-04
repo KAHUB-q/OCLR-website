@@ -131,6 +131,7 @@ test.describe("system color scheme preference", () => {
     await expect(html).toHaveAttribute("lang", "zh-Hans");
     await expect(html).toHaveAttribute("data-theme", "light");
     await expect(html).toHaveAttribute("data-theme-preference", "system");
+    await openHeaderPreferences(page);
     await expect(trigger).toHaveAccessibleName("明暗模式：跟随系统（浅色）");
     await page.emulateMedia({ colorScheme: "dark" });
     await expect(html).toHaveAttribute("data-theme", "dark");

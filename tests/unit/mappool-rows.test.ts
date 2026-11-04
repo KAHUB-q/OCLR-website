@@ -62,6 +62,16 @@ describe("mappool auto-slot parsing", () => {
     expect(rows.every((r) => !r.error)).toBe(true);
     expect(rows[1].warning).toContain("reused");
   });
+  it("warns consistently when the reused map was saved in an earlier batch", () => {
+    const saved = [{ category: "NM" as const, position: 1, beatmapId: 123 }];
+    const [reused] = parseMappoolRows("HD1 123", undefined, saved);
+    expect(reused.error).toBeNull();
+    expect(reused.warning).toBe(parseMappoolRows("NM1 123\nHD1 123")[1].warning);
+    expect(parseMappoolRows("NM2 123", undefined, saved)[0].error).toContain(
+      "already exists in this category",
+    );
+    expect(parseMappoolRows("HD1 456", undefined, saved)[0].warning).toBeNull();
+  });
   it("requires a category only for unprefixed rows and preserves TB labels", () => {
     expect(parseMappoolRows("123")[0].error).toContain(
       "Choose a destination category",

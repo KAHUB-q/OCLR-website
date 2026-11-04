@@ -139,7 +139,7 @@ export function parseMappoolRows(
     ) + 1;
   const slots = new Set<string>(),
     entries = new Set<string>(),
-    maps = new Set<number>();
+    maps = new Set(existing.map((entry) => entry.beatmapId));
   return parsed.map((row) => {
     const { line, category, beatmapId } = row;
     let { position, error } = row;

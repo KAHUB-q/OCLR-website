@@ -21,6 +21,7 @@ import "../../src/app/chromatic-theme.css";
 import "../../src/app/frost-theme.css";
 import "../../src/app/archive-counts.css";
 import "../../src/app/header-mobile.css";
+import "../../src/app/content-layout.css";
 import { useState } from "react";
 import { TournamentShell } from "../../src/components/tournament-navigation";
 import { createRoot } from "react-dom/client";
@@ -62,7 +63,14 @@ function Harness() {
     params.has("tournament") ? "/tournaments/synthetic" : "/",
   );
   const content = (
-    <main style={{ minHeight: 2600, padding: 24 }}>
+    <main
+      className={
+        params.has("alignment") && !params.has("tournament")
+          ? "container page"
+          : undefined
+      }
+      style={{ minHeight: 2600, padding: params.has("alignment") ? 0 : 24 }}
+    >
       <h1>Synthetic header preview</h1>
       <a href="#content">Page content</a>
       <button type="button" data-route-change onClick={() => setPath("/news")}>

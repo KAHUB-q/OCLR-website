@@ -1,0 +1,11 @@
+/* One content column for ordinary pages, event content and header controls.
+ * A wider surface may override --content-max on the shared site shell. */
+:root {
+  --content-max: 77.5rem;
+  --gutter: clamp(1rem, 2vw, 3rem);
+}
+html[data-appearance] .themed-site .site-header .nav-wrap {
+  width: min(var(--content-max), calc(100% - 2 * var(--gutter)));
+  max-width: var(--content-max);
+  padding-inline: 0;
+}

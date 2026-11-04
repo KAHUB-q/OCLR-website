@@ -4,6 +4,7 @@ import { closeDb } from "../../src/db";
 import { seedEditions } from "../fixtures/editions";
 import { edition } from "../fixtures/edition";
 import { chooseTheme } from "./theme";
+import { openHeaderPreferences } from "./header-preferences";
 
 const origin = "http://127.0.0.1:3100";
 // The brightness present when <body> is first parsed, i.e. before first paint.
@@ -49,6 +50,7 @@ test.describe("system color scheme preference", () => {
     // No saved choice: the system's dark mode applies before first paint.
     await page.emulateMedia({ colorScheme: "dark" });
     await page.goto("/tournaments/test-cup");
+    await openHeaderPreferences(page);
     expect(await firstPaint(page)).toBe("dark");
     await expect(html).toHaveAttribute("data-theme", "dark");
     await expect(html).toHaveAttribute("data-theme-preference", "system");
@@ -81,6 +83,7 @@ test.describe("system color scheme preference", () => {
     await expect(html).toHaveAttribute("data-theme-preference", "system");
 
     // Three accessible options, keyboard reachable.
+    await openHeaderPreferences(page);
     await trigger.focus();
     await page.keyboard.press("ArrowDown");
     const menu = page.getByRole("menu", { name: "Color mode", exact: true });
@@ -122,11 +125,13 @@ test.describe("system color scheme preference", () => {
     expect(await cookie("oclr-theme")).toBeUndefined();
 
     // A route refresh (language change) keeps the automatic mode and listener.
+    await openHeaderPreferences(page);
     await page.locator(".language-control button").first().click();
     await page.locator('.language-control [data-locale="zh-Hans"]').click();
     await expect(html).toHaveAttribute("lang", "zh-Hans");
     await expect(html).toHaveAttribute("data-theme", "light");
     await expect(html).toHaveAttribute("data-theme-preference", "system");
+    await openHeaderPreferences(page);
     await expect(trigger).toHaveAccessibleName("明暗模式：跟随系统（浅色）");
     await page.emulateMedia({ colorScheme: "dark" });
     await expect(html).toHaveAttribute("data-theme", "dark");

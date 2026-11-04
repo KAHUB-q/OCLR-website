@@ -69,9 +69,12 @@ test.describe("appearance and language preferences", () => {
     expect(initial?.headers()["content-language"]).toBe("zh-Hans");
     await expect(page.locator("html")).toHaveAttribute("lang", "zh-Hans");
     await expect(page.locator("html")).toHaveAttribute("data-theme", "light");
+    const compact = page.viewportSize()!.width <= 760;
+    if (compact) await page.locator(".menu-toggle").click();
     await expect(
       page.locator(".language-control > button"),
     ).toHaveAccessibleName(/简体中文$/);
+    if (compact) await page.locator(".menu-toggle").click();
     await expect(
       page.getByRole("heading", {
         name: "Organizer edition · 原文",
@@ -221,11 +224,13 @@ test.describe("appearance and language preferences", () => {
         await expect(
           page.getByRole("heading", { name: title, exact: true }),
         ).toBeVisible();
+        await openHeaderPreferences(page);
         await expect(page.locator(".theme-control")).toBeVisible();
         await expect(page.locator(".themed-site")).toHaveCSS(
           "color-scheme",
           (await page.locator("html").getAttribute("data-theme"))!,
         );
+        await closeHeaderPreferences(page);
         expect(
           await page.evaluate(
             () => document.documentElement.scrollWidth <= innerWidth,

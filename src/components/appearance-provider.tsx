@@ -1,5 +1,9 @@
 "use client";
 import {
+  ensureAppearanceStylesheet,
+  activateAppearanceStylesheet,
+} from "@/lib/appearance-styles";
+import {
   createContext,
   useContext,
   useLayoutEffect,
@@ -47,11 +51,30 @@ export function AppearanceProvider({
       ? choice.value
       : initialPreference;
   const preference = isPublicAppearance(candidate) ? candidate : undefined;
-  const appearance = readVisitorAppearance(preference, inherited.appearance);
+  const desiredAppearance = readVisitorAppearance(
+    preference,
+    inherited.appearance,
+  );
+  const [appearance, setAppearance] = useState(desiredAppearance);
+  useLayoutEffect(() => {
+    let cancelled = false;
+    void ensureAppearanceStylesheet(desiredAppearance)
+      .then(() => {
+        if (cancelled) return;
+        activateAppearanceStylesheet(desiredAppearance);
+        setAppearance(desiredAppearance);
+      })
+      .catch(() => {
+        /* Retain the loaded appearance; the next navigation retries. */
+      });
+    return () => {
+      cancelled = true;
+    };
+  }, [desiredAppearance]);
   // SSR sets the same attribute. Client navigation updates it before paint,
   // without turning an inherited tournament default into a personal cookie.
   useLayoutEffect(() => {
-    document.documentElement.dataset.appearance = appearance;
+    // Stylesheet loading applies the selector only after the CSS is ready.
     // Discard legacy season cookies without persisting an inherited edition theme.
     const cookie = document.cookie
       .split("; ")

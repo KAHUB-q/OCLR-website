@@ -110,10 +110,24 @@ describe("player workspace values", () => {
     for (const extra of [
       { beatmapId: 456 },
       { category: "HD" },
-      { fmMode: "force_mod" },
-      { fmRestrictions: "HD required" },
       { metadata: { ...map.metadata, checksum: "a" } },
     ])
       expect(practiceContextValue({ ...map, ...extra })).not.toBe(before);
+    for (const category of ["NM", "HD", "HR", "DT", "TB"])
+      expect(
+        practiceContextValue({
+          ...map,
+          category,
+          fmMode: "force_mod",
+          fmRestrictions: "HD required",
+        }),
+      ).toBe(practiceContextValue({ ...map, category }));
+    const fm = { ...map, category: "FM" };
+    expect(practiceContextValue({ ...fm, fmMode: "free_mod" })).not.toBe(
+      practiceContextValue(fm),
+    );
+    expect(
+      practiceContextValue({ ...fm, fmRestrictions: "HD required" }),
+    ).not.toBe(practiceContextValue(fm));
   });
 });

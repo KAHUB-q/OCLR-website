@@ -84,6 +84,11 @@ or relevant mod change marks the old record and requires a fresh context/version
 before replacing it. Deleted entries retain private audit history and do not
 silently transfer a score to a new slot.
 
+FM policy changes affect only FM practice contexts (#798). Existing non-FM
+hashes are verified using the current chart/mod identity and saved pool-setting
+history, so deploying the corrected context calculation preserves valid older
+scores. This read compatibility does not rewrite records or private audit history.
+
 ## Season timetable
 
 `/tournaments/[edition]/player/availability` stores up to 200 dated time ranges

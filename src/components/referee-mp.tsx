@@ -1,5 +1,11 @@
 "use client";
-import { useCallback, useEffect, useRef, useState } from "react";
+import {
+  useCallback,
+  useEffect,
+  useRef,
+  useState,
+  type ReactNode,
+} from "react";
 import { useAppTranslations } from "@/i18n/shared";
 import type { RefereeWorkspace } from "@/lib/referee";
 import type { RefereeMpView } from "@/lib/referee-mp";
@@ -26,11 +32,13 @@ export function RefereeMp({
   disabled,
   roomId,
   onWorkspace,
+  children,
 }: {
   endpoint: string;
   disabled: boolean;
   roomId: number | null;
   onWorkspace: (w: RefereeWorkspace) => void;
+  children: (control: ReactNode, feedback: ReactNode) => ReactNode;
 }) {
   const tr = useAppTranslations();
   const [binding, setBinding] = useState<RefereeMpView["binding"]>(null);
@@ -176,42 +184,44 @@ export function RefereeMp({
       setBusy(false);
     }
   }
-  return (
+  const control = (
+    <button
+      type="button"
+      className={`secondary ${styles.mpSyncToggle}`}
+      aria-pressed={Boolean(binding?.enabled)}
+      title={
+        binding?.enabled
+          ? tr("Stop MP sync")
+          : !roomId
+            ? tr("Connect the local IRC app to this fixture first.")
+            : tr("Automatic sync")
+      }
+      disabled={disabled || busy || (!binding?.enabled && !roomId)}
+      onClick={() => void change()}
+    >
+      {binding?.enabled && (
+        <svg
+          width="14"
+          height="14"
+          viewBox="0 0 16 16"
+          fill="none"
+          aria-hidden="true"
+        >
+          <path
+            d="m3 8 3 3 7-7"
+            stroke="currentColor"
+            strokeWidth="2"
+            strokeLinecap="round"
+            strokeLinejoin="round"
+          />
+        </svg>
+      )}
+      {busy ? tr("Saving…") : tr("Automatic sync")}
+    </button>
+  );
+  const feedback = (
     <div className={styles.mpSync}>
       <div className={styles.mpSyncActions}>
-        <button
-          type="button"
-          className="secondary"
-          aria-pressed={Boolean(binding?.enabled)}
-          title={
-            binding?.enabled
-              ? tr("Stop MP sync")
-              : !roomId
-                ? tr("Connect the local IRC app to this fixture first.")
-                : tr("Automatic sync")
-          }
-          disabled={disabled || busy || (!binding?.enabled && !roomId)}
-          onClick={() => void change()}
-        >
-          {binding?.enabled && (
-            <svg
-              width="14"
-              height="14"
-              viewBox="0 0 16 16"
-              fill="none"
-              aria-hidden="true"
-            >
-              <path
-                d="m3 8 3 3 7-7"
-                stroke="currentColor"
-                strokeWidth="2"
-                strokeLinecap="round"
-                strokeLinejoin="round"
-              />
-            </svg>
-          )}
-          {busy ? tr("Saving…") : tr("Automatic sync")}
-        </button>
         {!!roomId && (
           <a
             href={`https://osu.ppy.sh/community/matches/${roomId}`}
@@ -288,5 +298,11 @@ export function RefereeMp({
         </details>
       )}
     </div>
+  );
+  return children(
+    control,
+    roomId || error || binding?.error || binding?.issues.length
+      ? feedback
+      : null,
   );
 }

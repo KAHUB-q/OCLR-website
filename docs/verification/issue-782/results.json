@@ -1,0 +1,21 @@
+{
+  "cases": 24,
+  "minContrast": 4.612613505330215,
+  "colors": {
+    "light-NM": "rgb(43, 106, 164)",
+    "light-HD": "rgb(130, 96, 0)",
+    "light-HR": "rgb(196, 32, 38)",
+    "light-DT": "rgb(106, 77, 174)",
+    "light-TB": "rgb(170, 63, 120)",
+    "light-FM": "rgb(27, 20, 34)",
+    "light-XY": "rgb(27, 20, 34)",
+    "dark-NM": "rgb(117, 185, 237)",
+    "dark-HD": "rgb(246, 200, 95)",
+    "dark-HR": "rgb(255, 147, 151)",
+    "dark-DT": "rgb(188, 164, 242)",
+    "dark-TB": "rgb(233, 155, 199)",
+    "dark-FM": "rgb(244, 243, 252)",
+    "dark-XY": "rgb(244, 243, 252)"
+  },
+  "errors": []
+}

@@ -800,6 +800,7 @@
     "m935b458bc51c": "osu! returned incomplete batch metadata.",
     "m3fabe9d0ac91": "Beatmap lookup failed.",
     "m590b52e8bd70": "osu! did not supply the map ruleset; adjusted attributes cannot be verified.",
+    "m36fce272cdaa": "First-to series require tied maps to be replayed.",
     "m78080d598f79": "Difficulty lookup is busy. Retry shortly.",
     "m9bd3257cbfda": "osu! returned incomplete difficulty attributes. Saved data was preserved.",
     "m14bb00478022": "Enter an osu! match ID or canonical multiplayer match link.",

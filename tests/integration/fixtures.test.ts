@@ -24,6 +24,7 @@ import {
   resultRevisions,
   staffRoles,
   teams,
+  tournamentRounds,
   users,
 } from "../../src/db/schema";
 import {
@@ -502,6 +503,42 @@ describe.skipIf(!url)(
       );
       expect(edited.fixtures[0].label).toBe("Updated public fixture");
       expect(await db().select().from(matchResults)).toEqual([]);
+    });
+    it("rejects counted ties in first-to rounds before changing saved rules", async () => {
+      const [before] = await db()
+        .select()
+        .from(tournamentRounds)
+        .where(eq(tournamentRounds.id, roundId));
+      await expect(
+        fixtureCommand(admin, "test-cup", {
+          ...confirm,
+          action: "round_rules",
+          roundId,
+          expectedVersion: before.version,
+          scoringRules: { ...rules, tiedMapPolicy: "count_as_draw" },
+          standingsRules: null,
+        }),
+      ).rejects.toMatchObject({
+        status: 400,
+        message: "First-to series require tied maps to be replayed.",
+      });
+      const [after] = await db()
+        .select()
+        .from(tournamentRounds)
+        .where(eq(tournamentRounds.id, roundId));
+      expect(after).toEqual(before);
+      await fixtureCommand(admin, "test-cup", {
+        ...confirm,
+        action: "round_rules",
+        roundId,
+        expectedVersion: before.version,
+        scoringRules: {
+          ...rules,
+          tiedMapPolicy: "count_as_draw",
+          series: { type: "fixed_maps", count: 2, allowDraw: true },
+        },
+        standingsRules: null,
+      });
     });
     it("saves EX lineup size and rejects counts above the normal lineup without updating rules", async () => {
       const [f] = (await fixtureCommand(admin, "test-cup", body())).fixtures;

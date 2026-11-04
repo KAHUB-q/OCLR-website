@@ -24,6 +24,7 @@ import {
   resultRevisions,
   staffRoles,
   teams,
+  tournamentRounds,
   users,
 } from "../../src/db/schema";
 import {

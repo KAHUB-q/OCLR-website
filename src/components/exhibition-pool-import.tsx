@@ -24,6 +24,7 @@ export function ExhibitionPoolImport({
   const [poolId, setPoolId] = useState("");
   const [selected, setSelected] = useState<string[]>([]);
   const [query, setQuery] = useState("");
+  const [selectionError, setSelectionError] = useState("");
   useEffect(() => {
     if (!open) return;
     const controller = new AbortController();
@@ -58,6 +59,7 @@ export function ExhibitionPoolImport({
       .includes(query.trim().toLocaleLowerCase()),
   );
   function reset() {
+    setSelectionError("");
     setSelected([]);
     setQuery("");
   }
@@ -157,8 +159,18 @@ export function ExhibitionPoolImport({
                 <button
                   type="button"
                   className="secondary"
-                  disabled={!maps.length || maps.length > 50}
-                  onClick={() => setSelected(maps.map((map) => map.key))}
+                  disabled={!maps.length}
+                  onClick={() => {
+                    const merged = [
+                      ...new Set([...selected, ...maps.map((map) => map.key)]),
+                    ];
+                    if (merged.length > 50) {
+                      setSelectionError(tr("Choose up to 50 maps."));
+                      return;
+                    }
+                    setSelectionError("");
+                    setSelected(merged);
+                  }}
                 >
                   {tr("Select all visible maps")}
                 </button>
@@ -166,7 +178,10 @@ export function ExhibitionPoolImport({
                   type="button"
                   className="secondary"
                   disabled={!selected.length}
-                  onClick={() => setSelected([])}
+                  onClick={() => {
+                    setSelectionError("");
+                    setSelected([]);
+                  }}
                 >
                   {tr("Clear selection")}
                 </button>
@@ -174,6 +189,7 @@ export function ExhibitionPoolImport({
                   {tr("{count} maps selected", { count: selected.length })}
                 </span>
               </div>
+              {selectionError && <p role="alert">{selectionError}</p>}
               <fieldset
                 className="form-stack"
                 aria-labelledby={`${id}-maps`}

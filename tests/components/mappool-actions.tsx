@@ -26,7 +26,7 @@ const data: MappoolWorkspace = {
     {
       id: "round",
       name: "Synthetic round",
-      stage: "group",
+      stage: params.has("exhibition") ? "exhibition" : "group",
       position: 1,
       version: 1,
     },

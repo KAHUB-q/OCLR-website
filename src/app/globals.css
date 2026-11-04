@@ -4053,6 +4053,9 @@ html[data-appearance]
   gap: 0.5rem;
   padding-block: 1rem 0.75rem;
 }
+.mappool-workbench .mappool-pool-heading:has(> .mappool-setup) {
+  grid-template-columns: minmax(0, 1fr);
+}
 .mappool-pool-heading h2,
 .mappool-setup h2,
 .mappool-workbench h3 {

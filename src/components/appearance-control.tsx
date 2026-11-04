@@ -1,4 +1,8 @@
 "use client";
+import {
+  ensureAppearanceStylesheet,
+  activateAppearanceStylesheet,
+} from "@/lib/appearance-styles";
 import { appearanceLabel } from "@/i18n/appearance";
 import { useEffect, useId, useRef, useState, type KeyboardEvent } from "react";
 import {
@@ -31,6 +35,8 @@ export function AppearanceControl({
   const preference = scope ? (scope.preference ?? "site") : localPreference;
   const inheritedDefault = scope?.inheritedDefault ?? defaultAppearance;
   const [open, setOpen] = useState(false);
+  const [loading, setLoading] = useState(false);
+  const [loadError, setLoadError] = useState(false);
   const root = useRef<HTMLDivElement>(null),
     trigger = useRef<HTMLButtonElement>(null);
   const focus = useRef<Appearance | "site">(preference),
@@ -147,6 +153,7 @@ export function AppearanceControl({
           className={styles.menu}
           onKeyDown={keyboard}
         >
+          {loadError && <p role="alert">{tr("Please try again.")}</p>}
           {(["site", ...publicAppearances] as const).map((value) => (
             <button
               key={value}
@@ -155,10 +162,21 @@ export function AppearanceControl({
               aria-checked={value === preference}
               tabIndex={-1}
               data-appearance-option={value}
-              onClick={() => {
+              disabled={loading}
+              onClick={async () => {
                 const effective = value === "site" ? inheritedDefault : value;
+                setLoading(true);
+                setLoadError(false);
+                try {
+                  await ensureAppearanceStylesheet(effective);
+                } catch {
+                  setLoadError(true);
+                  setLoading(false);
+                  return;
+                }
                 scope?.choose(value === "site" ? undefined : value);
-                document.documentElement.dataset.appearance = effective;
+                activateAppearanceStylesheet(effective);
+                setLoading(false);
                 document.cookie = `${appearanceCookie}=${value === "site" ? "" : value}; Path=/; Max-Age=${value === "site" ? 0 : 31536000}; SameSite=Lax${location.protocol === "https:" ? "; Secure" : ""}`;
                 setPreference(value);
                 setAppearance(effective);

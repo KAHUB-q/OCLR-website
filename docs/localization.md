@@ -80,3 +80,20 @@ Private editions and OBS/presenter output retain their existing boundaries.
 This policy supersedes earlier instructions offering season designs in the
 Header or as site-wide defaults; historical design verification is not current
 selection-policy evidence.
+
+## On-demand appearance styles (#812)
+
+`npm ci` / `npm run dev` / `npm run build` generate minified public styles from
+`src/app/*-theme.css`. Root rendering emits only the resolved authorized
+appearance; default needs no optional stylesheet. A manual choice is applied
+only after its stylesheet loads successfully. Failed loads retain the previous
+appearance and preference. Route-inherited choices load before applying their
+selector; visitor and edition authorization rules use the existing resolver.
+
+The same generator derives the homepage shell class inventory from its actual
+layout/page component tree. Other page styles load with a React stylesheet
+resource when entering those routes. Generated files under
+`public/appearance-styles/` and `src/app/shell.generated.css` are build artifacts;
+edit the original CSS. Public CSS uses Next's revalidation default, so rebuilding
+styles cannot leave a long-lived immutable URL serving older CSS. Component
+browser fixtures continue to consume the original styles directly.

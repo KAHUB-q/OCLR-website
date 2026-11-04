@@ -1,3 +1,5 @@
+import "./shell.generated.css";
+import { appearanceStylesheet } from "@/lib/appearance-styles";
 import { remoteMode } from "@/lib/data-source";
 import {
   frontendSite,
@@ -17,29 +19,6 @@ import { hasDeveloperAccess } from "@/lib/developer-api";
 import { currentUser } from "@/lib/auth/user";
 import { SiteFrame } from "@/components/site-frame";
 import { Header } from "@/components/header";
-import "./globals.css";
-import "./public-tournament.css";
-import "./workspace.css";
-import "./pastel-theme.css";
-import "./swiss-theme.css";
-import "./clay-theme.css";
-import "./manga-theme.css";
-import "./glass-theme.css";
-import "./esports-theme.css";
-import "./arcade-theme.css";
-import "./frutiger-theme.css";
-import "./skyline-theme.css";
-import "./glacier-theme.css";
-import "./sakura-theme.css";
-import "./graphite-theme.css";
-import "./orbital-theme.css";
-import "./prism-theme.css";
-import "./azure-theme.css";
-import "./verdant-theme.css";
-import "./chromatic-theme.css";
-import "./frost-theme.css";
-import "./archive-counts.css";
-import "./header-mobile.css";
 import { AppearanceProvider } from "@/components/appearance-provider";
 import { inheritedAppearance } from "@/lib/appearance-scope";
 import { tournamentAppearanceScopes } from "@/lib/tournaments";
@@ -206,6 +185,13 @@ export default async function RootLayout({
       suppressHydrationWarning
     >
       <head>
+        {appearanceStylesheet(appearance) && (
+          <link
+            rel="stylesheet"
+            href={appearanceStylesheet(appearance)!}
+            data-oclr-appearance-style={appearance}
+          />
+        )}
         <script
           nonce={route.get("x-nonce") ?? undefined}
           suppressHydrationWarning

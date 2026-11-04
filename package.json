@@ -39,7 +39,10 @@
     "test:e2e:functional": "playwright test --config playwright.functional.config.ts",
     "test:e2e:core": "playwright test --config playwright.core.config.ts",
     "test:e2e:header": "playwright test --config playwright.header.config.ts",
-    "test:e2e:remote:core": "playwright test --config playwright.remote-core.config.ts"
+    "test:e2e:remote:core": "playwright test --config playwright.remote-core.config.ts",
+    "prepare": "node --import tsx scripts/build-appearance-styles.ts",
+    "predev": "node --import tsx scripts/build-appearance-styles.ts",
+    "prebuild": "node --import tsx scripts/build-appearance-styles.ts"
   },
   "dependencies": {
     "@cm3tahkuh/react-tournament-brackets": "^1.1.6",

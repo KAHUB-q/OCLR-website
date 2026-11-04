@@ -102,6 +102,9 @@ createServer((request, response) => {
         : "text/javascript; charset=utf-8",
     );
     response.end(themedStyles.get(file) ?? file.contents);
+  } else if (/^\/appearance-styles\/[a-z-]+\.css$/.test(request.url ?? "")) {
+    response.setHeader("Content-Type", "text/css; charset=utf-8");
+    response.end(readFileSync(resolve("public", `.${request.url}`)));
   } else if (
     themeAssets.has(request.url ?? "") ||
     tournamentArtwork.has(request.url ?? "")

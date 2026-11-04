@@ -164,9 +164,7 @@ function knockoutSeries(match: Pick<SeriesResult, "label" | "round">) {
 export function decidingSeries<T extends DecisiveMatch>(
   matches: T[],
 ): T | null {
-  const knockout = matches.filter(
-    (match) => match.winnerTeamId && knockoutSeries(match),
-  );
+  const knockout = matches.filter((match) => knockoutSeries(match));
   if (!knockout.length) return null;
   const ranked = knockout
     .map((match) => ({
@@ -181,17 +179,29 @@ export function decidingSeries<T extends DecisiveMatch>(
   const best = ranked.length ? Math.max(...ranked.map((e) => e.rank)) : 0;
   const candidates = ranked.length
     ? ranked.filter((entry) => entry.rank === best).map((entry) => entry.match)
-    : knockout;
+    : knockout.filter((match) => !earlyRound.test(match.label ?? ""));
+  if (!candidates.length) return null;
+  // A known final whose result/date is pending cannot be replaced by an
+  // earlier series, including a completed first grand final before a reset.
+  if (
+    candidates.some(
+      (match) => !match.winnerTeamId && seriesTime(match) === null,
+    )
+  )
+    return null;
   const dated = candidates.filter((match) => seriesTime(match) !== null);
   // A single candidate needs no ordering; several undated ones stay unknown.
-  if (!dated.length) return candidates.length === 1 ? candidates[0] : null;
+  if (!dated.length)
+    return candidates.length === 1 && candidates[0].winnerTeamId
+      ? candidates[0]
+      : null;
   const latest = Math.max(...dated.map((match) => seriesTime(match)!));
   const winners = new Set(
     dated
       .filter((match) => seriesTime(match) === latest)
       .map((m) => m.winnerTeamId),
   );
-  return winners.size === 1
+  return winners.size === 1 && !winners.has(null)
     ? (dated.find((match) => seriesTime(match) === latest) ?? null)
     : null;
 }
@@ -224,8 +234,9 @@ export function tournamentPlacements(
   const decided = matches.filter(
     (match) => match.winnerTeamId && match.loserTeamId && knockoutSeries(match),
   );
-  const deciding = decidingSeries(decided);
-  if (!deciding) return { champion: null, runnerUp: null, third: [] };
+  const deciding = decidingSeries(matches);
+  if (!deciding?.winnerTeamId || !deciding.loserTeamId)
+    return { champion: null, runnerUp: null, third: [] };
   const champion = deciding.winnerTeamId;
   const runnerUp = (deciding as SeriesResult).loserTeamId ?? null;
   const thirdMatches = decided.filter(

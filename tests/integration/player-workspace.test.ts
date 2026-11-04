@@ -1,4 +1,5 @@
-import { randomUUID } from "node:crypto";
+import { createHash, randomUUID } from "node:crypto";
+import { legacyPracticeContextValue } from "../../src/lib/player-workspace-model";
 import {
   beforeAll,
   beforeEach,
@@ -19,6 +20,7 @@ import {
   registrations,
   mappools,
   mappoolEntries,
+  mappoolEvents,
   playerPracticeRecords,
   playerSeasonAvailability,
   playerWorkspaceEvents,
@@ -215,6 +217,77 @@ describe.skipIf(!url)("private player workspace #671", () => {
     await expect(playerPracticeWorkspace(p, slug)).rejects.toMatchObject({
       status: 403,
     });
+  });
+  it("keeps legacy NM/HD scores current across FM-only edits, but expires FM and replaced charts", async () => {
+    const oldPolicy = {
+      fmMode: "free_mod" as const,
+      fmRestrictions: "HD allowed",
+    };
+    const newPolicy = { ...oldPolicy, fmRestrictions: "HD or HR allowed" };
+    await db().update(mappools).set(oldPolicy).where(eq(mappools.id, pool));
+    await db()
+      .insert(mappoolEntries)
+      .values(
+        ["HD", "FM"].map((category) => ({
+          poolId: pool,
+          category: category as "HD" | "FM",
+          position: 1,
+          beatmapId: 123,
+          metadata,
+        })),
+      );
+    const entries = await db()
+      .select()
+      .from(mappoolEntries)
+      .where(eq(mappoolEntries.poolId, pool));
+    const saved = entries.map((map) => ({
+      editionSlug: slug,
+      userId: p.osuId,
+      entryId: map.id,
+      beatmapId: map.beatmapId,
+      contextKey: createHash("sha256")
+        .update(
+          JSON.stringify(legacyPracticeContextValue({ ...map, ...oldPolicy })),
+        )
+        .digest("hex"),
+      score: 900000,
+    }));
+    await db().insert(playerPracticeRecords).values(saved);
+    const before = (await playerPracticeWorkspace(p, slug, pool)).pool!;
+    expect(before.entries.every((map) => !map.records[0].stale)).toBe(true);
+    await db()
+      .insert(mappoolEvents)
+      .values({
+        editionSlug: slug,
+        poolId: pool,
+        actorId: admin.osuId,
+        action: "pool_settings",
+        before: { pool: oldPolicy },
+        after: { pool: newPolicy },
+      });
+    await db().update(mappools).set(newPolicy).where(eq(mappools.id, pool));
+    const after = (await playerPracticeWorkspace(q, slug, pool)).pool!;
+    for (const map of after.entries) {
+      expect(map.records[0].stale).toBe(map.category === "FM");
+      expect(
+        map.context ===
+          before.entries.find((old) => old.id === map.id)!.context,
+      ).toBe(map.category !== "FM");
+    }
+    await db()
+      .update(mappoolEntries)
+      .set({ beatmapId: 456 })
+      .where(eq(mappoolEntries.poolId, pool));
+    expect(
+      (await playerPracticeWorkspace(p, slug, pool)).pool!.entries.every(
+        (map) => map.records[0].stale,
+      ),
+    ).toBe(true);
+    expect(
+      (await db().select().from(playerPracticeRecords))
+        .map((record) => record.contextKey)
+        .sort(),
+    ).toEqual(saved.map((record) => record.contextKey).sort());
   });
   it("shares practice with the whole current team while keeping other teams and public pools private", async () => {
     const cmd = await practice();
@@ -591,7 +664,7 @@ describe.skipIf(!url)("private player workspace #671", () => {
     expect(
       (await playerPracticeWorkspace(p, slug)).pool!.entries[0].records[0]
         .stale,
-    ).toBe(true);
+    ).toBe(false);
   });
   it("rechecks publication and appointment even when retrying a saved request", async () => {
     const cmd = await practice(a);

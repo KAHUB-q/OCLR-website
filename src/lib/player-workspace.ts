@@ -1,5 +1,5 @@
 import { createHash } from "node:crypto";
-import { and, eq, inArray, isNull, isNotNull, or } from "drizzle-orm";
+import { and, eq, inArray, isNull, isNotNull, or, sql } from "drizzle-orm";
 import { db, readOnlyData } from "@/db";
 import {
   captains,
@@ -10,6 +10,7 @@ import {
   registrations,
   mappools,
   mappoolEntries,
+  mappoolEvents,
   playerPracticeRecords,
   playerSeasonAvailability,
   playerWorkspaceEvents,
@@ -23,6 +24,7 @@ import { publicMappools } from "./mappools";
 import {
   practiceCommandSchema,
   practiceContextValue,
+  legacyPracticeContextValue,
   timetableCommandSchema,
   normalizeSeasonAvailability,
 } from "./player-workspace-model";
@@ -193,6 +195,37 @@ export async function playerPracticeWorkspace(
             ),
           )
       : [];
+    // Old non-FM hashes included pool-wide FM policy. Reconstruct only those
+    // irrelevant fields from saved settings history; chart/mod identity must
+    // still match the current entry. Never rewrite records or audit history.
+    const legacyPolicies =
+      selected && records.length
+        ? await db()
+            .select({
+              before: sql<unknown>`${mappoolEvents.before}->'pool'`,
+              after: sql<unknown>`${mappoolEvents.after}->'pool'`,
+            })
+            .from(mappoolEvents)
+            .where(
+              and(
+                eq(mappoolEvents.editionSlug, slug),
+                eq(mappoolEvents.poolId, selected.id),
+                eq(mappoolEvents.action, "pool_settings"),
+              ),
+            )
+        : [];
+    const policies = [
+      selected,
+      ...legacyPolicies.flatMap((event) => [event.before, event.after]),
+    ].flatMap((value) => {
+      const parsed = z
+        .object({
+          fmMode: z.string().nullable(),
+          fmRestrictions: z.string(),
+        })
+        .safeParse(value);
+      return parsed.success ? [parsed.data] : [];
+    });
     return {
       actorId: actor.osuId,
       team: c.team ? { id: c.team.id, name: c.team.name } : null,
@@ -220,6 +253,12 @@ export async function playerPracticeWorkspace(
                   fmRestrictions: selected.fmRestrictions,
                 }),
               );
+              const compatibleKeys = new Set([key]);
+              if (e.category !== "FM")
+                for (const policy of policies)
+                  compatibleKeys.add(
+                    digest(legacyPracticeContextValue({ ...e, ...policy })),
+                  );
               return {
                 ...e,
                 context: key,
@@ -236,7 +275,7 @@ export async function playerPracticeWorkspace(
                     comment: r.comment,
                     version: r.version,
                     updatedAt: r.updatedAt.toISOString(),
-                    stale: r.contextKey !== key,
+                    stale: !compatibleKeys.has(r.contextKey),
                   })),
               };
             }),

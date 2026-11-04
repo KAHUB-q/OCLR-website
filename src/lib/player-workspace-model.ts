@@ -67,13 +67,21 @@ export const timetableCommandSchema = z
   .strict();
 
 /** A replaced chart or changed mod policy never silently reuses an earlier score. */
-export function practiceContextValue(map: {
+type PracticeMapContext = {
   beatmapId: number;
   category: string;
   metadata: BeatmapMetadata;
   fmMode: string | null;
   fmRestrictions: string;
-}) {
+};
+export function practiceContextValue(map: PracticeMapContext) {
+  return legacyPracticeContextValue(
+    map.category === "FM" ? map : { ...map, fmMode: null, fmRestrictions: "" },
+  );
+}
+
+/** Retained to verify saved pre-fix hashes against authoritative pool history. */
+export function legacyPracticeContextValue(map: PracticeMapContext) {
   return JSON.stringify({
     beatmapId: map.beatmapId,
     category: map.category,

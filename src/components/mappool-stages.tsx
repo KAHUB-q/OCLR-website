@@ -9,7 +9,11 @@ export function MappoolStages({
   hideSingleHeading = false,
 }: {
   hideSingleHeading?: boolean;
-  stages: { value: "group" | "knockout"; label: string; content: ReactNode }[];
+  stages: {
+    value: "group" | "knockout" | "exhibition";
+    label: string;
+    content: ReactNode;
+  }[];
 }) {
   const tr = useAppTranslations();
 

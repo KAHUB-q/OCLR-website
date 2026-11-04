@@ -52,6 +52,7 @@ const data: MappoolWorkspace = {
     category: "NM",
     position,
     beatmapId: 100 + position,
+    source: null,
     metadataFetchedAt: date,
     metadata: {
       artist: "Synthetic artist",

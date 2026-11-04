@@ -252,7 +252,7 @@ async function editionRecord(
     const matches: CompetitionMatchRecord[] = [];
     for (const fixture of competition?.fixtures ?? []) {
       const result = fixture.result;
-      if (!result) continue;
+      if (!result || fixture.stage === "exhibition") continue;
       const side = teams.has(fixture.home.team?.id ?? "")
         ? "home"
         : teams.has(fixture.away.team?.id ?? "")
@@ -282,7 +282,7 @@ async function editionRecord(
     const placements = tournamentPlacements(
       (competition?.fixtures ?? []).flatMap((fixture) => {
         const result = fixture.result;
-        if (!result) return [];
+        if (!result || fixture.stage === "exhibition") return [];
         const winner = result.draw ? null : result.winnerTeamId;
         const sides = [fixture.home.team?.id, fixture.away.team?.id];
         return [

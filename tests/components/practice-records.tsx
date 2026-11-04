@@ -80,6 +80,7 @@ function workspace(poolId: string): PracticeWorkspace {
         category: category as "NM" | "HD" | "HR",
         position: 1,
         beatmapId: (params.has("long-bid") ? 3774074 : 100) + index,
+        source: null,
         context: "a".repeat(64),
         ownVersion: one && index === 0 ? 1 : 0,
         metadata: {

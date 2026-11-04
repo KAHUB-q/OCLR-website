@@ -1,4 +1,5 @@
 "use client";
+import { competitionStageLabel } from "@/lib/competition-stage";
 
 import { InfoNote } from "@/components/info-note";
 import { ForceFixtureDelete } from "./force-fixture-delete";
@@ -180,8 +181,7 @@ function FixtureForm({
               )}
               {data.rounds.map((r) => (
                 <option key={r.round.id} value={r.round.id}>
-                  {r.stage === "group" ? tr("Group") : tr("Knockout")} /{" "}
-                  {r.round.name}
+                  {tr(competitionStageLabel(r.stage))} / {r.round.name}
                 </option>
               ))}
             </select>

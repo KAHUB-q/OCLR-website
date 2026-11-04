@@ -137,7 +137,7 @@ async function databasePublicMatchRating(slug: string, fixtureId: string) {
     async (tx) => {
       const competition = await publicCompetition(slug, tx);
       const fixture = competition?.fixtures.find(
-        (f) => f.id === fixtureId && f.result,
+        (f) => f.id === fixtureId && f.result && f.stage !== "exhibition",
       );
       if (!fixture?.result) return null;
       const identities = await ratingIdentities(slug, tx, [
@@ -176,7 +176,7 @@ async function databasePublicRoundRatings(slug: string) {
       const competition = await publicCompetition(slug, tx);
       if (!competition) return [];
       const fixtures = competition.fixtures.filter(
-        (f) => f.status !== "cancelled",
+        (f) => f.status !== "cancelled" && f.stage !== "exhibition",
       );
       const identities = await ratingIdentities(slug, tx, [
         ...new Set(
@@ -290,6 +290,7 @@ export async function staffRoundRatings(
       and(
         eq(fixtureTable.editionSlug, slug),
         ne(fixtureTable.status, "cancelled"),
+        ne(tournamentStages.kind, "exhibition"),
       ),
     );
   return [...new Set(rows.map((r) => r.round.id))].map((roundId) => {

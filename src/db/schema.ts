@@ -746,7 +746,11 @@ export const staffRoleEvents = pgTable(
   (t) => [index("staff_role_events_grant_idx").on(t.grantId)],
 );
 
-export const stageKind = pgEnum("stage_kind", ["group", "knockout"]);
+export const stageKind = pgEnum("stage_kind", [
+  "group",
+  "knockout",
+  "exhibition",
+]);
 export const tournamentStages = pgTable(
   "tournament_stages",
   {
@@ -844,6 +848,10 @@ export const mappoolEntries = pgTable(
     metadata: jsonb("metadata")
       .$type<import("../lib/mappool-model").BeatmapMetadata>()
       .notNull(),
+    source:
+      jsonb("source").$type<
+        import("../lib/exhibition-pools").HistoricalMapSource
+      >(),
     metadataFetchedAt: timestamp("metadata_fetched_at", { withTimezone: true })
       .notNull()
       .defaultNow(),

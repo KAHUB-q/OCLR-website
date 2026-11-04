@@ -125,6 +125,12 @@ function MapDetails({
             </div>
           ))}
         </dl>
+        {entry.source && (
+          <p className="muted small">
+            {tr("Historical source")}: {entry.source.editionName} ·{" "}
+            {entry.source.poolName} · {entry.source.slot}
+          </p>
+        )}
         {entry.category === "FM" && (
           <p className="notice">
             {fmPolicyName(pool.fmMode) ?? tr("FM policy not configured")}

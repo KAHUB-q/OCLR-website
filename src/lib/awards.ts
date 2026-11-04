@@ -7,6 +7,8 @@ import {
   editionEvents,
   editionState,
   fixtures,
+  tournamentRounds,
+  tournamentStages,
   registrations,
   teams,
   users,
@@ -107,10 +109,19 @@ async function calculation(slug: string, reader: Reader) {
       ? await reader
           .select({ id: fixtures.id, at: fixtures.scheduledAt })
           .from(fixtures)
+          .innerJoin(
+            tournamentRounds,
+            eq(tournamentRounds.id, fixtures.roundId),
+          )
+          .innerJoin(
+            tournamentStages,
+            eq(tournamentStages.id, tournamentRounds.stageId),
+          )
           .where(
             and(
               eq(fixtures.editionSlug, slug),
               ne(fixtures.status, "cancelled"),
+              ne(tournamentStages.kind, "exhibition"),
             ),
           )
       : [];

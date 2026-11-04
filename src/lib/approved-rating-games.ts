@@ -1,8 +1,10 @@
 import { createHash } from "node:crypto";
-import { and, eq, inArray, isNotNull } from "drizzle-orm";
+import { and, eq, inArray, isNotNull, ne } from "drizzle-orm";
 import { db } from "@/db";
 import {
   fixtures,
+  tournamentRounds,
+  tournamentStages,
   matchResults,
   resultRevisions,
   matchImports,
@@ -25,6 +27,11 @@ export async function approvedRatingGames(
       fingerprint: matchImports.fingerprint,
     })
     .from(fixtures)
+    .innerJoin(tournamentRounds, eq(tournamentRounds.id, fixtures.roundId))
+    .innerJoin(
+      tournamentStages,
+      eq(tournamentStages.id, tournamentRounds.stageId),
+    )
     .innerJoin(matchResults, eq(matchResults.fixtureId, fixtures.id))
     .innerJoin(
       resultRevisions,
@@ -43,6 +50,7 @@ export async function approvedRatingGames(
     .where(
       and(
         eq(fixtures.editionSlug, slug),
+        ne(tournamentStages.kind, "exhibition"),
         isNotNull(fixtures.publishedAt),
         isNotNull(matchResults.publishedAt),
         isNotNull(resultRevisions.approvedAt),

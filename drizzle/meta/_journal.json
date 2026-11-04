@@ -519,6 +519,13 @@
       "when": 1793664758666,
       "tag": "0073_candidate_skillsets",
       "breakpoints": true
+    },
+    {
+      "idx": 74,
+      "version": "7",
+      "when": 1793760420041,
+      "tag": "0074_exhibition_rounds",
+      "breakpoints": true
     }
   ]
 }

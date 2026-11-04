@@ -1,5 +1,11 @@
 "use client";
 import {
+  competitionStages,
+  competitionStageLabel,
+  exhibitionNotice,
+} from "@/lib/competition-stage";
+import { ExhibitionPoolImport } from "./exhibition-pool-import";
+import {
   StaffReadOnlyContext,
   ReadOnlyFields,
   useStaffReadOnly,
@@ -498,10 +504,10 @@ function MappoolEditorContent({
           id={`${id}-stage`}
           label={tr("Competition stage")}
           value={stage}
-          items={[
-            { value: "group", label: "Group Stage" },
-            { value: "knockout", label: "Knockout Stage" },
-          ]}
+          items={competitionStages.map((value) => ({
+            value,
+            label: competitionStageLabel(value),
+          }))}
           onChange={(value) => {
             setStage(value);
             setRoundId("");
@@ -619,8 +625,19 @@ function MappoolEditorContent({
           {tr(feedback)}
         </div>
       )}
+      {stage === "exhibition" && (
+        <p className="notice">{tr(exhibitionNotice)}</p>
+      )}
       {pool ? (
         <section className="mappool-active" aria-label={tr("Selected mappool")}>
+          {stage === "exhibition" && editable && !readOnly && (
+            <ExhibitionPoolImport
+              key={`${pool.id}-${pool.version}`}
+              slug={slug}
+              pool={pool}
+              onFeedback={setFeedback}
+            />
+          )}
           <div className="mappool-toolbar mappool-pool-heading">
             <div>
               <h2>

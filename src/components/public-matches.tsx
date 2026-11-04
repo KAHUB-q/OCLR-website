@@ -1,4 +1,8 @@
 "use client";
+import {
+  competitionStageLabel,
+  exhibitionNotice,
+} from "@/lib/competition-stage";
 
 import { InfoNote } from "@/components/info-note";
 
@@ -31,8 +35,7 @@ export function MatchCard({
     <article className="panel public-match-card">
       <div className="match-meta">
         <span className="eyebrow">
-          {f.stage === "group" ? tr("GROUP STAGE") : tr("KNOCKOUT STAGE")} /{" "}
-          {f.roundName}
+          {tr(competitionStageLabel(f.stage))} / {f.roundName}
         </span>
         <span className="badge">{tr(status)}</span>
       </div>
@@ -176,10 +179,7 @@ export function PublicMatches({
         >
           {[
             ["", "All stages"],
-            ...stages.map((value) => [
-              value,
-              value === "group" ? "Group Stage" : "Knockout Stage",
-            ]),
+            ...stages.map((value) => [value, competitionStageLabel(value)]),
           ].map(([value, label]) => (
             <button
               key={value}
@@ -271,11 +271,11 @@ export function PublicMatches({
             aria-labelledby={`public-round-${roundId}`}
           >
             <h2 id={`public-round-${roundId}`}>
-              {group[0].stage === "group"
-                ? tr("Group Stage")
-                : tr("Knockout Stage")}{" "}
-              · {group[0].roundName}
+              {tr(competitionStageLabel(group[0].stage))} · {group[0].roundName}
             </h2>
+            {group[0].stage === "exhibition" && (
+              <p className="notice">{tr(exhibitionNotice)}</p>
+            )}
             <div className="public-match-list" data-view={view}>
               {group.map((f) => (
                 <MatchCard key={f.id} fixture={f} slug={slug} />

@@ -1,5 +1,11 @@
 "use client";
 import Link from "next/link";
+import {
+  competitionStages,
+  competitionStageLabel,
+  exhibitionNotice,
+  type CompetitionStageKind,
+} from "@/lib/competition-stage";
 import { RoundRules } from "./competition-settings";
 import type { FixtureWorkspace } from "@/lib/fixtures";
 import { ReadOnlyFields, StaffReadOnlyContext } from "./staff-read-only";
@@ -106,7 +112,7 @@ export function RoundManager({
 }: {
   slug: string;
   rounds: MappoolWorkspace["rounds"];
-  initialStage: "group" | "knockout";
+  initialStage: CompetitionStageKind;
   initialRoundId?: string;
   refereeData?: Pick<MappoolWorkspace, "refereeRules" | "pools" | "entries">;
   season?: string | null;
@@ -138,10 +144,10 @@ export function RoundManager({
           label={tr("Competition stage")}
           appearance="line"
           value={stage}
-          items={[
-            { value: "group", label: "Group Stage" },
-            { value: "knockout", label: "Knockout Stage" },
-          ]}
+          items={competitionStages.map((value) => ({
+            value,
+            label: competitionStageLabel(value),
+          }))}
           onChange={(value) => {
             setStage(value);
             setEditing(null);
@@ -176,6 +182,9 @@ export function RoundManager({
         aria-labelledby={`${id}-stage-${stage}`}
         tabIndex={0}
       >
+        {stage === "exhibition" && (
+          <p className="notice">{tr(exhibitionNotice)}</p>
+        )}
         {editing === "new" && (
           <section
             className={styles.editor}

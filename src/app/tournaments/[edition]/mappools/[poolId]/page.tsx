@@ -1,3 +1,4 @@
+import { competitionStageLabel } from "@/lib/competition-stage";
 import { historicalPage } from "@/components/historical-archive";
 import { MappoolBrowser } from "@/components/mappool-browser";
 import { PageHeading } from "@/components/ui";
@@ -29,7 +30,7 @@ async function Issue271Page({
         {tr("← All mappools")}
       </Link>
       <PageHeading
-        eyebrow={`${tr(pool.stage === "group" ? "Group Stage" : "Knockout Stage")} / ${pool.roundName}`}
+        eyebrow={`${tr(competitionStageLabel(pool.stage))} / ${pool.roundName}`}
         title={pool.name}
       >
         {tr("Published · Last updated ")}

@@ -215,3 +215,29 @@ migration workflow before this app version; no production migration was performe
 by this change. Older app versions can ignore the additive table; do not remove
 saved planning data or down-migrate. Remote backends need the new fields and
 migration, while frontend remote views remain read-only.
+
+## Exhibition pools from historical maps (#788)
+
+In an Exhibition round, create a pool and open **Choose from historical
+mappools**. Choose a past tournament and pool, search by title/slot/BID, and
+select individual maps or all visible maps (up to 50 per save). Sources include
+published archive pools and released saved pools from completed public editions;
+the current edition, private editions, draft pools and archive entries without
+a usable recorded map identity are excluded. Historical categories outside the
+supported NM/HD/HR/DT/FM/TB slots are not selectable. Configure the destination FM
+policy explicitly before selecting FM maps.
+
+Saving verifies current official map metadata and appends maps after the last
+saved position in each original category. It preserves existing gaps and rejects
+duplicate maps in the same category. Deleted/unavailable provider maps, failed
+lookups, ruleset mismatches, stale source/target revisions, source withdrawal or
+locked target pools fail without a partial save. Refresh the source selector if
+its content changed. Public reads use saved data and never fetch the provider.
+
+The new entries retain source edition/pool names and IDs, original slot and BID.
+This provenance is visible in map management and public map details. Map
+replacement clears provenance when its BID changes; refresh/reorder retain it.
+Historical source rows and replay attachments are never copied or modified.
+Destination entries, pool version and audit commit together under the existing
+edition permission and locking rules. The protected historical selector composes
+existing public saved-read resources; the remote frontend remains read-only.

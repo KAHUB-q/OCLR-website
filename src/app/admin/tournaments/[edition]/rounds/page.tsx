@@ -54,7 +54,11 @@ async function Issue271Page({
           initialRoundId={selected?.id}
           initialStage={
             selected?.stage ??
-            (query.stage === "knockout" ? "knockout" : "group")
+            (query.stage === "exhibition"
+              ? "exhibition"
+              : query.stage === "knockout"
+                ? "knockout"
+                : "group")
           }
         />
       </>

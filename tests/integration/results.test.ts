@@ -36,6 +36,15 @@ import {
   publicCompetition,
   publicFixture,
 } from "../../src/lib/public-competition";
+import { approvedRatingGames } from "../../src/lib/approved-rating-games";
+import {
+  publicMatchRating,
+  publicRoundRatings,
+  staffRoundRatings,
+  ratingIdentities,
+} from "../../src/lib/ratings";
+import { publicPlayer } from "../../src/lib/players";
+import { playerCompetitionRecord } from "../../src/lib/player-competition";
 import { publicBracket } from "../../src/lib/brackets";
 import { fixtureCommand, fixtureForReview } from "../../src/lib/fixtures";
 import { mappoolCommand } from "../../src/lib/mappools";
@@ -93,7 +102,7 @@ describe.skipIf(!url)(
         )
       ).fetchMatchSource;
     });
-    async function makeSource(changed = false) {
+    async function makeSource(changed = false, gameOffset = 0) {
       const roster = (await fixtureForReview(admin, "test-cup", fixtureId))
         .teams;
       const ids = roster.flatMap((t) => t.members.map((m) => m.osuId));
@@ -103,6 +112,7 @@ describe.skipIf(!url)(
         syntheticApiGame(3),
       ].map((g) => ({
         ...g,
+        id: g.id + gameOffset,
         scores: g.scores.map((s, i) => ({ ...s, user_id: ids[i] })),
       }));
       vi.mocked(osuApi).mockResolvedValue(
@@ -266,6 +276,116 @@ describe.skipIf(!url)(
         })
       ).review;
     }
+    it("publishes exhibition results separately while official ratings, progression and career keep only the formal fixture", async () => {
+      let view = await imported();
+      view = (
+        await resultCommand(referee, "test-cup", fixtureId, submission(view))
+      ).review;
+      view = await published(await approved(view));
+      const officialId = fixtureId;
+      const officialRound = view.context.round.id;
+      const homeId = view.context.fixture.homeTeamId;
+      const playerId = view.context.teams[0].members[0].osuId;
+      const before = await playerCompetitionRecord(
+        await publicPlayer(playerId),
+      );
+      expect(before.matches).toBe(1);
+      const created = await mappoolCommand(admin, "test-cup", {
+        ...confirm,
+        action: "round_create",
+        stage: "exhibition",
+        name: "Grand Finals",
+        position: 1,
+      });
+      const round = created.rounds.find((r) => r.stage === "exhibition")!;
+      await expect(
+        mappoolCommand(admin, "test-cup", {
+          ...confirm,
+          action: "round_edit",
+          roundId: round.id,
+          expectedVersion: round.version,
+          stage: "knockout",
+          name: "Forged official",
+          position: 1,
+        }),
+      ).rejects.toMatchObject({ status: 400 });
+      await fixtureCommand(admin, "test-cup", {
+        ...confirm,
+        action: "round_rules",
+        roundId: round.id,
+        expectedVersion: round.version,
+        scoringRules: syntheticScoringRules,
+        standingsRules: null,
+      });
+      const workspace = await fixtureCommand(admin, "test-cup", {
+        ...fixtureBody,
+        roundId: round.id,
+        mappoolId: null,
+        label: "Exhibition Final",
+      });
+      fixtureId = workspace.fixtures.find((f) => f.roundId === round.id)!.id;
+      source = await makeSource(false, 10000);
+      vi.mocked(fetchMatchSource).mockResolvedValue(source);
+      view = await imported();
+      view = (
+        await resultCommand(referee, "test-cup", fixtureId, submission(view))
+      ).review;
+      await published(await approved(view));
+      const competition = (await publicCompetition("test-cup"))!;
+      expect(
+        competition.fixtures.map((f) => [f.id, f.stage, Boolean(f.result)]),
+      ).toEqual(
+        expect.arrayContaining([
+          [officialId, "group", true],
+          [fixtureId, "exhibition", true],
+        ]),
+      );
+      expect(
+        (await publicFixture("test-cup", fixtureId))?.details?.rating,
+      ).toBeNull();
+      expect(await publicMatchRating("test-cup", fixtureId)).toBeNull();
+      const games = await approvedRatingGames("test-cup", db());
+      expect(games).toHaveLength(3);
+      expect(games.every((game) => game.fixtureId === officialId)).toBe(true);
+      expect(
+        (await publicRoundRatings("test-cup")).map((r) => r.roundId),
+      ).toEqual([officialRound]);
+      expect(
+        (
+          await staffRoundRatings(
+            "test-cup",
+            db(),
+            games,
+            await ratingIdentities("test-cup", db()),
+          )
+        ).map((r) => r.roundId),
+      ).toEqual([officialRound]);
+      const career = await playerCompetitionRecord(
+        await publicPlayer(playerId),
+      );
+      expect(career.matches).toBe(before.matches);
+      expect(career.wins).toBe(before.wins);
+      expect(career.championships).toBe(before.championships);
+      // A formally named exhibition cannot become a knockout progression source.
+      const ko = await mappoolCommand(admin, "test-cup", {
+        ...confirm,
+        action: "round_create",
+        stage: "knockout",
+        name: "Formal final",
+        position: 1,
+      });
+      await expect(
+        fixtureCommand(admin, "test-cup", {
+          ...fixtureBody,
+          roundId: ko.rounds.find((r) => r.stage === "knockout")!.id,
+          mappoolId: null,
+          label: "Bad progression",
+          homeTeamId: homeId,
+          homeSourceId: fixtureId,
+          homeSourceOutcome: "winner",
+        }),
+      ).rejects.toMatchObject({ status: 400 });
+    });
     it("scores saved referee EX declarations and blocks approval after the declaration changes", async () => {
       const ctx = await fixtureForReview(admin, "test-cup", fixtureId);
       await fixtureCommand(admin, "test-cup", {

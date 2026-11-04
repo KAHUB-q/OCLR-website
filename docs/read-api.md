@@ -405,3 +405,16 @@ The v1.18.0 follow-up adds `skillsetTags` (stable English skill IDs) and
 `skillsetVersion` to private `selectionWorkspace` candidates. Existing candidates
 start with no tags and version 1. These fields are saved staff collaboration data;
 they do not change public pools or grant Developer/remote write access.
+
+### Contract 1.19.0 — exhibitions (#788)
+
+Saved round/pool/fixture stage values additionally accept `exhibition`. Released
+exhibition fixtures remain available through competition, schedule and match
+resources with their explicit stage. They are excluded from official player
+career results, ratings, placements, map performance and award calculations.
+Public exhibition match details have no official rating. Pool entries add
+optional nullable `source` provenance (edition slug/name, pool ID/name, original slot and
+BID); existing entries return `null`, and older saved-read backends may omit this additive field. No credentials, private source records or
+replay attachments are included. The historical pool selector composes existing
+public tournament, enrollment and mappool resources; it adds no remote write
+capability.

@@ -137,92 +137,94 @@ createServer((request, response) => {
       response.setHeader("Content-Security-Policy", policy);
       nonce = /'nonce-([^']+)'/.exec(policy)![1];
     }
-    const entry = request.url?.startsWith("/header")
-      ? "header"
-      : request.url?.startsWith("/referee-panel")
-        ? "referee-panel"
-        : request.url?.startsWith("/force-fixture-delete")
-          ? "force-fixture-delete"
-          : request.url?.startsWith("/round-referee-policy")
-            ? "round-referee-policy"
-            : request.url?.startsWith("/stage-groups")
-              ? "stage-groups"
-              : request.url?.startsWith("/info-note")
-                ? "info-note"
-                : request.url?.startsWith("/s5-bracket")
-                  ? "s5-bracket"
-                  : request.url?.startsWith("/s3-bracket")
-                    ? "s3-bracket"
-                    : request.url?.startsWith("/archive-bracket")
-                      ? "archive-bracket"
-                      : request.url?.startsWith("/ocl-chess")
-                        ? "ocl-chess"
-                        : request.url?.startsWith("/statistics-manager")
-                          ? "statistics-manager"
-                          : request.url?.startsWith("/team-editor")
-                            ? "team-editor"
-                            : request.url?.startsWith("/event-statistics")
-                              ? "event-statistics"
-                              : request.url?.startsWith("/statistics-explorer")
-                                ? "statistics-explorer"
-                                : request.url?.startsWith("/player-id-badge")
-                                  ? "player-id-badge"
-                                  : request.url?.startsWith(
-                                        "/player-profile-cover",
-                                      )
-                                    ? "player-profile-cover"
-                                    : request.url?.startsWith(
-                                          "/player-profile-no-cover",
-                                        )
-                                      ? "player-profile-no-cover"
-                                      : request.url?.startsWith("/rank-chart")
-                                        ? "rank-chart"
-                                        : request.url?.startsWith(
-                                              "/schedule-selection",
-                                            )
-                                          ? "schedule-selection"
-                                          : request.url?.startsWith(
-                                                "/practice-records",
-                                              )
-                                            ? "practice-records"
-                                            : request.url?.startsWith(
-                                                  "/mappool-actions",
-                                                )
-                                              ? "mappool-actions"
-                                              : request.url?.startsWith(
-                                                    "/streaming-manager",
-                                                  )
-                                                ? "streaming-manager"
-                                                : request.url?.startsWith(
-                                                      "/captain-manager",
-                                                    )
-                                                  ? "captain-manager"
-                                                  : request.url?.startsWith(
-                                                        "/tournament-settings",
-                                                      )
-                                                    ? "tournament-settings"
-                                                    : "player-message-board";
-    const fixture = request.url?.startsWith("/public-results")
+    const entry = request.url?.startsWith("/public-results")
       ? "public-results"
-      : request.url?.startsWith("/exhibition-pool-import")
-        ? "exhibition-pool-import"
-        : request.url?.startsWith("/public-mappools")
-          ? "public-mappools"
-          : request.url?.startsWith("/action-loading")
-            ? "action-loading"
-            : request.url?.startsWith("/staff-role-form")
-              ? "staff-role-form"
-              : request.url?.startsWith("/player-sidebar")
-                ? "player-sidebar"
-                : request.url?.startsWith("/staff-navigation")
-                  ? "staff-navigation"
-                  : request.url?.startsWith("/player-timeline")
-                    ? "player-timeline"
-                    : request.url?.startsWith("/workbench-compact")
-                      ? "workbench-compact"
-                      : request.url?.startsWith("/country-flags")
-                        ? "country-flags"
-                        : entry;
+      : request.url?.startsWith("/header")
+        ? "header"
+        : request.url?.startsWith("/referee-panel")
+          ? "referee-panel"
+          : request.url?.startsWith("/force-fixture-delete")
+            ? "force-fixture-delete"
+            : request.url?.startsWith("/round-referee-policy")
+              ? "round-referee-policy"
+              : request.url?.startsWith("/stage-groups")
+                ? "stage-groups"
+                : request.url?.startsWith("/info-note")
+                  ? "info-note"
+                  : request.url?.startsWith("/s5-bracket")
+                    ? "s5-bracket"
+                    : request.url?.startsWith("/s3-bracket")
+                      ? "s3-bracket"
+                      : request.url?.startsWith("/archive-bracket")
+                        ? "archive-bracket"
+                        : request.url?.startsWith("/ocl-chess")
+                          ? "ocl-chess"
+                          : request.url?.startsWith("/statistics-manager")
+                            ? "statistics-manager"
+                            : request.url?.startsWith("/team-editor")
+                              ? "team-editor"
+                              : request.url?.startsWith("/event-statistics")
+                                ? "event-statistics"
+                                : request.url?.startsWith(
+                                      "/statistics-explorer",
+                                    )
+                                  ? "statistics-explorer"
+                                  : request.url?.startsWith("/player-id-badge")
+                                    ? "player-id-badge"
+                                    : request.url?.startsWith(
+                                          "/player-profile-cover",
+                                        )
+                                      ? "player-profile-cover"
+                                      : request.url?.startsWith(
+                                            "/player-profile-no-cover",
+                                          )
+                                        ? "player-profile-no-cover"
+                                        : request.url?.startsWith("/rank-chart")
+                                          ? "rank-chart"
+                                          : request.url?.startsWith(
+                                                "/schedule-selection",
+                                              )
+                                            ? "schedule-selection"
+                                            : request.url?.startsWith(
+                                                  "/practice-records",
+                                                )
+                                              ? "practice-records"
+                                              : request.url?.startsWith(
+                                                    "/mappool-actions",
+                                                  )
+                                                ? "mappool-actions"
+                                                : request.url?.startsWith(
+                                                      "/streaming-manager",
+                                                    )
+                                                  ? "streaming-manager"
+                                                  : request.url?.startsWith(
+                                                        "/captain-manager",
+                                                      )
+                                                    ? "captain-manager"
+                                                    : request.url?.startsWith(
+                                                          "/tournament-settings",
+                                                        )
+                                                      ? "tournament-settings"
+                                                      : "player-message-board";
+    const fixture = request.url?.startsWith("/exhibition-pool-import")
+      ? "exhibition-pool-import"
+      : request.url?.startsWith("/public-mappools")
+        ? "public-mappools"
+        : request.url?.startsWith("/action-loading")
+          ? "action-loading"
+          : request.url?.startsWith("/staff-role-form")
+            ? "staff-role-form"
+            : request.url?.startsWith("/player-sidebar")
+              ? "player-sidebar"
+              : request.url?.startsWith("/staff-navigation")
+                ? "staff-navigation"
+                : request.url?.startsWith("/player-timeline")
+                  ? "player-timeline"
+                  : request.url?.startsWith("/workbench-compact")
+                    ? "workbench-compact"
+                    : request.url?.startsWith("/country-flags")
+                      ? "country-flags"
+                      : entry;
     response.end(
       `<!doctype html><html><head><meta name="viewport" content="width=device-width, initial-scale=1"><link rel="stylesheet" href="/${fixture}.css"></head><body><div id="root"></div><script nonce="${nonce}" src="/${fixture}.js"></script></body></html>`,
     );

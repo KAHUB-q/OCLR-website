@@ -35,7 +35,7 @@ test.describe("versioned read API and existing SSR", () => {
     await new Promise<void>((resolve) => transport.close(() => resolve()));
     await closeDb();
   });
-  test("reads public and private projections from localhost, preserves complete SSR players and the API specification", async ({
+  test("reads public and private projections from localhost, preserves the complete player directory and the API specification", async ({
     page,
     context,
     isMobile,
@@ -181,7 +181,14 @@ test.describe("versioned read API and existing SSR", () => {
       await context.route("https://a.ppy.sh/**", (route) => route.abort());
       if (isMobile) await page.setViewportSize({ width: 320, height: 844 });
       await page.goto("/tournaments/test-cup/players");
+      await expect(page.locator(".event-player-row")).toHaveCount(40);
+      const showMore = page.getByRole("button", {
+        name: "Show more players",
+        exact: true,
+      });
+      await showMore.click();
       await expect(page.locator(".event-player-row")).toHaveCount(63);
+      await expect(showMore).toHaveCount(0);
       const zero = page
         .locator(".event-player-row")
         .filter({ hasText: `Synthetic Directory ${base} Member` });

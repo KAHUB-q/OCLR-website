@@ -301,7 +301,20 @@ test("uses real remote grants for core SSR/navigation without local DB or OAuth,
   ).toBeVisible();
   await page.goto("/tournaments/test-cup/players");
   await page.reload();
-  await expect(page.locator(".event-player-row")).toHaveCount(108);
+  async function showAllPlayers() {
+    const rows = page.locator(".event-player-row");
+    const showMore = page.getByRole("button", {
+      name: "Show more players",
+      exact: true,
+    });
+    await expect(rows).toHaveCount(40);
+    await showMore.click();
+    await expect(rows).toHaveCount(80);
+    await showMore.click();
+    await expect(rows).toHaveCount(108);
+    await expect(showMore).toHaveCount(0);
+  }
+  await showAllPlayers();
   await expect(page.locator(".event-player-identity .avatar")).toHaveCount(108);
   await expect(
     page
@@ -490,7 +503,7 @@ test("uses real remote grants for core SSR/navigation without local DB or OAuth,
     await setEditionAppearance("test-cup", appearance);
     await renewConnection();
     await page.goto("/tournaments/test-cup/players");
-    await expect(page.locator(".event-player-row")).toHaveCount(108);
+    await showAllPlayers();
     await expect(page.locator("html")).toHaveAttribute(
       "data-appearance",
       appearance,

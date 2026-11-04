@@ -1,7 +1,7 @@
 import { db } from "@/db";
 import { userProfileCache, users } from "@/db/schema";
 import { and, eq, inArray, sql } from "drizzle-orm";
-import { after } from "next/server";
+import { after } from "next/server.js";
 import { randomUUID } from "node:crypto";
 import { remoteMode } from "./data-source";
 import { HttpError } from "./http";

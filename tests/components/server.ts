@@ -34,6 +34,7 @@ const bundle = await build({
     "tests/components/round-referee-policy.tsx",
     "tests/components/info-note.tsx",
     "tests/components/mappool-actions.tsx",
+    "tests/components/public-mappools.tsx",
     "tests/components/workbench-compact.tsx",
     "tests/components/stage-groups.tsx",
     "tests/components/streaming-manager.tsx",
@@ -70,6 +71,7 @@ const themedStyles = new Map(
       "staff-navigation.css",
       "staff-role-form.css",
       "mappool-actions.css",
+      "public-mappools.css",
       "workbench-compact.css",
       "country-flags.css",
       "practice-records.css",
@@ -195,21 +197,23 @@ createServer((request, response) => {
                                                       )
                                                     ? "tournament-settings"
                                                     : "player-message-board";
-    const fixture = request.url?.startsWith("/action-loading")
-      ? "action-loading"
-      : request.url?.startsWith("/staff-role-form")
-        ? "staff-role-form"
-        : request.url?.startsWith("/player-sidebar")
-          ? "player-sidebar"
-          : request.url?.startsWith("/staff-navigation")
-            ? "staff-navigation"
-            : request.url?.startsWith("/player-timeline")
-              ? "player-timeline"
-              : request.url?.startsWith("/workbench-compact")
-                ? "workbench-compact"
-                : request.url?.startsWith("/country-flags")
-                  ? "country-flags"
-                  : entry;
+    const fixture = request.url?.startsWith("/public-mappools")
+      ? "public-mappools"
+      : request.url?.startsWith("/action-loading")
+        ? "action-loading"
+        : request.url?.startsWith("/staff-role-form")
+          ? "staff-role-form"
+          : request.url?.startsWith("/player-sidebar")
+            ? "player-sidebar"
+            : request.url?.startsWith("/staff-navigation")
+              ? "staff-navigation"
+              : request.url?.startsWith("/player-timeline")
+                ? "player-timeline"
+                : request.url?.startsWith("/workbench-compact")
+                  ? "workbench-compact"
+                  : request.url?.startsWith("/country-flags")
+                    ? "country-flags"
+                    : entry;
     response.end(
       `<!doctype html><html><head><meta name="viewport" content="width=device-width, initial-scale=1"><link rel="stylesheet" href="/${fixture}.css"></head><body><div id="root"></div><script nonce="${nonce}" src="/${fixture}.js"></script></body></html>`,
     );

@@ -140,7 +140,8 @@ test.describe("#106–#115 shared presentation", () => {
           }
           expect(
             await page
-              .locator(".mappool-release-heading")
+              .locator("main header")
+              .filter({ has: page.locator("time") })
               .first()
               .evaluate((el) => getComputedStyle(el).backgroundColor),
           ).toBe("rgba(0, 0, 0, 0)");

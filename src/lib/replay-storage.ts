@@ -42,6 +42,7 @@ export async function storeReplay(key: string, bytes: Buffer) {
   const target = replayPath(directory, key),
     temp = join(directory, `.${key}.${randomUUID()}.tmp`);
   const handle = await open(temp, "wx", 0o600);
+  let renamed = false;
   try {
     try {
       await handle.writeFile(bytes);
@@ -51,6 +52,7 @@ export async function storeReplay(key: string, bytes: Buffer) {
     }
 
     await rename(temp, target);
+    renamed = true;
     const parent = await open(directory, "r");
     try {
       await parent.sync();
@@ -59,6 +61,9 @@ export async function storeReplay(key: string, bytes: Buffer) {
     }
   } catch (error) {
     await unlink(temp).catch(() => {});
+    // This call has not returned, so no attachment can reference this new key.
+    // Database commit ambiguity is handled separately by the upload service.
+    if (renamed) await unlink(target).catch(() => {});
     throw error;
   }
 }

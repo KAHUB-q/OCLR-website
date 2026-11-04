@@ -7,6 +7,7 @@ import {
   mkdir,
   writeFile,
   open,
+  rename,
   symlink,
   rm,
   readdir,
@@ -22,9 +23,15 @@ import {
   replayDirectory,
 } from "../../src/lib/replay-storage";
 import { REPLAY_STORAGE_MAX_BYTES } from "../../src/lib/replay-model";
+import { syntheticReplay } from "../fixtures/replay";
 vi.mock("node:fs/promises", async (original) => {
   const fs = await original<typeof import("node:fs/promises")>();
-  return { ...fs, lstat: vi.fn(fs.lstat) };
+  return {
+    ...fs,
+    lstat: vi.fn(fs.lstat),
+    open: vi.fn(fs.open),
+    rename: vi.fn(fs.rename),
+  };
 });
 let root: string;
 beforeEach(async () => {
@@ -34,10 +41,74 @@ beforeEach(async () => {
   vi.stubEnv("OCLR_MEDIA_DIR", root);
 });
 afterEach(async () => {
+  const fs =
+    await vi.importActual<typeof import("node:fs/promises")>(
+      "node:fs/promises",
+    );
+  vi.mocked(open).mockImplementation(fs.open);
+  vi.mocked(rename).mockImplementation(fs.rename);
+  vi.restoreAllMocks();
   await rm(root, { recursive: true, force: true });
   vi.unstubAllEnvs();
 });
 describe("durable private replay storage", () => {
+  it.each(["EIO", "EPERM"])(
+    "removes only failed post-rename writes when directory sync returns %s",
+    async (code) => {
+      const bytes = syntheticReplay();
+      const saved = randomUUID();
+      await storeReplay(saved, bytes);
+      const directory = await replayDirectory();
+      const fs =
+        await vi.importActual<typeof import("node:fs/promises")>(
+          "node:fs/promises",
+        );
+      const failure = Object.assign(
+        new Error("Synthetic parent sync failure"),
+        { code },
+      );
+      vi.mocked(open).mockImplementation(async (path, flags, mode) => {
+        const handle = await fs.open(path, flags, mode);
+        if (path === directory)
+          vi.spyOn(handle, "sync").mockRejectedValue(failure);
+        return handle;
+      });
+      for (let attempt = 0; attempt < 2; attempt++)
+        await expect(storeReplay(randomUUID(), bytes)).rejects.toBe(failure);
+      expect(await readdir(directory)).toEqual([`${saved}.osr`]);
+      expect(
+        await readReplay(
+          saved,
+          bytes.length,
+          createHash("sha256").update(bytes).digest("hex"),
+        ),
+      ).toEqual(bytes);
+      vi.mocked(open).mockImplementation(fs.open);
+      await storeReplay(randomUUID(), bytes);
+      expect(await readdir(directory)).toHaveLength(2);
+    },
+  );
+
+  it("cleans temporary writes and preserves an existing target when rename fails", async () => {
+    const bytes = syntheticReplay();
+    const saved = randomUUID();
+    await storeReplay(saved, bytes);
+    const failure = Object.assign(new Error("Synthetic rename failure"), {
+      code: "EIO",
+    });
+    vi.mocked(rename).mockRejectedValueOnce(failure);
+    await expect(storeReplay(saved, Buffer.from("replacement"))).rejects.toBe(
+      failure,
+    );
+    expect(await readdir(await replayDirectory())).toEqual([`${saved}.osr`]);
+    expect(
+      await readReplay(
+        saved,
+        bytes.length,
+        createHash("sha256").update(bytes).digest("hex"),
+      ),
+    ).toEqual(bytes);
+  });
   it("allows an upload when a committed deletion removes a file during quota accounting", async () => {
     const directory = await replayDirectory();
     const deleted = join(directory, randomUUID() + ".osr");

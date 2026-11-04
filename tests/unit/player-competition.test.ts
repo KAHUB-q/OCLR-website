@@ -66,6 +66,34 @@ describe("archive stage classification", () => {
 });
 
 describe("champion derivation", () => {
+  it("waits for a known final and never substitutes an explicitly early round", () => {
+    const semifinal = {
+      label: "Semifinals",
+      at: "2026-11-01T12:00:00Z",
+      winnerTeamId: "a",
+    };
+    expect(championTeamId([semifinal])).toBeNull();
+    expect(
+      championTeamId([
+        semifinal,
+        {
+          label: "Grand Final",
+          at: "2026-11-02T12:00:00Z",
+          winnerTeamId: null,
+        },
+      ]),
+    ).toBeNull();
+    expect(
+      championTeamId([
+        { label: "Grand Final", at: "2026-11-02T12:00:00Z", winnerTeamId: "a" },
+        {
+          label: "Grand Final reset",
+          at: "2026-11-03T12:00:00Z",
+          winnerTeamId: null,
+        },
+      ]),
+    ).toBeNull();
+  });
   it("ranks deciding rounds above earlier and lower-bracket knockout rounds", () => {
     expect(finalRoundRank("Grand Finals")).toBe(2);
     expect(finalRoundRank("GF")).toBe(2);

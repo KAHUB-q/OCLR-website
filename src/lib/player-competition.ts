@@ -282,8 +282,8 @@ async function editionRecord(
     const placements = tournamentPlacements(
       (competition?.fixtures ?? []).flatMap((fixture) => {
         const result = fixture.result;
-        if (!result || fixture.stage === "exhibition") return [];
-        const winner = result.draw ? null : result.winnerTeamId;
+        if (fixture.stage === "exhibition") return [];
+        const winner = !result || result.draw ? null : result.winnerTeamId;
         const sides = [fixture.home.team?.id, fixture.away.team?.id];
         return [
           {

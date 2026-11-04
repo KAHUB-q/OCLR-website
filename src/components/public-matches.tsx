@@ -155,7 +155,8 @@ export function PublicMatches({
       (!stage || f.stage === stage) &&
       (!round || f.roundId === round) &&
       (!selectedGroup ||
-        (selectedGroup.rows.some((r) => r.team.id === f.home.team?.id) &&
+        (f.stage === "group" &&
+          selectedGroup.rows.some((r) => r.team.id === f.home.team?.id) &&
           selectedGroup.rows.some((r) => r.team.id === f.away.team?.id))) &&
       (!status ||
         (status === "completed"

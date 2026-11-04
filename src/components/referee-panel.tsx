@@ -347,6 +347,11 @@ export function RefereePanel({
   }
   const disabled = busy || uncertain || !data.canRecord;
   const state = simulation ? projectReferee(model) : data.projection;
+  const nextTeamIndex = data.teams.findIndex(
+    (team) => team.id === state.nextStep?.teamId,
+  );
+  const nextTeamSide =
+    nextTeamIndex === 1 ? "red" : nextTeamIndex === 0 ? "blue" : "neutral";
   const exPick = state.activeSelections.find(
     (s) => s.id === state.lastSelectionId,
   );
@@ -910,12 +915,22 @@ export function RefereePanel({
             >
               <h2 id="referee-pool">{tr("Round mappool")}</h2>
 
-              <p role="status">
+              <p
+                role="status"
+                className={`${styles.sequencePreview} ${styles.sequenceRow} ${styles.sequenceTeam}`}
+                data-team={nextTeamSide}
+              >
                 {state.nextStep
                   ? tr("Step {number}: {action} · {team}", {
                       number: state.nextStep.index + 1,
                       action: state.nextStep.kind.toUpperCase(),
-                      team: teamName(state.nextStep.teamId),
+                      team:
+                        nextTeamIndex >= 0
+                          ? `${tr(nextTeamIndex === 1 ? "Red team" : "Blue team")} ${teamName(state.nextStep.teamId)}`
+                          : teamName(
+                              state.nextStep.teamId,
+                              state.nextStep.kind === "tb",
+                            ),
                     })
                   : tr("No further configured step")}
               </p>

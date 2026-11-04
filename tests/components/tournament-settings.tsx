@@ -41,13 +41,18 @@ const initial: Workspace = {
 };
 function Fixture() {
   const [data, setData] = useState(initial);
-  const saved = useRef<Pick<Workspace["edition"], "name" | "branding"> | null>(
-    null,
-  );
+  const saved = useRef<Pick<
+    Workspace["edition"],
+    "name" | "branding" | "ezScoreMultiplier"
+  > | null>(null);
   useEffect(() => {
     const receive = (event: Event) => {
       const fields = (event as CustomEvent<Workspace["edition"]>).detail;
-      saved.current = { name: fields.name, branding: fields.branding };
+      saved.current = {
+        name: fields.name,
+        branding: fields.branding,
+        ezScoreMultiplier: fields.ezScoreMultiplier,
+      };
     };
     window.addEventListener("synthetic-settings-saved", receive);
     return () =>

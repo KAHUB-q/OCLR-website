@@ -69,6 +69,8 @@ export function EventStatistics({
     ]),
   );
   const poolLabels: Record<string, string> = {
+    "Raw MP score": tr("Raw MP score"),
+    "Score multiplier": tr("Score multiplier"),
     "Applicable matches": tr("Applicable matches"),
     "Unknown mappool matches": tr("Unknown mappool matches"),
     "Pick coverage": tr("Pick coverage"),
@@ -213,6 +215,13 @@ export function EventStatistics({
             "Team score",
             "Match",
           ];
+    if (plays.some((s) => (s.scoreMultiplier ?? 1) !== 1))
+      columns.splice(
+        columns.indexOf("Score") + 1,
+        0,
+        "Raw MP score",
+        "Score multiplier",
+      );
     rows = plays.map((s) => ({
       _osuId: s.osuId,
       Map: s.slot,
@@ -220,6 +229,8 @@ export function EventStatistics({
       Player: s.player,
       Team: s.team,
       Score: s.score,
+      "Raw MP score": s.rawScore ?? s.score,
+      "Score multiplier": s.scoreMultiplier ?? 1,
       Accuracy: s.accuracy,
       Combo: s.combo,
       Mods: s.mods,
@@ -285,7 +296,10 @@ export function EventStatistics({
     if (typeof value === "number")
       return /accuracy|rate/i.test(key)
         ? `${number(value * 100, 2)}%`
-        : number(value, /MC|placement/.test(key) ? 3 : 0);
+        : number(
+            value,
+            key === "Score multiplier" ? 4 : /MC|placement/.test(key) ? 3 : 0,
+          );
     return value;
   }
   return (

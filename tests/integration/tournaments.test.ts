@@ -144,6 +144,57 @@ describe.skipIf(!url)("authoritative tournament edition storage", () => {
     );
     expect(second.data.map((row) => row.season)).toEqual(["10", "9"]);
   });
+  it("saves edition-scoped EZ statistics multipliers with revision, permissions and audit", async () => {
+    await create();
+    const payload = {
+      ...fields,
+      status: "upcoming",
+      ezScoreMultiplier: 1.2345,
+    };
+    const saved = await change(0, "general", payload);
+    expect(saved.edition.ezScoreMultiplier).toBe(1.2345);
+    expect((await readTournament("s12"))?.edition.ezScoreMultiplier).toBe(
+      1.2345,
+    );
+    expect(
+      (await readTournament("test-cup"))?.edition.ezScoreMultiplier,
+    ).toBeUndefined();
+    const event = (await auditEvents()).find(
+      (e) => e.kind === "tournament_general",
+    )!;
+    expect(JSON.stringify(event.detail)).toContain(
+      '"ezScoreMultiplier":1.2345',
+    );
+    await expect(
+      change(0, "general", { ...payload, ezScoreMultiplier: 2 }),
+    ).rejects.toMatchObject({ status: 409 });
+    await expect(
+      tournamentCommand(mapper, "s12", {
+        action: "general",
+        ...payload,
+        expectedRevision: saved.revision,
+        confirmed: true,
+      }),
+    ).rejects.toMatchObject({ status: 403 });
+    for (const invalid of [0, -1, 0.00001, 100.0001, 1.00001])
+      await expect(
+        change(saved.revision, "general", {
+          ...payload,
+          ezScoreMultiplier: invalid,
+        }),
+      ).rejects.toMatchObject({ status: 400 });
+    const withoutField = await change(saved.revision, "general", {
+      ...fields,
+      status: "upcoming",
+    });
+    expect(withoutField.edition.ezScoreMultiplier).toBe(1.2345);
+    const cleared = await change(withoutField.revision, "general", {
+      ...payload,
+      ezScoreMultiplier: null,
+    });
+    expect(cleared.edition.ezScoreMultiplier).toBeNull();
+  });
+
   it("persists competition intervals with revision, authorization and transactional audit", async () => {
     await create();
     const schedule = [

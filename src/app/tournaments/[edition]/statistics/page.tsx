@@ -34,6 +34,8 @@ async function Issue271Page({
       title: p.title,
       mapId: p.beatmapId,
       score: p.score,
+      rawScore: p.rawScore,
+      scoreMultiplier: p.scoreMultiplier,
       accuracy: p.accuracy,
       combo: p.combo,
       mods: p.mods.join(" "),

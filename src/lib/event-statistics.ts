@@ -9,6 +9,8 @@ export type EventScore = {
   title: string;
   mapId: number | null;
   score: number;
+  rawScore?: number;
+  scoreMultiplier?: number;
   accuracy: number | null;
   combo: number | null;
   mods: string;

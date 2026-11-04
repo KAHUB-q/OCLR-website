@@ -189,6 +189,9 @@ export function MatchDetailsView({
                         <th scope="col">{tr("Lobby team / slot")}</th>
                         <th scope="col">{tr("Score")}</th>
                         <th scope="col">{tr("Reviewed score")}</th>
+                        {g.scores.some(
+                          (s) => (s.statisticsMultiplier ?? 1) !== 1,
+                        ) && <th scope="col">{tr("Statistics score")}</th>}
                         <th scope="col">{tr("Accuracy")}</th>
                         <th scope="col">{tr("Combo")}</th>
                         <th scope="col">300 / 100 / 50 / {tr("Miss")}</th>
@@ -241,6 +244,16 @@ export function MatchDetailsView({
                               ? number(s.effectiveTotal)
                               : tr("Not applicable")}
                           </td>
+                          {g.scores.some(
+                            (row) => (row.statisticsMultiplier ?? 1) !== 1,
+                          ) && (
+                            <td>
+                              {number(s.statisticsTotal)}
+                              {(s.statisticsMultiplier ?? 1) !== 1 && (
+                                <span className="small muted">{` · EZ × ${s.statisticsMultiplier}`}</span>
+                              )}
+                            </td>
+                          )}
                           <td>
                             {s.accuracy === null
                               ? tr("Not recorded")

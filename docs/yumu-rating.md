@@ -6,6 +6,14 @@ OCLR adapts the mathematical rating model from [yumu-bot](https://github.com/yum
 
 Only approved and published result revision pointers are read, never the latest import or pending correction. The adapter verifies game claims, scoring mode, source fingerprint, round and ordered fixture-team attribution. Effective score follows the approved failed-score policy. Games excluded by the reviewed proposal never enter the rating. A fixture's approved source may contain games from completed MP source histories; game ID, not room count or beatmap ID, defines a sample. A later legitimate play of the same beatmap is retained.
 
+Edition settings can apply the explicit `ez-score-v1` statistics policy (#844):
+recorded EZ scores use raw MP score × the saved multiplier, rounded to a whole
+number. It applies once before fixture/round/weekly aggregation and preserves
+reviewed zero contributions and approved winning teams. Saving the setting
+recalculates derived reports; their evidence includes the multiplier and policy.
+Published award snapshots retain their existing review/republication boundary.
+See [EZ statistics configuration](tournament-management.md#ez-statistics-score-multiplier-844).
+
 For game g, n_g is the number of observed, attributed scores (including valid zero scores), S_g their effective-score sum. For player i:
 
 - `RRA_ig = score_ig * n_g / S_g`.
@@ -19,7 +27,7 @@ For game g, n_g is the number of observed, attributed scores (including valid ze
 
 Computations use JavaScript binary64 in ascending game ID / player ID order; published metrics round to nearest 9 decimals (nonnegative half up). Rank comparisons use these metrics. Equal MRA retains competition rank ties; UID only orders display rows. Percentile inputs use average tied positions divided by N-1 (0 is best, 1 worst); RWS is ordered by RWS then DRA as upstream does. A single player's percentile inputs are null. Small comparison populations are explicitly labeled. These are relative population measures, not globally comparable skill scores.
 
-To avoid cancellation for large N, the ERA implementation uses the complementary scaling factor. Its continuous equal-population limit is ERA=1 when the complement underflows. Invalid/unsafe scores, zero-sum games, conflicting duplicate game identities, unresolved teams or missing sources mark the report unavailable; no fabricated metric or partial official table is emitted. Valid zero scores still count as appearances and contribute RRA=0, unlike upstream's zero-score skip. No upstream low-score deletion, same-BID deduplication, skip/ignore or EZ multiplier is reapplied to approved scores.
+To avoid cancellation for large N, the ERA implementation uses the complementary scaling factor. Its continuous equal-population limit is ERA=1 when the complement underflows. Invalid/unsafe scores, zero-sum games, conflicting duplicate game identities, unresolved teams or missing sources mark the report unavailable; no fabricated metric or partial official table is emitted. Valid zero scores still count as appearances and contribute RRA=0, unlike upstream's zero-score skip. No upstream low-score deletion, same-BID deduplication, skip/ignore or implicit EZ multiplier is reapplied to approved scores; only the explicit edition statistics policy above adjusts EZ scores.
 
 **Single-fixture ratings never use SR.** No weight option or provider SR lookup exists. Beatmap metadata updates cannot alter scores. Ratings are derived from immutable approved result inputs and the named policy; source revision/fingerprint evidence accompanies them. Reapproving a correction changes the derived report only after the existing result review/publication transaction. No second score store or rating-specific mutation is introduced. Public projection runs within one repeatable-read snapshot, reuses fixture/progression/team publication checks and withholds a report if any scoring identity is not public. Admin reads remain edition-scoped. Legacy weekly award calculations are unchanged by #192.
 

@@ -45,6 +45,7 @@ import {
 } from "../../src/lib/ratings";
 import { publicPlayer } from "../../src/lib/players";
 import { playerCompetitionRecord } from "../../src/lib/player-competition";
+import { readTournament, tournamentCommand } from "../../src/lib/tournaments";
 import { publicBracket } from "../../src/lib/brackets";
 import { fixtureCommand, fixtureForReview } from "../../src/lib/fixtures";
 import { mappoolCommand } from "../../src/lib/mappools";
@@ -276,6 +277,52 @@ describe.skipIf(!url)(
         })
       ).review;
     }
+    it("uses the edition EZ multiplier for approved statistics while preserving raw and reviewed results", async () => {
+      source.games[0].scores[0].mods = ["EZ"];
+      let view = await imported();
+      view = (
+        await resultCommand(referee, "test-cup", fixtureId, submission(view))
+      ).review;
+      await published(await approved(view));
+      const before = (await publicFixture("test-cup", fixtureId))!;
+      const saved = (await readTournament("test-cup"))!;
+      const e = saved.edition;
+      await tournamentCommand(admin, "test-cup", {
+        action: "general",
+        expectedRevision: saved.revision,
+        confirmed: true,
+        name: e.name,
+        season: e.season,
+        summary: e.summary,
+        status: e.status,
+        timeZone: e.timeZone,
+        branding: e.branding,
+        ezScoreMultiplier: 1.5,
+      });
+      const games = await approvedRatingGames("test-cup", db());
+      const raw = source.games[0].scores[0];
+      const adjusted = games
+        .find((g) => g.gameId === source.games[0].id)!
+        .scores.find((s) => s.userId === raw.osuId)!;
+      expect(adjusted).toMatchObject({
+        rawTotal: raw.total,
+        total: Math.round(raw.total! * 1.5),
+        scoreMultiplier: 1.5,
+        mods: ["EZ"],
+      });
+      const after = (await publicFixture("test-cup", fixtureId))!;
+      expect(after.result).toEqual(before.result);
+      const detail = after.details!.games[0].scores.find(
+        (s) => s.osuId === raw.osuId,
+      )!;
+      expect(detail.total).toBe(raw.total);
+      expect(detail.statisticsTotal).toBe(adjusted.total);
+      const playerRating = (fixture: typeof before) =>
+        fixture.details!.rating!.players.find((p) => p.userId === raw.osuId)!;
+      expect(playerRating(after).mra).toBeGreaterThan(playerRating(before).mra);
+      expect(await approvedRatingGames("test-cup", db())).toEqual(games);
+    });
+
     it("publishes exhibition results separately while official ratings, progression and career keep only the formal fixture", async () => {
       let view = await imported();
       view = (

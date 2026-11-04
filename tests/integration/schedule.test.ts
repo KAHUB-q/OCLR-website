@@ -168,27 +168,25 @@ describe.skipIf(!url)("private schedule negotiation #591", () => {
           publishedAt: new Date(),
         })
         .returning();
-      await db()
-        .insert(fixtureReferees)
-        .values({
-          fixtureId: id,
-          userId: other.osuId,
-          assignedBy: admin.osuId,
-        });
+      await db().insert(fixtureReferees).values({
+        fixtureId: id,
+        userId: other.osuId,
+        assignedBy: admin.osuId,
+      });
       const table =
         role === "referee"
           ? fixtureReferees
           : role === "streamer"
             ? fixtureStreams
             : fixtureCommentators;
-      await db()
-        .insert(table)
-        .values({
-          fixtureId: second.id,
-          userId: other.osuId,
-          source: "staff",
-          assignedBy: admin.osuId,
-        });
+      const booking = {
+        fixtureId: second.id,
+        userId: other.osuId,
+        source: "staff" as const,
+        confirmedTimeZone: "Asia/Taipei",
+        assignedBy: admin.osuId,
+      };
+      await db().insert(table).values(booking);
       const conflicts = async () =>
         (await scheduleWorkspace(admin, slug)).fixtures.map(
           (fixture) => fixture.sameStart,

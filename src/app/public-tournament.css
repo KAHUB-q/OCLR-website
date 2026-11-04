@@ -1,5 +1,5 @@
 /* One site-wide appearance, rendered from a non-sensitive preference cookie. */
-.themed-site {
+:root {
   --site-background: #f4f1f7;
   --site-surface: #fff;
   --site-raised: #f8f4fb;
@@ -28,7 +28,7 @@
   --site-primary: #6c2e91;
   --site-primary-hover: #552074;
 }
-html[data-theme="dark"] .themed-site {
+html[data-theme="dark"] {
   --site-background: #090c17;
   --site-surface: #121626;
   --site-raised: #191d30;
@@ -56,7 +56,21 @@ html[data-theme="dark"] .themed-site {
   --site-panel-shadow: #0009;
   --site-dialog-shadow: #0009;
 }
-/* Ordinary pages share tokens; broadcast surfaces retain their isolated palette. */
+/* Broadcast components keep the original independent palette. */
+.broadcast-site {
+  --color-background: #090c17;
+  --color-surface: #121626;
+  --color-raised: #1b1e32;
+  --color-foreground: #f4f3fc;
+  --color-muted: #aaaec6;
+  --color-accent: #c566ed;
+  --color-border: #292d43;
+  --color-success: #72e3bc;
+  --color-warning: #f0cb83;
+  --color-danger: #ff9eaf;
+}
+/* Document and ordinary pages share semantic aliases, including body portals. */
+:root,
 .themed-site {
   --color-background: var(--site-background);
   --color-surface: var(--site-surface);
@@ -68,6 +82,8 @@ html[data-theme="dark"] .themed-site {
   --color-success: var(--site-success);
   --color-warning: var(--site-warning);
   --color-danger: var(--site-danger);
+}
+.themed-site {
   --button-radius: 999px;
   --radius-panel: 1.375rem;
   color-scheme: light;

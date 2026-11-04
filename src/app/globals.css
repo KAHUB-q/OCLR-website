@@ -21,6 +21,10 @@
   --button-radius: 0.45rem;
 }
 :root {
+  background: var(--color-background);
+  color-scheme: light;
+}
+html[data-theme="dark"] {
   color-scheme: dark;
 }
 html:has([data-broadcast]) {
@@ -1009,7 +1013,7 @@ dialog > .actions {
   margin-top: 1.25rem;
 }
 dialog::backdrop {
-  background: #040711cc;
+  background: var(--site-backdrop, #040711cc);
   backdrop-filter: blur(4px);
 }
 #identity,

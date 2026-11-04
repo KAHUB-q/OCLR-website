@@ -32,8 +32,7 @@ html[data-appearance="cute-pastel"][data-theme="dark"]:not(
   background: #241a20;
 }
 
-html[data-appearance="cute-pastel"] .themed-site {
-  --pastel-yellow: #ffd36b;
+html[data-appearance="cute-pastel"] {
   --site-mod-hd-background: #ffe6a3;
   --site-mod-hd-foreground: #674b10;
   --site-mod-hr-background: #ffc6cc;
@@ -67,6 +66,10 @@ html[data-appearance="cute-pastel"] .themed-site {
   --site-on-primary: #4a2c3a;
   --site-primary: #ff9dbe;
   --site-primary-hover: #ff86b5;
+}
+
+html[data-appearance="cute-pastel"] .themed-site {
+  --pastel-yellow: #ffd36b;
   --button-radius: 999px;
   --radius-panel: 1.5rem;
   color-scheme: light;
@@ -76,7 +79,7 @@ html[data-appearance="cute-pastel"] .themed-site {
   line-height: 1.7;
 }
 
-html[data-theme="dark"][data-appearance="cute-pastel"] .themed-site {
+html[data-theme="dark"][data-appearance="cute-pastel"] {
   --site-background: #241a20;
   --site-surface: #2f2229;
   --site-raised: #382830;
@@ -104,6 +107,9 @@ html[data-theme="dark"][data-appearance="cute-pastel"] .themed-site {
   --site-on-primary: #3a1f2a;
   --site-primary: #ff9dbe;
   --site-primary-hover: #ffb3d0;
+}
+
+html[data-theme="dark"][data-appearance="cute-pastel"] .themed-site {
   color-scheme: dark;
 }
 

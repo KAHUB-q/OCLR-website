@@ -1,5 +1,5 @@
 /* S3 Frost Waltz: registered crystalline snowflake waltz on MainSheet components. */
-html[data-appearance="frost-waltz"] .themed-site {
+html[data-appearance="frost-waltz"] {
   --site-background: #f2faff;
   --site-surface: #ffffff;
   --site-raised: #e5f3fa;
@@ -27,6 +27,8 @@ html[data-appearance="frost-waltz"] .themed-site {
   --site-panel-shadow: #34204b20;
   --site-dialog-shadow: #34204b38;
   --site-backdrop: #21173380;
+}
+html[data-appearance="frost-waltz"] .themed-site {
   --button-radius: 8px;
   --radius-panel: 12px;
   --frost-ice: #71c9ee;
@@ -40,7 +42,7 @@ html[data-appearance="frost-waltz"] .themed-site {
   --frost-edge-light: #ffffffa6;
   background: var(--site-background);
 }
-html[data-appearance="frost-waltz"][data-theme="dark"] .themed-site {
+html[data-appearance="frost-waltz"][data-theme="dark"] {
   --site-background: #101e2a;
   --site-surface: #172b39;
   --site-raised: #213c4c;
@@ -68,6 +70,8 @@ html[data-appearance="frost-waltz"][data-theme="dark"] .themed-site {
   --site-panel-shadow: #09051266;
   --site-dialog-shadow: #09051299;
   --site-backdrop: #090512b0;
+}
+html[data-appearance="frost-waltz"][data-theme="dark"] .themed-site {
   --frost-ice: #70bdd4;
   --frost-ice-ink: #b7e9f8;
   --frost-aqua: #69c6c8;

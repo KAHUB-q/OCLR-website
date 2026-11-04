@@ -1,5 +1,5 @@
 /* S5 Prism Overture: prismatic surfaces with outlined EB Garamond Italic beta. */
-html[data-appearance="prism-overture"] .themed-site {
+html[data-appearance="prism-overture"] {
   --site-background: #f7f5fc;
   --site-surface: #ffffff;
   --site-raised: #eee8f8;
@@ -27,6 +27,8 @@ html[data-appearance="prism-overture"] .themed-site {
   --site-panel-shadow: #34204b20;
   --site-dialog-shadow: #34204b38;
   --site-backdrop: #21173380;
+}
+html[data-appearance="prism-overture"] .themed-site {
   --button-radius: 8px;
   --radius-panel: 12px;
   --prism-violet: #8060bd;
@@ -40,7 +42,7 @@ html[data-appearance="prism-overture"] .themed-site {
   --prism-edge-light: #ffffffa6;
   background: var(--site-background);
 }
-html[data-appearance="prism-overture"][data-theme="dark"] .themed-site {
+html[data-appearance="prism-overture"][data-theme="dark"] {
   --site-background: #1b1730;
   --site-surface: #26203e;
   --site-raised: #32294e;
@@ -68,6 +70,8 @@ html[data-appearance="prism-overture"][data-theme="dark"] .themed-site {
   --site-panel-shadow: #09051266;
   --site-dialog-shadow: #09051299;
   --site-backdrop: #090512b0;
+}
+html[data-appearance="prism-overture"][data-theme="dark"] .themed-site {
   --prism-violet: #bc9ce8;
   --prism-violet-ink: #e2c9ff;
   --prism-peach: #f1b4bc;

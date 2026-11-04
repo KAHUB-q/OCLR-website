@@ -67,7 +67,7 @@ html[data-appearance="retro-arcade"][data-theme="dark"]:not(
 }
 
 /* Light: arcade night. A deep indigo cabinet, a step brighter than black. */
-html[data-appearance="retro-arcade"] .themed-site {
+html[data-appearance="retro-arcade"] {
   --site-background: #15122b;
   --site-surface: #1e1a3b;
   --site-raised: #29244c;
@@ -95,6 +95,9 @@ html[data-appearance="retro-arcade"] .themed-site {
   --site-panel-shadow: #00000080;
   --site-dialog-shadow: #000000a6;
   --site-backdrop: #050508b3;
+  --site-button-shadow: 4px 4px 0 var(--arcade-magenta);
+}
+html[data-appearance="retro-arcade"] .themed-site {
   /* Selection cursor: a solid cyan block. */
   --arcade-cursor: #00e5ff;
   --arcade-on-cursor: #15122b;
@@ -115,7 +118,6 @@ html[data-appearance="retro-arcade"] .themed-site {
   --arcade-pixel: "Fusion Pixel 12px SC";
   --arcade-display: "Press Start 2P", var(--arcade-pixel), var(--font-sans);
   --arcade-label-font: var(--arcade-pixel), var(--font-sans);
-  --site-button-shadow: 4px 4px 0 var(--arcade-magenta);
   --button-radius: 0;
   --radius-panel: 0;
   color-scheme: dark;
@@ -129,7 +131,7 @@ html[lang="en"][data-appearance="retro-arcade"] .themed-site {
   --arcade-pixel: "Fusion Pixel 12px Latin";
 }
 /* Dark: the black cabinet itself. */
-html[data-appearance="retro-arcade"][data-theme="dark"] .themed-site {
+html[data-appearance="retro-arcade"][data-theme="dark"] {
   --site-background: #050508;
   --site-surface: #111118;
   --site-raised: #1b1b25;
@@ -148,6 +150,8 @@ html[data-appearance="retro-arcade"][data-theme="dark"] .themed-site {
   --site-panel-shadow: #00000099;
   --site-dialog-shadow: #000000b3;
   --site-backdrop: #000000b3;
+}
+html[data-appearance="retro-arcade"][data-theme="dark"] .themed-site {
   --arcade-on-cursor: #050508;
   --arcade-label: #ff6ec4;
 }
@@ -414,7 +418,9 @@ html[data-appearance="retro-arcade"]
   background: var(--site-tint);
 }
 /* Disabled: flat, dashed edge, plus the base opacity. */
-html[data-appearance="retro-arcade"] .themed-site :is(button, .button):disabled:not([aria-busy="true"]),
+html[data-appearance="retro-arcade"]
+  .themed-site
+  :is(button, .button):disabled:not([aria-busy="true"]),
 html[data-appearance="retro-arcade"]
   .themed-site
   .button[aria-disabled="true"] {

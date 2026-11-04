@@ -1,5 +1,5 @@
 /* S10 Skyline Pop. Shared MainSheet tokens; broadcast output stays isolated. */
-html[data-appearance="skyline-pop"] .themed-site {
+html[data-appearance="skyline-pop"] {
   --site-background: #fffaf0;
   --site-surface: #ffffff;
   --site-raised: #eef7ff;
@@ -27,6 +27,8 @@ html[data-appearance="skyline-pop"] .themed-site {
   --site-panel-shadow: #17375930;
   --site-dialog-shadow: #17375933;
   --site-backdrop: #17375966;
+}
+html[data-appearance="skyline-pop"] .themed-site {
   --skyline-sky: #55d1ed;
   --skyline-peach: #ff91bd;
   --pop-city: url("/themes/skyline-pop/coast.webp");
@@ -37,7 +39,7 @@ html[data-appearance="skyline-pop"] .themed-site {
   --radius-panel: 10px;
   background: var(--site-background);
 }
-html[data-appearance="skyline-pop"][data-theme="dark"] .themed-site {
+html[data-appearance="skyline-pop"][data-theme="dark"] {
   --site-background: #111d38;
   --site-surface: #1b2e50;
   --site-raised: #263f65;
@@ -65,6 +67,8 @@ html[data-appearance="skyline-pop"][data-theme="dark"] .themed-site {
   --site-panel-shadow: #0006;
   --site-dialog-shadow: #0009;
   --site-backdrop: #0009;
+}
+html[data-appearance="skyline-pop"][data-theme="dark"] .themed-site {
   --skyline-sky: #3296c4;
   --skyline-peach: #ff9dcd;
   --pop-city: url("/themes/skyline-pop/coast.webp");

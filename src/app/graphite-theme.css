@@ -1,6 +1,6 @@
 /* S7 Graphite Arena: brushed silver, machined edges and competition yellow.
  * Reflections are static background layers; original artwork stays literal. */
-html[data-appearance="graphite-arena"] .themed-site {
+html[data-appearance="graphite-arena"] {
   --site-background: #f3f4f2;
   --site-surface: #ffffff;
   --site-raised: #e9eceb;
@@ -28,6 +28,8 @@ html[data-appearance="graphite-arena"] .themed-site {
   --site-panel-shadow: #171c2024;
   --site-dialog-shadow: #171c2033;
   --site-backdrop: #171c2080;
+}
+html[data-appearance="graphite-arena"] .themed-site {
   --button-radius: 2px;
   --radius-panel: 2px;
   --graphite-yellow: #eacb49;
@@ -57,7 +59,7 @@ html[data-appearance="graphite-arena"] .themed-site {
     inset 0 -1px var(--graphite-edge-dark), 0 6px 12px -12px #17212b66;
   background: var(--site-background);
 }
-html[data-appearance="graphite-arena"][data-theme="dark"] .themed-site {
+html[data-appearance="graphite-arena"][data-theme="dark"] {
   --site-background: #171c20;
   --site-surface: #22292f;
   --site-raised: #303940;
@@ -82,6 +84,8 @@ html[data-appearance="graphite-arena"][data-theme="dark"] .themed-site {
   --site-panel-shadow: #0006;
   --site-dialog-shadow: #0009;
   --site-backdrop: #000a;
+}
+html[data-appearance="graphite-arena"][data-theme="dark"] .themed-site {
   --graphite-grain: repeating-linear-gradient(
     0deg,
     #ffffff00 0 2px,

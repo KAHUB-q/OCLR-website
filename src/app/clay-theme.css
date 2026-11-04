@@ -19,7 +19,7 @@ html[data-appearance="claymorphism"][data-theme="dark"]:not(
   background: #271b19;
 }
 
-html[data-appearance="claymorphism"] .themed-site {
+html[data-appearance="claymorphism"] {
   --site-background: #f8ebe4;
   --site-surface: #fffaf6;
   --site-raised: #f4e2d9;
@@ -47,6 +47,10 @@ html[data-appearance="claymorphism"] .themed-site {
   --site-panel-shadow: #8f4f3d59;
   --site-dialog-shadow: #47291f4d;
   --site-backdrop: #47291f66;
+  --site-button-shadow: var(--clay-button);
+}
+
+html[data-appearance="claymorphism"] .themed-site {
   /* Small-area mint selection, never a status colour. */
   --clay-mint: #c9ecd9;
   --clay-mint-foreground: #1b5640;
@@ -81,7 +85,6 @@ html[data-appearance="claymorphism"] .themed-site {
   --clay-panel:
     0 14px 28px -24px var(--clay-drop-strong),
     inset 0 1px 0 var(--clay-highlight);
-  --site-button-shadow: var(--clay-button);
   --button-radius: 18px;
   --radius-panel: 24px;
   color-scheme: light;
@@ -89,7 +92,7 @@ html[data-appearance="claymorphism"] .themed-site {
   color: var(--site-foreground);
   line-height: 1.65;
 }
-html[data-appearance="claymorphism"][data-theme="dark"] .themed-site {
+html[data-appearance="claymorphism"][data-theme="dark"] {
   --site-background: #271b19;
   --site-surface: #352523;
   --site-raised: #3f2c29;
@@ -117,6 +120,8 @@ html[data-appearance="claymorphism"][data-theme="dark"] .themed-site {
   --site-panel-shadow: #0000008c;
   --site-dialog-shadow: #000000a6;
   --site-backdrop: #000000a6;
+}
+html[data-appearance="claymorphism"][data-theme="dark"] .themed-site {
   --clay-mint: #264f40;
   --clay-mint-foreground: #cff3e2;
   --clay-mint-border: #74c3a1;
@@ -170,7 +175,9 @@ html[data-appearance="claymorphism"]
   transform: translateY(1px);
 }
 /* Disabled reads as unbaked: flat with a dashed edge, plus the base opacity. */
-html[data-appearance="claymorphism"] .themed-site :is(button, .button):disabled:not([aria-busy="true"]),
+html[data-appearance="claymorphism"]
+  .themed-site
+  :is(button, .button):disabled:not([aria-busy="true"]),
 html[data-appearance="claymorphism"]
   .themed-site
   .button[aria-disabled="true"] {

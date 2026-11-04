@@ -1,5 +1,5 @@
 /* S9 Glacier Blue: approved Cirno ice-fairy design, scoped to ordinary pages. */
-html[data-appearance="glacier-blue"] .themed-site {
+html[data-appearance="glacier-blue"] {
   --site-background: #f4f9fe;
   --site-surface: #ffffff;
   --site-raised: #edf5ff;
@@ -27,11 +27,13 @@ html[data-appearance="glacier-blue"] .themed-site {
   --site-panel-shadow: #102c5030;
   --site-dialog-shadow: #102c5033;
   --site-backdrop: #102c5066;
+}
+html[data-appearance="glacier-blue"] .themed-site {
   --button-radius: 4px;
   --radius-panel: 4px;
   background: var(--site-background);
 }
-html[data-appearance="glacier-blue"][data-theme="dark"] .themed-site {
+html[data-appearance="glacier-blue"][data-theme="dark"] {
   --site-background: #0d182c;
   --site-surface: #14223b;
   --site-raised: #1d3151;

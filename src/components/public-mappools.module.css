@@ -166,50 +166,6 @@
   margin-bottom: 1rem;
 }
 
-.browse .cards {
-  gap: 0.75rem;
-}
-
-/* Keep the shared card's metadata, clipboard and links; simplify only this view. */
-.browse .card {
-  grid-template-columns: 9rem minmax(0, 1fr);
-  min-height: 7.75rem;
-  padding: 0;
-}
-
-.browse .card::before,
-.browse .card :global(.map-card-cover)::before {
-  content: none;
-}
-
-.browse .card :global(.map-card-art) {
-  inset-inline-start: 0;
-  opacity: 0.06;
-}
-
-.browse .card :global(.map-card-cover),
-.browse .card :global(.beatmap-cover) {
-  border-radius: 0;
-}
-
-.browse .card :global(.map-card-copy) {
-  padding: 0.8rem 1rem;
-}
-
-.browse .card :global(.map-card-values) {
-  padding-inline-end: 0;
-}
-
-.browse .card :global(.map-card-title) {
-  font-size: var(--text-body);
-}
-
-.browse .card :global(.map-card-mode) {
-  position: static;
-  align-self: flex-start;
-  margin-top: 0.25rem;
-}
-
 @media (prefers-reduced-motion: reduce) {
   .collection :global(.workspace-tabs button),
   .browse :global(.workspace-tabs button) {
@@ -234,55 +190,5 @@
 
   .viewControl svg {
     display: none;
-  }
-
-  .browse .card {
-    grid-template-columns: 5rem minmax(0, 1fr);
-    min-height: 0;
-  }
-
-  .browse .card :global(.map-card-cover .beatmap-cover) {
-    height: 100%;
-    aspect-ratio: auto;
-  }
-
-  .browse .card :global(.map-card-copy) {
-    padding: 0.7rem;
-  }
-
-  .browse .card :global(.map-card-title) {
-    display: -webkit-box;
-    -webkit-line-clamp: 2;
-    -webkit-box-orient: vertical;
-    white-space: normal;
-    overflow-wrap: anywhere;
-  }
-
-  .browse .card :global(.map-card-title-row) {
-    padding-inline-end: 0;
-  }
-
-  .browse .card :global(.map-card-id) {
-    left: 0.2rem;
-    max-width: calc(100% - 0.4rem);
-    padding-inline: 0.25rem;
-    font-size: var(--text-label);
-  }
-
-  .browse .card :global(.map-card-id-icon) {
-    display: none;
-  }
-
-  .browse .card :global(.map-slot-badge) {
-    left: 0.35rem;
-  }
-
-  .browse .card :global(.map-card-values) {
-    gap: 0.25rem 0.55rem;
-  }
-
-  .browse .card :global(.map-card-copy > .beatmap-actions) {
-    position: static;
-    margin-top: 0.5rem;
   }
 }

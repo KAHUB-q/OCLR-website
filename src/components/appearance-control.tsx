@@ -145,6 +145,7 @@ export function AppearanceControl({
           {name(appearance)}
         </span>
       </button>
+      {loadError && <p role="alert">{tr("Please try again.")}</p>}
       {open && (
         <div
           id={id}
@@ -153,7 +154,6 @@ export function AppearanceControl({
           className={styles.menu}
           onKeyDown={keyboard}
         >
-          {loadError && <p role="alert">{tr("Please try again.")}</p>}
           {(["site", ...publicAppearances] as const).map((value) => (
             <button
               key={value}

@@ -1,4 +1,5 @@
 "use client";
+/* eslint-disable @next/next/no-css-tags -- React 19 stylesheet resources block route paint until the shared page styles are loaded. */
 import { usePathname, useSearchParams } from "next/navigation";
 import type { ReactNode } from "react";
 import { isPublicPage, isBroadcastPage } from "@/lib/public-navigation";

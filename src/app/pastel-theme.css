@@ -79,7 +79,7 @@ html[data-appearance="cute-pastel"] .themed-site {
   line-height: 1.7;
 }
 
-html[data-theme="dark"][data-appearance="cute-pastel"] .themed-site {
+html[data-theme="dark"][data-appearance="cute-pastel"] {
   --site-background: #241a20;
   --site-surface: #2f2229;
   --site-raised: #382830;
@@ -107,6 +107,9 @@ html[data-theme="dark"][data-appearance="cute-pastel"] .themed-site {
   --site-on-primary: #3a1f2a;
   --site-primary: #ff9dbe;
   --site-primary-hover: #ffb3d0;
+}
+
+html[data-theme="dark"][data-appearance="cute-pastel"] .themed-site {
   color-scheme: dark;
 }
 

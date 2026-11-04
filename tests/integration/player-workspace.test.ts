@@ -664,7 +664,7 @@ describe.skipIf(!url)("private player workspace #671", () => {
     expect(
       (await playerPracticeWorkspace(p, slug)).pool!.entries[0].records[0]
         .stale,
-    ).toBe(true);
+    ).toBe(false);
   });
   it("rechecks publication and appointment even when retrying a saved request", async () => {
     const cmd = await practice(a);

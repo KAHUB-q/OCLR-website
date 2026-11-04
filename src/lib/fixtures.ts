@@ -817,6 +817,14 @@ export async function fixtureCommand(
       }
       if (c.action === "round_rules") {
         if (
+          c.scoringRules?.series.type === "first_to" &&
+          c.scoringRules.tiedMapPolicy === "count_as_draw"
+        )
+          throw new HttpError(
+            400,
+            "First-to series require tied maps to be replayed.",
+          );
+        if (
           c.scoringRules?.exPlayersPerTeam != null &&
           c.scoringRules.exPlayersPerTeam > c.scoringRules.playersPerTeam
         )

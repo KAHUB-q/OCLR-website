@@ -20,6 +20,7 @@ const tournamentArtwork = new Set([
 
 const bundle = await build({
   entryPoints: [
+    "tests/components/public-results.tsx",
     "tests/components/exhibition-pool-import.tsx",
     "tests/components/action-loading.tsx",
     "tests/components/player-sidebar.tsx",
@@ -201,25 +202,27 @@ createServer((request, response) => {
                                                       )
                                                     ? "tournament-settings"
                                                     : "player-message-board";
-    const fixture = request.url?.startsWith("/exhibition-pool-import")
-      ? "exhibition-pool-import"
-      : request.url?.startsWith("/public-mappools")
-        ? "public-mappools"
-        : request.url?.startsWith("/action-loading")
-          ? "action-loading"
-          : request.url?.startsWith("/staff-role-form")
-            ? "staff-role-form"
-            : request.url?.startsWith("/player-sidebar")
-              ? "player-sidebar"
-              : request.url?.startsWith("/staff-navigation")
-                ? "staff-navigation"
-                : request.url?.startsWith("/player-timeline")
-                  ? "player-timeline"
-                  : request.url?.startsWith("/workbench-compact")
-                    ? "workbench-compact"
-                    : request.url?.startsWith("/country-flags")
-                      ? "country-flags"
-                      : entry;
+    const fixture = request.url?.startsWith("/public-results")
+      ? "public-results"
+      : request.url?.startsWith("/exhibition-pool-import")
+        ? "exhibition-pool-import"
+        : request.url?.startsWith("/public-mappools")
+          ? "public-mappools"
+          : request.url?.startsWith("/action-loading")
+            ? "action-loading"
+            : request.url?.startsWith("/staff-role-form")
+              ? "staff-role-form"
+              : request.url?.startsWith("/player-sidebar")
+                ? "player-sidebar"
+                : request.url?.startsWith("/staff-navigation")
+                  ? "staff-navigation"
+                  : request.url?.startsWith("/player-timeline")
+                    ? "player-timeline"
+                    : request.url?.startsWith("/workbench-compact")
+                      ? "workbench-compact"
+                      : request.url?.startsWith("/country-flags")
+                        ? "country-flags"
+                        : entry;
     response.end(
       `<!doctype html><html><head><meta name="viewport" content="width=device-width, initial-scale=1"><link rel="stylesheet" href="/${fixture}.css"></head><body><div id="root"></div><script nonce="${nonce}" src="/${fixture}.js"></script></body></html>`,
     );

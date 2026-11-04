@@ -54,27 +54,49 @@ export function MappoolReplays({
   const panel = useRef<HTMLDialogElement>(null),
     reload = useRef<HTMLButtonElement>(null);
   const request = useRef<XMLHttpRequest | null>(null),
+    listRequest = useRef<AbortController | null>(null),
     dialog = useRef<HTMLDialogElement>(null);
-  useEffect(() => () => request.current?.abort(), []);
+  useEffect(
+    () => () => {
+      request.current?.abort();
+      listRequest.current?.abort();
+      listRequest.current = null;
+    },
+    [url],
+  );
   const [knownVersion, setKnownVersion] = useState(pool.version);
   const version = Math.max(knownVersion, pool.version);
   const writable = canManage;
   async function load() {
+    listRequest.current?.abort();
+    const controller = new AbortController();
+    listRequest.current = controller;
     setLoading(true);
+    setError("");
     try {
-      const response = await fetch(url, { cache: "no-store" });
+      const response = await fetch(url, {
+        cache: "no-store",
+        signal: controller.signal,
+      });
       const data = await response.json();
+      if (listRequest.current !== controller || controller.signal.aborted)
+        return;
       if (!response.ok) throw new Error(data.error);
       setItems(data);
       setLoaded(true);
     } catch (err) {
+      if (listRequest.current !== controller || controller.signal.aborted)
+        return;
       setError(
         err instanceof Error
           ? err.message
           : tr("Could not load replays. Retry the list."),
       );
     } finally {
-      setLoading(false);
+      if (listRequest.current === controller) {
+        listRequest.current = null;
+        setLoading(false);
+      }
     }
   }
   async function upload(event: FormEvent) {
@@ -227,6 +249,9 @@ export function MappoolReplays({
           if (pending) event.preventDefault();
         }}
         onClose={() => {
+          listRequest.current?.abort();
+          listRequest.current = null;
+          setLoading(false);
           setExpanded(false);
           summary.current?.focus();
         }}

@@ -740,8 +740,8 @@ html[data-theme="dark"] .themed-site {
   color: var(--site-secondary-text);
 }
 .public-tournament
-.mappool-sheet
-:is(.mappool-map-title, .mappool-base-sr, .mappool-slot) {
+  .mappool-sheet
+  :is(.mappool-map-title, .mappool-base-sr, .mappool-slot) {
   color: var(--site-accent);
 }
 .public-tournament
@@ -1465,6 +1465,10 @@ html[data-appearance]
 }
 .themed-site .mappool-map-title.map-open-button {
   font-size: 0.875rem;
+}
+.themed-site .archive-map-list .archive-map-identity button.map-open-button {
+  font-size: inherit;
+  line-height: inherit;
 }
 .mappool-map-title.map-open-button > span {
   color: var(--site-muted);

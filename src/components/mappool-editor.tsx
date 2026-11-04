@@ -631,14 +631,6 @@ function MappoolEditorContent({
       )}
       {pool ? (
         <section className="mappool-active" aria-label={tr("Selected mappool")}>
-          {stage === "exhibition" && editable && !readOnly && (
-            <ExhibitionPoolImport
-              key={`${pool.id}-${pool.version}`}
-              slug={slug}
-              pool={pool}
-              onFeedback={setFeedback}
-            />
-          )}
           <div className="mappool-toolbar mappool-pool-heading">
             <div>
               <h2>
@@ -655,6 +647,14 @@ function MappoolEditorContent({
                 </span>
               </h2>
             </div>
+            {stage === "exhibition" && editable && !readOnly && (
+              <ExhibitionPoolImport
+                key={`${pool.id}-${pool.version}`}
+                slug={slug}
+                pool={pool}
+                onFeedback={setFeedback}
+              />
+            )}
             <div className="actions mappool-pool-actions">
               {!pool.lockedAt && (
                 <ConfirmMutation

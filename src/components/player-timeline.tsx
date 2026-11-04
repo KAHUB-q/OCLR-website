@@ -133,8 +133,7 @@ export function PlayerTimeline({ timeline }: { timeline: PlayerTimeline }) {
     else if (artwork) artworks.set(span.key, artwork);
   }
   const activeCover = active ? covers.get(active) : undefined;
-  const activeArtwork =
-    active && !activeCover ? artworks.get(active) : undefined;
+  const activeArtwork = active && !activeCover ? artworks.get(active) : undefined;
 
   // Both scales are rendered as custom properties, so the media query picks one
   // without a hydration mismatch. The capsule is centred on the true midpoint,

@@ -18,7 +18,10 @@ import {
 import { getPublicEditions } from "@/lib/content";
 import { archiveKeyVisual } from "@/lib/archive-key-visual";
 import { getAppTranslations } from "@/i18n/server";
-import { frontendProfile, frontendUsernameOwner } from "@/lib/frontend-data";
+import {
+  frontendProfile,
+  frontendUsernameOwner,
+} from "@/lib/frontend-data";
 import { remoteMode } from "@/lib/data-source";
 import { profileBws, profileBwsMany } from "@/lib/bws";
 import { publicRoundRatings } from "@/lib/ratings";
@@ -64,7 +67,9 @@ async function ProfileContent({
     }
     const owner = await frontendUsernameOwner(name);
     if (!owner) notFound();
-    redirect(`/players/${owner.osuId}${edition ? `?edition=${edition}` : ""}`);
+    redirect(
+      `/players/${owner.osuId}${edition ? `?edition=${edition}` : ""}`,
+    );
   }
   let data: Awaited<ReturnType<typeof frontendProfile>>;
   let publishedEditions: Awaited<ReturnType<typeof getPublicEditions>>;
@@ -224,10 +229,8 @@ async function ProfileContent({
   // BWS review is edition-scoped, so each panel needs its own computation.
   // The remote adapter has no public badge-review resource; it keeps the
   // profile-wide value rather than issuing one full profile read per edition.
-  const bwsByEdition: Record<
-    string,
-    Awaited<ReturnType<typeof profileBws>>
-  > = {};
+  const bwsByEdition: Record<string, Awaited<ReturnType<typeof profileBws>>> =
+    {};
   if (data.snapshot) {
     if (remoteMode()) {
       for (const entry of selectableEditions)

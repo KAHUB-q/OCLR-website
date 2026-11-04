@@ -18,7 +18,7 @@ const person = (team: string): PublishedPlayer => ({
   team: { id: team, name: team },
   role: "player",
   captain: false,
-  participation: "native",
+  participation: "finalized_roster",
 });
 const fixture = (
   roundName: string,

@@ -12,6 +12,8 @@ import en from "../../messages/en.json";
 const data = {
   slug: "synthetic",
   archiveKey: "synthetic",
+  ezScoreMultiplier: 1,
+  statisticsScorePolicy: "ez-score-v1",
   matchDetails: [],
   poolFixtures: undefined,
   publishedAt: null,

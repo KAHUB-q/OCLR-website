@@ -45,6 +45,8 @@ export type MapPlay = {
   /** Winning team for this map, when the source already resolved it. */
   winnerTeamId?: string | null;
   score: number;
+  rawScore?: number;
+  scoreMultiplier?: number;
   accuracy: number | null;
 };
 
@@ -163,7 +165,10 @@ function mapResult(game: MapPlay[], teamId: string): PlayerMapRow["result"] {
   if (explicit) return explicit === teamId ? "win" : "loss";
   const totals = new Map<string, number>();
   for (const play of game)
-    totals.set(play.teamId, (totals.get(play.teamId) ?? 0) + play.score);
+    totals.set(
+      play.teamId,
+      (totals.get(play.teamId) ?? 0) + (play.rawScore ?? play.score),
+    );
   if (totals.size < 2) return null;
   const ranked = [...totals].sort((a, b) => b[1] - a[1]);
   if (ranked[0][1] === ranked[1][1]) return "tie";
@@ -195,7 +200,7 @@ export function mapPerformance(
 ): MapPerformanceFields {
   const games = new Map<number, MapPlay[]>();
   for (const play of plays) {
-    if (play.score < minimumCountedScore) continue;
+    if ((play.rawScore ?? play.score) < minimumCountedScore) continue;
     games.set(play.gameId, [...(games.get(play.gameId) ?? []), play]);
   }
   const rows: PlayerMapRow[] = [];
@@ -376,6 +381,8 @@ export function liveMapPlays(
       teamId: score.teamId,
       winnerTeamId: game.winnerTeamId,
       score: score.total,
+      rawScore: score.unadjustedTotal ?? score.rawTotal,
+      scoreMultiplier: score.scoreMultiplier,
       accuracy: score.accuracy ?? null,
     }));
   });

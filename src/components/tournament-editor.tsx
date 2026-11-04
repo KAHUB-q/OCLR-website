@@ -1,4 +1,5 @@
 "use client";
+import { ezScoreMultiplierSchema } from "@/lib/statistics-score";
 import { coachingEnabled } from "@/lib/editions";
 import { milestonePayload } from "@/lib/milestone-payload";
 
@@ -372,6 +373,12 @@ function General({ data, saved }: EditorProps) {
   const [coachesEnabled, setCoachesEnabled] = useState(
     coachingEnabled(data.edition),
   );
+  const [ezMultiplier, setEzMultiplier] = useState(
+    data.edition.ezScoreMultiplier?.toString() ?? "",
+  );
+  const validEzMultiplier =
+    ezMultiplier === "" ||
+    ezScoreMultiplierSchema.safeParse(Number(ezMultiplier)).success;
   const [appearance, setAppearance] = useState(
     data.edition.defaultAppearance ?? "site",
   );
@@ -432,6 +439,36 @@ function General({ data, saved }: EditorProps) {
             )}
           </p>
         </fieldset>
+        <fieldset className="settings-card form-stack">
+          <legend>{tr("Statistics")}</legend>
+          <label className="field">
+            <span>{tr("EZ statistics score multiplier (optional)")}</span>
+            <input
+              type="number"
+              min={0.0001}
+              max={100}
+              step="0.0001"
+              value={ezMultiplier}
+              aria-invalid={!validEzMultiplier || undefined}
+              onChange={(event) => setEzMultiplier(event.target.value)}
+            />
+          </label>
+          <p className="muted small">
+            {tr(
+              "Uses MP score × multiplier for EZ, including combined mods. Blank uses 1. Saving recalculates statistics from published scores.",
+            )}
+          </p>
+          <p className="muted small">
+            {tr("Adjusted scores are rounded to the nearest whole number.")}
+          </p>
+          {!validEzMultiplier && (
+            <p role="alert">
+              {tr(
+                "Enter a multiplier from 0.0001 to 100 with up to 4 decimal places.",
+              )}
+            </p>
+          )}
+        </fieldset>
         <label className="field">
           <span>{tr("Default tournament appearance")}</span>
           <select
@@ -463,6 +500,12 @@ function General({ data, saved }: EditorProps) {
             ...value,
             status,
             coachesEnabled,
+            ezScoreMultiplier:
+              ezMultiplier === ""
+                ? data.edition.ezScoreMultiplier === undefined
+                  ? undefined
+                  : null
+                : Number(ezMultiplier),
             rosterCapacity:
               rosterCapacity === ""
                 ? data.edition.rosterCapacity === undefined
@@ -472,6 +515,7 @@ function General({ data, saved }: EditorProps) {
             defaultAppearance: appearance === "site" ? null : appearance,
           }}
           label={tr("Save general settings")}
+          disabled={!validEzMultiplier}
           confirmation={
             status === "completed" && data.edition.status !== "completed"
           }
@@ -1378,6 +1422,7 @@ export function TournamentEditor({
               timeZone: data.edition.timeZone,
               branding: data.edition.branding,
               defaultAppearance: data.edition.defaultAppearance,
+              ezScoreMultiplier: data.edition.ezScoreMultiplier,
             })}
             {...props}
           />

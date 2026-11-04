@@ -28,7 +28,11 @@ import {
 } from "./match-model";
 import { approvedRatingGames } from "./approved-rating-games";
 import { ratingIdentities, ratingSnapshot } from "./ratings";
-import { reviewedMatchDetails, type MatchDetails } from "./match-details-model";
+import {
+  reviewedMatchDetails,
+  withStatisticsScores,
+  type MatchDetails,
+} from "./match-details-model";
 import { calculateStandings } from "./standings";
 import { readTournament } from "./tournaments";
 export type PublicTeam = {
@@ -459,12 +463,17 @@ async function databasePublicFixture(
         tx,
         proposal.data.teamIds,
       );
-      const details = reviewedMatchDetails(
-        proposal.data,
-        parsed.flatMap((g) => (g.success ? [g.data] : [])),
-        fixture.result.mpId,
-        fixture.result.revision,
-        identities,
+      const ezScoreMultiplier =
+        (await readTournament(slug, tx, true))?.edition.ezScoreMultiplier ?? 1;
+      const details = withStatisticsScores(
+        reviewedMatchDetails(
+          proposal.data,
+          parsed.flatMap((g) => (g.success ? [g.data] : [])),
+          fixture.result.mpId,
+          fixture.result.revision,
+          identities,
+        ),
+        ezScoreMultiplier,
       );
       details.sources[0].complete = source.data.complete;
       const games = (await approvedRatingGames(slug, tx)).filter(

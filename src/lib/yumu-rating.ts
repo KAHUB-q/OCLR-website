@@ -12,6 +12,11 @@ export type RatingScore = {
   teamId: string;
   /** Optional display fields; the rating formula ignores them. */
   accuracy?: number | null;
+  rawTotal?: number;
+  /** Reviewed contribution before statistical scaling, including failed-score zeroing. */
+  unadjustedTotal?: number;
+  scoreMultiplier?: number;
+  mods?: string[];
 };
 export type RatingBeatmap = {
   setId: number | null;
@@ -35,6 +40,7 @@ export type RatingGame = {
   beatmap?: RatingBeatmap | null;
   scoringType?: string | null;
   problem?: string;
+  ezScoreMultiplier?: number;
 };
 export type PlayerRating = {
   userId: number;

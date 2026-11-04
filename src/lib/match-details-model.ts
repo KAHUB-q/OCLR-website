@@ -6,6 +6,7 @@ import {
   type StatisticsSnapshot,
 } from "./archive-statistics-model";
 import type { ratingSnapshot } from "./ratings";
+import { statisticsScore } from "./statistics-score";
 
 export type MatchDetailScore = {
   osuId: number;
@@ -15,6 +16,8 @@ export type MatchDetailScore = {
   slot: number | null;
   total: number | null;
   effectiveTotal: number | null;
+  statisticsTotal?: number | null;
+  statisticsMultiplier?: number;
   accuracy: number | null;
   combo: number | null;
   passed: boolean | null;
@@ -60,6 +63,33 @@ export type MatchDetails = {
   technicalAdjudication: boolean;
   rating: ReturnType<typeof ratingSnapshot> | null;
 };
+/** Statistical adjustments do not replace reviewed contributions or match wins. */
+export function withStatisticsScores(
+  details: MatchDetails,
+  ezScoreMultiplier = 1,
+): MatchDetails {
+  if (ezScoreMultiplier === 1) return details;
+  return {
+    ...details,
+    games: details.games.map((game) => ({
+      ...game,
+      scores: game.scores.map((score) => ({
+        ...score,
+        statisticsMultiplier: [...game.mods, ...score.mods].includes("EZ")
+          ? ezScoreMultiplier
+          : 1,
+        statisticsTotal:
+          score.included && score.effectiveTotal !== null
+            ? statisticsScore(
+                score.effectiveTotal,
+                [...game.mods, ...score.mods],
+                ezScoreMultiplier,
+              ).score
+            : null,
+      })),
+    })),
+  };
+}
 export function detailScore(
   s: MatchScore,
   username: string,

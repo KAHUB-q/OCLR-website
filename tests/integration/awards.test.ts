@@ -31,6 +31,7 @@ import {
 import { seedEditions } from "../fixtures/editions";
 import { seedAwardReview, awardWeeks } from "../fixtures/awards";
 import { assertTestDatabase } from "../database";
+import { readTournament, tournamentCommand } from "../../src/lib/tournaments";
 const url = process.env.TEST_DATABASE_URL;
 const admin = { osuId: 113001, username: "Synthetic Admin" },
   referee = { osuId: 113002, username: "Synthetic Referee" };
@@ -49,11 +50,13 @@ describe.skipIf(!url)("edition weekly award review and publication", () => {
     await closeDb();
     vi.unstubAllEnvs();
   });
-  async function configure() {
+  async function configure(
+    policy: "relative-game-mean-v1" | "yumu-mra-v1" = "relative-game-mean-v1",
+  ) {
     const seeded = await seedAwardReview(admin.osuId, referee.osuId);
     const data = await awardCommand(admin, "test-cup", {
       action: "configure",
-      policy: "relative-game-mean-v1",
+      policy,
       confirmed: true,
       expectedVersion: 0,
       weeks: awardWeeks,
@@ -68,6 +71,51 @@ describe.skipIf(!url)("edition weekly award review and publication", () => {
       week: 1,
       fingerprint,
     });
+  it.each(["relative-game-mean-v1", "yumu-mra-v1"] as const)(
+    "invalidates %s award releases after a multiplier change while retaining their immutable snapshot",
+    async (policy) => {
+      const { data } = await configure(policy);
+      await publish(data.reports[0].fingerprint);
+      const [original] = await db().select().from(weeklyAwardReleases);
+      const saved = (await readTournament("test-cup"))!;
+      const e = saved.edition;
+      await tournamentCommand(admin, "test-cup", {
+        action: "general",
+        confirmed: true,
+        expectedRevision: saved.revision,
+        name: e.name,
+        season: e.season,
+        summary: e.summary,
+        status: e.status,
+        timeZone: e.timeZone,
+        branding: e.branding,
+        ezScoreMultiplier: 1.5,
+      });
+      const current = await awardWorkspace(admin, "test-cup");
+      expect(current.reports[0].evidence[0]).toMatchObject({
+        ezScoreMultiplier: 1.5,
+        statisticsScorePolicy: "ez-score-v1",
+      });
+      // Even unchanged normalized values must record the new scoring policy.
+      expect(current.reports[0].candidates).toEqual(data.reports[0].candidates);
+      expect(current.reports[0].fingerprint).not.toBe(
+        data.reports[0].fingerprint,
+      );
+      expect((await publicAwards("test-cup"))![0]).toMatchObject({
+        stale: true,
+        candidates: [],
+      });
+      expect((await db().select().from(weeklyAwardReleases))[0]).toEqual(
+        original,
+      );
+      await expect(publish(data.reports[0].fingerprint)).rejects.toMatchObject({
+        status: 409,
+      });
+      await publish(current.reports[0].fingerprint);
+      expect((await publicAwards("test-cup"))![0].stale).toBe(false);
+      expect(await db().select().from(weeklyAwardReleases)).toHaveLength(2);
+    },
+  );
   it("derives current tiers, excludes captains, blocks unreleased tier sources and follows undo", async () => {
     const { seeded } = await configure();
     const sequence = [seeded.home.teamId, seeded.away.teamId];

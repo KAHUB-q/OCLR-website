@@ -207,6 +207,7 @@ const commandSchema = z.discriminatedUnion("action", [
       ...identity,
       status: shape.status,
       coachesEnabled: shape.coachesEnabled,
+      ezScoreMultiplier: shape.ezScoreMultiplier,
       rosterCapacity: shape.rosterCapacity,
     })
     .strict(),
@@ -706,6 +707,9 @@ export async function tournamentCommand(
           : {}),
         ...(c.coachesEnabled !== undefined
           ? { coachesEnabled: c.coachesEnabled }
+          : {}),
+        ...(c.ezScoreMultiplier !== undefined
+          ? { ezScoreMultiplier: c.ezScoreMultiplier }
           : {}),
         timeZone: c.timeZone,
         branding: c.branding,

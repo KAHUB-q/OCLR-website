@@ -3856,6 +3856,13 @@
     "ma3afbf6a3de8": "Could not load historical mappools.",
     "m2f96b962ef77": "Historical source",
     "m0be11b8c5524": "Loading historical mappools…",
-    "m3b2e41f6eb67": "Refresh historical mappools"
+    "m3b2e41f6eb67": "Refresh historical mappools",
+    "m52a15982a634": "Raw MP score",
+    "m5620f687ed36": "Score multiplier",
+    "m6dba3ba7516b": "Statistics score",
+    "mf8bb5c414245": "EZ statistics score multiplier (optional)",
+    "mb8a34c244cdc": "Uses MP score × multiplier for EZ, including combined mods. Blank uses 1. Saving recalculates statistics from published scores.",
+    "m735182e60e1a": "Adjusted scores are rounded to the nearest whole number.",
+    "m4a145d9dcdfd": "Enter a multiplier from 0.0001 to 100 with up to 4 decimal places."
   }
 }

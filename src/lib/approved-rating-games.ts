@@ -13,12 +13,16 @@ import {
 } from "@/db/schema";
 import { matchGameSchema, reviewedResultSchema } from "./match-model";
 import type { RatingGame } from "./yumu-rating";
+import { readTournament } from "./tournaments";
+import { statisticsScore } from "./statistics-score";
 export type RatingReader = Pick<ReturnType<typeof db>, "select">;
 /** One authoritative adapter shared by ratings and awards. No imports/latest-pointer reads. */
 export async function approvedRatingGames(
   slug: string,
   reader: RatingReader,
 ): Promise<RatingGame[]> {
+  const ezScoreMultiplier =
+    (await readTournament(slug, reader))?.edition.ezScoreMultiplier ?? 1;
   // Follow the published revision pointer, even while a newer correction awaits review.
   const sources = await reader
     .select({
@@ -85,6 +89,7 @@ export async function approvedRatingGames(
         .digest("hex"),
       teamIds: proposal.success ? proposal.data.teamIds : [],
       winnerTeamId: null as string | null,
+      ...(ezScoreMultiplier === 1 ? {} : { ezScoreMultiplier }),
     };
     if (!proposal.success) {
       games.push({
@@ -157,16 +162,27 @@ export async function approvedRatingGames(
             problem = "Player score or approved attribution needs review.";
             continue;
           }
+          const mods = [...new Set([...game.mods, ...score.mods])].sort();
+          const unadjustedTotal =
+            score.passed === false &&
+            proposal.data.rulesSnapshot.failedScorePolicy === "zero"
+              ? 0
+              : score.total;
+          const adjusted = statisticsScore(
+            unadjustedTotal,
+            mods,
+            ezScoreMultiplier,
+          );
           scores.push({
             userId: id,
             teamId: (attribution?.[0]?.teamId ??
               rosterTeams[0]?.teamId ??
               (substitution && substitution[0]?.teamId))!,
-            total:
-              score.passed === false &&
-              proposal.data.rulesSnapshot.failedScorePolicy === "zero"
-                ? 0
-                : score.total,
+            total: adjusted.score,
+            rawTotal: score.total,
+            unadjustedTotal,
+            scoreMultiplier: adjusted.scoreMultiplier,
+            mods,
             accuracy: score.accuracy,
           });
         }

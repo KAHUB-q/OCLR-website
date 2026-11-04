@@ -7,7 +7,10 @@ import {
   parseStatisticsSnapshot,
   statisticsSnapshotSchema,
 } from "./statistics-snapshot";
-import { archiveMatchDetails } from "./match-details-model";
+import {
+  archiveMatchDetails,
+  withStatisticsScores,
+} from "./match-details-model";
 import {
   archivePoolFixtures,
   type EventPoolFixture,
@@ -49,6 +52,7 @@ import {
 import { HttpError } from "./http";
 import { fetchMatchSource } from "./osu-matches";
 import { readTournament } from "./tournaments";
+import { statisticsScore, STATISTICS_SCORE_POLICY } from "./statistics-score";
 
 const integer = z.number().int().nonnegative();
 const commandSchema = z.discriminatedUnion("action", [
@@ -712,6 +716,8 @@ async function databasePublicArchiveStatistics(
   return db().transaction(
     async (tx) => {
       const archive = await archiveFor(slug, tx, true);
+      const ezScoreMultiplier =
+        (await readTournament(slug, tx, true))?.edition.ezScoreMultiplier ?? 1;
       const key = statisticsArchiveKey(archive);
       const rows = await stored(slug, tx);
       const fixtures = statisticsFixtures(archive).filter(
@@ -734,24 +740,34 @@ async function databasePublicArchiveStatistics(
         return sources;
       });
       const plays = published.flatMap((r) =>
-        projectStatistics(archive, r.fixtureId, r.published!),
+        projectStatistics(
+          archive,
+          r.fixtureId,
+          r.published!,
+          ezScoreMultiplier,
+        ),
       );
       return {
         slug,
         archiveKey: key,
+        ezScoreMultiplier: ezScoreMultiplier as number | undefined,
+        statisticsScorePolicy: STATISTICS_SCORE_POLICY as string | undefined,
         matchDetails: (fixtureId ? fixtures : []).flatMap((f) => {
           const sources = published.filter((r) => r.fixtureId === f.id);
           if (!sources.length) return [];
           // Published snapshot identity, not the mutable draft version, anchors the report.
-          const details = archiveMatchDetails(
-            archive,
-            f.id,
-            sources.map((r) => ({
-              snapshot: r.published!,
-              revision: createHash("sha256")
-                .update(JSON.stringify(r.published))
-                .digest("hex"),
-            })),
+          const details = withStatisticsScores(
+            archiveMatchDetails(
+              archive,
+              f.id,
+              sources.map((r) => ({
+                snapshot: r.published!,
+                revision: createHash("sha256")
+                  .update(JSON.stringify(r.published))
+                  .digest("hex"),
+              })),
+            ),
+            ezScoreMultiplier,
           );
           const games: RatingGame[] = details.games
             .filter((g) => g.included)
@@ -762,6 +778,7 @@ async function databasePublicArchiveStatistics(
               revision: 0,
               fingerprint: g.revision,
               approvalFingerprint: g.revision,
+              ...(ezScoreMultiplier === 1 ? {} : { ezScoreMultiplier }),
               at: g.startTime,
               teamIds: details.teamIds,
               winnerTeamId:
@@ -775,7 +792,13 @@ async function databasePublicArchiveStatistics(
                 .map((s) => ({
                   userId: s.osuId,
                   teamId: s.teamId!,
-                  total: s.effectiveTotal!,
+                  total: statisticsScore(
+                    s.effectiveTotal!,
+                    [...g.mods, ...s.mods],
+                    ezScoreMultiplier,
+                  ).score,
+                  rawTotal: s.total!,
+                  mods: [...new Set([...g.mods, ...s.mods])].sort(),
                 })),
             }));
           details.rating = ratingSnapshot(

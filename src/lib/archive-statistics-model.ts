@@ -1,5 +1,6 @@
 import type { HistoricalArchive } from "./historical-archive";
 import type { MatchGame, MatchScore, MatchSource } from "./match-model";
+import { statisticsScore } from "./statistics-score";
 
 export const statisticsSeasons = [
   "s1",
@@ -355,6 +356,8 @@ export type StatisticsPlay = {
   osuId: number;
   teamId: string;
   score: number;
+  rawScore?: number;
+  scoreMultiplier?: number;
   scoringType: string;
   accuracy: number | null;
   combo: number | null;
@@ -367,14 +370,18 @@ export function projectStatistics(
   archive: HistoricalArchive,
   fixtureId: string,
   snapshot: StatisticsSnapshot,
+  ezScoreMultiplier = 1,
 ): StatisticsPlay[] {
   const fixture = archive.matches.find((m) => m.id === fixtureId)!;
   const pool = archive.pools.find((p) => p.id === snapshot.poolId);
   return selectedStatisticsGames(snapshot).flatMap((g) => {
     const map = pool?.maps.find((m) => m.beatmapId === g.beatmapId);
     const scores = statisticsScores(g, snapshot.excludedScores);
-    const maximum = Math.max(...scores.map((s) => s.total ?? 0));
-    return scores.map((s) => ({
+    const adjusted = scores.map((s) =>
+      statisticsScore(s.total!, [...g.mods, ...s.mods], ezScoreMultiplier),
+    );
+    const maximum = Math.max(...adjusted.map((s) => s.score));
+    return scores.map((s, index) => ({
       fixtureId,
       mpId: snapshot.source.match.id,
       gameId: g.id,
@@ -390,14 +397,14 @@ export function projectStatistics(
       at: g.startTime!,
       osuId: s.osuId!,
       teamId: archive.players.find((p) => p.osuId === s.osuId)!.teamId!,
-      score: s.total!,
+      ...adjusted[index],
       scoringType: g.scoringType!,
       accuracy: s.accuracy,
       combo: s.combo,
       passed: s.passed,
       mods: [...new Set([...g.mods, ...s.mods])].sort(),
       hits: s.hitCounts,
-      relative: maximum > 0 ? s.total! / maximum : null,
+      relative: maximum > 0 ? adjusted[index].score / maximum : null,
     }));
   });
 }

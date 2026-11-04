@@ -342,7 +342,12 @@ export function StatisticsExplorer({
                       </td>
                       <td>{p.mods.join(" ") || "NM"}</td>
                       <td>{p.scoringType}</td>
-                      <td>{fmt(p.score)}</td>
+                      <td>
+                        {fmt(p.score)}
+                        {(p.scoreMultiplier ?? 1) !== 1 && (
+                          <small className="muted">{` (${tr("Raw MP score")}: ${fmt(p.rawScore ?? p.score)} × ${p.scoreMultiplier})`}</small>
+                        )}
+                      </td>
                       <td>{pct(p.accuracy)}</td>
                       <td>{fmt(p.combo)}</td>
                       <td>

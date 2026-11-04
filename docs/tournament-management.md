@@ -2,6 +2,27 @@
 
 Database-backed tournament configuration, player registration, role assignment, staff reviews, and audit behavior. For operator prerequisites, see [deployment and recovery](deployment.md).
 
+## EZ statistics score multiplier (#844)
+
+Tournament Settings → General → Statistics accepts an optional edition-specific
+EZ multiplier from 0.0001 to 100, with up to four decimal places. Blank means 1.
+For scores whose recorded game/player Mods contain EZ, statistics use the saved
+MP score multiplied by this value, rounded to the nearest whole number (positive
+halves round up). Integer decimal arithmetic avoids floating-point rounding drift.
+The same rule applies to EZ combinations in FM/TB; non-EZ scores keep their value.
+
+Saving settings immediately recalculates statistical reads from existing approved
+and published source snapshots. Raw MP scores, reviewed contributions, approved
+match wins and snapshot publication remain authoritative. Repeated reads/imports
+always start from raw scores and never compound a previous adjustment. The
+settings revision and automatic audit record capture the change; no provider
+refresh or database migration is required. Individual score views expose the raw
+score, multiplier and statistical score when an adjustment applies. Existing
+low-score appearance filtering continues to use the original MP score.
+
+These validation/rounding defaults and the new Chinese interface wording await
+organizer review with the implementation PR.
+
 ## Tournament content
 
 Historical editions can import verified source snapshots through the edition's **Historical archive** screen, then preview privately and publish separately. These records retain source identities and aggregate outcomes without creating live registrations, accounts, permissions or approved game results. See [S9 analysis and import handoff](s9-archive.md) for the allowlisted format, unresolved source conflicts and deployment/import checkpoint.

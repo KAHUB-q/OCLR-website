@@ -2,6 +2,7 @@ import { appearances } from "./preferences";
 import { eligibilityLimitsSchema } from "./eligibility-model";
 import { z } from "zod";
 import { historicalArchiveSchema } from "./historical-archive";
+import { ezScoreMultiplierSchema } from "./statistics-score";
 const instant = z.iso.datetime({ offset: true });
 const questionFields = {
   id: z.string().regex(/^[a-z][a-z0-9_]{0,39}$/),
@@ -127,6 +128,7 @@ export const editionSchema = z
     defaultAppearance: z.enum(appearances).nullable().optional(),
     rosterCapacity: z.number().int().min(1).max(256).nullable().optional(),
     coachesEnabled: z.boolean().optional(),
+    ezScoreMultiplier: ezScoreMultiplierSchema.nullable().optional(),
     archive: historicalArchiveSchema.optional(),
     published: z.boolean(),
     status: z.enum(["upcoming", "live", "completed"]),

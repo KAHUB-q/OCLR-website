@@ -1,6 +1,7 @@
 import type { PlayerClass } from "./player-class";
 import { calculateRating, YUMU_POLICY, type PlayerRating } from "./yumu-rating";
 import { z } from "zod";
+import { STATISTICS_SCORE_POLICY } from "./statistics-score";
 export const AWARD_POLICY = "relative-game-mean-v1";
 export type AwardPolicy = typeof AWARD_POLICY | typeof YUMU_POLICY;
 export const awardPolicySchema = z.enum([AWARD_POLICY, YUMU_POLICY]);
@@ -47,6 +48,7 @@ export type AwardGame = {
   teamIds?: string[];
   winnerTeamId?: string | null;
   problem?: string;
+  ezScoreMultiplier?: number;
 };
 export type AwardCandidate = {
   userId: number;
@@ -72,6 +74,8 @@ export type AwardStanding = {
     revision: number;
     at: string | null;
     fingerprint: string;
+    ezScoreMultiplier?: number;
+    statisticsScorePolicy?: string;
   }[];
 };
 // Ratio and weekly mean use 9 decimal places, rounded half up. Keep integer
@@ -155,6 +159,12 @@ export function weeklyStandings(
       revision: game.revision,
       at: game.at,
       fingerprint: game.fingerprint,
+      ...(game.ezScoreMultiplier === undefined
+        ? {}
+        : {
+            ezScoreMultiplier: game.ezScoreMultiplier,
+            statisticsScorePolicy: STATISTICS_SCORE_POLICY,
+          }),
     });
   }
   const mean = (value: { units: bigint; count: number }) =>

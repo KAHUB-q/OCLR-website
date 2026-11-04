@@ -16,6 +16,14 @@ generated contracts, and `npm run read-api:check` verifies it before a push (see
 
 ## Resources and authorization
 
+Contract 1.20 adds optional edition `ezScoreMultiplier`, statistics `rawScore` /
+`scoreMultiplier` fields and score-policy evidence. Statistical values are already
+adjusted by the backend; remote frontends must display them without multiplying
+again. Historical match-detail and native approved-result projections retain raw
+and reviewed totals alongside an optional `statisticsTotal`. Older backends that
+omit adjustment metadata retain their existing unadjusted behavior. See
+[EZ statistics configuration](tournament-management.md#ez-statistics-score-multiplier-844).
+
 | GET resource (relative to `/api/v1`)     | Anonymous | Bearer scope               | Data                                                                     |
 | ---------------------------------------- | --------- | -------------------------- | ------------------------------------------------------------------------ |
 | `/me`                                    | No        | `identity:read`            | Current token subject, scopes and expiry                                 |

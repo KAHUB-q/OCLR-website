@@ -126,6 +126,61 @@ describe.skipIf(!url)("historical statistics transactions", () => {
     await closeDb();
     vi.unstubAllEnvs();
   });
+  it("recalculates published EZ statistics from unchanged MP snapshots after an audited settings save", async () => {
+    const source = statisticsSource();
+    source.games[0].scores[0].mods = ["EZ"];
+    vi.mocked(fetchMatchSource).mockResolvedValue(source);
+    await statisticsCommand(referee, "s7", imported);
+    await statisticsCommand(referee, "s7", reviewed);
+    await statisticsCommand(admin, "s7", publish);
+    const before = await publicArchiveStatistics("s7", "one");
+    const storedBefore = await db().select().from(historicalStatistics);
+    const current = (await readTournament("s7"))!;
+    const e = current.edition;
+    await tournamentCommand(admin, "s7", {
+      action: "general",
+      expectedRevision: current.revision,
+      confirmed: true,
+      name: e.name,
+      season: e.season,
+      summary: e.summary,
+      status: e.status,
+      timeZone: e.timeZone,
+      branding: e.branding,
+      ezScoreMultiplier: 1.5,
+    });
+    const after = await publicArchiveStatistics("s7", "one");
+    const original = before.plays.find((p) => p.mods.includes("EZ"))!;
+    const changed = after.plays.find(
+      (p) => p.gameId === original.gameId && p.osuId === original.osuId,
+    )!;
+    expect(changed).toMatchObject({
+      rawScore: original.score,
+      score: Math.round(original.score * 1.5),
+      scoreMultiplier: 1.5,
+    });
+    expect(after.ezScoreMultiplier).toBe(1.5);
+    expect(after.archiveKey).toBe(before.archiveKey);
+    expect(after.fixtures).toEqual(before.fixtures);
+    expect((await publicArchiveStatistics("s7", "one")).plays).toEqual(
+      after.plays,
+    );
+    expect(await db().select().from(historicalStatistics)).toEqual(
+      storedBefore,
+    );
+    expect(after.matchDetails[0].details.games[0].effectiveTotals).toEqual(
+      before.matchDetails[0].details.games[0].effectiveTotals,
+    );
+    expect(after.matchDetails[0].details.rating?.fingerprint).not.toBe(
+      before.matchDetails[0].details.rating?.fingerprint,
+    );
+    const playerRating = (report: typeof before) =>
+      report.matchDetails[0].details.rating!.players.find(
+        (p) => p.userId === original.osuId,
+      )!;
+    expect(playerRating(after).mra).toBeGreaterThan(playerRating(before).mra);
+  });
+
   it.each(["s1", "s2", "s3", "s4", "s5", "s6"])(
     "%s keeps review, release, scope and saved remote reads consistent",
     async (slug) => {

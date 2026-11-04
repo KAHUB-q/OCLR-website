@@ -23,6 +23,7 @@ import { classifyPlayer, PLAYER_CLASS_POLICY } from "./player-class";
 import { publicCompetition } from "./public-competition";
 import { readTournament } from "./tournaments";
 import { calculateRating, type RatingGame } from "./yumu-rating";
+import { STATISTICS_SCORE_POLICY } from "./statistics-score";
 
 export async function ratingIdentities(
   slug: string,
@@ -79,6 +80,12 @@ export function ratingSnapshot(
           fixtureId: g.fixtureId,
           revision: g.revision,
           fingerprint: g.approvalFingerprint ?? g.fingerprint,
+          ...(g.ezScoreMultiplier === undefined
+            ? {}
+            : {
+                ezScoreMultiplier: g.ezScoreMultiplier,
+                statisticsScorePolicy: STATISTICS_SCORE_POLICY,
+              }),
         },
       ]),
     ).values(),

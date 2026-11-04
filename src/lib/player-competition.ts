@@ -292,6 +292,7 @@ async function editionRecord(
         return [
           {
             label: `${fixture.stage} ${fixture.roundName}`.trim(),
+            roundId: fixture.roundId,
             at: fixture.scheduledAt,
             winnerTeamId: winner ?? null,
             loserTeamId: winner

@@ -108,6 +108,8 @@ export function competitionStage(
 
 /** One decided series, reduced to the labels, time and teams a placement needs. */
 export type SeriesResult = {
+  /** Native round identity; scheduling times do not identify a round. */
+  roundId?: string;
   /** Stage or round label, e.g. "Grand Finals", "GF", "总决赛". */
   label: string | null;
   at: string | null;
@@ -264,7 +266,21 @@ export function tournamentPlacements(
   });
   if (!earlier.length) return { champion, runnerUp, third: [] };
   const lastRoundAt = Math.max(...earlier.map((match) => seriesTime(match)!));
-  const round = earlier.filter((match) => seriesTime(match) === lastRoundAt);
+  const latest = earlier.find((match) => seriesTime(match) === lastRoundAt)!;
+  const round = earlier.filter((match) => {
+    if (latest.roundId) return match.roundId === latest.roundId;
+    if (latest.round)
+      return (
+        match.round?.phase === latest.round.phase &&
+        match.round?.index === latest.round.index
+      );
+    // Legacy archives can have round names without structured metadata.
+    if (/semi|半决赛|半決賽|\bsf\b/i.test(latest.label ?? ""))
+      return (
+        match.label?.trim().toLowerCase() === latest.label?.trim().toLowerCase()
+      );
+    return seriesTime(match) === lastRoundAt;
+  });
   // More than two series on that date spans unrelated rounds, so claim nothing.
   if (round.length > 2) return { champion, runnerUp, third: [] };
   return {

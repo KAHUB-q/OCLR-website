@@ -463,6 +463,8 @@
 .summaryActions {
   display: flex;
   flex-wrap: wrap;
+  justify-content: flex-end;
+  margin-inline-start: auto;
   gap: 0.5rem;
 }
 .mpSync {
@@ -480,7 +482,7 @@
   align-items: center;
   gap: 0.5rem;
 }
-.mpSyncActions button {
+.mpSyncToggle {
   display: inline-flex;
   align-items: center;
   gap: 0.375rem;
@@ -488,7 +490,7 @@
   min-height: 2.5rem;
   padding: 0.375rem 0.625rem;
 }
-.mpSyncActions button[aria-pressed="true"] {
+.mpSyncToggle[aria-pressed="true"] {
   color: var(--site-accent-strong);
   border-color: var(--site-accent);
   background: var(--site-tint);

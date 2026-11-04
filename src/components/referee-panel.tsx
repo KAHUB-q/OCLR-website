@@ -3,7 +3,7 @@ import { RefereeMp } from "./referee-mp";
 import { useStaffReadOnly } from "./staff-read-only";
 import Link from "next/link";
 import { refereeMessage } from "@/i18n/referee";
-import { useEffect, useId, useRef, useState } from "react";
+import { useEffect, useId, useRef, useState, type ReactNode } from "react";
 import { useAppTranslations } from "@/i18n/shared";
 import type { RefereeWorkspace, RefereeCommand } from "@/lib/referee";
 import {
@@ -395,6 +395,151 @@ export function RefereePanel({
       .at(-1)?.payload;
     return `${description} · ${previous?.type === "attempt_resolved" ? `${outcome(previous.status, previous.winnerTeamId)} → ` : ""}${outcome(p.status, p.winnerTeamId)}`;
   }
+  const renderSummary = (
+    syncControl: ReactNode = null,
+    syncFeedback: ReactNode = null,
+  ) => (
+    <section
+      className={`panel ${styles.pinnedSummary}`}
+      aria-label={tr("Referee records")}
+    >
+      <div className={styles.summaryHeading}>
+        <span className="eyebrow">{tr("Series score")}</span>
+        <div className={styles.summaryActions}>
+          {exPick &&
+            exPick.kind === "pick" &&
+            exPick.category !== "TB" &&
+            exPick.attempts.length === 1 &&
+            exPick.attempts[0]?.status === "pending" && (
+              <button
+                type="button"
+                className="secondary"
+                aria-pressed={Boolean(exPick.exMode)}
+                title={`${tr("BID")} ${exPick.beatmapId}`}
+                disabled={disabled || stale || !data.rules?.exPlayersPerTeam}
+                onClick={() =>
+                  void send({
+                    action: "declare_ex",
+                    pickId: exPick.id,
+                    enabled: !exPick.exMode,
+                  })
+                }
+              >
+                {exPick.exMode ? tr("Cancel EX") : tr("Declare EX")}
+              </button>
+            )}
+          <button
+            type="button"
+            className="secondary"
+            disabled={disabled || !state.lastSelectionId}
+            onClick={() => send({ action: "void_last" })}
+          >
+            {tr("Withdraw last Ban / Pick")}
+          </button>
+          {syncControl}
+        </div>
+      </div>
+      <div className={styles.summaryScore}>
+        {data.teams.length === 2 ? (
+          <>
+            <div className={styles.summaryTeam} data-team="red">
+              <span>{data.teams[1].name}</span>
+              <strong>{state.score[data.teams[1].id] ?? 0}</strong>
+            </div>
+            <span className={styles.scoreDivider} aria-hidden="true">
+              :
+            </span>
+            <div className={styles.summaryTeam} data-team="blue">
+              <span>{data.teams[0].name}</span>
+              <strong>{state.score[data.teams[0].id] ?? 0}</strong>
+            </div>
+          </>
+        ) : (
+          <span>{tr("Teams not resolved")}</span>
+        )}
+      </div>
+      <dl className={styles.summaryRows}>
+        <div>
+          <dt>{tr("BP sequence")}</dt>
+          <dd
+            tabIndex={state.activeSelections.length ? 0 : undefined}
+            aria-label={tr("BP sequence")}
+          >
+            {state.activeSelections.length
+              ? state.activeSelections.map((s) => (
+                  <span
+                    key={s.id}
+                    className={styles.bpStep}
+                    data-team={
+                      s.teamId && s.teamId === data.teams[1]?.id
+                        ? "red"
+                        : s.teamId && s.teamId === data.teams[0]?.id
+                          ? "blue"
+                          : "neutral"
+                    }
+                  >
+                    {teamName(s.teamId)} {s.kind.toUpperCase()} {s.category}
+                    {data.maps.find((m) => m.id === s.entryId)?.position}
+                  </span>
+                ))
+              : "—"}
+          </dd>
+        </div>
+        {state.activeSelections.some((s) => s.attempts.length > 1) && (
+          <div>
+            <dt>{tr("Replay history")}</dt>
+            <dd tabIndex={0} aria-label={tr("Replay history")}>
+              {state.activeSelections.some((s) => s.attempts.length > 1)
+                ? state.activeSelections
+                    .filter((s) => s.attempts.length > 1)
+                    .map((s) => (
+                      <span key={s.id}>
+                        {s.category}
+                        {
+                          data.maps.find((m) => m.id === s.entryId)?.position
+                        } ·{" "}
+                        {tr("Replays used: {used} / {limit}", {
+                          used: s.attempts.length - 1,
+                          limit: basis.policy?.maxReplaysPerMap ?? "—",
+                        })}
+                      </span>
+                    ))
+                : "—"}
+            </dd>
+          </div>
+        )}
+        {state.activeSelections.some((s) => s.kind !== "ban") && (
+          <div>
+            <dt>{tr("Map outcomes")}</dt>
+            <dd tabIndex={0} aria-label={tr("Map outcomes")}>
+              {state.activeSelections.some((s) => s.kind !== "ban")
+                ? state.activeSelections
+                    .filter((s) => s.kind !== "ban")
+                    .map((s) => {
+                      const attempt = s.attempts.at(-1);
+                      return (
+                        <span key={s.id}>
+                          {s.category}
+                          {
+                            data.maps.find((m) => m.id === s.entryId)?.position
+                          }{" "}
+                          ·{" "}
+                          {attempt?.winnerTeamId
+                            ? tr("Winner: {team}", {
+                                team: teamName(attempt.winnerTeamId),
+                              })
+                            : refereeMessage(tr, attempt?.status ?? "pending")}
+                        </span>
+                      );
+                    })
+                : "—"}
+            </dd>
+          </div>
+        )}
+      </dl>
+      {syncFeedback}
+    </section>
+  );
   return (
     <div className={styles.workspace}>
       <nav className={styles.stageNav} aria-label={tr("Referee stages")}>
@@ -746,169 +891,23 @@ export function RefereePanel({
             )}
           </div>
           <div className={styles.columns}>
-            <section
-              className={`panel ${styles.pinnedSummary}`}
-              aria-label={tr("Referee records")}
-            >
-              <div className={styles.summaryHeading}>
-                <span className="eyebrow">{tr("Series score")}</span>
-                <div className={styles.summaryActions}>
-                  {exPick &&
-                    exPick.kind === "pick" &&
-                    exPick.category !== "TB" &&
-                    exPick.attempts.length === 1 &&
-                    exPick.attempts[0]?.status === "pending" && (
-                      <button
-                        type="button"
-                        className="secondary"
-                        aria-pressed={Boolean(exPick.exMode)}
-                        title={`${tr("BID")} ${exPick.beatmapId}`}
-                        disabled={
-                          disabled || stale || !data.rules?.exPlayersPerTeam
-                        }
-                        onClick={() =>
-                          void send({
-                            action: "declare_ex",
-                            pickId: exPick.id,
-                            enabled: !exPick.exMode,
-                          })
-                        }
-                      >
-                        {exPick.exMode ? tr("Cancel EX") : tr("Declare EX")}
-                      </button>
-                    )}
-                  <button
-                    type="button"
-                    className="secondary"
-                    disabled={disabled || !state.lastSelectionId}
-                    onClick={() => send({ action: "void_last" })}
-                  >
-                    {tr("Withdraw last Ban / Pick")}
-                  </button>
-                </div>
-              </div>
-              <div className={styles.summaryScore}>
-                {data.teams.length === 2 ? (
-                  <>
-                    <div className={styles.summaryTeam} data-team="red">
-                      <span>{data.teams[1].name}</span>
-                      <strong>{state.score[data.teams[1].id] ?? 0}</strong>
-                    </div>
-                    <span className={styles.scoreDivider} aria-hidden="true">
-                      :
-                    </span>
-                    <div className={styles.summaryTeam} data-team="blue">
-                      <span>{data.teams[0].name}</span>
-                      <strong>{state.score[data.teams[0].id] ?? 0}</strong>
-                    </div>
-                  </>
-                ) : (
-                  <span>{tr("Teams not resolved")}</span>
-                )}
-              </div>
-              <dl className={styles.summaryRows}>
-                <div>
-                  <dt>{tr("BP sequence")}</dt>
-                  <dd
-                    tabIndex={state.activeSelections.length ? 0 : undefined}
-                    aria-label={tr("BP sequence")}
-                  >
-                    {state.activeSelections.length
-                      ? state.activeSelections.map((s) => (
-                          <span
-                            key={s.id}
-                            className={styles.bpStep}
-                            data-team={
-                              s.teamId && s.teamId === data.teams[1]?.id
-                                ? "red"
-                                : s.teamId && s.teamId === data.teams[0]?.id
-                                  ? "blue"
-                                  : "neutral"
-                            }
-                          >
-                            {teamName(s.teamId)} {s.kind.toUpperCase()}{" "}
-                            {s.category}
-                            {
-                              data.maps.find((m) => m.id === s.entryId)
-                                ?.position
-                            }
-                          </span>
-                        ))
-                      : "—"}
-                  </dd>
-                </div>
-                {state.activeSelections.some((s) => s.attempts.length > 1) && (
-                  <div>
-                    <dt>{tr("Replay history")}</dt>
-                    <dd tabIndex={0} aria-label={tr("Replay history")}>
-                      {state.activeSelections.some((s) => s.attempts.length > 1)
-                        ? state.activeSelections
-                            .filter((s) => s.attempts.length > 1)
-                            .map((s) => (
-                              <span key={s.id}>
-                                {s.category}
-                                {
-                                  data.maps.find((m) => m.id === s.entryId)
-                                    ?.position
-                                }{" "}
-                                ·{" "}
-                                {tr("Replays used: {used} / {limit}", {
-                                  used: s.attempts.length - 1,
-                                  limit: basis.policy?.maxReplaysPerMap ?? "—",
-                                })}
-                              </span>
-                            ))
-                        : "—"}
-                    </dd>
-                  </div>
-                )}
-                {state.activeSelections.some((s) => s.kind !== "ban") && (
-                  <div>
-                    <dt>{tr("Map outcomes")}</dt>
-                    <dd tabIndex={0} aria-label={tr("Map outcomes")}>
-                      {state.activeSelections.some((s) => s.kind !== "ban")
-                        ? state.activeSelections
-                            .filter((s) => s.kind !== "ban")
-                            .map((s) => {
-                              const attempt = s.attempts.at(-1);
-                              return (
-                                <span key={s.id}>
-                                  {s.category}
-                                  {
-                                    data.maps.find((m) => m.id === s.entryId)
-                                      ?.position
-                                  }{" "}
-                                  ·{" "}
-                                  {attempt?.winnerTeamId
-                                    ? tr("Winner: {team}", {
-                                        team: teamName(attempt.winnerTeamId),
-                                      })
-                                    : refereeMessage(
-                                        tr,
-                                        attempt?.status ?? "pending",
-                                      )}
-                                </span>
-                              );
-                            })
-                        : "—"}
-                    </dd>
-                  </div>
-                )}
-              </dl>
-              {!simulation && data.canRecord && !readOnly && (
-                <RefereeMp
-                  endpoint={`${endpoint}/mp`}
-                  disabled={disabled}
-                  roomId={ircRoomId}
-                  onWorkspace={(next) => {
-                    if ((next.session?.revision ?? 0) < newestRevision.current)
-                      return;
-                    newestRevision.current = next.session?.revision ?? 0;
-                    setData(next);
-                  }}
-                />
-              )}
-            </section>
+            {!simulation && data.canRecord && !readOnly ? (
+              <RefereeMp
+                endpoint={`${endpoint}/mp`}
+                disabled={disabled}
+                roomId={ircRoomId}
+                onWorkspace={(next) => {
+                  if ((next.session?.revision ?? 0) < newestRevision.current)
+                    return;
+                  newestRevision.current = next.session?.revision ?? 0;
+                  setData(next);
+                }}
+              >
+                {renderSummary}
+              </RefereeMp>
+            ) : (
+              renderSummary()
+            )}
             <section
               className={`panel ${styles.pool}`}
               aria-labelledby="referee-pool"

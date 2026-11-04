@@ -20,6 +20,7 @@ const tournamentArtwork = new Set([
 
 const bundle = await build({
   entryPoints: [
+    "tests/components/backup-manager.tsx",
     "tests/components/exhibition-pool-import.tsx",
     "tests/components/action-loading.tsx",
     "tests/components/player-sidebar.tsx",
@@ -136,71 +137,75 @@ createServer((request, response) => {
       response.setHeader("Content-Security-Policy", policy);
       nonce = /'nonce-([^']+)'/.exec(policy)![1];
     }
-    const entry = request.url?.startsWith("/header")
-      ? "header"
-      : request.url?.startsWith("/referee-panel")
-        ? "referee-panel"
-        : request.url?.startsWith("/force-fixture-delete")
-          ? "force-fixture-delete"
-          : request.url?.startsWith("/round-referee-policy")
-            ? "round-referee-policy"
-            : request.url?.startsWith("/stage-groups")
-              ? "stage-groups"
-              : request.url?.startsWith("/info-note")
-                ? "info-note"
-                : request.url?.startsWith("/s5-bracket")
-                  ? "s5-bracket"
-                  : request.url?.startsWith("/s3-bracket")
-                    ? "s3-bracket"
-                    : request.url?.startsWith("/archive-bracket")
-                      ? "archive-bracket"
-                      : request.url?.startsWith("/ocl-chess")
-                        ? "ocl-chess"
-                        : request.url?.startsWith("/statistics-manager")
-                          ? "statistics-manager"
-                          : request.url?.startsWith("/team-editor")
-                            ? "team-editor"
-                            : request.url?.startsWith("/event-statistics")
-                              ? "event-statistics"
-                              : request.url?.startsWith("/statistics-explorer")
-                                ? "statistics-explorer"
-                                : request.url?.startsWith("/player-id-badge")
-                                  ? "player-id-badge"
-                                  : request.url?.startsWith(
-                                        "/player-profile-cover",
-                                      )
-                                    ? "player-profile-cover"
+    const entry = request.url?.startsWith("/backup-manager")
+      ? "backup-manager"
+      : request.url?.startsWith("/header")
+        ? "header"
+        : request.url?.startsWith("/referee-panel")
+          ? "referee-panel"
+          : request.url?.startsWith("/force-fixture-delete")
+            ? "force-fixture-delete"
+            : request.url?.startsWith("/round-referee-policy")
+              ? "round-referee-policy"
+              : request.url?.startsWith("/stage-groups")
+                ? "stage-groups"
+                : request.url?.startsWith("/info-note")
+                  ? "info-note"
+                  : request.url?.startsWith("/s5-bracket")
+                    ? "s5-bracket"
+                    : request.url?.startsWith("/s3-bracket")
+                      ? "s3-bracket"
+                      : request.url?.startsWith("/archive-bracket")
+                        ? "archive-bracket"
+                        : request.url?.startsWith("/ocl-chess")
+                          ? "ocl-chess"
+                          : request.url?.startsWith("/statistics-manager")
+                            ? "statistics-manager"
+                            : request.url?.startsWith("/team-editor")
+                              ? "team-editor"
+                              : request.url?.startsWith("/event-statistics")
+                                ? "event-statistics"
+                                : request.url?.startsWith(
+                                      "/statistics-explorer",
+                                    )
+                                  ? "statistics-explorer"
+                                  : request.url?.startsWith("/player-id-badge")
+                                    ? "player-id-badge"
                                     : request.url?.startsWith(
-                                          "/player-profile-no-cover",
+                                          "/player-profile-cover",
                                         )
-                                      ? "player-profile-no-cover"
-                                      : request.url?.startsWith("/rank-chart")
-                                        ? "rank-chart"
-                                        : request.url?.startsWith(
-                                              "/schedule-selection",
-                                            )
-                                          ? "schedule-selection"
+                                      ? "player-profile-cover"
+                                      : request.url?.startsWith(
+                                            "/player-profile-no-cover",
+                                          )
+                                        ? "player-profile-no-cover"
+                                        : request.url?.startsWith("/rank-chart")
+                                          ? "rank-chart"
                                           : request.url?.startsWith(
-                                                "/practice-records",
+                                                "/schedule-selection",
                                               )
-                                            ? "practice-records"
+                                            ? "schedule-selection"
                                             : request.url?.startsWith(
-                                                  "/mappool-actions",
+                                                  "/practice-records",
                                                 )
-                                              ? "mappool-actions"
+                                              ? "practice-records"
                                               : request.url?.startsWith(
-                                                    "/streaming-manager",
+                                                    "/mappool-actions",
                                                   )
-                                                ? "streaming-manager"
+                                                ? "mappool-actions"
                                                 : request.url?.startsWith(
-                                                      "/captain-manager",
+                                                      "/streaming-manager",
                                                     )
-                                                  ? "captain-manager"
+                                                  ? "streaming-manager"
                                                   : request.url?.startsWith(
-                                                        "/tournament-settings",
+                                                        "/captain-manager",
                                                       )
-                                                    ? "tournament-settings"
-                                                    : "player-message-board";
+                                                    ? "captain-manager"
+                                                    : request.url?.startsWith(
+                                                          "/tournament-settings",
+                                                        )
+                                                      ? "tournament-settings"
+                                                      : "player-message-board";
     const fixture = request.url?.startsWith("/exhibition-pool-import")
       ? "exhibition-pool-import"
       : request.url?.startsWith("/public-mappools")

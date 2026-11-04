@@ -57,6 +57,7 @@ function RoundForm({
         </label>
         <div className="actions">
           <ConfirmMutation
+            loadingFeedback="button"
             label={label}
             title={label}
             requireConfirmation={false}
@@ -230,6 +231,7 @@ export function RoundManager({
                       {tr("Edit round")}
                     </button>
                     <ConfirmMutation
+                      loadingFeedback="button"
                       label={tr("Delete round")}
                       className="secondary destructive-action"
                       title={tr("Delete round “{name}”?", { name: round.name })}

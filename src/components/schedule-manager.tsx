@@ -12,7 +12,11 @@ const Calendar = dynamic(() => import("./schedule-calendar"), { ssr: false });
 function Mutation(props: ComponentProps<typeof ConfirmMutation>) {
   const [requestKey] = useState(() => crypto.randomUUID());
   return (
-    <ConfirmMutation {...props} payload={{ ...props.payload, requestKey }} />
+    <ConfirmMutation
+      loadingFeedback="button"
+      {...props}
+      payload={{ ...props.payload, requestKey }}
+    />
   );
 }
 function statusLabel(
@@ -287,6 +291,7 @@ function FixtureEditor({
             </ul>
             <Mutation
               key={JSON.stringify([intervals, f.ownAvailability.version])}
+              loadingFeedback="region"
               label={tr("Save availability")}
               title={tr("Save availability")}
               requireConfirmation={false}

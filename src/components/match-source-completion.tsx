@@ -267,6 +267,7 @@ export function MatchSourceCompletion({
             {canManage && (
               <div className="actions">
                 <ConfirmMutation
+                  loadingFeedback="button"
                   label={tr("Confirm teams & import source")}
                   title={tr("Confirm teams & import source")}
                   description={tr(

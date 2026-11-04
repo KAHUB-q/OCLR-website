@@ -306,6 +306,7 @@ export function CaptainManager({
                         </MutationButton>
                       </div>
                       <ConfirmMutation
+                        loadingFeedback="button"
                         label={tr("Unappoint")}
                         title={tr("Unappoint {value0}?", {
                           value0: c.username,

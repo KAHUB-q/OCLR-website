@@ -1,5 +1,9 @@
 # #777 — Staff action loading and website audit
 
+The remaining action-row findings below are addressed in the subsequent
+[#785 repair and verification](../issue-785/README.md). This file retains the
+original audit and its dated results.
+
 Inspected on 2026-11-04 (Asia/Taipei), starting from main
 `7c2b68900cf96c2944b896b317f87d60509d6ebb` in the isolated
 `codex/staff-action-loading-audit` worktree. The original checkout and its

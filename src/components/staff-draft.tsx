@@ -82,6 +82,7 @@ function Controls({ slug, data }: { slug: string; data: StaffDraft }) {
       <div className="actions">
         {allowed.map((action) => (
           <ConfirmMutation
+            loadingFeedback="button"
             key={action}
             requireConfirmation={
               !["start", "pause", "resume", "unlock"].includes(action)

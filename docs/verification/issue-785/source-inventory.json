@@ -1,0 +1,499 @@
+{
+  "baseline": "e9b2e45a9e2ca86149739caa502ffdbfe57f0134",
+  "callSites": [
+    {
+      "file": "src/components/archive-importer.tsx",
+      "line": 57,
+      "component": "ConfirmMutation",
+      "parent": "section",
+      "container": "\"panel form-stack\"",
+      "feedback": "region (default)"
+    },
+    {
+      "file": "src/components/archive-importer.tsx",
+      "line": 179,
+      "component": "ConfirmMutation",
+      "parent": "section",
+      "container": "\"panel form-stack\"",
+      "feedback": "region (default)"
+    },
+    {
+      "file": "src/components/archive-importer.tsx",
+      "line": 304,
+      "component": "ConfirmMutation",
+      "parent": "section",
+      "container": "\"stack\"",
+      "feedback": "region (default)"
+    },
+    {
+      "file": "src/components/archive-player-exchange.tsx",
+      "line": 80,
+      "component": "ConfirmMutation",
+      "parent": "details",
+      "container": "\"panel form-stack\"",
+      "feedback": "region (default)"
+    },
+    {
+      "file": "src/components/archive-staff-resolver.tsx",
+      "line": 165,
+      "component": "ConfirmMutation",
+      "parent": "div",
+      "container": "\"form-stack\"",
+      "feedback": "region (default)"
+    },
+    {
+      "file": "src/components/archive-substitute.tsx",
+      "line": 85,
+      "component": "ConfirmMutation",
+      "parent": "details",
+      "container": "\"panel form-stack\"",
+      "feedback": "region (default)"
+    },
+    {
+      "file": "src/components/audit-module-tabs.tsx",
+      "line": 24,
+      "component": "LoadingRegion",
+      "parent": "div",
+      "container": "\"audit-module-tabs\"",
+      "feedback": "region (default)"
+    },
+    {
+      "file": "src/components/award-manager.tsx",
+      "line": 90,
+      "component": "LoadingRegion",
+      "parent": "form",
+      "container": "\"form-stack\"",
+      "feedback": "region (default)"
+    },
+    {
+      "file": "src/components/award-manager.tsx",
+      "line": 214,
+      "component": "LoadingRegion",
+      "parent": "section",
+      "container": "\"panel form-stack\"",
+      "feedback": "region (default)"
+    },
+    {
+      "file": "src/components/bws-review.tsx",
+      "line": 64,
+      "component": "LoadingRegion",
+      "parent": "section",
+      "container": "\"panel form-stack bws-review\"",
+      "feedback": "region (default)"
+    },
+    {
+      "file": "src/components/captain-manager.tsx",
+      "line": 198,
+      "component": "LoadingRegion",
+      "parent": "div",
+      "container": "\"stack\"",
+      "feedback": "region (default)"
+    },
+    {
+      "file": "src/components/captain-manager.tsx",
+      "line": 308,
+      "component": "ConfirmMutation",
+      "parent": "div",
+      "container": "\"captain-card-actions\"",
+      "feedback": "\"button\""
+    },
+    {
+      "file": "src/components/captain-manager.tsx",
+      "line": 495,
+      "component": "ConfirmMutation",
+      "parent": "section",
+      "container": "\"panel form-stack\"",
+      "feedback": "region (default)"
+    },
+    {
+      "file": "src/components/captain-manager.tsx",
+      "line": 606,
+      "component": "ConfirmMutation",
+      "parent": "section",
+      "container": "\"panel form-stack\"",
+      "feedback": "region (default)"
+    },
+    {
+      "file": "src/components/competition-settings.tsx",
+      "line": 214,
+      "component": "ConfirmMutation",
+      "parent": "div",
+      "container": "\"form-stack\"",
+      "feedback": "region (default)"
+    },
+    {
+      "file": "src/components/confirm-mutation.tsx",
+      "line": 110,
+      "component": "LoadingRegion",
+      "feedback": "region (default)"
+    },
+    {
+      "file": "src/components/confirm-mutation.tsx",
+      "line": 151,
+      "component": "LoadingRegion",
+      "parent": "dialog",
+      "feedback": "region (default)"
+    },
+    {
+      "file": "src/components/developer-access.tsx",
+      "line": 107,
+      "component": "LoadingRegion",
+      "parent": "div",
+      "container": "\"stack developer-access\"",
+      "feedback": "region (default)"
+    },
+    {
+      "file": "src/components/draft-order-editor.tsx",
+      "line": 237,
+      "component": "ConfirmMutation",
+      "parent": "div",
+      "container": "\"actions\"",
+      "feedback": "\"button\""
+    },
+    {
+      "file": "src/components/draft-order-editor.tsx",
+      "line": 255,
+      "component": "ConfirmMutation",
+      "parent": "div",
+      "container": "\"actions\"",
+      "feedback": "\"button\""
+    },
+    {
+      "file": "src/components/fixture-manager.tsx",
+      "line": 300,
+      "component": "ConfirmMutation",
+      "parent": "div",
+      "container": "\"form-stack fixture-form\"",
+      "feedback": "region (default)"
+    },
+    {
+      "file": "src/components/fixture-manager.tsx",
+      "line": 491,
+      "component": "LoadingRegion",
+      "parent": "div",
+      "container": "\"fixture-workspace stack\"",
+      "feedback": "region (default)"
+    },
+    {
+      "file": "src/components/fixture-manager.tsx",
+      "line": 659,
+      "component": "ConfirmMutation",
+      "parent": "div",
+      "container": "\"form-stack\"",
+      "feedback": "region (default)"
+    },
+    {
+      "file": "src/components/fixture-manager.tsx",
+      "line": 706,
+      "component": "ConfirmMutation",
+      "parent": "div",
+      "container": "\"fixture-delete-section\"",
+      "feedback": "region (default)"
+    },
+    {
+      "file": "src/components/mappool-batch.tsx",
+      "line": 265,
+      "component": "ConfirmMutation",
+      "parent": "div",
+      "container": "\"form-stack\"",
+      "feedback": "region (default)"
+    },
+    {
+      "file": "src/components/mappool-batch.tsx",
+      "line": 399,
+      "component": "ConfirmMutation",
+      "parent": "div",
+      "container": "\"actions\"",
+      "feedback": "\"button\""
+    },
+    {
+      "file": "src/components/mappool-batch.tsx",
+      "line": 421,
+      "component": "ConfirmMutation",
+      "parent": "div",
+      "container": "\"actions\"",
+      "feedback": "\"button\""
+    },
+    {
+      "file": "src/components/mappool-batch.tsx",
+      "line": 437,
+      "component": "ConfirmMutation",
+      "parent": "div",
+      "container": "\"actions\"",
+      "feedback": "\"button\""
+    },
+    {
+      "file": "src/components/mappool-editor.tsx",
+      "line": 55,
+      "component": "ConfirmMutation",
+      "feedback": "{icon ? \"button\" : \"region\"}"
+    },
+    {
+      "file": "src/components/mappool-editor.tsx",
+      "line": 643,
+      "component": "ConfirmMutation",
+      "parent": "div",
+      "container": "\"actions mappool-pool-actions\"",
+      "feedback": "\"button\""
+    },
+    {
+      "file": "src/components/mappool-order.tsx",
+      "line": 196,
+      "component": "LoadingRegion",
+      "feedback": "region (default)"
+    },
+    {
+      "file": "src/components/mappool-replays.tsx",
+      "line": 200,
+      "component": "LoadingRegion",
+      "parent": "section",
+      "container": "\"mappool-replays\"",
+      "feedback": "region (default)"
+    },
+    {
+      "file": "src/components/mappool-replays.tsx",
+      "line": 409,
+      "component": "LoadingRegion",
+      "parent": "dialog",
+      "container": "\"replay-delete-dialog\"",
+      "feedback": "region (default)"
+    },
+    {
+      "file": "src/components/match-review.tsx",
+      "line": 41,
+      "component": "ConfirmMutation",
+      "feedback": "\"button\""
+    },
+    {
+      "file": "src/components/match-review.tsx",
+      "line": 523,
+      "component": "ConfirmMutation",
+      "parent": "section",
+      "container": "\"panel form-stack\"",
+      "feedback": "region (default)"
+    },
+    {
+      "file": "src/components/match-source-completion.tsx",
+      "line": 269,
+      "component": "ConfirmMutation",
+      "parent": "div",
+      "container": "\"actions\"",
+      "feedback": "\"button\""
+    },
+    {
+      "file": "src/components/player-message-board.tsx",
+      "line": 343,
+      "component": "LoadingRegion",
+      "parent": "div",
+      "container": "\"player-message-confirm\"",
+      "feedback": "region (default)"
+    },
+    {
+      "file": "src/components/referee-assignment.tsx",
+      "line": 145,
+      "component": "LoadingRegion",
+      "parent": "dialog",
+      "feedback": "region (default)"
+    },
+    {
+      "file": "src/components/registration-removal.tsx",
+      "line": 35,
+      "component": "ConfirmMutation",
+      "parent": "section",
+      "container": "\"registration-removal spaced\"",
+      "feedback": "region (default)"
+    },
+    {
+      "file": "src/components/remote-development.tsx",
+      "line": 149,
+      "component": "LoadingRegion",
+      "parent": "section",
+      "container": "\"panel stack\"",
+      "feedback": "region (default)"
+    },
+    {
+      "file": "src/components/review-form.tsx",
+      "line": 64,
+      "component": "ConfirmMutation",
+      "parent": "section",
+      "container": "\"panel form-stack\"",
+      "feedback": "region (default)"
+    },
+    {
+      "file": "src/components/round-manager.tsx",
+      "line": 59,
+      "component": "ConfirmMutation",
+      "parent": "div",
+      "container": "\"actions\"",
+      "feedback": "\"button\""
+    },
+    {
+      "file": "src/components/round-manager.tsx",
+      "line": 233,
+      "component": "ConfirmMutation",
+      "parent": "div",
+      "container": "\"actions\"",
+      "feedback": "\"button\""
+    },
+    {
+      "file": "src/components/schedule-manager.tsx",
+      "line": 15,
+      "component": "ConfirmMutation",
+      "feedback": "\"button\""
+    },
+    {
+      "file": "src/components/staff-draft.tsx",
+      "line": 84,
+      "component": "ConfirmMutation",
+      "parent": "div",
+      "container": "\"actions\"",
+      "feedback": "\"button\""
+    },
+    {
+      "file": "src/components/staff-role-form.tsx",
+      "line": 238,
+      "component": "ConfirmMutation",
+      "parent": "div",
+      "container": "\"staff-role-submit\"",
+      "feedback": "\"button\""
+    },
+    {
+      "file": "src/components/staff-role-form.tsx",
+      "line": 291,
+      "component": "ConfirmMutation",
+      "feedback": "\"button\""
+    },
+    {
+      "file": "src/components/staff-role-form.tsx",
+      "line": 322,
+      "component": "ConfirmMutation",
+      "feedback": "\"button\""
+    },
+    {
+      "file": "src/components/stage-groups.tsx",
+      "line": 483,
+      "component": "ConfirmMutation",
+      "parent": "div",
+      "container": "\"group-save-controls\"",
+      "feedback": "\"button\""
+    },
+    {
+      "file": "src/components/statistics-manager.tsx",
+      "line": 536,
+      "component": "LoadingRegion",
+      "parent": "div",
+      "container": "\"stack statistics-workspace\"",
+      "feedback": "region (default)"
+    },
+    {
+      "file": "src/components/statistics-manager.tsx",
+      "line": 685,
+      "component": "ConfirmMutation",
+      "parent": "div",
+      "container": "\"actions\"",
+      "feedback": "\"button\""
+    },
+    {
+      "file": "src/components/statistics-manager.tsx",
+      "line": 713,
+      "component": "ConfirmMutation",
+      "parent": "div",
+      "container": "\"actions\"",
+      "feedback": "\"button\""
+    },
+    {
+      "file": "src/components/streaming-access.tsx",
+      "line": 102,
+      "component": "LoadingRegion",
+      "parent": "div",
+      "container": "\"stack developer-access\"",
+      "feedback": "region (default)"
+    },
+    {
+      "file": "src/components/streaming-manager.tsx",
+      "line": 16,
+      "component": "ConfirmMutation",
+      "feedback": "\"button\""
+    },
+    {
+      "file": "src/components/team-coach-manager.tsx",
+      "line": 73,
+      "component": "LoadingRegion",
+      "parent": "section",
+      "container": "\"form-stack team-coach-manager\"",
+      "feedback": "region (default)"
+    },
+    {
+      "file": "src/components/team-editor.tsx",
+      "line": 107,
+      "component": "LoadingRegion",
+      "parent": "dialog",
+      "container": "\"team-editor-dialog\"",
+      "feedback": "region (default)"
+    },
+    {
+      "file": "src/components/team-manager.tsx",
+      "line": 97,
+      "component": "ConfirmMutation",
+      "parent": "section",
+      "container": "\"form-stack\"",
+      "feedback": "region (default)"
+    },
+    {
+      "file": "src/components/tournament-editor.tsx",
+      "line": 332,
+      "component": "ConfirmMutation",
+      "parent": "div",
+      "container": "\"settings-save\"",
+      "feedback": "\"button\""
+    },
+    {
+      "file": "src/components/tournament-editor.tsx",
+      "line": 773,
+      "component": "ConfirmMutation",
+      "parent": "div",
+      "container": "\"section-title\"",
+      "feedback": "\"button\""
+    },
+    {
+      "file": "src/components/tournament-editor.tsx",
+      "line": 1251,
+      "component": "ConfirmMutation",
+      "parent": "section",
+      "container": "\"panel form-stack\"",
+      "feedback": "region (default)"
+    },
+    {
+      "file": "src/components/tournament-editor.tsx",
+      "line": 1284,
+      "component": "ConfirmMutation",
+      "parent": "section",
+      "container": "\"panel form-stack\"",
+      "feedback": "region (default)"
+    },
+    {
+      "file": "src/app/dashboard/page.tsx",
+      "line": 302,
+      "component": "ConfirmMutation",
+      "parent": "div",
+      "container": "\"actions\"",
+      "feedback": "\"button\""
+    },
+    {
+      "file": "src/app/admin/tournaments/[edition]/teams/page.tsx",
+      "line": 155,
+      "component": "ConfirmMutation",
+      "parent": "div",
+      "container": "\"actions\"",
+      "feedback": "\"button\""
+    },
+    {
+      "file": "src/app/admin/tournaments/[edition]/teams/page.tsx",
+      "line": 180,
+      "component": "ConfirmMutation",
+      "parent": "div",
+      "container": "\"actions\"",
+      "feedback": "\"button\""
+    }
+  ]
+}

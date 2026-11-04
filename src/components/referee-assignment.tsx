@@ -6,6 +6,7 @@ import { useAppTranslations } from "@/i18n/shared";
 import { useId, useRef, useState } from "react";
 import { usePendingRefresh } from "./use-pending-refresh";
 import { LoadingRegion } from "./loading-region";
+import { PendingButtonLabel } from "./pending-button-label";
 import type { FixtureWorkspace } from "@/lib/fixtures";
 import { formatDate } from "@/lib/editions";
 export function RefereeAssignment({
@@ -117,7 +118,6 @@ export function RefereeAssignment({
     : [];
   return (
     <>
-      {refreshing && activeAction === "save" && !error && <LoadingRegion />}
       <button
         type="button"
         disabled={pending}
@@ -129,7 +129,9 @@ export function RefereeAssignment({
           dialog.current?.showModal();
         }}
       >
-        {tr("Assign Referee")}
+        <PendingButtonLabel pending={pending}>
+          {tr("Assign Referee")}
+        </PendingButtonLabel>
       </button>
       <dialog
         ref={dialog}

@@ -1,0 +1,288 @@
+.collection {
+  min-width: 0;
+}
+
+.collection :global(.workspace-tabs[data-appearance="line"]),
+.browse :global(.workspace-tabs[data-appearance="line"]) {
+  width: 100%;
+  gap: 0.25rem;
+  padding: 0;
+  border: 0;
+  border-bottom: 1px solid var(--site-border);
+  border-radius: 0;
+  background: transparent;
+  scrollbar-width: thin;
+}
+
+.collection :global(.workspace-tabs[data-appearance="line"] button),
+.browse :global(.workspace-tabs[data-appearance="line"] button) {
+  min-height: 44px;
+  padding: 0.65rem 0.8rem;
+  border: 0;
+  border-bottom: 2px solid transparent;
+  border-radius: 0;
+  color: var(--site-muted);
+  background: transparent;
+  box-shadow: none;
+  transform: none;
+  transition:
+    color 120ms,
+    background 120ms;
+}
+
+.collection
+  :global(.workspace-tabs[data-appearance="line"] button[aria-selected="true"]),
+.browse
+  :global(
+    .workspace-tabs[data-appearance="line"] button[aria-selected="true"]
+  ) {
+  border-bottom-color: var(--site-accent);
+  color: var(--site-accent);
+  background: transparent;
+}
+
+.collection :global(.workspace-tabs[data-appearance="line"] button:hover),
+.browse :global(.workspace-tabs[data-appearance="line"] button:hover) {
+  color: var(--site-accent-strong);
+  background: var(--site-raised);
+}
+
+.context,
+.context > div {
+  display: flex;
+  align-items: baseline;
+  flex-wrap: wrap;
+  gap: 0.5rem 0.9rem;
+}
+
+.context {
+  justify-content: space-between;
+  margin-bottom: 1rem;
+  color: var(--site-muted);
+  font-size: 0.8rem;
+}
+
+.context p {
+  margin: 0;
+}
+
+.stage {
+  border-radius: 0.45rem;
+  padding: 0.25rem 0.6rem;
+  color: var(--site-accent);
+  background: var(--site-tint);
+  font-weight: 700;
+}
+
+.round {
+  overflow-wrap: anywhere;
+}
+
+.singleName {
+  margin: 0;
+  padding-bottom: 0.75rem;
+  border-bottom: 1px solid var(--site-border);
+  font-size: 1.05rem;
+  overflow-wrap: anywhere;
+}
+
+.context .poolMeta {
+  align-items: center;
+  gap: 0.4rem;
+}
+
+.poolLink {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 44px;
+  height: 44px;
+  border-radius: 0.5rem;
+  color: var(--site-accent);
+}
+
+.poolLink:hover {
+  background: var(--site-raised);
+}
+
+.browse {
+  padding-top: 0.5rem;
+}
+
+.browse .summary {
+  justify-content: space-between;
+  gap: 0.25rem 1rem;
+  padding: 0;
+  border: 0;
+  border-radius: 0;
+  background: transparent;
+  font-size: 0.8rem;
+}
+
+.browse .summary strong {
+  color: var(--site-foreground);
+  font-size: inherit;
+  font-weight: 600;
+}
+
+.browse .toolbar {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) minmax(9rem, auto) auto;
+  align-items: center;
+  gap: 0.65rem;
+  margin-bottom: 0.5rem;
+}
+
+.browse .toolbar > * {
+  min-width: 0;
+  order: 0;
+  margin: 0;
+}
+
+.browse .viewControl:global(.map-view-control) {
+  flex-wrap: nowrap;
+  border-radius: 0.7rem;
+}
+
+.browse .viewControl:global(.map-view-control) button {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.4rem;
+  white-space: nowrap;
+  border-radius: 0.45rem;
+}
+
+.browse .viewControl:global(.map-view-control) button[aria-pressed="true"] {
+  background: var(--site-tint);
+  color: var(--site-accent);
+}
+
+.viewControl svg {
+  flex-shrink: 0;
+}
+
+.browse .modTabs {
+  margin-bottom: 1rem;
+}
+
+.browse .cards {
+  gap: 0.75rem;
+}
+
+/* Keep the shared card's metadata, clipboard and links; simplify only this view. */
+.browse .card {
+  grid-template-columns: 9rem minmax(0, 1fr);
+  min-height: 7.75rem;
+  padding: 0;
+}
+
+.browse .card::before,
+.browse .card :global(.map-card-cover)::before {
+  content: none;
+}
+
+.browse .card :global(.map-card-art) {
+  inset-inline-start: 0;
+  opacity: 0.06;
+}
+
+.browse .card :global(.map-card-cover),
+.browse .card :global(.beatmap-cover) {
+  border-radius: 0;
+}
+
+.browse .card :global(.map-card-copy) {
+  padding: 0.8rem 1rem;
+}
+
+.browse .card :global(.map-card-values) {
+  padding-inline-end: 0;
+}
+
+.browse .card :global(.map-card-title) {
+  font-size: 1.05rem;
+}
+
+.browse .card :global(.map-card-mode) {
+  position: static;
+  align-self: flex-start;
+  margin-top: 0.25rem;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .collection :global(.workspace-tabs button),
+  .browse :global(.workspace-tabs button) {
+    transition: none;
+  }
+}
+
+@media (max-width: 680px) {
+  .browse .toolbar {
+    grid-template-columns: minmax(0, 1fr) auto;
+  }
+
+  .browse .search {
+    grid-column: 1 / -1;
+  }
+
+  .browse .viewControl:global(.map-view-control) button {
+    min-height: 44px;
+    padding-inline: 0.45rem;
+    font-size: 0.8rem;
+  }
+
+  .viewControl svg {
+    display: none;
+  }
+
+  .browse .card {
+    grid-template-columns: 5rem minmax(0, 1fr);
+    min-height: 0;
+  }
+
+  .browse .card :global(.map-card-cover .beatmap-cover) {
+    height: 100%;
+    aspect-ratio: auto;
+  }
+
+  .browse .card :global(.map-card-copy) {
+    padding: 0.7rem;
+  }
+
+  .browse .card :global(.map-card-title) {
+    display: -webkit-box;
+    -webkit-line-clamp: 2;
+    -webkit-box-orient: vertical;
+    white-space: normal;
+    overflow-wrap: anywhere;
+  }
+
+  .browse .card :global(.map-card-title-row) {
+    padding-inline-end: 0;
+  }
+
+  .browse .card :global(.map-card-id) {
+    left: 0.2rem;
+    max-width: calc(100% - 0.4rem);
+    padding-inline: 0.25rem;
+    font-size: 0.7rem;
+  }
+
+  .browse .card :global(.map-card-id-icon) {
+    display: none;
+  }
+
+  .browse .card :global(.map-slot-badge) {
+    left: 0.35rem;
+  }
+
+  .browse .card :global(.map-card-values) {
+    gap: 0.25rem 0.55rem;
+  }
+
+  .browse .card :global(.map-card-copy > .beatmap-actions) {
+    position: static;
+    margin-top: 0.5rem;
+  }
+}

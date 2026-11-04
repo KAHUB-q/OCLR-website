@@ -169,12 +169,12 @@ test.describe("published mappool mainsheet", () => {
     ).toContainText("Not calculated");
 
     await expect(sheet.locator(".mappool-category-links")).toHaveCount(0);
-    const modFilter = page.getByRole("group", {
+    const modFilter = page.getByRole("tablist", {
       name: "Synthetic Released 30-Map Pool: mod filter",
     });
     for (const category of categories)
       await expect(
-        modFilter.getByRole("button", { name: category, exact: true }),
+        modFilter.getByRole("tab", { name: category, exact: true }),
       ).toBeVisible();
     for (const c of categories)
       expect(

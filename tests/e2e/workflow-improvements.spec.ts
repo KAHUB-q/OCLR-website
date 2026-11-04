@@ -74,13 +74,15 @@ test.describe("focused workflow improvements", () => {
         await preferences(context, locale, theme);
         await page.goto("/tournaments/test-cup/mappools");
         await expect(page.locator(".mappool-public-round")).toHaveCount(0);
-        await expect(page.locator(".mappool-release-heading h3")).toContainText(
-          "GS",
-        );
+        await expect(
+          page.getByRole("heading", { name: "GS", exact: true }),
+        ).toContainText("GS");
         expect(
-          (await page.locator(".mappool-release-heading").innerText()).match(
-            /GS/g,
-          ),
+          (
+            await page
+              .getByRole("heading", { name: "GS", exact: true })
+              .innerText()
+          ).match(/GS/g),
         ).toHaveLength(1);
         await page.setViewportSize({
           width: isMobile ? 320 : 1440,

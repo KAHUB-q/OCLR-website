@@ -16,6 +16,8 @@ import { BeatmapActions } from "./beatmap-actions";
 import { BeatmapCover } from "./beatmap-cover";
 import { MapCardBand } from "./map-card-band";
 import { MappoolView } from "./mappool-view";
+import { WorkspaceTabs } from "./workspace-tabs";
+import styles from "./public-mappools.module.css";
 type Pool = Awaited<ReturnType<typeof publicMappools>>[number];
 type Entry = Pool["entries"][number];
 function modRating(entry: Entry) {
@@ -181,6 +183,7 @@ export function MappoolBrowser({
   headingLevel?: 2 | 4 | 5;
 }) {
   const tr = useAppTranslations();
+  const tabId = useId();
   const [category, setCategory] = useState("");
   const [search, setSearch] = useState("");
   const [sort, setSort] = useState("slot");
@@ -221,8 +224,8 @@ export function MappoolBrowser({
         pool.entries.length
       : null;
   return (
-    <div className="mappool-browse">
-      <div className="pool-summary">
+    <div className={`mappool-browse ${styles.browse}`}>
+      <div className={`pool-summary ${styles.summary}`}>
         <span role="status">
           <strong>{entries.length}</strong> / {pool.entries.length}{" "}
           {tr(" released maps")}
@@ -232,60 +235,9 @@ export function MappoolBrowser({
             <strong>{number(mean, 2)} ★</strong> {tr(" average base SR")}
           </span>
         )}
-        <span>
-          {categories
-            .filter((c) => pool.entries.some((e) => e.category === c))
-            .join(" / ")}
-        </span>
       </div>
-      <div className="map-browse-toolbar">
-        <div
-          className="event-pills"
-          role="group"
-          aria-label={tr("{value0}: mod filter", { value0: pool.name })}
-        >
-          {[
-            ["", "All mods"],
-            ...categories
-              .filter((c) => pool.entries.some((e) => e.category === c))
-              .map((c) => [c, c]),
-          ].map(([value, label]) => (
-            <button
-              className="secondary"
-              key={value}
-              type="button"
-              aria-pressed={category === value}
-              onClick={() => {
-                setCategory(value);
-                setSelected(null);
-              }}
-            >
-              {tr(label)}
-            </button>
-          ))}
-        </div>
-        <div
-          className="event-pills map-view-control"
-          role="group"
-          aria-label={tr("{value0}: map view", { value0: pool.name })}
-        >
-          {["cards", "compact"].map((value) => (
-            <button
-              className="secondary"
-              key={value}
-              type="button"
-              aria-pressed={view === value}
-              onClick={() => {
-                setView(value);
-                setSelected(null);
-              }}
-            >
-              {value === "cards" ? tr("Map cards") : tr("Compact table")}
-            </button>
-          ))}
-        </div>
-
-        <label className="field map-search">
+      <div className={`map-browse-toolbar ${styles.toolbar}`}>
+        <label className={`field map-search ${styles.search}`}>
           <span className="sr-only">
             {tr("Search ")}
             {pool.name}
@@ -317,77 +269,144 @@ export function MappoolBrowser({
             <option value="stars">{tr("Base difficulty")}</option>
           </select>
         </label>
+        <div
+          className={`event-pills map-view-control ${styles.viewControl}`}
+          role="group"
+          aria-label={tr("{value0}: map view", { value0: pool.name })}
+        >
+          {["cards", "compact"].map((value) => (
+            <button
+              className="secondary"
+              key={value}
+              type="button"
+              aria-pressed={view === value}
+              onClick={() => {
+                setView(value);
+                setSelected(null);
+              }}
+            >
+              <svg
+                width="16"
+                height="16"
+                viewBox="0 0 24 24"
+                fill="none"
+                stroke="currentColor"
+                strokeWidth="1.6"
+                aria-hidden="true"
+                focusable="false"
+              >
+                {value === "cards" ? (
+                  <>
+                    <rect x="3" y="3" width="18" height="18" rx="2" />
+                    <path d="M3 12h18" />
+                  </>
+                ) : (
+                  <>
+                    <rect x="3" y="3" width="18" height="18" rx="2" />
+                    <path d="M3 9h18M3 15h18M9 3v18" />
+                  </>
+                )}
+              </svg>
+              {value === "cards" ? tr("Map cards") : tr("Compact table")}
+            </button>
+          ))}
+        </div>
       </div>
-
-      {view === "compact" ? (
-        <MappoolView
-          pool={{ ...pool, entries }}
-          headingLevel={headingLevel}
-          onSelect={setSelected}
-          showCategoryLinks={false}
+      <div className={styles.modTabs}>
+        <WorkspaceTabs
+          id={tabId}
+          label={tr("{value0}: mod filter", { value0: pool.name })}
+          appearance="line"
+          value={category}
+          onChange={(value) => {
+            setCategory(value);
+            setSelected(null);
+          }}
+          items={[
+            { value: "", label: tr("All mods") },
+            ...categories
+              .filter((c) => pool.entries.some((e) => e.category === c))
+              .map((c) => ({ value: c, label: c, literal: true })),
+          ]}
         />
-      ) : (
-        <>
-          {pool.entries.some((e) => e.category === "FM") && (
-            <p className="map-values-note muted small">
-              {fmPolicyName(pool.fmMode) ?? tr("FM policy not configured")}
-              {pool.fmRestrictions
-                ? `: ${pool.fmRestrictions}`
-                : tr(": Detailed restrictions have not been published.")}
-            </p>
-          )}
-          <div className="map-card-grid">
-            {entries.map((e) => {
-              const slot = slotLabel(e.category, e.position);
-              return (
-                <MapCardBand
-                  key={e.id}
-                  id={`map-${e.id}`}
-                  dataCategory={e.category}
-                  slot={slot}
-                  title={e.metadata.title}
-                  artist={e.metadata.artist}
-                  difficulty={e.metadata.difficulty}
-                  mapper={e.metadata.mapper}
-                  beatmapId={e.beatmapId}
-                  setId={e.metadata.setId}
-                  stars={e.metadata.stars}
-                  bpm={e.metadata.bpm}
-                  durationSeconds={e.metadata.duration}
-                  cs={e.metadata.cs}
-                  ar={e.metadata.ar}
-                  od={e.metadata.od}
-                  mode={e.metadata.mode}
-                  headingLevel={headingLevel}
-                  openLabel={tr("View {value0}: {value1}", {
-                    value0: slot,
-                    value1: e.metadata.title,
-                  })}
-                  onOpen={() => setSelected(e.id)}
-                  chips={
-                    e.metadata.attributes ? (
-                      <span className="map-mod-rating">{tr(modRating(e))}</span>
-                    ) : e.category === "FM" ? undefined : (
-                      <span className="map-mod-note">{tr(modRating(e))}</span>
-                    )
-                  }
-                  note={
-                    e.category === "FM" && (
-                      <p className="map-fm-policy muted small">
-                        {fmPolicyName(pool.fmMode) ??
-                          tr("FM policy not configured")}
-                      </p>
-                    )
-                  }
-                />
-              );
-            })}
-          </div>
-        </>
-      )}
-      {!entries.length && (
-        <p className="notice">{tr("No beatmaps match these filters.")}</p>
-      )}
+      </div>
+      <div
+        id={`${tabId}-panel`}
+        role="tabpanel"
+        aria-labelledby={`${tabId}-${category}`}
+      >
+        {view === "compact" ? (
+          <MappoolView
+            pool={{ ...pool, entries }}
+            headingLevel={headingLevel}
+            onSelect={setSelected}
+            showCategoryLinks={false}
+          />
+        ) : (
+          <>
+            {pool.entries.some((e) => e.category === "FM") && (
+              <p className="map-values-note muted small">
+                {fmPolicyName(pool.fmMode) ?? tr("FM policy not configured")}
+                {pool.fmRestrictions
+                  ? `: ${pool.fmRestrictions}`
+                  : tr(": Detailed restrictions have not been published.")}
+              </p>
+            )}
+            <div className={`map-card-grid ${styles.cards}`}>
+              {entries.map((e) => {
+                const slot = slotLabel(e.category, e.position);
+                return (
+                  <MapCardBand
+                    className={styles.card}
+                    showMode={!!e.metadata.mode && e.metadata.mode !== "osu"}
+                    key={e.id}
+                    id={`map-${e.id}`}
+                    dataCategory={e.category}
+                    slot={slot}
+                    title={e.metadata.title}
+                    artist={e.metadata.artist}
+                    difficulty={e.metadata.difficulty}
+                    mapper={e.metadata.mapper}
+                    beatmapId={e.beatmapId}
+                    setId={e.metadata.setId}
+                    stars={e.metadata.stars}
+                    bpm={e.metadata.bpm}
+                    durationSeconds={e.metadata.duration}
+                    cs={e.metadata.cs}
+                    ar={e.metadata.ar}
+                    od={e.metadata.od}
+                    mode={e.metadata.mode}
+                    headingLevel={headingLevel}
+                    openLabel={tr("View {value0}: {value1}", {
+                      value0: slot,
+                      value1: e.metadata.title,
+                    })}
+                    onOpen={() => setSelected(e.id)}
+                    chips={
+                      e.metadata.attributes ? (
+                        <span className="map-mod-rating">
+                          {tr(modRating(e))}
+                        </span>
+                      ) : undefined
+                    }
+                    note={
+                      e.category === "FM" && (
+                        <p className="map-fm-policy muted small">
+                          {fmPolicyName(pool.fmMode) ??
+                            tr("FM policy not configured")}
+                        </p>
+                      )
+                    }
+                  />
+                );
+              })}
+            </div>
+          </>
+        )}
+        {!entries.length && (
+          <p className="notice">{tr("No beatmaps match these filters.")}</p>
+        )}
+      </div>
       {active && (
         <MapDetails
           entry={active}

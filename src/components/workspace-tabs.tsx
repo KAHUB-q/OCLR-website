@@ -12,7 +12,7 @@ export function WorkspaceTabs<T extends string>({
 }: {
   id: string;
   label: string;
-  items: { value: T; label: string }[];
+  items: { value: T; label: string; literal?: boolean }[];
   value: T;
   onChange: (value: T) => void;
   appearance?: "segmented" | "line";
@@ -64,7 +64,7 @@ export function WorkspaceTabs<T extends string>({
             document.getElementById(`${id}-${items[next].value}`)?.focus();
           }}
         >
-          {tr(item.label)}
+          {item.literal ? item.label : tr(item.label)}
         </button>
       ))}
     </div>

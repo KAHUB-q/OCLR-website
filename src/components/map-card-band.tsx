@@ -33,6 +33,7 @@ export function MapCardBand({
   originalBeatmapId,
   originalSetId,
   beatmapMissing,
+  preferOriginal,
   stars,
   bpm,
   durationSeconds,
@@ -68,6 +69,7 @@ export function MapCardBand({
   originalBeatmapId?: number | null;
   originalSetId?: number | null;
   beatmapMissing?: boolean;
+  preferOriginal?: boolean;
   stars?: number | null;
   bpm?: number | null;
   durationSeconds?: number | null;
@@ -227,6 +229,7 @@ export function MapCardBand({
       originalBeatmapId={originalBeatmapId}
       originalSetId={originalSetId}
       beatmapMissing={beatmapMissing}
+      preferOriginal={preferOriginal}
       name={slot}
     />
   );

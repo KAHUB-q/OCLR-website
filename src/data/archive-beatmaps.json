@@ -2984,6 +2984,36 @@
       "source": "https://osu.ppy.sh/beatmaps/2968871",
       "fetchedAt": "2026-10-26T02:49:04.201099+00:00",
       "beatmapUpdatedAt": "2021-05-06T20:16:08Z"
+    },
+    "2678913": {
+      "beatmapId": 2678913,
+      "setId": 1290517,
+      "title": "Maeda Jun x yanaginagi - Before I Rise [Special]",
+      "mapper": "Gaia",
+      "stars": 4.4607,
+      "bpm": 140,
+      "drainSeconds": 167,
+      "cs": 4,
+      "ar": 9,
+      "od": 8.5,
+      "source": "https://osu.ppy.sh/beatmaps/2678913",
+      "fetchedAt": "2026-11-04T23:33:04.341971+00:00",
+      "beatmapUpdatedAt": "2020-12-05T05:12:32Z"
+    },
+    "2933979": {
+      "beatmapId": 2933979,
+      "setId": 1424727,
+      "title": "Annabel - syncretism [Delis' Insane '17]",
+      "mapper": "Delis",
+      "stars": 4.43274,
+      "bpm": 155,
+      "drainSeconds": 210,
+      "cs": 4,
+      "ar": 8,
+      "od": 8,
+      "source": "https://osu.ppy.sh/beatmaps/2933979",
+      "fetchedAt": "2026-11-04T23:33:04.343264+00:00",
+      "beatmapUpdatedAt": "2021-04-11T17:11:31Z"
     }
   },
   "unavailable": [

@@ -80,6 +80,94 @@ describe("historical composite titles", () => {
 });
 
 describe("historical map metadata supplementation", () => {
+  it("repairs legacy saved S5 DT maps without a reimport or mutation", () => {
+    const pool = archive("s5").pools.find((p) => p.id === "pool-2")!;
+    for (const map of pool.maps) {
+      if (!["DT2", "DT4"].includes(map.slot)) continue;
+      delete map.originalId;
+      for (const key of [
+        "mapper",
+        "stars",
+        "bpm",
+        "drainSeconds",
+        "cs",
+        "ar",
+        "od",
+      ] as const)
+        map[key] = null;
+    }
+    const before = structuredClone(pool);
+    const result = archivePoolMetadata(pool, "s5");
+    const dt2 = result.pool.maps.find((m) => m.slot === "DT2")!;
+    const dt4 = result.pool.maps.find((m) => m.slot === "DT4")!;
+    expect(dt2).toMatchObject({
+      beatmapId: 2567502,
+      originalId: 2933979,
+      preferOriginal: true,
+    });
+    expect(dt4).toMatchObject({
+      beatmapId: 2720295,
+      originalId: 2678913,
+      preferOriginal: true,
+      mapper: "Gaia",
+      stars: 6.27,
+      bpm: 210,
+      drainSeconds: 111,
+      cs: 4,
+      ar: 8.5,
+      od: 8,
+    });
+    expect(dt4.archivalSupplemented).toEqual([
+      "mapper",
+      "stars",
+      "bpm",
+      "drainSeconds",
+      "cs",
+      "ar",
+      "od",
+    ]);
+    expect(dt4.supplemented).toBeUndefined();
+    expect(result.setIds[2678913]).toBe(1290517);
+    expect(result.setIds[2933979]).toBe(1424727);
+    expect(result.missingBeatmapIds).toContain(2720295);
+    expect(snapshot.maps[2678913].bpm).toBe(140);
+    expect(snapshot.maps[2678913].ar).toBe(9);
+    expect(pool).toEqual(before);
+    expect(archivePoolMetadata(result.pool, "s5").pool.maps).toEqual(
+      result.pool.maps,
+    );
+  });
+  it("preserves explicit saved values and restricts S5 repairs to the exact pool, slot and BID", () => {
+    const pool = archive("s5").pools.find((p) => p.id === "pool-2")!;
+    const map = pool.maps.find((m) => m.slot === "DT4")!;
+    map.stars = 0;
+    map.bpm = 199;
+    map.originalId = 42;
+    expect(
+      archivePoolMetadata(pool, "s5").pool.maps.find((m) => m.slot === "DT4"),
+    ).toMatchObject({
+      stars: 0,
+      bpm: 199,
+      originalId: 42,
+      preferOriginal: false,
+    });
+    for (const [edition, poolId, slot, bid] of [
+      ["s6", "pool-2", "DT4", 2720295],
+      ["s5", "pool-3", "DT4", 2720295],
+      ["s5", "pool-2", "DT3", 2720295],
+      ["s5", "pool-2", "DT4", 42],
+    ] as const) {
+      const row = { ...map, slot, beatmapId: bid };
+      delete row.originalId;
+      const result = archivePoolMetadata(
+        { ...pool, id: poolId, maps: [row] },
+        edition,
+      ).pool.maps[0];
+      expect(result.originalId).toBeUndefined();
+      expect(result.preferOriginal).toBeUndefined();
+      expect(result.archivalSource).toBeUndefined();
+    }
+  });
   it("keeps the archived edit and records the original map separately", () => {
     const pool = archive("s10").pools.find((value) => value.id === "gs1");
     const map = pool?.maps.find((value) => value.slot === "NM6");

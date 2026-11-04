@@ -6,6 +6,21 @@ import { english } from "../../src/i18n/translate";
 vi.mock("../../src/i18n/shared", () => ({ useAppTranslations: () => english }));
 afterEach(() => vi.unstubAllGlobals());
 describe("archive edit destinations", () => {
+  it("uses an explicitly confirmed original even with a cached edit set and no provider 404", () => {
+    vi.stubGlobal("React", React);
+    const html = renderToStaticMarkup(
+      <BeatmapActions
+        beatmapId={2567502}
+        setId={1235093}
+        originalBeatmapId={2933979}
+        originalSetId={1424727}
+        preferOriginal
+      />,
+    );
+    expect(html).toContain('href="https://osu.ppy.sh/beatmaps/2933979"');
+    expect(html).toContain('href="osu://b/2933979"');
+    expect(html).toContain("Open original map");
+  });
   it.each([false, true])(
     "uses original links only for confirmed missing edits (%s)",
     (missing) => {

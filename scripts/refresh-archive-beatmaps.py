@@ -35,13 +35,20 @@ def extract(html, bid):
                 beatmapUpdatedAt=beatmap['last_updated'])
 
 
+def expected_ids():
+    ids = {m['beatmapId'] for name in ['s4', 's5', 's6-confirmed']
+           for p in json.loads((ROOT / f'docs/imports/{name}-archive.json').read_text())['pools']
+           for m in p['maps'] if m['beatmapId']}
+    supplements = json.loads((ROOT / 'src/data/archive-map-supplements.json').read_text())
+    ids.update(entry['originalId'] for rows in supplements.values() for entry in rows)
+    return sorted(ids)
+
+
 def main():
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument('--resume', action='store_true')
     args = parser.parse_args()
-    ids = sorted({m['beatmapId'] for name in ['s4', 's5', 's6-confirmed']
-                  for p in json.loads((ROOT / f'docs/imports/{name}-archive.json').read_text())['pools']
-                  for m in p['maps'] if m['beatmapId']})
+    ids = expected_ids()
     result = json.loads(OUTPUT.read_text()) if args.resume and OUTPUT.exists() else dict(maps={}, unavailable=[])
     result['unavailable'] = []
     result['pending'] = [bid for bid in ids if str(bid) not in result['maps']]

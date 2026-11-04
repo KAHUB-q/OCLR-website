@@ -759,9 +759,14 @@ export async function HistoricalArchiveView({
     const artwork =
       pool && display
         ? await archiveArtworkLookup(
-            pool.maps
+            display.pool.maps
               .flatMap((m) => [m.beatmapId, m.originalId ?? null])
-              .filter((id) => id !== null && !display.setIds[id]),
+              .filter(
+                (id) =>
+                  id !== null &&
+                  !display.setIds[id] &&
+                  !display.missingBeatmapIds.includes(id),
+              ),
           )
         : null;
     title = tr("Mappools");
@@ -771,7 +776,10 @@ export async function HistoricalArchiveView({
           key={pool.id}
           pool={display.pool}
           artworkSetIds={{ ...artwork?.setIds, ...display.setIds }}
-          missingBeatmapIds={artwork?.missingBeatmapIds}
+          missingBeatmapIds={[
+            ...display.missingBeatmapIds,
+            ...(artwork?.missingBeatmapIds ?? []),
+          ]}
           stages={a.pools.map((p) => ({
             id: p.id,
             name: p.name,

@@ -14,15 +14,16 @@ OUTPUT = ROOT / 'docs/imports/s5-archive.json'
 # Provenance for archived S5 edits whose official beatmap page is gone: the edit
 # stays in beatmapId, originalId points at the surviving source map players can
 # still open. Mirrors ORIGINAL_BEATMAP_IDS in the S6/S9/S10 builders (#420).
-ORIGINAL_BEATMAP_IDS = {2567502: 2933979, 2720295: 2678913, 2756449: 2755377}
+MAP_SUPPLEMENTS = json.loads((ROOT / 'src/data/archive-map-supplements.json').read_text())['s5']
+ORIGINAL_BEATMAP_IDS = {2756449: 2755377, **{
+    entry['beatmapId']: entry['originalId'] for entry in MAP_SUPPLEMENTS}}
 # The two edits without a surviving page have unpublished cells, so the editors'
 # own values fill them (organizer-confirmed 2026-10-29): DT4 is the 1.5x version of
 # 2678913 with AR 9 -> 8.5 and OD 8.5 -> 8 (hence stars 6.27 / bpm 210, and
 # drainSeconds 167 / 1.5 ~= 111), and NM4's cs/ar/od match 2755377. These are the
 # edits' values, not re-measured results.
 SUPPLEMENTAL_MAP_ATTRIBUTES = {
-    2720295: dict(mapper='Gaia', stars=6.27, bpm=210, drainSeconds=111,
-                  cs=4, ar=8.5, od=8),
+    **{entry['beatmapId']: entry['attributes'] for entry in MAP_SUPPLEMENTS},
     2756449: dict(cs=4, ar=9.4, od=8),
 }
 

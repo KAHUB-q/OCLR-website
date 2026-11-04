@@ -1,4 +1,5 @@
 import snapshot from "@/data/archive-beatmaps.json";
+import supplements from "@/data/archive-map-supplements.json";
 import type { HistoricalArchive } from "./historical-archive";
 
 type Pool = HistoricalArchive["pools"][number];
@@ -19,6 +20,9 @@ export type ArchiveDisplayMap = MapEntry & {
   supplemented?: Field[];
   metadataSource?: string;
   metadataFetchedAt?: string;
+  archivalSource?: string;
+  archivalSupplemented?: Field[];
+  preferOriginal?: boolean;
 };
 export type ArchiveDisplayPool = Omit<Pool, "maps"> & {
   maps: ArchiveDisplayMap[];
@@ -96,15 +100,41 @@ export function archivePoolMetadata(
 ): {
   pool: ArchiveDisplayPool;
   setIds: Record<number, number>;
+  missingBeatmapIds: number[];
 } {
   const setIds: Record<number, number> = {};
   const enabled = ["s4", "s5", "s6"].includes(editionSlug);
   return {
     setIds,
+    missingBeatmapIds: enabled
+      ? pool.maps.flatMap((map) =>
+          map.beatmapId && snapshot.unavailable.includes(map.beatmapId)
+            ? [map.beatmapId]
+            : [],
+        )
+      : [],
     pool: {
       ...pool,
       maps: pool.maps.map((map): ArchiveDisplayMap => {
         const result: ArchiveDisplayMap = { ...map };
+        // Existing saved/remote archives predate the import-package supplement.
+        // Apply only the confirmed edition/pool/slot/BID, without mutating it.
+        const correction =
+          editionSlug === "s5"
+            ? supplements.s5.find(
+                (entry) =>
+                  entry.poolId === pool.id &&
+                  entry.slot === map.slot &&
+                  entry.beatmapId === map.beatmapId,
+              )
+            : undefined;
+        if (correction) {
+          result.originalId ??= correction.originalId;
+          result.preferOriginal = result.originalId === correction.originalId;
+          result.archivalSource = correction.source;
+        }
+        const archivedAttributes: Partial<Pick<MapEntry, Field>> =
+          correction?.attributes ?? {};
         const metadata =
           enabled && map.beatmapId
             ? (snapshot.maps as Record<string, Snapshot>)[map.beatmapId]
@@ -116,6 +146,12 @@ export function archivePoolMetadata(
               : map[field] === null;
           if (!missing) continue;
           if (field === "title" || field === "mapper") result[field] = null;
+          const archivedValue = archivedAttributes[field];
+          if (archivedValue !== undefined) {
+            Object.assign(result, { [field]: archivedValue });
+            (result.archivalSupplemented ??= []).push(field);
+            continue;
+          }
           if (!metadata) continue;
           // Field/value pairs have the same schema in the archive and snapshot.
           Object.assign(result, { [field]: metadata[field] });
@@ -126,6 +162,12 @@ export function archivePoolMetadata(
           result.metadataSource = metadata.source;
           result.metadataFetchedAt = metadata.fetchedAt;
         }
+        const originalMetadata =
+          enabled && result.originalId
+            ? (snapshot.maps as Record<string, Snapshot>)[result.originalId]
+            : undefined;
+        if (originalMetadata)
+          setIds[originalMetadata.beatmapId] = originalMetadata.setId;
         return result;
       }),
     },

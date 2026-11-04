@@ -28,7 +28,7 @@
   outline-offset: 4px;
 }
 .score {
-  font-size: 1.5rem;
+  font-size: var(--text-heading);
   font-weight: 700;
   font-variant-numeric: tabular-nums;
   overflow-wrap: anywhere;
@@ -70,7 +70,7 @@
   min-width: 0;
   padding: 0.375rem 0.5rem;
   border-inline-start: 2px solid currentColor;
-  font-size: 0.875rem;
+  font-size: var(--text-small);
   line-height: 1.5;
 }
 .sequenceNumber {
@@ -201,7 +201,7 @@
   outline-offset: 3px;
 }
 .navNumber {
-  font-size: 0.75rem;
+  font-size: var(--text-label);
   font-variant-numeric: tabular-nums;
 }
 .stageContent {
@@ -226,11 +226,11 @@
 }
 .stageHeading h2 {
   margin: 0;
-  font-size: 1.5rem;
+  font-size: var(--text-heading);
 }
 .stageNumber {
   color: var(--site-muted);
-  font-size: 0.875rem;
+  font-size: var(--text-small);
   font-variant-numeric: tabular-nums;
 }
 @media (max-width: 900px) {
@@ -248,7 +248,7 @@
     gap: 0.25rem;
     padding: 0.5rem 0.25rem;
     text-align: center;
-    font-size: 0.875rem;
+    font-size: var(--text-small);
     border-inline-start: 0;
     border-bottom: 3px solid transparent;
   }
@@ -302,7 +302,7 @@
 }
 .ircMessage time,
 .ircMessage small {
-  font-size: 0.75rem;
+  font-size: var(--text-label);
   color: var(--site-muted);
 }
 .ircMessage code {
@@ -327,7 +327,7 @@
 .ircQuick button {
   padding: 0.5rem;
   min-height: 2.75rem;
-  font-size: 0.8125rem;
+  font-size: var(--text-support);
 }
 .columns {
   display: flex;
@@ -341,7 +341,7 @@
   margin-block: 1.25rem;
 }
 .poolGroup h3 {
-  font-size: 0.875rem;
+  font-size: var(--text-small);
   color: var(--site-muted);
   border-bottom: 1px solid var(--site-border);
   padding-bottom: 0.5rem;
@@ -360,7 +360,7 @@
 }
 .poolRow small {
   display: block;
-  font-size: 0.75rem;
+  font-size: var(--text-label);
   color: var(--site-muted);
 }
 .poolRow[data-selected="true"] {
@@ -373,7 +373,7 @@
   flex-shrink: 0;
 }
 .poolActions button {
-  font-size: 0.75rem;
+  font-size: var(--text-label);
   padding: 0.375rem 0.5rem;
   min-height: 2.5rem;
 }
@@ -400,7 +400,7 @@
   .stageNav a {
     padding: 0.5rem;
     gap: 0.375rem;
-    font-size: 0.875rem;
+    font-size: var(--text-small);
   }
 }
 @media (max-width: 700px) {
@@ -422,7 +422,7 @@
     height: min(12rem, 30dvh);
   }
   .irc > p {
-    font-size: 0.75rem;
+    font-size: var(--text-label);
   }
   .ircComposer {
     grid-template-columns: minmax(0, 1fr) auto;
@@ -473,7 +473,7 @@
   margin-top: 0.5rem;
   padding-top: 0.5rem;
   border-top: 1px solid var(--site-border);
-  font-size: 0.75rem;
+  font-size: var(--text-label);
   min-width: 0;
 }
 .mpSyncActions {
@@ -511,7 +511,7 @@
 .summaryHeading button {
   min-height: 2.75rem;
   padding: 0.375rem 0.75rem;
-  font-size: 0.75rem;
+  font-size: var(--text-label);
 }
 .summaryScore {
   display: grid;
@@ -531,7 +531,7 @@
 }
 .summaryTeam span {
   overflow-wrap: anywhere;
-  font-size: 0.9375rem;
+  font-size: var(--text-small);
   font-weight: 650;
 }
 .summaryTeam strong {
@@ -558,13 +558,13 @@
 }
 .scoreDivider {
   color: var(--site-muted);
-  font-size: 1.25rem;
+  font-size: var(--text-heading);
 }
 .summaryRows {
   margin: 0.5rem 0 0;
   display: grid;
   gap: 0.375rem;
-  font-size: 0.75rem;
+  font-size: var(--text-label);
 }
 .summaryRows > div {
   display: grid;
@@ -586,7 +586,7 @@
   width: 100%;
 }
 .recordControls > summary {
-  font-size: 0.875rem;
+  font-size: var(--text-small);
 }
 .workspace .poolGroup {
   margin-block: 0.75rem;
@@ -638,10 +638,10 @@
   min-height: 3rem;
 }
 .workspace .poolRow > div:first-child {
-  font-size: 0.8125rem;
+  font-size: var(--text-support);
 }
 .workspace .poolRow small {
-  font-size: 0.6875rem;
+  font-size: var(--text-label);
 }
 .workspace .poolActions {
   grid-template-columns: repeat(4, auto);
@@ -650,7 +650,7 @@
 .workspace .pool .poolActions button {
   padding: 0.25rem 0.375rem;
   min-height: 2rem;
-  font-size: 0.6875rem;
+  font-size: var(--text-label);
   border-radius: 0.375rem;
   white-space: nowrap;
 }
@@ -679,25 +679,25 @@
     padding: 0.5rem 0.625rem;
   }
   .summaryScore {
-    font-size: 0.75rem;
+    font-size: var(--text-label);
     gap: 0.5rem;
   }
   .summaryTeam strong {
-    font-size: 1.5rem;
+    font-size: var(--text-heading);
   }
   .summaryTeam span {
-    font-size: 0.8125rem;
+    font-size: var(--text-support);
   }
   .summaryTeam {
     padding-inline-start: 0.375rem;
   }
   .summaryHeading button {
-    font-size: 0.6875rem;
+    font-size: var(--text-label);
     padding-inline: 0.5rem;
   }
   .summaryRows {
     gap: 0.25rem;
-    font-size: 0.6875rem;
+    font-size: var(--text-label);
   }
   .summaryRows > div {
     grid-template-columns: 4rem minmax(0, 1fr);
@@ -713,7 +713,7 @@
   }
   .workspace .pool .poolActions button {
     padding-inline: 0.125rem;
-    font-size: 0.625rem;
+    font-size: var(--text-label);
     min-height: 1.75rem;
   }
 }
@@ -730,13 +730,13 @@
   min-width: 4rem;
   min-height: 44px;
   padding: 0.5rem 0.75rem;
-  font-size: 0.8125rem;
+  font-size: var(--text-support);
 }
 .irc .ircLaunchActions a {
   min-width: 0;
   min-height: 2rem;
   padding: 0.375rem 0.625rem;
-  font-size: 0.75rem;
+  font-size: var(--text-label);
   line-height: 1.25;
   white-space: nowrap;
   text-align: center;
@@ -762,10 +762,10 @@
 .ircConnection button,
 .ircConnection a {
   padding: 0.25rem 0.5rem;
-  font-size: 0.75rem;
+  font-size: var(--text-label);
 }
 .ircHelp {
-  font-size: 0.75rem;
+  font-size: var(--text-label);
 }
 .ircHelp[open] {
   max-height: 9rem;
@@ -776,7 +776,7 @@
   margin-block: 0.5rem;
 }
 .ircReceipts > summary {
-  font-size: 0.75rem;
+  font-size: var(--text-label);
 }
 
 .syncStatus {
@@ -785,7 +785,7 @@
   padding: 0.5rem;
   background: var(--site-tint);
   border-radius: 0.5rem;
-  font-size: 0.8125rem;
+  font-size: var(--text-support);
 }
 .syncStatus button {
   justify-self: start;

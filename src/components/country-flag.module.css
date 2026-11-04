@@ -22,6 +22,6 @@
   height: 100%;
   border: 1px solid currentColor;
   border-radius: 0.25rem;
-  font-size: 0.625rem;
+  font-size: var(--text-label);
   font-weight: 600;
 }

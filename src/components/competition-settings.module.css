@@ -17,7 +17,7 @@
   min-width: 0;
 }
 .columns h4 {
-  font-size: 1rem;
+  font-size: var(--text-body);
   margin: 0;
 }
 @media (max-width: 800px) {

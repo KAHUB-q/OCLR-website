@@ -9,7 +9,7 @@
 }
 .teams caption {
   text-align: start;
-  font-size: 1.15rem;
+  font-size: var(--text-heading);
   font-weight: 600;
   padding: 1rem 0;
 }
@@ -32,13 +32,13 @@
 .teams :global(.team-monogram) {
   width: 40px;
   height: 40px;
-  font-size: 1rem;
+  font-size: var(--text-body);
 }
 .teams :global(.actions) {
   gap: 0.5rem;
 }
 .teams button {
-  font-size: 0.875rem;
+  font-size: var(--text-small);
   padding: 0.4rem 0.75rem;
 }
 .groups :global(.group-assignment-grid) {

@@ -17,7 +17,7 @@
   gap: 0.5rem 1rem;
 }
 .header h2 {
-  font-size: 1.125rem;
+  font-size: var(--text-heading);
 }
 .actions {
   display: flex;
@@ -29,7 +29,7 @@
 .save {
   min-height: 44px;
   padding: 0.5rem 0.75rem;
-  font-size: 0.8125rem;
+  font-size: var(--text-support);
 }
 .description {
   line-height: 1.5;
@@ -44,7 +44,7 @@
   border-block: 1px solid var(--site-border);
 }
 .score {
-  font-size: 0.9375rem;
+  font-size: var(--text-small);
   font-weight: 650;
   font-variant-numeric: tabular-nums;
 }
@@ -67,12 +67,12 @@
   min-width: 0;
 }
 .attempt h3 {
-  font-size: 0.9375rem;
+  font-size: var(--text-small);
   line-height: 1.5;
 }
 .status {
   color: var(--site-secondary-text);
-  font-size: 0.8125rem;
+  font-size: var(--text-support);
 }
 .linkControls {
   display: flex;
@@ -85,7 +85,7 @@
   flex: 1 1 12rem;
   min-width: 0;
   gap: 0.25rem;
-  font-size: 0.8125rem;
+  font-size: var(--text-support);
 }
 .gameField select {
   min-height: 44px;

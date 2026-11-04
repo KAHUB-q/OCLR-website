@@ -112,7 +112,7 @@
   min-height: 32.1264px;
   padding: 0.24rem 0.9rem;
   min-width: 0;
-  font-size: 0.85rem;
+  font-size: var(--text-support);
   font-weight: 600;
 }
 .home-contact > span:last-child {
@@ -125,7 +125,7 @@
   width: 100%;
   min-height: 32.1264px;
   padding: 0.24rem 0.9rem;
-  font-size: 0.85rem;
+  font-size: var(--text-support);
   font-weight: 600;
   transition:
     transform 0.2s,
@@ -224,7 +224,7 @@ html[data-appearance="swiss-minimal"]
     display: none;
   }
   .home-full-name {
-    font-size: 0.75rem;
+    font-size: var(--text-label);
     letter-spacing: 0.08em;
   }
   .home-wordmark {
@@ -236,13 +236,13 @@ html[data-appearance="swiss-minimal"]
   .home-feature .home-contact {
     gap: 0.8rem;
     padding: 0.25rem 0.72rem;
-    font-size: 0.8rem;
+    font-size: var(--text-support);
   }
   .home-registration-link {
     min-height: 32.1264px;
     padding: 0.25rem 0.72rem;
     gap: 0.675rem;
-    font-size: 0.8rem;
+    font-size: var(--text-support);
   }
   .home-archive-section {
     padding-block: 2.5rem;
@@ -860,7 +860,7 @@ html[data-theme="dark"]
     min-height: 30px;
     padding: 0.2rem 0.6rem;
     gap: 0.45rem;
-    font-size: 0.74rem;
+    font-size: var(--text-label);
     line-height: 1.2;
   }
   .home-feature
@@ -977,7 +977,7 @@ html[data-theme="dark"]
   background: #f5eefff2;
   color: #4a3478;
   font-weight: 700;
-  font-size: 0.95rem;
+  font-size: var(--text-small);
   line-height: 1.3;
   text-align: center;
   box-shadow: 0 6px 18px #0b071b55;
@@ -1006,7 +1006,7 @@ html[data-theme="dark"]
   border-radius: 8px;
   background: #9b78d6;
   color: #fff;
-  font-size: 0.85rem;
+  font-size: var(--text-support);
   transition: background-color 0.15s ease;
 }
 .home-liru-chibi {
@@ -1117,7 +1117,7 @@ html[data-theme="dark"]
 }
 .home-liru-ask .home-liru-bubble {
   margin-top: -16px;
-  font-size: 0.9rem;
+  font-size: var(--text-small);
 }
 
 @media (prefers-reduced-motion: reduce) {

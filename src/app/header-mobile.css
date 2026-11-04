@@ -99,7 +99,7 @@
     display: block;
     margin: 0 12px 8px;
     color: var(--site-muted, #b5a1c9);
-    font-size: 0.75rem;
+    font-size: var(--text-label);
   }
   .site-header .site-preferences > div {
     position: static;
@@ -119,7 +119,7 @@
     box-shadow: none;
     border-radius: 8px;
     transform: none;
-    font-size: 0.875rem;
+    font-size: var(--text-small);
     font-weight: 500;
     white-space: normal;
   }

@@ -117,7 +117,7 @@ html[data-theme="dark"] .themed-site {
     gap: 0.4rem;
   }
   .main-nav > a {
-    font-size: 0.8rem;
+    font-size: var(--text-support);
   }
   .site-preferences {
     gap: 0.15rem;
@@ -205,7 +205,7 @@ html[data-theme="dark"] .themed-site {
   padding-block-start: 0.75rem;
 }
 .event-context {
-  --tournament-navigation-font-size: 0.95rem;
+  --tournament-navigation-font-size: var(--text-small);
   position: sticky;
   top: var(--tournament-header-height);
   z-index: 20;
@@ -478,7 +478,7 @@ html[data-theme="dark"] .themed-site {
   margin-bottom: 1rem;
 }
 .event-intro > .muted {
-  font-size: 1rem;
+  font-size: var(--text-body);
 }
 .event-intro .actions {
   margin-top: 1.75rem;
@@ -627,7 +627,7 @@ html[data-theme="dark"] .themed-site {
   gap: 0.75rem;
 }
 .public-match-round h2 {
-  font-size: 1.15rem;
+  font-size: var(--text-heading);
 }
 .public-tournament .public-match-card {
   padding: 1rem 1.2rem;
@@ -635,7 +635,7 @@ html[data-theme="dark"] .themed-site {
   min-width: 0;
 }
 .public-tournament .public-match-card h3 {
-  font-size: 0.9rem;
+  font-size: var(--text-small);
   margin: 0.5rem 0 0.8rem;
 }
 .public-tournament .public-match-card .match-meta {
@@ -646,7 +646,7 @@ html[data-theme="dark"] .themed-site {
   gap: 0.5rem;
 }
 .public-tournament .public-match-card .match-meta .eyebrow {
-  font-size: 0.65rem;
+  font-size: var(--text-label);
   letter-spacing: 0.08em;
 }
 .public-tournament .public-match-card .match-versus {
@@ -655,7 +655,7 @@ html[data-theme="dark"] .themed-site {
   align-items: center;
   gap: 0.75rem;
   margin: 0;
-  font-size: 0.9rem;
+  font-size: var(--text-small);
 }
 .public-tournament .public-match-card .match-versus > :last-child {
   text-align: right;
@@ -666,16 +666,16 @@ html[data-theme="dark"] .themed-site {
   border-radius: 0.65rem;
   padding: 0.25rem 0.65rem;
   font-variant-numeric: tabular-nums;
-  font-size: 1.1rem;
+  font-size: var(--text-body);
 }
 .public-tournament .match-time {
-  font-size: 0.8rem;
+  font-size: var(--text-support);
   margin: 1rem 0 0.3rem;
 }
 .match-public-details > summary {
   cursor: pointer;
   color: var(--site-accent);
-  font-size: 0.8rem;
+  font-size: var(--text-support);
   padding-block: 0.5rem;
   min-height: 44px;
   align-content: center;
@@ -805,12 +805,12 @@ html[data-theme="dark"] .themed-site {
   border: 1px solid var(--site-border);
   border-radius: 1rem;
   margin-bottom: 0.75rem;
-  font-size: 0.8rem;
+  font-size: var(--text-support);
   color: var(--site-muted);
 }
 .pool-summary strong {
   color: var(--site-accent);
-  font-size: 1.2rem;
+  font-size: var(--text-heading);
   font-variant-numeric: tabular-nums;
 }
 .map-browse-toolbar {
@@ -882,7 +882,7 @@ html[data-theme="dark"] .themed-site {
   padding: 0.1rem 0.5rem;
   background: var(--map-star, var(--site-muted));
   color: var(--map-star-ink, #ffffff);
-  font-size: 0.8rem;
+  font-size: var(--text-support);
   font-weight: 800;
   font-variant-numeric: tabular-nums;
   line-height: 1.35;
@@ -897,13 +897,13 @@ html[data-theme="dark"] .themed-site {
 }
 .map-card-copy .eyebrow {
   text-transform: none;
-  font-size: 0.65rem;
+  font-size: var(--text-label);
   letter-spacing: 0.06em;
   margin-bottom: 0.25rem;
 }
 .map-card-copy :is(h2, h3, h4, h5) {
   margin: 0 0 0.25rem;
-  font-size: 1rem;
+  font-size: var(--text-body);
 }
 .themed-site button.map-open-button {
   display: block;
@@ -918,7 +918,7 @@ html[data-theme="dark"] .themed-site {
   white-space: normal;
   overflow-wrap: anywhere;
   padding: 0;
-  font-size: 1.5rem;
+  font-size: var(--text-heading);
   min-height: 44px;
 }
 .themed-site button.map-open-button:is(:hover, :focus-visible, :active) {
@@ -935,7 +935,7 @@ html[data-theme="dark"] .themed-site {
   display: flex;
   flex-wrap: wrap;
   gap: 0.5rem;
-  font-size: 0.75rem;
+  font-size: var(--text-label);
   padding-top: 0;
   margin-top: 0.35rem;
 }
@@ -1071,7 +1071,7 @@ html[data-appearance]
   background: var(--map-star, var(--site-muted));
   box-shadow: none;
   color: var(--map-star-ink, #ffffff);
-  font-size: 1rem;
+  font-size: var(--text-body);
   font-weight: 800;
   line-height: 1.35;
   text-shadow: none;
@@ -1104,7 +1104,7 @@ html[data-appearance]
   box-shadow: none;
   color: var(--map-star-ink, #ffffff);
   font-family: inherit;
-  font-size: 0.8rem;
+  font-size: var(--text-support);
   font-weight: 800;
   letter-spacing: normal;
   line-height: 1.35;
@@ -1177,7 +1177,7 @@ html[data-appearance] .themed-site .map-browse-card--band .map-open-button {
 .map-browse-card--band .map-card-title {
   display: block;
   min-width: 0;
-  font-size: 1.5rem;
+  font-size: var(--text-heading);
   line-height: 1.3;
   overflow: hidden;
   white-space: nowrap;
@@ -1192,7 +1192,7 @@ html[data-appearance] .themed-site .map-browse-card--band .map-open-button {
   margin: 0;
   min-width: 0;
   color: var(--site-muted);
-  font-size: 0.8rem;
+  font-size: var(--text-support);
 }
 .map-card-artist,
 .map-card-mapper,
@@ -1207,7 +1207,7 @@ html[data-appearance] .themed-site .map-browse-card--band .map-open-button {
   right: 1.1rem;
   bottom: 0.85rem;
   color: var(--site-muted);
-  font-size: 0.8rem;
+  font-size: var(--text-support);
   line-height: 1.2;
 }
 .map-card-star {
@@ -1216,7 +1216,7 @@ html[data-appearance] .themed-site .map-browse-card--band .map-open-button {
   padding: 0.05rem 0.45rem;
   background: var(--map-star, var(--site-muted));
   color: var(--map-star-ink, #ffffff);
-  font-size: 0.8rem;
+  font-size: var(--text-support);
   font-weight: 800;
   font-variant-numeric: tabular-nums;
 }
@@ -1314,7 +1314,7 @@ html[data-appearance]
   background: var(--site-surface);
   box-shadow: 0 12px 30px var(--site-dialog-shadow);
   color: var(--site-muted);
-  font-size: 0.75rem;
+  font-size: var(--text-label);
   line-height: 1.45;
   text-align: left;
   opacity: 0;
@@ -1346,7 +1346,7 @@ html[data-appearance]
 }
 .map-mod-note {
   color: var(--site-muted);
-  font-size: 0.8rem;
+  font-size: var(--text-support);
 }
 .map-browse-card--band .map-mod-rating {
   margin: 0;
@@ -1354,7 +1354,7 @@ html[data-appearance]
   padding: 0.05rem 0.5rem;
   background: var(--site-tint);
   color: var(--site-muted);
-  font-size: 0.8rem;
+  font-size: var(--text-support);
 }
 .map-browse-card--band .map-card-copy > .beatmap-actions {
   position: absolute;
@@ -1408,13 +1408,13 @@ html[data-appearance]
 }
 .map-detail-identity h2 {
   margin: 0;
-  font-size: 1.25rem;
+  font-size: var(--text-heading);
   line-height: 1.4;
   overflow-wrap: anywhere;
 }
 .map-detail-identity p {
   margin: 0.25rem 0;
-  font-size: 0.85rem;
+  font-size: var(--text-support);
   overflow-wrap: anywhere;
 }
 .map-dialog > header {
@@ -1435,7 +1435,7 @@ html[data-appearance]
   border-block: 1px solid var(--site-border);
 }
 .map-dialog .archive-map-stats dd {
-  font-size: 1rem;
+  font-size: var(--text-body);
 }
 .beatmap-actions {
   display: flex;
@@ -1497,7 +1497,7 @@ html[data-appearance]
   }
 }
 .themed-site .mappool-map-title.map-open-button {
-  font-size: 0.875rem;
+  font-size: var(--text-small);
 }
 .themed-site .archive-map-list .archive-map-identity button.map-open-button {
   font-size: inherit;
@@ -1517,7 +1517,7 @@ html[data-appearance]
     height: 64px;
   }
   .map-detail-identity h2 {
-    font-size: 1.125rem;
+    font-size: var(--text-heading);
   }
   .map-dialog-body {
     padding: 1rem;
@@ -1536,13 +1536,13 @@ html[data-appearance]
   border-bottom: 1px solid var(--site-border);
 }
 .map-detail-grid dt {
-  font-size: 0.75rem;
+  font-size: var(--text-label);
   color: var(--site-muted);
 }
 .map-detail-grid dd {
   margin: 0.15rem 0 0;
   overflow-wrap: anywhere;
-  font-size: 0.85rem;
+  font-size: var(--text-support);
 }
 .map-dialog-navigation {
   display: flex;
@@ -1643,7 +1643,7 @@ body:has(dialog[open].map-dialog) {
 }
 .public-team-heading h2 {
   margin: 0 0 0.25rem;
-  font-size: 1.2rem;
+  font-size: var(--text-heading);
 }
 .team-monogram {
   display: grid;
@@ -1654,7 +1654,7 @@ body:has(dialog[open].map-dialog) {
   height: 52px;
   flex-shrink: 0;
   border-radius: 50%;
-  font-size: 1.15rem;
+  font-size: var(--text-heading);
   font-weight: 800;
 }
 .public-player-identity {
@@ -1696,7 +1696,7 @@ body:has(dialog[open].map-dialog) {
 }
 .team-standings th,
 .team-standings td {
-  font-size: 0.75rem;
+  font-size: var(--text-label);
   padding: 0.5rem;
 }
 .public-tournament .directory-details {
@@ -1759,7 +1759,7 @@ body:has(dialog[open].map-dialog) {
   align-items: center;
   gap: 0.65rem;
   min-height: 44px;
-  font-size: 0.85rem;
+  font-size: var(--text-support);
   padding: 0.5rem 0.65rem;
   border-radius: 0.65rem;
   color: var(--site-muted);
@@ -1767,7 +1767,7 @@ body:has(dialog[open].map-dialog) {
 .rules-handbook nav a span {
   flex-shrink: 0;
   white-space: nowrap;
-  font-size: 0.8rem;
+  font-size: var(--text-support);
   color: var(--site-accent);
 }
 .rules-handbook nav a:hover,
@@ -1793,7 +1793,7 @@ body:has(dialog[open].map-dialog) {
   display: flex;
   align-items: baseline;
   gap: 0.8rem;
-  font-size: 1.35rem;
+  font-size: var(--text-heading);
   line-height: 1.4;
 }
 :is(.rules-article, [data-handbook]) h2 span {
@@ -1890,7 +1890,7 @@ body:has(dialog[open].map-dialog) {
   margin: 0;
 }
 .public-tournament .mappool-release-heading h3 {
-  font-size: 1rem;
+  font-size: var(--text-body);
 }
 
 .public-tournament .mappool-category-heading > span {
@@ -2120,7 +2120,7 @@ html[data-theme="dark"] .themed-site {
   border-inline-start: 1px solid #ffffff50;
   padding-inline-start: 1rem;
   color: #eeebf6;
-  font-size: 0.8rem;
+  font-size: var(--text-support);
   font-weight: 500;
 }
 .hero-status::before {
@@ -2138,7 +2138,7 @@ html[data-theme="dark"] .themed-site {
 }
 .hero .hero-enrollment {
   margin: 0;
-  font-size: 0.85rem;
+  font-size: var(--text-support);
   color: #e0d9ea;
   max-width: 42rem;
 }
@@ -2256,7 +2256,7 @@ html[data-theme="dark"] .brand .oclr-wordmark {
 .countdown-units span {
   overflow-wrap: anywhere;
   color: var(--site-muted);
-  font-size: 0.75rem;
+  font-size: var(--text-label);
 }
 .countdown-date {
   display: block;
@@ -2304,7 +2304,7 @@ html[data-theme="dark"] .brand .oclr-wordmark {
 }
 .season-registration-facts h3 {
   margin: 0 0 0.5rem;
-  font-size: 1rem;
+  font-size: var(--text-body);
 }
 .season-registration .section-title h2,
 .season-stages .section-title h2 {
@@ -2342,14 +2342,14 @@ html[data-theme="dark"] .brand .oclr-wordmark {
 }
 .season-player-count span {
   color: var(--site-muted);
-  font-size: 0.875rem;
+  font-size: var(--text-small);
 }
 .season-eligibility {
   max-width: 65ch;
   overflow-wrap: anywhere;
 }
 .season-eligibility h3 {
-  font-size: 1rem;
+  font-size: var(--text-body);
   margin: 0 0 0.5rem;
 }
 .season-eligibility p {
@@ -2436,7 +2436,7 @@ html[data-theme="dark"] .brand .oclr-wordmark {
   flex: 0 0 auto;
   border: 2px solid var(--site-border);
   background: var(--site-surface);
-  font-size: 0.875rem;
+  font-size: var(--text-small);
 }
 .season-stages [data-next] .event-step {
   border-color: var(--site-accent);

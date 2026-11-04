@@ -17,7 +17,8 @@
   transform: translate(-50%, -50%);
 }
 /* A page transition takes visual priority over any still-pending local region. */
-:global(body:has(dialog[data-loading-overlay][open])) .mask[data-loading-region-overlay] {
+:global(body:has(dialog[data-loading-overlay][open]))
+  .mask[data-loading-region-overlay] {
   visibility: hidden;
 }
 @media (forced-colors: active) {

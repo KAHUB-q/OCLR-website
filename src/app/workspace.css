@@ -336,7 +336,7 @@
   width: 28px;
   height: 28px;
   border-radius: 7px;
-  font-size: 0.65rem;
+  font-size: var(--text-label);
   vertical-align: middle;
 }
 
@@ -346,7 +346,7 @@
 }
 .team-editor-dialog h2 {
   margin: 0;
-  font-size: 1.25rem;
+  font-size: var(--text-heading);
 }
 .team-editor-dialog .team-monogram {
   width: 100%;
@@ -420,7 +420,7 @@
 .settings-identity-meta {
   margin-inline-start: 0.75rem;
   color: var(--site-muted);
-  font-size: 0.75rem;
+  font-size: var(--text-label);
   font-weight: 400;
 }
 .general-settings > .settings-card {
@@ -489,7 +489,7 @@
 }
 .fixture-match-heading h3 {
   margin: 0;
-  font-size: 1rem;
+  font-size: var(--text-body);
   overflow-wrap: anywhere;
 }
 .fixture-match-heading p {
@@ -513,7 +513,7 @@
   display: block;
 }
 .fixture-versus {
-  font-size: 0.75rem;
+  font-size: var(--text-label);
   flex: 0 0 auto;
 }
 .fixture-summary p {
@@ -577,7 +577,7 @@
 }
 .source-match-facts dt {
   color: var(--site-muted);
-  font-size: 0.8rem;
+  font-size: var(--text-support);
 }
 .source-match-facts dd {
   margin: 0.2rem 0 0;
@@ -768,18 +768,18 @@
   overflow-wrap: anywhere;
 }
 .group-team-select strong {
-  font-size: 0.85rem;
+  font-size: var(--text-support);
 }
 .group-team-select small {
   color: var(--site-muted);
-  font-size: 0.75rem;
+  font-size: var(--text-label);
 }
 .group-team-select .team-monogram {
   width: 2rem;
   height: 2rem;
   flex-shrink: 0;
   border-radius: 0.4rem;
-  font-size: 0.75rem;
+  font-size: var(--text-label);
 }
 .themed-site .group-team-card :is(.group-team-grip, .group-team-return) {
   width: 2.75rem;

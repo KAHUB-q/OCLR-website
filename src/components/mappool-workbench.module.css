@@ -5,11 +5,11 @@
   min-width: 0;
 }
 .workbench h2 {
-  font-size: 1.15rem;
+  font-size: var(--text-heading);
   margin: 0 0 1rem;
 }
 .workbench h3 {
-  font-size: 1rem;
+  font-size: var(--text-body);
 }
 .importer {
   padding-bottom: 1.5rem;
@@ -157,7 +157,7 @@
 .composerHint {
   grid-column: 1 / -1;
   margin: 0;
-  font-size: 0.75rem;
+  font-size: var(--text-label);
 }
 .commentHeading {
   display: flex;
@@ -167,7 +167,7 @@
 }
 .commentHeading p {
   min-width: 0;
-  font-size: 0.75rem;
+  font-size: var(--text-label);
   line-height: 1.4;
   overflow-wrap: anywhere;
 }
@@ -253,13 +253,13 @@
   resize: vertical;
   min-height: 4.5rem;
   padding: 0.5rem;
-  font-size: 0.875rem;
+  font-size: var(--text-small);
 }
 .thread button,
 .promotion > button {
   min-height: 32px;
   padding: 0.25rem 0.5rem;
-  font-size: 0.875rem;
+  font-size: var(--text-small);
 }
 .promotion {
   flex: 0 1 auto;
@@ -295,7 +295,7 @@
   padding: 0.75rem;
 }
 .roundChoices legend {
-  font-size: 0.875rem;
+  font-size: var(--text-small);
   font-weight: 600;
 }
 .roundOptions {
@@ -330,7 +330,7 @@
 .candidateRounds button {
   min-height: 32px;
   padding: 0.25rem 0.5rem;
-  font-size: 0.875rem;
+  font-size: var(--text-small);
 }
 .roundPopover {
   position: fixed;
@@ -343,7 +343,7 @@
   background: var(--site-surface);
   color: var(--site-foreground);
   box-shadow: 0 0.75rem 2rem var(--site-shadow);
-  font-size: 0.875rem;
+  font-size: var(--text-small);
   line-height: 1.5;
 }
 .roundPopover:popover-open {
@@ -432,7 +432,7 @@
   flex: 1 1 auto;
 }
 .workbenchCard:global(.map-browse-card--band) :global(.map-card-title) {
-  font-size: 1.125rem;
+  font-size: var(--text-heading);
 }
 .workbenchCard:global(.map-browse-card--band) :global(.map-card-footer) {
   margin-top: 0;
@@ -444,7 +444,7 @@
   gap: 0.25rem 0.5rem;
   padding: 0 0.75rem 0.5rem;
   color: var(--site-muted);
-  font-size: 0.8125rem;
+  font-size: var(--text-support);
   overflow-wrap: anywhere;
 }
 .assignedRound {
@@ -463,7 +463,7 @@
   padding: 0.625rem 0;
   overflow-x: auto;
   scrollbar-width: thin;
-  font-size: 0.8125rem;
+  font-size: var(--text-support);
 }
 .workbenchCard:global(.map-browse-card--band) :global(.map-card-parameters) {
   display: flex;
@@ -480,7 +480,7 @@
 .workbenchCard:global(.map-browse-card--band) .attribution {
   flex-wrap: nowrap;
   max-width: 100%;
-  font-size: 0.75rem;
+  font-size: var(--text-label);
   white-space: nowrap;
 }
 .workbenchCard:global(.map-browse-card--band) .attribution a {
@@ -502,7 +502,7 @@
   position: relative;
   inset: auto;
   flex-shrink: 0;
-  font-size: 0.75rem;
+  font-size: var(--text-label);
 }
 .workbenchCard:global(.map-browse-card--band)
   :global(.map-slot-badge)
@@ -653,7 +653,7 @@
   color: var(--site-foreground);
   background: var(--site-surface);
   box-shadow: 0 0.75rem 2rem var(--site-shadow);
-  font-size: 0.875rem;
+  font-size: var(--text-small);
   line-height: 1.5;
 }
 .promotionHeading {
@@ -711,7 +711,7 @@
   background: var(--site-tint);
   color: var(--site-accent);
   padding: 0.2rem 0.65rem;
-  font-size: 0.8125rem;
+  font-size: var(--text-support);
 }
 .skillsetDialog {
   width: min(680px, calc(100% - 2rem));
@@ -773,7 +773,7 @@
 }
 .skillsetGroup legend {
   margin-bottom: 0.5rem;
-  font-size: 0.8125rem;
+  font-size: var(--text-support);
   color: var(--site-muted);
 }
 .skillsetChoices {
@@ -783,7 +783,7 @@
 .skillsetDialog .skillsetChoice {
   min-height: 36px;
   padding: 0.35rem 0.75rem;
-  font-size: 0.8125rem;
+  font-size: var(--text-support);
 }
 .skillsetDialog .skillsetChoice[aria-pressed="true"] {
   background: var(--site-primary);

@@ -309,10 +309,7 @@ html[data-appearance="frutiger-aero"] .themed-site .site-footer {
   box-shadow: none;
   color: var(--site-secondary-text);
 }
-html[data-appearance="frutiger-aero"]
-  .themed-site
-  .site-footer
-  .footer-credit {
+html[data-appearance="frutiger-aero"] .themed-site .site-footer .footer-credit {
   color: var(--site-accent);
   text-decoration-color: color-mix(
     in srgb,
@@ -534,9 +531,7 @@ html[data-appearance="frutiger-aero"]
   text-decoration-thickness: 2px;
   text-underline-offset: 0.22em;
 }
-html[data-appearance="frutiger-aero"]
-  .themed-site
-  button.map-open-button {
+html[data-appearance="frutiger-aero"] .themed-site button.map-open-button {
   display: flex;
   align-items: center;
   min-height: 44px;
@@ -569,9 +564,7 @@ html[data-appearance="frutiger-aero"]
   text-underline-offset: 0.2em;
   transform: none;
 }
-html[data-appearance="frutiger-aero"]
-  .themed-site
-  button.statistics-player {
+html[data-appearance="frutiger-aero"] .themed-site button.statistics-player {
   min-height: 44px;
   padding: 0.25rem 0;
   border: 0;
@@ -932,7 +925,7 @@ html[data-appearance="frutiger-aero"] .themed-site .map-slot-badge {
     var(--frutiger-blue)
   );
   color: var(--frutiger-on-blue);
-  font-size: 0.8rem;
+  font-size: var(--text-support);
   font-weight: 800;
   line-height: 1.15;
   letter-spacing: -0.02em;
@@ -1041,7 +1034,7 @@ html[data-appearance="frutiger-aero"] .themed-site .notice {
     min-height: 44px;
     /* Keep the short code plus padding inside the mobile circle. */
     padding-inline: 0.3rem;
-    font-size: 0.72rem;
+    font-size: var(--text-label);
   }
 }
 

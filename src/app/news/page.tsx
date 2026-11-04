@@ -26,7 +26,9 @@ async function Issue271Page() {
                 <p className="eyebrow news-kind">{publicNewsKind(a, tr)}</p>
                 <p className="muted small">
                   {a.future ? tr("Scheduled for ") : ""}
-                  {tr(formatDate(a.at, a.timeZone, tr.locale))}
+                  <time dateTime={a.at}>
+                    {tr(formatDate(a.at, a.timeZone, tr.locale))}
+                  </time>
                 </p>
               </div>
               <div>

@@ -16,13 +16,13 @@ html[data-appearance] .themed-site .archive-overview-summary .archive-counts {
 
 /* The old theme cards drew a decorative top rule; each bar now carries it. */
 html[data-appearance]
-.themed-site
-.archive-overview-summary
-.archive-counts::before,
+  .themed-site
+  .archive-overview-summary
+  .archive-counts::before,
 html[data-appearance]
-.themed-site
-.archive-overview-summary
-.archive-counts::after {
+  .themed-site
+  .archive-overview-summary
+  .archive-counts::after {
   content: none;
   display: none;
 }
@@ -37,31 +37,31 @@ html[data-appearance] .themed-site .archive-overview-summary .archive-count {
   padding: 0.65rem 1rem 0.65rem 1.15rem;
   overflow: hidden;
   border: 1px solid
-  color-mix(in srgb, var(--site-accent) 24%, var(--site-border));
+    color-mix(in srgb, var(--site-accent) 24%, var(--site-border));
   border-radius: var(--archive-bar-radius);
   background: var(--site-surface);
   box-shadow: 0 1px 0 color-mix(in srgb, var(--site-border) 55%, transparent);
   color: inherit;
   font: inherit;
   transition:
-          background-color 160ms ease,
-          border-color 160ms ease,
-          box-shadow 160ms ease,
-          transform 160ms ease;
+    background-color 160ms ease,
+    border-color 160ms ease,
+    box-shadow 160ms ease,
+    transform 160ms ease;
 }
 
 html[data-appearance]
-.themed-site
-.archive-overview-summary
-.archive-count[data-link] {
+  .themed-site
+  .archive-overview-summary
+  .archive-count[data-link] {
   cursor: pointer;
 }
 
 /* A slim theme-accent edge keeps each bar recognisably in its appearance. */
 html[data-appearance]
-.themed-site
-.archive-overview-summary
-.archive-count::before {
+  .themed-site
+  .archive-overview-summary
+  .archive-count::before {
   content: "";
   position: absolute;
   inset: 0 auto 0 0;
@@ -75,7 +75,7 @@ html[data-appearance]
 html[data-appearance] .themed-site .archive-overview-summary .archive-count dt {
   min-width: 0;
   color: var(--site-secondary-text);
-  font-size: 0.95rem;
+  font-size: var(--text-small);
   font-weight: 600;
   line-height: 1.4;
   overflow-wrap: anywhere;
@@ -95,21 +95,21 @@ html[data-appearance] .themed-site .archive-overview-summary .archive-count dd {
 
 /* Stretch the link across the whole bar so the row is the click target. */
 html[data-appearance]
-.themed-site
-.archive-overview-summary
-.archive-count
-dd
-a {
+  .themed-site
+  .archive-overview-summary
+  .archive-count
+  dd
+  a {
   color: inherit;
   text-decoration: none;
 }
 
 html[data-appearance]
-.themed-site
-.archive-overview-summary
-.archive-count
-dd
-a::after {
+  .themed-site
+  .archive-overview-summary
+  .archive-count
+  dd
+  a::after {
   content: "";
   position: absolute;
   inset: 0;
@@ -117,61 +117,61 @@ a::after {
 }
 
 html[data-appearance]
-.themed-site
-.archive-overview-summary
-.archive-count
-dd
-a:focus-visible {
+  .themed-site
+  .archive-overview-summary
+  .archive-count
+  dd
+  a:focus-visible {
   outline: none;
 }
 
 html[data-appearance]
-.themed-site
-.archive-overview-summary
-.archive-count:focus-within {
+  .themed-site
+  .archive-overview-summary
+  .archive-count:focus-within {
   outline: 2px solid var(--site-accent);
   outline-offset: 2px;
 }
 
 @media (hover: hover) {
   html[data-appearance]
-  .themed-site
-  .archive-overview-summary
-  .archive-count[data-link]:hover {
+    .themed-site
+    .archive-overview-summary
+    .archive-count[data-link]:hover {
     border-color: color-mix(
-            in srgb,
-            var(--site-accent) 68%,
-            var(--site-border)
+      in srgb,
+      var(--site-accent) 68%,
+      var(--site-border)
     );
     background: color-mix(in srgb, var(--site-tint) 76%, var(--site-surface));
     box-shadow: 0 7px 18px -12px
-    color-mix(in srgb, var(--site-accent) 60%, transparent);
+      color-mix(in srgb, var(--site-accent) 60%, transparent);
     transform: translateY(-2px);
   }
 
   html[data-appearance]
-  .themed-site
-  .archive-overview-summary
-  .archive-count[data-link]:hover::before {
+    .themed-site
+    .archive-overview-summary
+    .archive-count[data-link]:hover::before {
     opacity: 1;
   }
 
   html[data-appearance]
-  .themed-site
-  .archive-overview-summary
-  .archive-count[data-link]:hover
-  dd {
+    .themed-site
+    .archive-overview-summary
+    .archive-count[data-link]:hover
+    dd {
     color: var(--site-accent);
   }
 }
 
 html[data-appearance]
-.themed-site
-.archive-overview-summary
-.archive-count[data-link]:active {
+  .themed-site
+  .archive-overview-summary
+  .archive-count[data-link]:active {
   background: var(--site-tint);
   box-shadow: inset 0 2px 4px
-  color-mix(in srgb, var(--site-accent) 18%, transparent);
+    color-mix(in srgb, var(--site-accent) 18%, transparent);
   transform: translateY(0) scale(0.99);
 }
 
@@ -183,9 +183,9 @@ html:is(
     [data-appearance="retro-arcade"],
     [data-appearance="graphite-arena"]
   )
-.themed-site
-.archive-overview-summary
-.archive-counts {
+  .themed-site
+  .archive-overview-summary
+  .archive-counts {
   --archive-bar-radius: 0.12rem;
 }
 
@@ -195,9 +195,9 @@ html:is(
     [data-appearance="sakura-circuit"],
     [data-appearance="orbital-pulse"]
   )
-.themed-site
-.archive-overview-summary
-.archive-counts {
+  .themed-site
+  .archive-overview-summary
+  .archive-counts {
   --archive-bar-radius: 999px;
 }
 
@@ -206,44 +206,44 @@ html:is(
     [data-appearance="prism-overture"],
     [data-appearance="frost-waltz"]
   )
-.themed-site
-.archive-overview-summary
-.archive-counts {
+  .themed-site
+  .archive-overview-summary
+  .archive-counts {
   --archive-bar-radius: 1.15rem;
 }
 
 html[data-appearance="claymorphism"]
-.themed-site
-.archive-overview-summary
-.archive-count {
+  .themed-site
+  .archive-overview-summary
+  .archive-count {
   box-shadow:
-          inset 0 1px 0 rgb(255 255 255 / 60%),
-          0 8px 16px -12px rgb(0 0 0 / 45%);
+    inset 0 1px 0 rgb(255 255 255 / 60%),
+    0 8px 16px -12px rgb(0 0 0 / 45%);
 }
 
 html[data-appearance="manga-halftone"]
-.themed-site
-.archive-overview-summary
-.archive-count,
+  .themed-site
+  .archive-overview-summary
+  .archive-count,
 html[data-appearance="retro-arcade"]
-.themed-site
-.archive-overview-summary
-.archive-count {
+  .themed-site
+  .archive-overview-summary
+  .archive-count {
   border-width: 2px;
   box-shadow: 3px 3px 0 color-mix(in srgb, var(--site-accent) 55%, transparent);
 }
 
 html[data-appearance="skyline-pop"]
-.themed-site
-.archive-overview-summary
-.archive-count {
+  .themed-site
+  .archive-overview-summary
+  .archive-count {
   box-shadow: 0 3px 0 color-mix(in srgb, var(--site-accent) 40%, transparent);
 }
 
 html[data-appearance="glassmorphism"]
-.themed-site
-.archive-overview-summary
-.archive-count {
+  .themed-site
+  .archive-overview-summary
+  .archive-count {
   background: color-mix(in srgb, var(--site-surface) 72%, transparent);
   -webkit-backdrop-filter: blur(10px);
   backdrop-filter: blur(10px);
@@ -252,14 +252,14 @@ html[data-appearance="glassmorphism"]
 @media (prefers-reduced-motion: reduce) {
   html[data-appearance] .themed-site .archive-overview-summary .archive-count,
   html[data-appearance]
-  .themed-site
-  .archive-overview-summary
-  .archive-count::before,
+    .themed-site
+    .archive-overview-summary
+    .archive-count::before,
   html[data-appearance]
-  .themed-site
-  .archive-overview-summary
-  .archive-count
-  dd {
+    .themed-site
+    .archive-overview-summary
+    .archive-count
+    dd {
     transition: none;
   }
 }
@@ -287,8 +287,8 @@ html:is(
     [data-appearance="glacier-blue"],
     [data-appearance="skyline-pop"]
   )
-.themed-site
-.archive-overview-summary
-.archive-counts {
+  .themed-site
+  .archive-overview-summary
+  .archive-counts {
   --archive-bar-radius: 0;
 }

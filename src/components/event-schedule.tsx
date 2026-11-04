@@ -353,7 +353,7 @@ export function EventSchedule({
                       >
                         {m.label ?? `#${m.id}`}
                       </a>
-                      <small>{m.time}</small>
+                      <time>{m.time}</time>
                       {m.roomOpenedAt && (
                         <small>
                           {tr("MP room opened")} · {m.roomOpenedAt}

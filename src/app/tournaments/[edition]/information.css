@@ -13,7 +13,7 @@
   background: linear-gradient(100deg, var(--site-tint), var(--site-surface));
   box-shadow: 0 8px 28px var(--site-shadow);
   color: var(--site-foreground);
-  font-size: 0.85rem;
+  font-size: var(--text-support);
 }
 .information-active:hover {
   border-color: var(--site-accent);
@@ -49,14 +49,14 @@
 .information-document {
   min-width: 0;
   overflow-wrap: anywhere;
-  font-size: 0.92rem;
+  font-size: var(--text-small);
   line-height: 1.85;
 }
 .information-heading {
   margin-bottom: 1.5rem;
 }
 .information-heading .eyebrow {
-  font-size: 0.68rem;
+  font-size: var(--text-label);
   color: var(--site-muted);
   letter-spacing: 0.12em;
   margin: 0 0 0.6rem;
@@ -109,7 +109,7 @@
   margin-top: 2.8rem;
 }
 .information-document h2 {
-  font-size: 1.5rem;
+  font-size: var(--text-heading);
   font-weight: 650;
   line-height: 1.5;
   margin: 0 0 1.2rem;
@@ -118,7 +118,7 @@
   letter-spacing: -0.02em;
 }
 .information-document h3 {
-  font-size: 1.05rem;
+  font-size: var(--text-body);
   font-weight: 700;
   margin: 1.5rem 0 0.7rem;
 }
@@ -146,7 +146,7 @@
 .information-document table {
   border-collapse: collapse;
   width: 100%;
-  font-size: 0.84rem;
+  font-size: var(--text-support);
   line-height: 1.7;
   margin: 0;
 }
@@ -178,13 +178,13 @@
   max-width: none;
   color: var(--site-muted);
   margin: -0.6rem 0 0.8rem;
-  font-size: 0.75rem;
+  font-size: var(--text-label);
   text-align: right;
 }
 .information-place {
   display: inline-block;
   margin-right: 0.7rem;
-  font-size: 0.8rem;
+  font-size: var(--text-support);
   font-weight: 800;
   font-variant-numeric: tabular-nums;
   color: var(--site-accent);
@@ -229,7 +229,7 @@
   overflow-y: auto;
 }
 .information-contents h2 {
-  font-size: 0.8rem;
+  font-size: var(--text-support);
   font-weight: 750;
   margin: 0 0 1.2rem;
 }
@@ -242,7 +242,7 @@
   display: flex;
   gap: 0.65rem;
   padding: 0.4rem 0;
-  font-size: 0.78rem;
+  font-size: var(--text-support);
   color: var(--site-muted);
   line-height: 1.5;
 }
@@ -251,14 +251,14 @@
 }
 .information-contents a > span {
   color: var(--site-accent);
-  font-size: 0.65rem;
+  font-size: var(--text-label);
   padding-top: 0.15rem;
 }
 .information-contents ul {
   padding-left: 1.6rem;
 }
 .information-contents ul a {
-  font-size: 0.72rem;
+  font-size: var(--text-label);
 }
 .information-contents .information-back-top {
   margin-top: 1.5rem;
@@ -289,7 +289,7 @@ html[data-appearance="swiss-minimal"]
     gap: 0.6rem;
   }
   .information-active-detail {
-    font-size: 0.72rem;
+    font-size: var(--text-label);
   }
   .information-active-action {
     width: 100%;
@@ -321,23 +321,23 @@ html[data-appearance="swiss-minimal"]
     display: none;
   }
   .information-contents a {
-    font-size: 0.75rem;
+    font-size: var(--text-label);
   }
   .information-document {
     width: 100%;
-    font-size: 0.86rem;
+    font-size: var(--text-small);
   }
   .information-banner {
     aspect-ratio: 2.8 / 1;
   }
   .information-document h2 {
-    font-size: 1.3rem;
+    font-size: var(--text-heading);
   }
   .public-tournament .information-document :is(th, td) {
     padding: 0.6rem 0.65rem;
   }
   .information-document table {
-    font-size: 0.78rem;
+    font-size: var(--text-support);
   }
   .information-document td:first-child {
     min-width: 6rem;
@@ -357,7 +357,7 @@ html[data-appearance="swiss-minimal"]
 }
 .information-document[data-handbook] {
   grid-template-columns: minmax(0, 1fr);
-  font-size: 1rem;
+  font-size: var(--text-body);
   line-height: 1.85;
 }
 .information-document[data-handbook] > section + section {
@@ -365,7 +365,7 @@ html[data-appearance="swiss-minimal"]
   padding-top: 2rem;
 }
 .information-document[data-handbook] h2 {
-  font-size: 1.35rem;
+  font-size: var(--text-heading);
   padding-bottom: 0;
   border-bottom: 0;
 }
@@ -387,14 +387,14 @@ html[data-appearance="swiss-minimal"]
   align-items: baseline;
   min-height: 44px;
   padding: 0.5rem 0;
-  font-size: 0.85rem;
+  font-size: var(--text-support);
 }
 .public-tournament .information-contents a > span {
   flex-shrink: 0;
-  font-size: 0.7rem;
+  font-size: var(--text-label);
 }
 .public-tournament .information-contents ul a {
-  font-size: 0.8rem;
+  font-size: var(--text-support);
 }
 html[data-appearance="cute-pastel"] .public-tournament .information-layout {
   grid-template-columns: minmax(0, 1fr) 240px;
@@ -585,7 +585,7 @@ html[data-appearance="cute-pastel"] .public-tournament .information-layout {
   margin-top: 2rem;
 }
 .public-tournament .information-overview-details table {
-  font-size: 0.875rem;
+  font-size: var(--text-small);
 }
 
 .information-banner.information-winter-banner {

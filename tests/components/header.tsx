@@ -22,6 +22,10 @@ import "../../src/app/frost-theme.css";
 import "../../src/app/archive-counts.css";
 import "../../src/app/header-mobile.css";
 import { useState } from "react";
+import { EventPlayers } from "../../src/components/event-players";
+import { SeasonCountdown } from "../../src/components/season-countdown";
+import "../../src/app/tournaments/[edition]/event-pages.css";
+import "../../src/app/home.css";
 import { TournamentShell } from "../../src/components/tournament-navigation";
 import { createRoot } from "react-dom/client";
 import { NextIntlClientProvider } from "next-intl";
@@ -64,6 +68,51 @@ function Harness() {
   const content = (
     <main style={{ minHeight: 2600, padding: 24 }}>
       <h1>Synthetic header preview</h1>
+      {params.has("typography") && (
+        <>
+          <EventPlayers
+            remote
+            preview
+            edition="synthetic"
+            players={[
+              {
+                id: 1,
+                name: "中文選手",
+                team: null,
+                captain: false,
+                rank: 12345,
+                pp: 4000,
+                bio: "中文自我介紹，確認小字保持清晰。",
+                messages: [{ author: "合成資料", text: "中文留言內容" }],
+              },
+            ]}
+          />
+          <div className="news-list">
+            <article>
+              <div>
+                <p className="muted small">
+                  <time dateTime="2026-10-22T00:00:00+08:00">
+                    2026/10/22 00:00 (UTC+8)
+                  </time>
+                </p>
+              </div>
+              <div>
+                <h2>新聞標題</h2>
+              </div>
+            </article>
+          </div>
+          <SeasonCountdown
+            registration={{
+              opensAt: "2026-11-26T20:00:00+08:00",
+              closesAt: "2026-11-30T20:00:00+08:00",
+              opensLabel: "2026年11月26日 20:00 (UTC+8)",
+              closesLabel: "2026年11月30日 20:00 (UTC+8)",
+            }}
+            state="upcoming"
+            initialNow={Date.parse("2026-11-01T12:00:00Z")}
+          />
+        </>
+      )}
       <a href="#content">Page content</a>
       <button type="button" data-route-change onClick={() => setPath("/news")}>
         Synthetic route change

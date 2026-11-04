@@ -23,7 +23,7 @@ export function PageHeading({
   title,
   children,
 }: {
-  eyebrow?: string;
+  eyebrow?: ReactNode;
   title: string;
   children?: ReactNode;
 }) {

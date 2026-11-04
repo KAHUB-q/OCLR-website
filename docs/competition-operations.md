@@ -583,3 +583,8 @@ map-source provenance. Existing stages and records remain unchanged; existing
 map entries have no inferred historical source. Apply through the approved
 migration workflow before running the new app; this feature does not authorize
 production migration or deployment.
+
+Referee countdowns accept integer seconds from 1 through 3600 (or an unset
+value). Round settings, generated commands, IRC queue validation and timer
+acknowledgements share this range (#801). Existing out-of-range settings must
+be corrected before saving or sending a countdown.

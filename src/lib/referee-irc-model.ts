@@ -1,4 +1,8 @@
 import { z } from "zod";
+import {
+  refereeCountdownMaxSeconds,
+  validRefereeCountdown,
+} from "./referee-commands";
 const line = (max: number) =>
   z
     .string()
@@ -105,6 +109,8 @@ export const normalizedIrcUsername = (name: string) =>
   name.trim().replace(/\s+/g, "_").toLowerCase();
 /** One line, existing room only. Credentials, arbitrary IRC verbs and room creation are not remotely executable. */
 export function allowedIrcCommand(text: string) {
+  const countdown = /^!mp (?:timer|start) (\d+)$/.exec(text);
+  if (countdown && !validRefereeCountdown(Number(countdown[1]))) return false;
   return /^(?:!mp map [1-9]\d{0,9}(?: [0-3])?|!mp mods (?:None|(?:NF|EZ|HD|HR|DT|HT|NC|FL|FI|SD|PF|SO|MR|[1-9]K|Freemod)(?: (?:NF|EZ|HD|HR|DT|HT|NC|FL|FI|SD|PF|SO|MR|[1-9]K|Freemod))*)|!mp set [0-3] [0-3] (?:[1-9]|1[0-6])|!mp (?:invite|addref) [A-Za-z0-9_\[\]-]{1,50}|!mp (?:timer|start) [1-9]\d{0,3}|!mp (?:abort|aborttimer))$/.test(
     text,
   );
@@ -168,7 +174,8 @@ export function confirmsIrcCommand(
     const seconds =
       Number(countdown[1]) * (countdown[2] === "minute" ? 60 : 1) +
       Number(countdown[3] ?? 0);
-    if (seconds === Number(timer[1]) && seconds <= 3600) return true;
+    if (seconds === Number(timer[1]) && seconds <= refereeCountdownMaxSeconds)
+      return true;
   }
   const addref = /^!mp addref ([A-Za-z0-9_\[\]-]{1,50})$/.exec(text);
   const added = /^Added (.+) to the match referees\.?$/.exec(evidence.text);

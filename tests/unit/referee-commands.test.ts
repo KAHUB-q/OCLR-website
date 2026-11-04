@@ -346,21 +346,28 @@ describe("referee command generation", () => {
     ).toBe("!mp addref A_B");
     expect(input.settings.streamerUsername).toBe("Caster Name");
   });
-  it.each([0, -1, 1.5, NaN, Infinity, Number.MAX_SAFE_INTEGER + 1])(
-    "rejects invalid seconds %s",
-    (timerSeconds) => {
-      expect(
-        refereeSettingsSchema.safeParse({ ...input.settings, timerSeconds })
-          .success,
-      ).toBe(false);
-      expect(
-        command(
-          { ...input, settings: { ...input.settings, timerSeconds } },
-          "timer",
-        ),
-      ).toBeNull();
-    },
-  );
+  it.each([
+    0,
+    -1,
+    1.5,
+    3601,
+    9999,
+    10000,
+    NaN,
+    Infinity,
+    Number.MAX_SAFE_INTEGER + 1,
+  ])("rejects invalid seconds %s", (timerSeconds) => {
+    expect(
+      refereeSettingsSchema.safeParse({ ...input.settings, timerSeconds })
+        .success,
+    ).toBe(false);
+    expect(
+      command(
+        { ...input, settings: { ...input.settings, timerSeconds } },
+        "timer",
+      ),
+    ).toBeNull();
+  });
   it("does not tie start countdown to timer changes", () => {
     expect(
       command(

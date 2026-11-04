@@ -7,7 +7,10 @@ import {
   type RefereePolicy,
   type RefereeMap,
 } from "@/lib/referee-model";
-import { type RefereeCommandPolicy } from "@/lib/referee-commands";
+import {
+  refereeCountdownMaxSeconds,
+  type RefereeCommandPolicy,
+} from "@/lib/referee-commands";
 import {
   standardRefereeCategoryMods,
   s11RefereeSteps,
@@ -407,6 +410,7 @@ export function RefereePolicyEditor({
               <input
                 type="number"
                 min={1}
+                max={refereeCountdownMaxSeconds}
                 value={durations[key]}
                 onChange={(e) =>
                   setDurations((d) => ({ ...d, [key]: e.target.value }))
@@ -414,6 +418,7 @@ export function RefereePolicyEditor({
               />
             </label>
           ))}
+          <p className="muted small">1–{refereeCountdownMaxSeconds}</p>
           <button type="submit">{tr("Save round referee policy")}</button>
         </fieldset>
         {error && <p role="alert">{error}</p>}

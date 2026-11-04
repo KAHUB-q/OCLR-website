@@ -1,4 +1,5 @@
 import { describe, it, expect } from "vitest";
+import { refereePolicySchema } from "../../src/lib/referee-model";
 import {
   allowedIrcCommand,
   allowedMakeCommand,
@@ -9,6 +10,44 @@ import {
   relaySchema,
 } from "../../src/lib/referee-irc-model";
 describe("IRC relay boundary", () => {
+  it.each([1, 90, 3600, 3601, 9999, 10000])(
+    "uses one countdown range for policy, queue and timer receipt: %s",
+    (seconds) => {
+      const valid = seconds <= 3600;
+      const policy = {
+        steps: [
+          {
+            kind: "pick",
+            actor: "firstPick",
+            categories: [],
+            entryIds: [],
+            avoidRepeatCategory: false,
+            tiedAt: null,
+          },
+        ],
+        commands: {
+          roomSize: 4,
+          noFail: true,
+          categoryMods: {},
+          banSeconds: seconds,
+          pickSeconds: seconds,
+          prepareSeconds: seconds,
+          startSeconds: seconds,
+        },
+      };
+      expect(refereePolicySchema.safeParse(policy).success).toBe(valid);
+      for (const kind of ["timer", "start"] as const) {
+        expect(allowedIrcCommand(`!mp ${kind} ${seconds}`)).toBe(valid);
+      }
+      expect(
+        confirmsIrcCommand(`!mp timer ${seconds}`, "#mp_123", {
+          sender: "BanchoBot",
+          target: "#mp_123",
+          text: `Countdown ends in ${seconds} seconds`,
+        }),
+      ).toBe(valid);
+    },
+  );
   it.each([
     ["!mp mods NF Freemod", "Disabled all mods, enabled FreeMod"],
     ["!mp mods NF DT Freemod", "Enabled DoubleTime, enabled FreeMod"],

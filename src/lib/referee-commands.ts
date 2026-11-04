@@ -9,11 +9,17 @@ const singleLine = (limit: number) =>
     .refine((value) => !/[\p{Cc}\p{Cf}\u2028\u2029]/u.test(value), {
       message: "Use a single line without control characters.",
     });
+export const refereeCountdownMaxSeconds = 3600;
+export const validRefereeCountdown = (value: unknown): value is number =>
+  typeof value === "number" &&
+  Number.isInteger(value) &&
+  value >= 1 &&
+  value <= refereeCountdownMaxSeconds;
 const seconds = z
   .number()
   .int()
   .positive()
-  .max(Number.MAX_SAFE_INTEGER)
+  .max(refereeCountdownMaxSeconds)
   .nullable();
 export const refereeSettingsSchema = z
   .object({
@@ -261,7 +267,7 @@ export function refereeCommands(input: RefereeCommandInput): RefereeCommand[] {
     }),
     command(
       "timer",
-      positiveInteger(settings.timerSeconds)
+      validRefereeCountdown(settings.timerSeconds)
         ? `!mp timer ${settings.timerSeconds}`
         : null,
       "Choose a positive timer duration.",
@@ -284,7 +290,7 @@ export function refereeCommands(input: RefereeCommandInput): RefereeCommand[] {
     ),
     command(
       "start",
-      positiveInteger(startSeconds) ? `!mp start ${startSeconds}` : null,
+      validRefereeCountdown(startSeconds) ? `!mp start ${startSeconds}` : null,
       "Configure the independent start countdown first.",
     ),
     command("abort", "!mp abort", null),

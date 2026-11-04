@@ -15,6 +15,7 @@ import {
   editionState,
   fixtures,
   fixtureStreams,
+  fixtureCommentators,
   memberships,
   scheduleRequests,
   scheduleEvents,
@@ -148,6 +149,72 @@ describe.skipIf(!url)("private schedule negotiation #591", () => {
     );
     return r;
   }
+  it.each(["referee", "streamer", "commentator"] as const)(
+    "reports simultaneous bookings across referee and %s roles in both directions",
+    async (role) => {
+      const [first] = await db()
+        .select()
+        .from(fixtures)
+        .where(eq(fixtures.id, id));
+      const [second] = await db()
+        .insert(fixtures)
+        .values({
+          editionSlug: slug,
+          roundId: first.roundId,
+          label: "C vs D",
+          position: 2,
+          scheduledAt: new Date(official),
+          timeZone: "Asia/Taipei",
+          publishedAt: new Date(),
+        })
+        .returning();
+      await db()
+        .insert(fixtureReferees)
+        .values({
+          fixtureId: id,
+          userId: other.osuId,
+          assignedBy: admin.osuId,
+        });
+      const table =
+        role === "referee"
+          ? fixtureReferees
+          : role === "streamer"
+            ? fixtureStreams
+            : fixtureCommentators;
+      await db()
+        .insert(table)
+        .values({
+          fixtureId: second.id,
+          userId: other.osuId,
+          source: "staff",
+          assignedBy: admin.osuId,
+        });
+      const conflicts = async () =>
+        (await scheduleWorkspace(admin, slug)).fixtures.map(
+          (fixture) => fixture.sameStart,
+        );
+      expect(await conflicts()).toEqual([[second.label], [first.label]]);
+      await db()
+        .update(table)
+        .set({ userId: player.osuId })
+        .where(eq(table.fixtureId, second.id));
+      expect(await conflicts()).toEqual([[], []]);
+      await db()
+        .update(table)
+        .set({ userId: other.osuId })
+        .where(eq(table.fixtureId, second.id));
+      await db()
+        .update(fixtures)
+        .set({ scheduledAt: new Date(proposed) })
+        .where(eq(fixtures.id, second.id));
+      expect(await conflicts()).toEqual([[], []]);
+      await db()
+        .update(fixtures)
+        .set({ scheduledAt: new Date(official), status: "cancelled" })
+        .where(eq(fixtures.id, second.id));
+      expect(await conflicts()).toEqual([[], []]);
+    },
+  );
   it("only changes the official time after two captains and independent staff approval; retry is idempotent", async () => {
     await db()
       .insert(fixtureStreams)

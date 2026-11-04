@@ -1,0 +1,24 @@
+/* One content column for ordinary pages, event content and header controls.
+ * A wider surface may override --content-max on the shared site shell. */
+:root {
+  --content-max: 77.5rem;
+  --gutter: clamp(1rem, 2vw, 3rem);
+}
+html[data-appearance] .themed-site .site-header .nav-wrap {
+  width: min(var(--content-max), calc(100% - 2 * var(--gutter)));
+  max-width: var(--content-max);
+  padding-inline: 0;
+}
+
+/* The glass board may extend into the gutters; its inner text uses the same
+ * column as the header, including on phones where the board fills the width. */
+html[data-appearance="glassmorphism"] .themed-site > main#main {
+  width: min(calc(var(--content-max) + 2 * var(--gutter) + 2px), 100%);
+  margin-inline: auto;
+}
+@media (max-width: 760px) {
+  .themed-site .site-header .mobile-menu-backdrop {
+    left: calc((100% - 100vw) / 2);
+    width: 100vw;
+  }
+}

@@ -11,6 +11,7 @@ import type { AppearanceScope } from "@/lib/appearance-scope";
 import type { Appearance } from "@/lib/preferences";
 import { getAppTranslations } from "@/i18n/server";
 import type { Metadata } from "next";
+import "./content-layout.css";
 import { isStaff } from "@/lib/auth/staff";
 import { hasStreamingMenuAccess } from "@/lib/streaming-api";
 import { hasDeveloperAccess } from "@/lib/developer-api";

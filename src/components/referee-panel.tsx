@@ -925,6 +925,7 @@ export function RefereePanel({
                     className={styles.poolGroup}
                     key={category}
                     aria-label={category}
+                    data-mod={category}
                   >
                     <h3>
                       {(
@@ -960,7 +961,7 @@ export function RefereePanel({
                             data-selected={ircSelection?.entryId === m.id}
                           >
                             <div>
-                              <strong>
+                              <strong className={styles.mapCode}>
                                 {m.category}
                                 {m.position}
                               </strong>{" "}

@@ -54,6 +54,7 @@ const bundle = await build({
     "tests/components/player-id-badge.tsx",
     "tests/components/player-profile-cover.tsx",
     "tests/components/player-profile-no-cover.tsx",
+    "tests/components/backup-manager.tsx",
   ],
   alias: { "next/image": resolve("tests/components/next-image.ts") },
   external: ["/rookie-stage.svg", "/themes/*", "/fonts/*", "/branding/*"],
@@ -220,8 +221,11 @@ createServer((request, response) => {
                     : request.url?.startsWith("/country-flags")
                       ? "country-flags"
                       : entry;
+    const fixtureName = request.url?.startsWith("/backup-manager")
+      ? "backup-manager"
+      : fixture;
     response.end(
-      `<!doctype html><html><head><meta name="viewport" content="width=device-width, initial-scale=1"><link rel="stylesheet" href="/${fixture}.css"></head><body><div id="root"></div><script nonce="${nonce}" src="/${fixture}.js"></script></body></html>`,
+      `<!doctype html><html><head><meta name="viewport" content="width=device-width, initial-scale=1"><link rel="stylesheet" href="/${fixtureName}.css"></head><body><div id="root"></div><script nonce="${nonce}" src="/${fixtureName}.js"></script></body></html>`,
     );
   }
 }).listen(

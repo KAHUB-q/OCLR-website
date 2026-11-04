@@ -174,7 +174,10 @@ export function BackupManager() {
             {job.state === "validated" && (
               <button
                 className="button secondary"
-                onClick={() => setSelected(job)}
+                onClick={() => {
+                  setConfirmation("");
+                  setSelected(job);
+                }}
               >
                 {tr("Review restore")}
               </button>
@@ -214,7 +217,10 @@ export function BackupManager() {
             </button>
             <button
               className="button secondary"
-              onClick={() => setSelected(null)}
+              onClick={() => {
+                setConfirmation("");
+                setSelected(null);
+              }}
             >
               {tr("Cancel")}
             </button>

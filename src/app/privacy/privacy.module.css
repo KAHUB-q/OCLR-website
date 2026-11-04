@@ -6,10 +6,10 @@
 }
 .page h2 {
   margin: 1.35rem 0 0.45rem;
-  font-size: 1.15rem;
+  font-size: var(--text-heading);
 }
 .page p {
   margin: 0.5rem 0;
-  font-size: 0.95rem;
+  font-size: var(--text-small);
   line-height: 1.7;
 }

@@ -56,7 +56,7 @@ const bundle = await build({
     "tests/components/player-profile-no-cover.tsx",
   ],
   alias: { "next/image": resolve("tests/components/next-image.ts") },
-  external: ["/rookie-stage.svg", "/themes/*", "/fonts/*"],
+  external: ["/rookie-stage.svg", "/themes/*", "/fonts/*", "/branding/*"],
   bundle: true,
   write: false,
   outdir: "component-bundle",

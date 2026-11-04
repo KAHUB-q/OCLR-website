@@ -15,7 +15,7 @@
   flex-wrap: wrap;
 }
 .chess-workspace > header p {
-  font-size: 0.875rem;
+  font-size: var(--text-small);
   color: var(--color-muted);
 }
 .chess-controls {
@@ -44,7 +44,7 @@
   box-sizing: border-box;
 }
 .chess-workspace h1 {
-  font-size: 1.25rem;
+  font-size: var(--text-heading);
   margin: 0;
   font-weight: 800;
 }
@@ -126,7 +126,7 @@
     padding: 8px;
   }
   .chess-workspace > header p {
-    font-size: 0.75rem;
+    font-size: var(--text-label);
   }
   .chess-palette {
     flex-wrap: nowrap;
@@ -197,7 +197,7 @@
   }
   .chess-workspace > .chess-toolbar {
     gap: 8px;
-    font-size: 0.875rem;
+    font-size: var(--text-small);
   }
   .chess-workspace > header {
     align-items: center;

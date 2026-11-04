@@ -1,5 +1,5 @@
 .card {
-  --stat-label-size: 0.85rem;
+  --stat-label-size: var(--text-support);
   --stat-value-size: 1.35rem;
 
   display: flex;
@@ -398,7 +398,7 @@
   box-shadow:
     0 2px 7px rgb(0 0 0 / 35%),
     inset 0 1px 0 rgb(255 255 255 / 14%);
-  font-size: 1.45rem;
+  font-size: var(--text-heading);
   font-variant-numeric: tabular-nums;
   font-weight: 750;
   line-height: 1;

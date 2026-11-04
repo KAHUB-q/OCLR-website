@@ -16,7 +16,7 @@
   color: var(--site-muted, var(--color-muted));
   cursor: help;
   font-family: Georgia, "Times New Roman", serif;
-  font-size: 0.75rem;
+  font-size: var(--text-label);
   font-style: italic;
   font-weight: 700;
   line-height: 1;
@@ -45,7 +45,7 @@
   background: var(--site-surface, var(--color-panel));
   box-shadow: 0 14px 34px var(--site-panel-shadow, rgb(0 0 0 / 28%));
   color: var(--site-muted, var(--color-muted));
-  font-size: 0.82rem;
+  font-size: var(--text-support);
   font-weight: 400;
   line-height: 1.6;
   text-align: left;

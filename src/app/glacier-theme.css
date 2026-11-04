@@ -278,7 +278,7 @@ html[data-appearance="glacier-blue"]
 }
 html[data-appearance="glacier-blue"] .themed-site .archive-counts dt {
   color: var(--site-muted);
-  font-size: 0.9rem;
+  font-size: var(--text-small);
   font-weight: 500;
   line-height: 1.6;
 }

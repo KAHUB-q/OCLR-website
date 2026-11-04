@@ -33,7 +33,7 @@
   padding: 0.4rem 0.75rem;
   border-radius: 1.25rem;
   color: var(--site-muted);
-  font-size: 0.8rem;
+  font-size: var(--text-support);
   text-decoration: none;
 }
 .views a[aria-current="page"] {
@@ -72,7 +72,7 @@
   justify-content: center;
   min-width: 28px;
   min-height: 28px;
-  font-size: 1rem;
+  font-size: var(--text-body);
 }
 .card :global(.public-player-identity) {
   flex: 1;
@@ -83,7 +83,7 @@
   line-height: 1.35;
 }
 .card :global(.public-player-identity p) {
-  font-size: 0.7rem;
+  font-size: var(--text-label);
   margin: 0.15rem 0 0;
 }
 .card :global(.avatar) {
@@ -93,7 +93,7 @@
   color: var(--site-accent-strong);
 }
 .card :global(.context-link) {
-  font-size: 0.85rem;
+  font-size: var(--text-support);
 }
 .stats {
   margin-bottom: 0.5rem;
@@ -105,7 +105,7 @@
   margin: 0.25rem 0 0;
 }
 .stats dt {
-  font-size: 0.7rem;
+  font-size: var(--text-label);
   color: var(--site-muted);
 }
 .stats dl > div {
@@ -116,7 +116,7 @@
 }
 .stats dd {
   margin: 0;
-  font-size: 1rem;
+  font-size: var(--text-body);
   line-height: 1.35;
   font-weight: 700;
   font-variant-numeric: tabular-nums;
@@ -128,14 +128,14 @@
   gap: 0.25rem 0.65rem;
   border-top: 1px solid var(--site-border);
   padding-top: 0.45rem;
-  font-size: 0.7rem;
+  font-size: var(--text-label);
 }
 .footer :global(.badge) {
-  font-size: 0.65rem;
+  font-size: var(--text-label);
   padding: 0.1rem 0.4rem;
 }
 .footer :global(.context-link) {
-  font-size: 0.7rem;
+  font-size: var(--text-label);
   min-height: 1.75rem;
 }
 .status {
@@ -179,11 +179,11 @@
   min-width: 0;
 }
 .row :global(.public-player-identity p) {
-  font-size: 0.65rem;
+  font-size: var(--text-label);
   margin: 0.15rem 0 0;
 }
 .row :global(.public-player-identity .text-link) {
-  font-size: 0.85rem;
+  font-size: var(--text-support);
 }
 .row :global(.avatar) {
   flex-shrink: 0;
@@ -219,7 +219,7 @@
   gap: 0.25rem;
 }
 .row .stats dd {
-  font-size: 0.95rem;
+  font-size: var(--text-small);
 }
 .row .footer {
   grid-column: 3;

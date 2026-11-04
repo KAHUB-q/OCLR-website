@@ -360,7 +360,7 @@ html[data-appearance="claymorphism"]
 }
 @media (min-width: 951px) and (max-width: 1000px) {
   html[data-appearance="claymorphism"] .themed-site .main-nav > a {
-    font-size: 0.78rem;
+    font-size: var(--text-support);
   }
 }
 @media (max-width: 950px) {

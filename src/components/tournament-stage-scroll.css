@@ -30,7 +30,7 @@
   width: 44px;
   height: 44px;
   min-height: 44px;
-  font-size: 1rem;
+  font-size: var(--text-body);
   padding: 0;
   border: 0;
   border-radius: 50%;
@@ -131,7 +131,7 @@
   width: 30px;
   flex: 0 0 30px;
   color: var(--site-muted);
-  font-size: 0.8rem;
+  font-size: var(--text-support);
   font-variant-numeric: tabular-nums;
   letter-spacing: 0.06em;
 }
@@ -150,12 +150,12 @@
 }
 .stage-scroll-title h2 {
   margin: 0;
-  font-size: 1.05rem;
+  font-size: var(--text-body);
   font-weight: 650;
   overflow-wrap: anywhere;
 }
 .stage-scroll-status {
-  font-size: 0.65rem;
+  font-size: var(--text-label);
   color: var(--site-muted);
 }
 .is-current .stage-scroll-status {
@@ -165,12 +165,12 @@
 .stage-scroll-copy p {
   margin: 0.25rem 0 0;
   color: var(--site-muted);
-  font-size: 0.75rem;
+  font-size: var(--text-label);
   line-height: 1.5;
 }
 .stage-scroll-action {
   flex: none;
-  font-size: 0.78rem;
+  font-size: var(--text-support);
   color: var(--site-accent);
   font-weight: 600;
   padding: 0.65rem 0;
@@ -209,7 +209,7 @@ html[data-appearance="swiss-minimal"]
     gap: 0.3rem 0.6rem;
   }
   .stage-scroll-title h2 {
-    font-size: 0.95rem;
+    font-size: var(--text-small);
   }
   .stage-scroll-action {
     grid-column: 2;
@@ -261,7 +261,7 @@ html[data-appearance="swiss-minimal"]
   h3 {
   margin: 0;
   padding: 0;
-  font-size: 1.05rem;
+  font-size: var(--text-body);
   line-height: 1.5;
 }
 .themed-site
@@ -272,7 +272,7 @@ html[data-appearance="swiss-minimal"]
   p {
   margin: 0.25rem 0 0;
   padding: 0;
-  font-size: 0.75rem;
+  font-size: var(--text-label);
   line-height: 1.5;
 }
 @media (max-width: 600px) {
@@ -282,6 +282,6 @@ html[data-appearance="swiss-minimal"]
     article.information-document
     .stage-scroll
     h3 {
-    font-size: 0.95rem;
+    font-size: var(--text-small);
   }
 }

@@ -223,7 +223,7 @@ html[data-appearance="manga-halftone"]
   background: var(--site-surface);
   color: var(--site-foreground);
   font-family: var(--manga-display);
-  font-size: 0.95rem;
+  font-size: var(--text-small);
   font-weight: 700;
   font-synthesis-weight: none;
   letter-spacing: 0.08em;
@@ -637,7 +637,7 @@ html[data-appearance="manga-halftone"]
 }
 @media (min-width: 951px) and (max-width: 1000px) {
   html[data-appearance="manga-halftone"] .themed-site .main-nav > a {
-    font-size: 0.78rem;
+    font-size: var(--text-support);
   }
 }
 @media (max-width: 950px) {
@@ -908,7 +908,7 @@ html[data-appearance="manga-halftone"] .themed-site .map-slot-badge {
   background: var(--site-primary);
   color: var(--site-on-primary);
   font-family: var(--manga-display);
-  font-size: 1.05rem;
+  font-size: var(--text-body);
   font-weight: 400;
   letter-spacing: 0.06em;
 }
@@ -1051,7 +1051,7 @@ html[data-appearance="manga-halftone"]
   background: var(--site-surface);
   color: var(--site-foreground);
   font-family: var(--manga-display);
-  font-size: 0.95rem;
+  font-size: var(--text-small);
   font-synthesis-weight: none;
   letter-spacing: 0.1em;
 }

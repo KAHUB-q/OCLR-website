@@ -34,7 +34,14 @@ async function Issue271Page({ params }: { params: Promise<{ slug: string }> }) {
       <div className="spaced">
         <p className="eyebrow news-kind">{publicNewsKind(item, tr)}</p>
         <PageHeading
-          eyebrow={`${item.future ? tr("Scheduled for ") : ""}${tr(formatDate(item.at, item.timeZone, tr.locale))}`}
+          eyebrow={
+            <>
+              {item.future ? tr("Scheduled for ") : ""}
+              <time dateTime={item.at}>
+                {tr(formatDate(item.at, item.timeZone, tr.locale))}
+              </time>
+            </>
+          }
           title={item.title}
         >
           {item.summary}

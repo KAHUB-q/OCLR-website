@@ -32,7 +32,7 @@
   background: var(--site-raised, #fff);
   color: var(--site-foreground, #172033);
   box-shadow: 0 12px 32px #0003;
-  font-size: 0.875rem;
+  font-size: var(--text-small);
   line-height: 1.65;
   overflow-wrap: anywhere;
 }

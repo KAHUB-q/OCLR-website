@@ -94,10 +94,10 @@
   --fc-classic-button-outline: var(--site-focus);
 }
 .schedule-calendar .schedule-calendar-root {
-  font-size: 0.8125rem;
+  font-size: var(--text-support);
 }
 .schedule-calendar .schedule-calendar-title {
-  font-size: 1rem;
+  font-size: var(--text-body);
 }
 .schedule-calendar .schedule-official {
   font-weight: 700;
@@ -160,7 +160,7 @@
 }
 .schedule-forms .zoned-date-input legend {
   padding: 0 0.25rem;
-  font-size: 0.8125rem;
+  font-size: var(--text-support);
   font-weight: 600;
 }
 

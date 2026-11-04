@@ -930,7 +930,7 @@ html[data-appearance="frutiger-aero"] .themed-site .map-slot-badge {
     var(--frutiger-blue)
   );
   color: var(--frutiger-on-blue);
-  font-size: 0.8rem;
+  font-size: var(--text-support);
   font-weight: 800;
   line-height: 1.15;
   letter-spacing: -0.02em;
@@ -1039,7 +1039,7 @@ html[data-appearance="frutiger-aero"] .themed-site .notice {
     min-height: 44px;
     /* Keep the short code plus padding inside the mobile circle. */
     padding-inline: 0.3rem;
-    font-size: 0.72rem;
+    font-size: var(--text-label);
   }
 }
 

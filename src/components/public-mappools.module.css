@@ -59,7 +59,7 @@
   justify-content: space-between;
   margin-bottom: 1rem;
   color: var(--site-muted);
-  font-size: 0.8rem;
+  font-size: var(--text-support);
 }
 
 .context p {
@@ -82,7 +82,7 @@
   margin: 0;
   padding-bottom: 0.75rem;
   border-bottom: 1px solid var(--site-border);
-  font-size: 1.05rem;
+  font-size: var(--text-body);
   overflow-wrap: anywhere;
 }
 
@@ -116,7 +116,7 @@
   border: 0;
   border-radius: 0;
   background: transparent;
-  font-size: 0.8rem;
+  font-size: var(--text-support);
 }
 
 .browse .summary strong {
@@ -201,7 +201,7 @@
 }
 
 .browse .card :global(.map-card-title) {
-  font-size: 1.05rem;
+  font-size: var(--text-body);
 }
 
 .browse .card :global(.map-card-mode) {
@@ -229,7 +229,7 @@
   .browse .viewControl:global(.map-view-control) button {
     min-height: 44px;
     padding-inline: 0.45rem;
-    font-size: 0.8rem;
+    font-size: var(--text-support);
   }
 
   .viewControl svg {
@@ -266,7 +266,7 @@
     left: 0.2rem;
     max-width: calc(100% - 0.4rem);
     padding-inline: 0.25rem;
-    font-size: 0.7rem;
+    font-size: var(--text-label);
   }
 
   .browse .card :global(.map-card-id-icon) {

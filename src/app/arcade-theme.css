@@ -254,7 +254,7 @@ html[data-appearance="retro-arcade"]
     .public-team-card h2,
     .news-list h2
   ) {
-  font-size: 24px;
+  font-size: var(--text-heading);
 }
 /* Content: body copy, tables, form fields and authored titles also use the
  * pixel face (contributor review asked for pixel type throughout). Bold text
@@ -289,7 +289,7 @@ html[data-appearance="retro-arcade"]
     .event-bracket-round a,
     .event-bracket-round small
   ) {
-  font-size: 12px;
+  font-size: var(--text-label);
 }
 /* Interface chrome: navigation, tabs, keys, menus, badges and labels use the
  * 12px pixel face at its native size. Form fields and beatmap titles/artists
@@ -320,13 +320,13 @@ html[data-appearance="retro-arcade"]
     .map-detail-identity .eyebrow
   ) {
   font-family: var(--arcade-label-font);
-  font-size: 12px;
+  font-size: var(--text-label);
   font-weight: 400;
   font-synthesis: none;
 }
 html[data-appearance="retro-arcade"] .themed-site .pool-summary strong {
   font-family: var(--arcade-label-font);
-  font-size: 24px;
+  font-size: var(--text-heading);
   font-weight: 400;
 }
 @media (max-width: 640px) {

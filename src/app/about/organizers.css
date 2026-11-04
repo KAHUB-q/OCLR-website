@@ -7,7 +7,7 @@
 }
 .organizer-heading .eyebrow {
   color: var(--site-muted);
-  font-size: 0.72rem;
+  font-size: var(--text-label);
   letter-spacing: 0.12em;
   margin: 0 0 1rem;
 }
@@ -29,7 +29,7 @@
   top: 6rem;
 }
 .organizer-sidebar h2 {
-  font-size: 0.8rem;
+  font-size: var(--text-support);
   font-weight: 600;
   color: var(--site-muted);
   margin: 0 0 1rem;
@@ -45,14 +45,14 @@
 .organizer-sidebar a {
   display: block;
   padding: 0.6rem 1rem;
-  font-size: 0.9rem;
+  font-size: var(--text-small);
   border-left: 2px solid transparent;
   margin-left: -1px;
 }
 .organizer-sidebar ol ol a {
   padding-left: 2rem;
   color: var(--site-muted);
-  font-size: 0.82rem;
+  font-size: var(--text-support);
 }
 .organizer-sidebar a:hover {
   border-left-color: var(--site-accent);
@@ -81,7 +81,7 @@
 }
 .organizer-group h3 {
   margin: 0 0 1.3rem;
-  font-size: 1.1rem;
+  font-size: var(--text-body);
   font-weight: 600;
 }
 .organizer-page .organizer-people {
@@ -100,14 +100,14 @@
 }
 .organizer-people :is(h3, h4) {
   color: var(--site-accent);
-  font-size: 1.05rem;
+  font-size: var(--text-body);
   font-weight: 600;
   margin: 0 0 0.4rem;
   overflow-wrap: anywhere;
 }
 .organizer-people p {
   color: var(--site-muted);
-  font-size: 0.8rem;
+  font-size: var(--text-support);
   line-height: 1.7;
   margin: 0;
 }
@@ -116,10 +116,10 @@
   justify-content: space-between;
   align-items: start;
   gap: 1.5rem;
-  font-size: 0.8rem;
+  font-size: var(--text-support);
 }
 .organizer-contact h2 {
-  font-size: 1rem;
+  font-size: var(--text-body);
   margin-bottom: 0.8rem;
 }
 .organizer-contact p {
@@ -168,7 +168,7 @@
     padding-left: 0.5rem;
   }
   .organizer-directory h2 {
-    font-size: 1.45rem;
+    font-size: var(--text-heading);
   }
   .organizer-page .organizer-people {
     gap: 1.5rem 1rem;
@@ -199,7 +199,7 @@
   border: 1px solid var(--site-border);
   background: var(--site-tint);
   color: var(--site-muted);
-  font-size: 1.15rem;
+  font-size: var(--text-heading);
   font-weight: 500;
   letter-spacing: 0.03em;
 }

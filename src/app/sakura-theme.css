@@ -146,7 +146,7 @@ html[data-appearance="sakura-circuit"] .themed-site .archive-counts > div {
   padding: 16px 24px;
 }
 html[data-appearance="sakura-circuit"] .themed-site .archive-counts dt {
-  font-size: 0.9rem;
+  font-size: var(--text-small);
   font-weight: 600;
 }
 html[data-appearance="sakura-circuit"] .themed-site .archive-counts dd {

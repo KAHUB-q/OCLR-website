@@ -35,7 +35,7 @@
 
 .head h3 {
   margin: 0;
-  font-size: 1rem;
+  font-size: var(--text-body);
   line-height: 1.5;
 }
 
@@ -57,7 +57,7 @@
 
 .facts dt {
   margin: 0;
-  font-size: 0.75rem;
+  font-size: var(--text-label);
   color: var(--site-muted, var(--color-muted));
 }
 
@@ -72,7 +72,7 @@
 
 .details > summary {
   cursor: pointer;
-  font-size: 0.85rem;
+  font-size: var(--text-support);
   color: var(--site-muted, var(--color-muted));
 }
 

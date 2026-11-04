@@ -197,7 +197,7 @@ html[data-appearance="prism-overture"]
 }
 html[data-appearance="prism-overture"] .themed-site .archive-counts dt {
   min-width: 0;
-  font-size: 0.9rem;
+  font-size: var(--text-small);
   font-weight: 600;
 }
 html[data-appearance="prism-overture"] .themed-site .archive-counts dd {

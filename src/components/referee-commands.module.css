@@ -23,7 +23,7 @@ details > .stack {
   display: grid;
   gap: 0.35rem;
   min-width: 0;
-  font-size: 0.85rem;
+  font-size: var(--text-support);
   font-weight: 600;
 }
 .timers {
@@ -50,7 +50,7 @@ details > .stack {
   max-width: 100%;
   min-height: 2.75rem;
   font-family: monospace;
-  font-size: 0.85rem;
+  font-size: var(--text-support);
   line-height: 1.4;
   overflow-wrap: anywhere;
   resize: vertical;
@@ -107,11 +107,11 @@ details > .stack {
   font-weight: 400;
 }
 .compactCommand .commandField > span:first-child {
-  font-size: 0.75rem;
+  font-size: var(--text-label);
   color: var(--site-muted);
 }
 .inlineCommand {
-  font-size: 0.875rem;
+  font-size: var(--text-small);
   font-family: monospace;
   line-height: 1.5;
   color: var(--site-foreground);
@@ -151,7 +151,7 @@ details > .stack {
 }
 .setupSettings > summary {
   color: var(--site-muted);
-  font-size: 0.875rem;
+  font-size: var(--text-small);
 }
 .setupSettings > div {
   margin-top: 1rem;
@@ -170,7 +170,7 @@ details > .stack {
 }
 .commandModule h4 {
   margin: 0 0 0.75rem;
-  font-size: 0.875rem;
+  font-size: var(--text-small);
 }
 .moduleColumns {
   display: grid;
@@ -184,7 +184,7 @@ details > .stack {
   padding-inline-start: 1.5rem;
   border-inline-start: 1px solid var(--site-border);
   color: var(--site-muted);
-  font-size: 0.8125rem;
+  font-size: var(--text-support);
   line-height: 1.6;
   min-width: 0;
 }
@@ -224,7 +224,7 @@ details > .stack {
 }
 .settings dt {
   color: var(--site-muted);
-  font-size: 0.875rem;
+  font-size: var(--text-small);
 }
 .settings dd {
   margin: 0;

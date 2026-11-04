@@ -103,22 +103,23 @@ test.describe("referee command workspace", () => {
     await page.goto(
       `/admin/tournaments/test-cup/matches/${seeded.fixtureId}/referee`,
     );
-    const toggle = page.getByRole("checkbox", {
-      name: /Declare EX for this pick/,
-    });
-    await toggle.click();
+    await page.getByRole("button", { name: "Declare EX", exact: true }).click();
     await expect
       .poll(async () =>
         (await read()).projection.activeSelections.some((p) => p.exMode),
       )
       .toBe(true);
     await page.reload();
-    await expect(toggle).toBeChecked();
+    await expect(
+      page.getByRole("button", { name: "Cancel EX", exact: true }),
+    ).toHaveAttribute("aria-pressed", "true");
     const current = await read();
     const pickId = current.projection.lastSelectionId!;
     await action({ action: "start_attempt", pickId });
     await page.reload();
-    await expect(toggle).toHaveCount(0);
+    await expect(
+      page.getByRole("button", { name: /^(Declare|Cancel) EX$/ }),
+    ).toHaveCount(0);
     const started = await read();
     const late = await context.request.patch(endpoint, {
       headers: { Origin: baseURL! },
@@ -251,7 +252,15 @@ test.describe("referee command workspace", () => {
     });
     await expect(summary).toContainText("BAN NM1");
     await expect(summary).toContainText("PICK NM2");
-    await expect(summary.locator("button")).toHaveCount(0);
+    await expect(
+      summary.getByRole("button", {
+        name: "Withdraw last Ban / Pick",
+        exact: true,
+      }),
+    ).toBeEnabled();
+    await expect(
+      summary.getByRole("button", { name: "Automatic sync", exact: true }),
+    ).toBeDisabled();
     await page
       .getByText("Record and correct outcomes", { exact: true })
       .click();
@@ -261,7 +270,12 @@ test.describe("referee command workspace", () => {
     await expect
       .poll(async () => (await read()).projection.score[home.id])
       .toBe(1);
-    await expect(summary).toContainText(`${home.name} 1`);
+    await expect(summary.locator('[data-team="blue"] > span')).toHaveText(
+      home.name,
+    );
+    await expect(summary.locator('[data-team="blue"] > strong')).toHaveText(
+      "1",
+    );
     await page
       .getByRole("button", { name: "Record replay", exact: true })
       .click();
@@ -374,9 +388,15 @@ test.describe("referee command workspace", () => {
     await page
       .getByRole("button", { name: "Apply order", exact: true })
       .click();
+    await expect
+      .poll(async () => (await (await context.request.get(api)).json()).session)
+      .toMatchObject({
+        firstBanTeamId: seeded.workspace.teams[0].id,
+        firstPickTeamId: seeded.workspace.teams[1].id,
+      });
     await expect(
-      page.getByText("Showing applied order", { exact: true }),
-    ).toBeVisible();
+      page.getByRole("button", { name: "Apply order", exact: true }),
+    ).toBeDisabled();
     const pool = page.getByRole("region", {
       name: "Round mappool",
       exact: true,

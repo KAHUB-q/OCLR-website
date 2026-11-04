@@ -12,11 +12,10 @@ html[data-appearance] .themed-site .site-header .nav-wrap {
 
 /* The glass board may extend into the gutters; its inner text uses the same
  * column as the header, including on phones where the board fills the width. */
-html[data-appearance="glassmorphism"] .themed-site > main {
+html[data-appearance="glassmorphism"] .themed-site > main#main {
   width: min(calc(var(--content-max) + 2 * var(--gutter) + 2px), 100%);
   margin-inline: auto;
 }
-
 @media (max-width: 760px) {
   .themed-site .site-header .mobile-menu-backdrop {
     left: calc((100% - 100vw) / 2);

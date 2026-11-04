@@ -683,6 +683,16 @@
   flex-wrap: wrap;
   gap: 0.375rem;
 }
+.workspace .neutralActions {
+  display: flex;
+  justify-content: flex-end;
+}
+.workspace .pool .neutralActions button {
+  min-width: 4rem;
+  min-height: 44px;
+  padding: 0.5rem 0.75rem;
+  font-size: 0.8125rem;
+}
 .irc .ircLaunchActions a {
   min-width: 0;
   min-height: 2rem;

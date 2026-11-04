@@ -974,6 +974,27 @@ export function RefereePanel({
                                 {teamName(used.teamId)} ·{" "}
                                 {used.kind.toUpperCase()}
                               </span>
+                            ) : m.category === "TB" ||
+                              state.nextStep?.kind === "tb" ? (
+                              <div
+                                className={`${styles.poolActions} ${styles.neutralActions}`}
+                              >
+                                <button
+                                  type="button"
+                                  className="secondary"
+                                  disabled={
+                                    disabled || stale || dirtyOrder || !allowed
+                                  }
+                                  onClick={() => {
+                                    void send({
+                                      action: "record_selection",
+                                      entryId: m.id,
+                                    });
+                                  }}
+                                >
+                                  {tr("referee_neutral_pick")}
+                                </button>
+                              </div>
                             ) : (
                               <div className={styles.poolActions}>
                                 {(["ban", "pick"] as const).flatMap((kind) =>
@@ -989,9 +1010,7 @@ export function RefereePanel({
                                           stale ||
                                           dirtyOrder ||
                                           !allowed ||
-                                          (state.nextStep?.kind === "tb"
-                                            ? kind !== "pick"
-                                            : state.nextStep?.kind !== kind) ||
+                                          state.nextStep?.kind !== kind ||
                                           (state.nextStep?.teamId !== null &&
                                             state.nextStep?.teamId !== team.id)
                                         }

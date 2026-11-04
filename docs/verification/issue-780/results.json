@@ -1,0 +1,12 @@
+{
+  "cases": 24,
+  "additional": [
+    "before-TB-disabled",
+    "readonly-disabled",
+    "ordinary-team-controls-preserved",
+    "keyboard-Enter-records-neutral-TB",
+    "single-request",
+    "teamId-null"
+  ],
+  "errors": []
+}

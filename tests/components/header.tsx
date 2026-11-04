@@ -63,7 +63,7 @@ function Harness() {
     params.has("tournament") ? "/tournaments/synthetic" : "/",
   );
   const content = (
-    <main
+    <div
       className={
         params.has("alignment") && !params.has("tournament")
           ? "container page"
@@ -76,7 +76,7 @@ function Harness() {
       <button type="button" data-route-change onClick={() => setPath("/news")}>
         Synthetic route change
       </button>
-    </main>
+    </div>
   );
   return (
     <AppRouterContext.Provider value={router}>
@@ -103,17 +103,19 @@ function Harness() {
                 systemTheme={theme}
                 appearance={appearance}
               />
-              {params.has("tournament") ? (
-                <TournamentShell
-                  slug="synthetic"
-                  name="Synthetic Cup"
-                  liveDraft={false}
-                >
-                  {content}
-                </TournamentShell>
-              ) : (
-                content
-              )}
+              <main id="main">
+                {params.has("tournament") ? (
+                  <TournamentShell
+                    slug="synthetic"
+                    name="Synthetic Cup"
+                    liveDraft={false}
+                  >
+                    {content}
+                  </TournamentShell>
+                ) : (
+                  content
+                )}
+              </main>
             </div>
           </NextIntlClientProvider>
         </SearchParamsContext.Provider>

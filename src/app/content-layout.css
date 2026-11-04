@@ -9,3 +9,10 @@ html[data-appearance] .themed-site .site-header .nav-wrap {
   max-width: var(--content-max);
   padding-inline: 0;
 }
+
+/* The glass board may extend into the gutters; its inner text uses the same
+ * column as the header, including on phones where the board fills the width. */
+html[data-appearance="glassmorphism"] .themed-site > main {
+  width: min(calc(var(--content-max) + 2 * var(--gutter) + 2px), 100%);
+  margin-inline: auto;
+}

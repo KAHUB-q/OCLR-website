@@ -66,7 +66,9 @@ describe("mappool auto-slot parsing", () => {
     const saved = [{ category: "NM" as const, position: 1, beatmapId: 123 }];
     const [reused] = parseMappoolRows("HD1 123", undefined, saved);
     expect(reused.error).toBeNull();
-    expect(reused.warning).toBe(parseMappoolRows("NM1 123\nHD1 123")[1].warning);
+    expect(reused.warning).toBe(
+      parseMappoolRows("NM1 123\nHD1 123")[1].warning,
+    );
     expect(parseMappoolRows("NM2 123", undefined, saved)[0].error).toContain(
       "already exists in this category",
     );

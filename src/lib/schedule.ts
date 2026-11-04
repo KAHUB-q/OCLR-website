@@ -249,7 +249,11 @@ export async function scheduleWorkspace(actor: User, slug: string) {
             .innerJoin(fixtures, eq(fixtures.id, fixtureCommentators.fixtureId))
             .where(eq(fixtures.editionSlug, slug))
         : [];
-      const broadcastBookings = [
+      const staffBookings = [
+        ...refereeRows.map((row) => ({
+          fixtureId: row.fixture_referees.fixtureId,
+          userId: row.fixture_referees.userId,
+        })),
         ...streamRows.map((row) => ({
           fixtureId: row.fixture_streams.fixtureId,
           userId: row.fixture_streams.userId,
@@ -316,6 +320,7 @@ export async function scheduleWorkspace(actor: User, slug: string) {
               .filter(
                 (v) =>
                   v.fixture.id !== f.id &&
+                  f.status !== "cancelled" &&
                   v.fixture.status !== "cancelled" &&
                   f.scheduledAt &&
                   v.fixture.scheduledAt?.getTime() ===
@@ -325,20 +330,10 @@ export async function scheduleWorkspace(actor: User, slug: string) {
                       id &&
                       [v.fixture.homeTeamId, v.fixture.awayTeamId].includes(id),
                   ) ||
-                    refereeRows.some(
-                      (r) =>
-                        r.fixture_referees.fixtureId === f.id &&
-                        refereeRows.some(
-                          (o) =>
-                            o.fixture_referees.fixtureId === v.fixture.id &&
-                            o.fixture_referees.userId ===
-                              r.fixture_referees.userId,
-                        ),
-                    ) ||
-                    broadcastBookings.some(
+                    staffBookings.some(
                       (booking) =>
                         booking.fixtureId === f.id &&
-                        broadcastBookings.some(
+                        staffBookings.some(
                           (other) =>
                             other.fixtureId === v.fixture.id &&
                             other.userId === booking.userId,

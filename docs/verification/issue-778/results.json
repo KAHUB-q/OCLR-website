@@ -1,0 +1,19 @@
+{
+  "cases": 48,
+  "heights": {
+    "before": 1763.390625,
+    "after": 581.75
+  },
+  "reduction": "67%",
+  "additional": [
+    "empty",
+    "readonly",
+    "official",
+    "save-and-same-key-retry",
+    "refresh",
+    "history",
+    "review-link",
+    "WCAG2A/AA/2.1AA axe"
+  ],
+  "errors": []
+}

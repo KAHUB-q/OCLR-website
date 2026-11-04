@@ -4,6 +4,7 @@ import Link from "next/link";
 import { useCallback, useEffect, useState } from "react";
 import { useAppTranslations } from "@/i18n/shared";
 import type { RefereeReconciliationWorkspace } from "@/lib/referee-reconciliation";
+import styles from "./referee-reconciliation.module.css";
 
 export function RefereeReconciliation({
   slug,
@@ -103,40 +104,38 @@ export function RefereeReconciliation({
   };
   return (
     <section
-      className="panel form-stack"
+      className={`panel ${styles.reconciliation}`}
       aria-labelledby="referee-reconciliation-heading"
     >
-      <div className="section-heading">
-        <div>
-          <h2 id="referee-reconciliation-heading">
-            {tr("Post-match reconciliation")}
-          </h2>
-          <p className="small muted">
-            {tr(
-              "Match each attempt to a saved MP game. Repeated plays need separate links. This does not submit or publish a result.",
-            )}
-          </p>
+      <header className={styles.header}>
+        <h2 id="referee-reconciliation-heading">
+          {tr("Post-match reconciliation")}
+        </h2>
+        <div className={styles.actions}>
+          <button
+            type="button"
+            className="secondary"
+            disabled={busy}
+            onClick={() => {
+              setError("");
+              load().catch((e) => setError(e.message));
+            }}
+          >
+            {tr("Refresh reconciliation")}
+          </button>
+          <Link
+            className="button secondary"
+            href={`/admin/tournaments/${slug}/matches/${fixtureId}`}
+          >
+            {tr("Open MP review")}
+          </Link>
         </div>
-      </div>
-      <div className="actions">
-        <button
-          type="button"
-          className="secondary"
-          disabled={busy}
-          onClick={() => {
-            setError("");
-            load().catch((e) => setError(e.message));
-          }}
-        >
-          {tr("Refresh reconciliation")}
-        </button>
-        <Link
-          className="button secondary"
-          href={`/admin/tournaments/${slug}/matches/${fixtureId}`}
-        >
-          {tr("Open MP review")}
-        </Link>
-      </div>
+      </header>
+      <p className={`small muted ${styles.description}`}>
+        {tr(
+          "Match each attempt to a saved MP game. Repeated plays need separate links. This does not submit or publish a result.",
+        )}
+      </p>
       {error && (
         <p role="alert" className="notice">
           {refereeMessage(tr, error)}
@@ -157,24 +156,26 @@ export function RefereeReconciliation({
       {!data && !error && <p>{tr("Loading…")}</p>}
       {data && (
         <>
-          <p>
-            {tr("Referee provisional score")}:{" "}
-            {data.teams
-              .map((t) => `${t.name} ${data.ledgerScore[t.id] ?? 0}`)
-              .join(" · ")}
-          </p>
-          {data.official ? (
-            <p className="small muted">
-              {tr("Saved result revision")}: {data.official.revision} ·{" "}
-              {data.official.publishedRevision === data.official.revision
-                ? tr("Published result")
-                : tr("Not published")}
-              {data.official.series &&
-                ` · ${data.official.series.homeWins} – ${data.official.series.awayWins}`}
+          <div className={styles.summary}>
+            <p className={styles.score}>
+              {tr("Referee provisional score")}:{" "}
+              {data.teams
+                .map((t) => `${t.name} ${data.ledgerScore[t.id] ?? 0}`)
+                .join(" · ")}
             </p>
-          ) : (
-            <p className="small muted">{tr("No result submitted")}</p>
-          )}
+            {data.official ? (
+              <p className="small muted">
+                {tr("Saved result revision")}: {data.official.revision} ·{" "}
+                {data.official.publishedRevision === data.official.revision
+                  ? tr("Published result")
+                  : tr("Not published")}
+                {data.official.series &&
+                  ` · ${data.official.series.homeWins} – ${data.official.series.awayWins}`}
+              </p>
+            ) : (
+              <p className="small muted">{tr("No result submitted")}</p>
+            )}
+          </div>
           {!data.rows.length && (
             <p>
               {tr(
@@ -182,67 +183,73 @@ export function RefereeReconciliation({
               )}
             </p>
           )}
-          {data.rows.map((row) => (
-            <article className="panel form-stack" key={row.attemptId}>
-              <h3>
-                {row.category} · {row.beatmapId} ·{" "}
-                {tr("Attempt {value0}", { value0: row.attemptNumber })}
-              </h3>
-              <p className="small">
-                {tr("Picked by")}: {team(row.pickTeamId)} ·{" "}
-                {tr("Recorded winner")}: {team(row.winnerTeamId)}
-              </p>
-              <p role="status">{statuses[row.status]}</p>
-              {row.link?.importId && (
-                <p className="small muted">
-                  {tr("Saved game link")}: {row.link.gameId} · {tr("MP winner")}
-                  : {team(row.sourceWinnerTeamId)}
-                </p>
-              )}
-              {data.canRecord && (
-                <div className="form-stack">
-                  <label className="field">
-                    <span>{tr("Choose the exact saved MP game")}</span>
-                    <select
-                      disabled={busy || pending !== null}
-                      value={choices[row.attemptId] ?? ""}
-                      onChange={(e) =>
-                        setChoices({
-                          ...choices,
-                          [row.attemptId]: e.target.value,
-                        })
-                      }
-                    >
-                      <option value="">{tr("No game link")}</option>
-                      {data.sources
-                        .filter((s) => s.current)
-                        .flatMap((s) =>
-                          s.games
-                            .filter((g) => g.beatmapId === row.beatmapId)
-                            .map((g) => (
-                              <option
-                                key={`${s.importId}:${g.id}`}
-                                value={`${s.importId}:${g.id}`}
-                              >
-                                MP {s.matchId} · {tr("Game")} {g.id} ·{" "}
-                                {team(g.winnerTeamId)}
-                              </option>
-                            )),
-                        )}
-                    </select>
-                  </label>
-                  <button
-                    type="button"
-                    className="secondary"
-                    disabled={busy || pending !== null}
-                    onClick={() => save(row.attemptId)}
-                  >
-                    {tr("Save game link")}
-                  </button>
+          <div className={styles.rows}>
+            {data.rows.map((row) => (
+              <article className={styles.row} key={row.attemptId}>
+                <div className={styles.attempt}>
+                  <h3>
+                    {row.category} · {row.beatmapId} ·{" "}
+                    {tr("Attempt {value0}", { value0: row.attemptNumber })}
+                  </h3>
+                  <p className="small">
+                    {tr("Picked by")}: {team(row.pickTeamId)} ·{" "}
+                    {tr("Recorded winner")}: {team(row.winnerTeamId)}
+                  </p>
+                  <p className={styles.status} role="status">
+                    {statuses[row.status]}
+                  </p>
+                  {row.link?.importId && (
+                    <p className="small muted">
+                      {tr("Saved game link")}: {row.link.gameId} ·{" "}
+                      {tr("MP winner")}: {team(row.sourceWinnerTeamId)}
+                    </p>
+                  )}
                 </div>
-              )}
-            </article>
-          ))}
+                {data.canRecord && (
+                  <div className={styles.linkControls}>
+                    <label className={`field ${styles.gameField}`}>
+                      <span>{tr("Choose the exact saved MP game")}</span>
+                      <select
+                        disabled={busy || pending !== null}
+                        value={choices[row.attemptId] ?? ""}
+                        onChange={(e) =>
+                          setChoices({
+                            ...choices,
+                            [row.attemptId]: e.target.value,
+                          })
+                        }
+                      >
+                        <option value="">{tr("No game link")}</option>
+                        {data.sources
+                          .filter((s) => s.current)
+                          .flatMap((s) =>
+                            s.games
+                              .filter((g) => g.beatmapId === row.beatmapId)
+                              .map((g) => (
+                                <option
+                                  key={`${s.importId}:${g.id}`}
+                                  value={`${s.importId}:${g.id}`}
+                                >
+                                  MP {s.matchId} · {tr("Game")} {g.id} ·{" "}
+                                  {team(g.winnerTeamId)}
+                                </option>
+                              )),
+                          )}
+                      </select>
+                    </label>
+                    <button
+                      type="button"
+                      className={`secondary ${styles.save}`}
+                      disabled={busy || pending !== null}
+                      onClick={() => save(row.attemptId)}
+                    >
+                      {tr("Save game link")}
+                    </button>
+                  </div>
+                )}
+              </article>
+            ))}
+          </div>
           {data.history.length > 0 && (
             <details>
               <summary>{tr("Reconciliation history")}</summary>

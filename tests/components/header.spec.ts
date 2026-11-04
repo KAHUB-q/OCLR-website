@@ -2,6 +2,42 @@ import { expect, test } from "@playwright/test";
 import { appearances } from "../../src/lib/preferences";
 import { expectPreferenceMenuFits } from "../e2e/header-preferences";
 
+test("long remote account names fit beside desktop controls and phone menus", async ({
+  page,
+}, info) => {
+  const username = "Synthetic Directory 2717000 Captain";
+  await page.route("https://a.ppy.sh/**", (route) => route.abort());
+  for (const appearance of ["default", "cute-pastel"])
+    for (const locale of ["zh-Hans", "zh-Hant", "en"])
+      for (const theme of ["light", "dark"]) {
+        const params = new URLSearchParams({
+          remote: "1",
+          user: "player",
+          username,
+          appearance,
+          locale,
+          theme,
+        });
+        await page.goto(`/header?${params}`);
+        const connection = page.locator(".nav-actions").getByRole("link");
+        await expect(page.locator(".account-label")).toHaveText(username);
+        await expect(page.locator(".account-label")).toHaveAttribute(
+          "title",
+          username,
+        );
+        await expect(connection).toHaveAttribute("href", "/remote");
+        for (const width of [320, 768, 1280, 1440]) {
+          await page.setViewportSize({ width, height: 900 });
+          expect(
+            await page.evaluate(() => document.documentElement.scrollWidth),
+            `${appearance} ${locale} ${theme} ${width}`,
+          ).toBeLessThanOrEqual(width);
+          await expect(connection).toBeVisible();
+        }
+      }
+  await page.screenshot({ path: info.outputPath("remote-account-header.png") });
+});
+
 test("phone dropdown keeps preferences accessible across appearances, locales and account states", async ({
   page,
 }, info) => {

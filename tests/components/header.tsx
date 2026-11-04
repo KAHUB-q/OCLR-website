@@ -85,7 +85,7 @@ function Harness() {
                   user
                     ? {
                         osuId: 1,
-                        username: "Synthetic Staff",
+                        username: params.get("username") || "Synthetic Staff",
                         staff: user === "staff",
                       }
                     : null

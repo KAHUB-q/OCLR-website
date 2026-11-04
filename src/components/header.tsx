@@ -419,7 +419,7 @@ export function Header({
                   <path d="m10 13 4-4M8 16l-1 1a4 4 0 0 1-6-6l4-4a4 4 0 0 1 6 0m2 1 1-1a4 4 0 0 1 6 6l-4 4a4 4 0 0 1-6 0" />
                 </svg>
               )}
-              <span className="account-label">
+              <span className="account-label" title={user?.username}>
                 {user?.username ?? tr("Remote connection")}
               </span>
             </Link>

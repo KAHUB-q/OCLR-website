@@ -4575,6 +4575,7 @@ html[data-appearance]
 /* Account workspaces are actions; public sections remain in the main navigation. */
 .nav-actions {
   display: flex;
+  min-width: 0;
   align-items: center;
   gap: 0.6rem;
 }
@@ -4805,6 +4806,8 @@ html:lang(zh-Hant) .eyebrow {
 }
 
 .account-control {
+  min-width: 0;
+  max-width: 100%;
   white-space: nowrap;
   gap: 0.5rem;
   padding: 0.4rem 0.7rem;
@@ -4812,6 +4815,12 @@ html:lang(zh-Hant) .eyebrow {
   transition:
     background 120ms,
     border-color 120ms;
+}
+.account-label {
+  min-width: 0;
+  max-width: 12rem;
+  overflow: hidden;
+  text-overflow: ellipsis;
 }
 .account-control .avatar {
   width: 28px;

@@ -352,13 +352,11 @@ export function MappoolBrowser({
                   : tr(": Detailed restrictions have not been published.")}
               </p>
             )}
-            <div className={`map-card-grid ${styles.cards}`}>
+            <div className="map-card-grid">
               {entries.map((e) => {
                 const slot = slotLabel(e.category, e.position);
                 return (
                   <MapCardBand
-                    className={styles.card}
-                    showMode={!!e.metadata.mode && e.metadata.mode !== "osu"}
                     key={e.id}
                     id={`map-${e.id}`}
                     dataCategory={e.category}

@@ -11,7 +11,7 @@ test.beforeEach(async ({ page }) => {
 
 for (const locale of ["en", "zh-Hans", "zh-Hant"]) {
   for (const theme of ["light", "dark"]) {
-    test(`one pool, horizontal cards and keyboard tabs (${locale}, ${theme})`, async ({
+    test(`one pool, S10 cards and keyboard tabs (${locale}, ${theme})`, async ({
       page,
     }, info) => {
       await page.setViewportSize({
@@ -70,14 +70,26 @@ for (const locale of ["en", "zh-Hans", "zh-Hant"]) {
           coverRight: cover.right,
           copyLeft: copy.left,
           coverTop: cover.top,
+          coverBottom: cover.bottom,
+          coverWidth: cover.width,
+          coverHeight: cover.height,
           copyTop: copy.top,
         };
       });
-      expect(bounds.copyLeft).toBeGreaterThanOrEqual(bounds.coverRight - 1);
-      expect(bounds.copyTop).toBeCloseTo(bounds.coverTop, 0);
       if (info.project.name === "mobile") {
-        expect((await card.boundingBox())!.height).toBeLessThan(280);
+        expect(bounds.copyTop).toBeGreaterThanOrEqual(bounds.coverBottom - 1);
+        expect(bounds.coverWidth / bounds.coverHeight).toBeCloseTo(16 / 9, 1);
+      } else {
+        expect(bounds.copyLeft).toBeGreaterThanOrEqual(bounds.coverRight - 1);
+        expect(bounds.copyTop).toBeCloseTo(bounds.coverTop, 0);
+        expect(bounds.coverWidth).toBeGreaterThanOrEqual(200);
       }
+      expect(
+        await card.evaluate((node) =>
+          parseFloat(getComputedStyle(node, "::before").width),
+        ),
+      ).toBe(20);
+      await expect(card.locator(".map-card-mode")).toBeVisible();
       expect(
         await page.evaluate(() => document.documentElement.scrollWidth),
       ).toBeLessThanOrEqual(page.viewportSize()!.width);
@@ -149,6 +161,71 @@ test("pool detail and historical cards retain season appearance boundaries", asy
       await expect(page.getByRole("dialog")).toBeVisible();
       await page.keyboard.press("Escape");
       await expect(card.locator(".map-open-button")).toBeFocused();
+    }
+  }
+});
+
+test("public cards match the S10 archive card geometry at each breakpoint", async ({
+  page,
+}, info) => {
+  const widths = info.project.name === "mobile" ? [390, 320] : [1280, 680];
+  for (const width of widths) {
+    await page.setViewportSize({ width, height: 900 });
+    for (const theme of ["light", "dark"]) {
+      for (const appearance of ["default", "skyline-pop"]) {
+        const dimensions = [];
+        for (const archive of [false, true]) {
+          await page.goto(
+            `/public-mappools?locale=zh-Hant&${archive ? "archive&" : ""}appearance=${appearance}&theme=${theme}`,
+          );
+          const card = page.locator(".map-browse-card").first();
+          await expect(card).toBeVisible();
+          dimensions.push(
+            await card.evaluate((node) => {
+              const style = getComputedStyle(node);
+              const cover = node.querySelector(".map-card-cover")!;
+              const copy = node.querySelector(".map-card-copy")!;
+              const title = node.querySelector(".map-card-title")!;
+              return {
+                columns: style.gridTemplateColumns,
+                padding: style.padding,
+                minHeight: style.minHeight,
+                radius: style.borderRadius,
+                railWidth: getComputedStyle(node, "::before").width,
+                railContent: getComputedStyle(node, "::before").content,
+                coverWidth: cover.getBoundingClientRect().width,
+                coverRadius: getComputedStyle(cover).borderRadius,
+                imageAspect: getComputedStyle(
+                  cover.querySelector(".beatmap-cover")!,
+                ).aspectRatio,
+                copyPadding: getComputedStyle(copy).padding,
+                titleSize: getComputedStyle(title).fontSize,
+                titleWhiteSpace: getComputedStyle(title).whiteSpace,
+                artOpacity: getComputedStyle(
+                  node.querySelector(".map-card-art")!,
+                ).opacity,
+                modePosition: getComputedStyle(
+                  node.querySelector(".map-card-mode")!,
+                ).position,
+                actionPosition: getComputedStyle(
+                  node.querySelector(".beatmap-actions")!,
+                ).position,
+              };
+            }),
+          );
+          expect(
+            await page.evaluate(() => document.documentElement.scrollWidth),
+          ).toBeLessThanOrEqual(width);
+          if (!archive && appearance === "default" && theme === "light") {
+            await page.screenshot({
+              path: info.outputPath(`s11-s10-card-${width}.png`),
+            });
+          }
+        }
+        expect(dimensions[0], `${width}px ${theme} ${appearance}`).toEqual(
+          dimensions[1],
+        );
+      }
     }
   }
 });

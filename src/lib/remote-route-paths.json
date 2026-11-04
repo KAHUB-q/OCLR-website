@@ -79,6 +79,7 @@
     "/api/admin/tournaments/[edition]/mappool-workbench",
     "/api/admin/tournaments/[edition]/mappools/entries/[entryId]/replays/[replayId]",
     "/api/admin/tournaments/[edition]/mappools/entries/[entryId]/replays",
+    "/api/admin/tournaments/[edition]/mappools/history",
     "/api/admin/tournaments/[edition]/mappools",
     "/api/admin/tournaments/[edition]/matches/[fixtureId]/referee/reconciliation",
     "/api/admin/tournaments/[edition]/matches/[fixtureId]/referee",

@@ -348,6 +348,7 @@ export function MappoolOrder({
                 metadata={entry.metadata}
                 label={editable ? undefined : label}
                 category={category}
+                source={entry.source}
               />
               {renderActions(entry, changed || busy || !!dragging)}
             </li>

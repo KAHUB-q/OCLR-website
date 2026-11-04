@@ -1,3 +1,4 @@
+import { competitionStageLabel } from "@/lib/competition-stage";
 import Link from "next/link";
 import { MatchReviewPanel } from "@/components/match-review";
 import { MatchSourceCompletion } from "@/components/match-source-completion";
@@ -120,7 +121,7 @@ async function Issue271Page({
       <>
         <PageHeading
           eyebrow={tr("{value0} STAGE / {value1}", {
-            value0: data.round.stage === "group" ? "GROUP" : "KNOCKOUT",
+            value0: tr(competitionStageLabel(data.round.stage)),
             value1: data.round.name,
           })}
           title={data.fixture.label}

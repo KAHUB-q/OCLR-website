@@ -1,3 +1,7 @@
+import {
+  exhibitionNotice,
+  competitionStageLabel,
+} from "@/lib/competition-stage";
 import { InfoNote } from "@/components/info-note";
 import { historicalPage } from "@/components/historical-archive";
 import { MatchDetailsView } from "@/components/match-details";
@@ -37,8 +41,11 @@ async function Issue271Page({
       <Link className="text-link" href={`/tournaments/${slug}/results`}>
         {tr("← All matches")}
       </Link>
+      {f.stage === "exhibition" && (
+        <p className="notice">{tr(exhibitionNotice)}</p>
+      )}
       <PageHeading
-        eyebrow={`${f.stage === "group" ? "GROUP STAGE" : "KNOCKOUT STAGE"} / ${f.roundName}`}
+        eyebrow={`${tr(competitionStageLabel(f.stage))} / ${f.roundName}`}
         title={f.label}
       >
         {f.status === "cancelled"

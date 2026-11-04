@@ -1,4 +1,8 @@
 import { db } from "@/db";
+import {
+  historicalSourceRead,
+  resolveHistoricalPool,
+} from "./exhibition-pools";
 import type { RoundRefereeRule } from "./round-referee-policy";
 import {
   editionState,
@@ -62,6 +66,21 @@ const commandSchema = z.discriminatedUnion("action", [
     .object({
       ...confirmation,
       ...versioned,
+      action: z.literal("history_import"),
+      sourceEdition: z.string().min(1).max(80),
+      sourcePool: z.string().min(1).max(80),
+      sourceFingerprint: z.string().regex(/^[a-f0-9]{64}$/),
+      sourceKeys: z
+        .array(z.string().min(1).max(80))
+        .min(1)
+        .max(50)
+        .refine((keys) => new Set(keys).size === keys.length),
+    })
+    .strict(),
+  z
+    .object({
+      ...confirmation,
+      ...versioned,
       action: z.literal("batch_import"),
       text: z.string().max(16000),
       category: z.enum(categories),
@@ -99,7 +118,7 @@ const commandSchema = z.discriminatedUnion("action", [
     .object({
       ...confirmation,
       action: z.literal("round_create"),
-      stage: z.enum(["group", "knockout"]),
+      stage: z.enum(["group", "knockout", "exhibition"]),
       name,
       position,
     })
@@ -260,7 +279,7 @@ async function databaseMappoolWorkspace(actor: User, slug: string) {
       return {
         rounds,
         pools,
-        entries,
+        entries: entries.map(historicalSourceRead),
         ...({
           refereeRules: refereeRules.map(
             ({ roundId, policy, revision, rules }) => ({
@@ -457,6 +476,39 @@ export async function mappoolCommand(
   let metadataFetchedAt: Date | undefined;
   const batchMetadata = new Map<number, BeatmapSnapshot>();
   const refreshedEntries = new Map<string, BeatmapSnapshot>();
+  if (c.action === "history_import") {
+    const [target] = await db()
+      .select({ pool: mappools, stage: tournamentStages.kind })
+      .from(mappools)
+      .innerJoin(tournamentRounds, eq(tournamentRounds.id, mappools.roundId))
+      .innerJoin(
+        tournamentStages,
+        eq(tournamentStages.id, tournamentRounds.stageId),
+      )
+      .where(and(eq(mappools.id, c.poolId), eq(mappools.editionSlug, slug)));
+    if (!target || target.stage !== "exhibition")
+      throw new HttpError(
+        400,
+        "Historical map selection is available for exhibition pools only.",
+      );
+    if (
+      target.pool.version !== c.expectedVersion ||
+      target.pool.lockedAt ||
+      target.pool.selectionLockedAt
+    )
+      throw new HttpError(
+        409,
+        "Refresh the pool. Stale or completed-fixture pools cannot be edited.",
+      );
+    const source = await resolveHistoricalPool(db(), slug, c);
+    const snapshots = await fetchBeatmaps(
+      source.maps.map((map) => map.beatmapId),
+    );
+    for (const [id, snapshot] of snapshots) {
+      if (snapshot instanceof HttpError) throw snapshot;
+      batchMetadata.set(id, snapshot);
+    }
+  }
   if (c.action === "batch_import" || c.action === "batch_refresh") {
     const [pool] = await db()
       .select()
@@ -864,8 +916,15 @@ export async function mappoolCommand(
 
       const before = { pool, entries };
       const [roundConfiguration] = await tx
-        .select({ rules: tournamentRounds.scoringRules })
+        .select({
+          rules: tournamentRounds.scoringRules,
+          stage: tournamentStages.kind,
+        })
         .from(tournamentRounds)
+        .innerJoin(
+          tournamentStages,
+          eq(tournamentStages.id, tournamentRounds.stageId),
+        )
         .where(eq(tournamentRounds.id, pool.roundId));
       const snapshots = [
         ...(metadata ? [metadata] : []),
@@ -878,7 +937,83 @@ export async function mappoolCommand(
           "Beatmap ruleset does not match the configured round. No maps were saved.",
         );
 
-      if (c.action === "batch_import") {
+      if (c.action === "history_import") {
+        if (roundConfiguration.stage !== "exhibition")
+          throw new HttpError(
+            400,
+            "Historical map selection is available for exhibition pools only.",
+          );
+        // Serialize against source edition configuration/publication changes. Source rows are never mutated.
+        await tx
+          .select()
+          .from(editionState)
+          .where(eq(editionState.slug, c.sourceEdition))
+          .for("share");
+        const source = await resolveHistoricalPool(tx, slug, c);
+        const positions = new Map(
+          categories.map((category) => [
+            category,
+            Math.max(
+              0,
+              ...entries
+                .filter((e) => e.category === category)
+                .map((e) => e.position),
+            ),
+          ]),
+        );
+        const selectedMaps = new Set<string>();
+        for (const map of source.maps) {
+          if (map.category === "FM" && !pool.fmMode)
+            throw new HttpError(409, "Configure FM before importing FM slots.");
+          if (
+            entries.some(
+              (entry) =>
+                entry.category === map.category &&
+                entry.beatmapId === map.beatmapId,
+            )
+          )
+            throw new HttpError(
+              409,
+              "A selected beatmap already exists in this category. No maps were saved.",
+            );
+          const identity = `${map.category}:${map.beatmapId}`;
+          if (selectedMaps.has(identity))
+            throw new HttpError(
+              400,
+              "Choose each beatmap only once per category.",
+            );
+          selectedMaps.add(identity);
+          const position = positions.get(map.category)! + 1;
+          if (position > 999)
+            throw new HttpError(
+              400,
+              "This category has no available map slots.",
+            );
+          positions.set(map.category, position);
+          const snapshot = batchMetadata.get(map.beatmapId);
+          if (!snapshot)
+            throw new HttpError(
+              409,
+              "The historical mappool changed. Select its maps again.",
+            );
+          await tx.insert(mappoolEntries).values({
+            poolId: pool.id,
+            category: map.category,
+            position,
+            beatmapId: map.beatmapId,
+            metadata: snapshot.metadata,
+            metadataFetchedAt: new Date(snapshot.fetchedAt),
+            source: {
+              editionSlug: source.pool.editionSlug,
+              editionName: source.pool.editionName,
+              poolId: source.pool.poolId,
+              poolName: source.pool.poolName,
+              slot: map.slot,
+              beatmapId: map.beatmapId,
+            },
+          });
+        }
+      } else if (c.action === "batch_import") {
         validateImport(c, entries);
         for (const row of c.rows) {
           const id = parseBeatmapId(row.beatmap)!;
@@ -1023,6 +1158,8 @@ export async function mappoolCommand(
             beatmapId: beatmapId!,
             metadata: metadata!,
             metadataFetchedAt: metadataFetchedAt!,
+            source:
+              entry?.beatmapId === beatmapId ? (entry?.source ?? null) : null,
           };
           if (entry)
             await tx
@@ -1123,6 +1260,7 @@ async function databasePublicMappools(slug: string, poolId?: string) {
               position: mappoolEntries.position,
               beatmapId: mappoolEntries.beatmapId,
               metadata: mappoolEntries.metadata,
+              source: mappoolEntries.source,
             })
             .from(mappoolEntries)
             .where(
@@ -1135,7 +1273,9 @@ async function databasePublicMappools(slug: string, poolId?: string) {
         : [];
       return pools.map((p) => ({
         ...p,
-        entries: entries.filter((e) => e.poolId === p.id),
+        entries: entries
+          .filter((e) => e.poolId === p.id)
+          .map(historicalSourceRead),
       }));
     },
     { isolationLevel: "repeatable read" },

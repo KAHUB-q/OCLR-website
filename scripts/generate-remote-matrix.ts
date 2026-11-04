@@ -49,6 +49,16 @@ const componentOps: Record<string, string[]> = {
   PlayerMessageBoard: ["publicPlayerMessages"],
   SelectionWorkbench: ["selectionWorkspace", "candidateComments"],
   MappoolEditor: ["replayList", "downloadReplay"],
+  historicalPoolChoices: [
+    "listPublicTournaments",
+    "publicEnrollment",
+    "publicMappools",
+  ],
+  ExhibitionPoolImport: [
+    "listPublicTournaments",
+    "publicEnrollment",
+    "publicMappools",
+  ],
   BroadcastDraft: ["publicBroadcastDraft"],
   LiveDraft: ["publicDraft", "captainDraft"],
   PublicTeams: ["getTeamAvatar"],
@@ -132,6 +142,11 @@ const rows = files.map((file) => {
     "statistics-manager": ["statisticsWorkspace"],
     "mappool-workbench": ["selectionWorkspace", "candidateComments"],
     "mappool-replays": ["replayList", "downloadReplay"],
+    "exhibition-pool-import": [
+      "listPublicTournaments",
+      "publicEnrollment",
+      "publicMappools",
+    ],
     "player-message-board": ["publicPlayerMessages"],
     "bws-review": ["staffBws"],
     "team-editor": ["getTeamAvatar"],

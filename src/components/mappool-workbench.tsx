@@ -1,4 +1,5 @@
 "use client";
+import { competitionStageLabel } from "@/lib/competition-stage";
 import { useEffect, useId, useRef, useState } from "react";
 import { useAppTranslations } from "@/i18n/shared";
 import type {
@@ -544,10 +545,7 @@ function RoundChoices({
             <span>
               {round.name}{" "}
               <span className="small muted">
-                ·{" "}
-                {round.stage === "group"
-                  ? tr("Group stage")
-                  : tr("Knockout stage")}
+                · {tr(competitionStageLabel(round.stage))}
               </span>
             </span>
           </label>
@@ -1377,10 +1375,7 @@ function PromoteCandidate({
                     <option value="">{tr("Choose a round")}</option>
                     {data.rounds.map((round) => (
                       <option key={round.id} value={round.id}>
-                        {round.name} ·{" "}
-                        {round.stage === "group"
-                          ? tr("Group stage")
-                          : tr("Knockout stage")}
+                        {round.name} · {tr(competitionStageLabel(round.stage))}
                       </option>
                     ))}
                   </select>

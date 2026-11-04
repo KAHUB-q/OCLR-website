@@ -57,6 +57,57 @@
       "type": "array",
       "items": { "$ref": "#/$defs/Readed79fffe39ce" }
     },
+    "Read03c7ab617973": {
+      "type": "object",
+      "properties": {
+        "entries": { "$ref": "#/$defs/Read501066a107c2" },
+        "id": { "type": "string" },
+        "name": { "type": "string" },
+        "roundId": { "type": "string" },
+        "fmMode": {
+          "anyOf": [
+            { "type": "null" },
+            { "type": "string", "const": "free_mod" },
+            { "type": "string", "const": "force_mod" }
+          ]
+        },
+        "fmRestrictions": { "type": "string" },
+        "publishedAt": {
+          "anyOf": [
+            { "type": "null" },
+            { "type": "string", "format": "date-time", "x-oclr-date": true }
+          ]
+        },
+        "updatedAt": {
+          "type": "string",
+          "format": "date-time",
+          "x-oclr-date": true
+        },
+        "roundName": { "type": "string" },
+        "roundPosition": { "type": "number" },
+        "stage": {
+          "anyOf": [
+            { "type": "string", "const": "group" },
+            { "type": "string", "const": "knockout" },
+            { "type": "string", "const": "exhibition" }
+          ]
+        }
+      },
+      "required": [
+        "entries",
+        "id",
+        "name",
+        "roundId",
+        "fmMode",
+        "fmRestrictions",
+        "publishedAt",
+        "updatedAt",
+        "roundName",
+        "roundPosition",
+        "stage"
+      ],
+      "additionalProperties": false
+    },
     "Read04063581a56c": {
       "type": "object",
       "properties": {
@@ -436,14 +487,16 @@
       "required": ["placement", "source", "teamId"],
       "additionalProperties": false
     },
-    "Read1c7d052b03b6": {
-      "type": "array",
-      "items": { "$ref": "#/$defs/Read9b210264ffce" }
-    },
     "Read1d67b72ac404": {
       "anyOf": [
         { "type": "null", "x-oclr-undefined": true },
         { "$ref": "#/$defs/Readbe633062b6e6" }
+      ]
+    },
+    "Read1e24ba30e3f7": {
+      "anyOf": [
+        { "type": "null", "x-oclr-undefined": true },
+        { "$ref": "#/$defs/Readb240b8e1e2a1" }
       ]
     },
     "Read1e7357328b87": {
@@ -605,6 +658,36 @@
       "required": ["mods", "freemod"],
       "additionalProperties": false
     },
+    "Read29e6c6bb3d8d": {
+      "type": "object",
+      "properties": {
+        "id": { "type": "string" },
+        "position": { "type": "number" },
+        "poolId": { "type": "string" },
+        "category": {
+          "anyOf": [
+            { "type": "string", "const": "TB" },
+            { "type": "string", "const": "NM" },
+            { "type": "string", "const": "HD" },
+            { "type": "string", "const": "DT" },
+            { "type": "string", "const": "HR" },
+            { "type": "string", "const": "FM" }
+          ]
+        },
+        "beatmapId": { "type": "number" },
+        "metadata": { "$ref": "#/$defs/Read04063581a56c" },
+        "source": { "$ref": "#/$defs/Readf43873178edf" }
+      },
+      "required": [
+        "id",
+        "position",
+        "poolId",
+        "category",
+        "beatmapId",
+        "metadata"
+      ],
+      "additionalProperties": false
+    },
     "Read2c425a16fc28": {
       "anyOf": [{ "type": "null" }, { "$ref": "#/$defs/Reade5acebf64e20" }]
     },
@@ -647,41 +730,8 @@
         { "$ref": "#/$defs/Read99e202cb645f" }
       ]
     },
-    "Read32168f36e009": {
-      "type": "object",
-      "properties": {
-        "id": { "type": "string" },
-        "poolId": { "type": "string" },
-        "category": {
-          "anyOf": [
-            { "type": "string", "const": "TB" },
-            { "type": "string", "const": "NM" },
-            { "type": "string", "const": "HD" },
-            { "type": "string", "const": "DT" },
-            { "type": "string", "const": "HR" },
-            { "type": "string", "const": "FM" }
-          ]
-        },
-        "position": { "type": "number" },
-        "beatmapId": { "type": "number" },
-        "metadata": { "$ref": "#/$defs/Read04063581a56c" }
-      },
-      "required": [
-        "id",
-        "poolId",
-        "category",
-        "position",
-        "beatmapId",
-        "metadata"
-      ],
-      "additionalProperties": false
-    },
     "Read3335ccc07221": {
       "anyOf": [{ "type": "null" }, { "$ref": "#/$defs/Read5c8b6e1d6293" }]
-    },
-    "Read345dcae8b5f2": {
-      "type": "array",
-      "items": { "$ref": "#/$defs/Read32168f36e009" }
     },
     "Read378164167572": {
       "type": "object",
@@ -940,6 +990,75 @@
       "type": "array",
       "items": { "$ref": "#/$defs/Readf8f63afe963c" }
     },
+    "Read427353d84539": {
+      "type": "object",
+      "properties": {
+        "pool": {
+          "anyOf": [
+            { "type": "null" },
+            {
+              "type": "object",
+              "properties": {
+                "id": { "type": "string" },
+                "name": { "type": "string" }
+              },
+              "required": ["id", "name"],
+              "additionalProperties": false
+            }
+          ]
+        },
+        "id": { "type": "string" },
+        "label": { "type": "string" },
+        "publishedAt": { "type": "string" },
+        "roundId": { "type": "string" },
+        "roundName": { "type": "string" },
+        "roundPosition": { "type": "number" },
+        "stageId": { "type": "string" },
+        "stage": {
+          "anyOf": [
+            { "type": "string", "const": "group" },
+            { "type": "string", "const": "knockout" },
+            { "type": "string", "const": "exhibition" }
+          ]
+        },
+        "position": { "type": "number" },
+        "home": { "$ref": "#/$defs/Read5f294e760979" },
+        "away": { "$ref": "#/$defs/Read5f294e760979" },
+        "confirmed": { "type": "boolean" },
+        "scheduledAt": { "anyOf": [{ "type": "null" }, { "type": "string" }] },
+        "timeZone": { "type": "string" },
+        "status": {
+          "anyOf": [
+            { "type": "string", "const": "scheduled" },
+            { "type": "string", "const": "in_progress" },
+            { "type": "string", "const": "cancelled" }
+          ]
+        },
+        "result": { "$ref": "#/$defs/Readbcbbfd10e5db" },
+        "updatedAt": { "type": "string" }
+      },
+      "required": [
+        "pool",
+        "id",
+        "label",
+        "publishedAt",
+        "roundId",
+        "roundName",
+        "roundPosition",
+        "stageId",
+        "stage",
+        "position",
+        "home",
+        "away",
+        "confirmed",
+        "scheduledAt",
+        "timeZone",
+        "status",
+        "result",
+        "updatedAt"
+      ],
+      "additionalProperties": false
+    },
     "Read431c8753d122": {
       "type": "object",
       "properties": {
@@ -1153,6 +1272,10 @@
     "Read4e7529ac2a29": {
       "anyOf": [{ "type": "null" }, { "$ref": "#/$defs/Read05e4e86503c3" }]
     },
+    "Read501066a107c2": {
+      "type": "array",
+      "items": { "$ref": "#/$defs/Read29e6c6bb3d8d" }
+    },
     "Read50818bdc2cdf": {
       "anyOf": [
         { "type": "null", "x-oclr-undefined": true },
@@ -1180,74 +1303,6 @@
         { "type": "string", "const": "FU" }
       ]
     },
-    "Read519857e96882": {
-      "type": "object",
-      "properties": {
-        "pool": {
-          "anyOf": [
-            { "type": "null" },
-            {
-              "type": "object",
-              "properties": {
-                "id": { "type": "string" },
-                "name": { "type": "string" }
-              },
-              "required": ["id", "name"],
-              "additionalProperties": false
-            }
-          ]
-        },
-        "id": { "type": "string" },
-        "label": { "type": "string" },
-        "publishedAt": { "type": "string" },
-        "roundId": { "type": "string" },
-        "roundName": { "type": "string" },
-        "roundPosition": { "type": "number" },
-        "stageId": { "type": "string" },
-        "stage": {
-          "anyOf": [
-            { "type": "string", "const": "group" },
-            { "type": "string", "const": "knockout" }
-          ]
-        },
-        "position": { "type": "number" },
-        "home": { "$ref": "#/$defs/Read5f294e760979" },
-        "away": { "$ref": "#/$defs/Read5f294e760979" },
-        "confirmed": { "type": "boolean" },
-        "scheduledAt": { "anyOf": [{ "type": "null" }, { "type": "string" }] },
-        "timeZone": { "type": "string" },
-        "status": {
-          "anyOf": [
-            { "type": "string", "const": "scheduled" },
-            { "type": "string", "const": "in_progress" },
-            { "type": "string", "const": "cancelled" }
-          ]
-        },
-        "result": { "$ref": "#/$defs/Readbcbbfd10e5db" },
-        "updatedAt": { "type": "string" }
-      },
-      "required": [
-        "pool",
-        "id",
-        "label",
-        "publishedAt",
-        "roundId",
-        "roundName",
-        "roundPosition",
-        "stageId",
-        "stage",
-        "position",
-        "home",
-        "away",
-        "confirmed",
-        "scheduledAt",
-        "timeZone",
-        "status",
-        "result",
-        "updatedAt"
-      ],
-      "additionalProperties": false
-    },
     "Read52a708f849a1": {
       "type": "array",
       "items": { "$ref": "#/$defs/Read850c438bb6f4" }
@@ -1271,56 +1326,6 @@
     "Read55c1328962f0": {
       "type": "array",
       "items": { "$ref": "#/$defs/Read6b1892d15a0a" }
-    },
-    "Read59eea1be11e7": {
-      "type": "object",
-      "properties": {
-        "entries": { "$ref": "#/$defs/Read345dcae8b5f2" },
-        "id": { "type": "string" },
-        "name": { "type": "string" },
-        "roundId": { "type": "string" },
-        "fmMode": {
-          "anyOf": [
-            { "type": "null" },
-            { "type": "string", "const": "free_mod" },
-            { "type": "string", "const": "force_mod" }
-          ]
-        },
-        "fmRestrictions": { "type": "string" },
-        "publishedAt": {
-          "anyOf": [
-            { "type": "null" },
-            { "type": "string", "format": "date-time", "x-oclr-date": true }
-          ]
-        },
-        "updatedAt": {
-          "type": "string",
-          "format": "date-time",
-          "x-oclr-date": true
-        },
-        "roundName": { "type": "string" },
-        "roundPosition": { "type": "number" },
-        "stage": {
-          "anyOf": [
-            { "type": "string", "const": "group" },
-            { "type": "string", "const": "knockout" }
-          ]
-        }
-      },
-      "required": [
-        "entries",
-        "id",
-        "name",
-        "roundId",
-        "fmMode",
-        "fmRestrictions",
-        "publishedAt",
-        "updatedAt",
-        "roundName",
-        "roundPosition",
-        "stage"
-      ],
-      "additionalProperties": false
     },
     "Read5ab2db77dabd": {
       "type": "object",
@@ -2053,6 +2058,10 @@
       "type": "array",
       "items": { "$ref": "#/$defs/Read9be53eb4b74e" }
     },
+    "Read703890674839": {
+      "type": "array",
+      "items": { "$ref": "#/$defs/Read03c7ab617973" }
+    },
     "Read70475a129e66": {
       "anyOf": [
         { "type": "null", "x-oclr-undefined": true },
@@ -2169,6 +2178,38 @@
         "player": { "$ref": "#/$defs/Readd988f71c5ebc" }
       },
       "required": ["id", "turnIndex", "team", "player"],
+      "additionalProperties": false
+    },
+    "Read82edd1e17f27": {
+      "type": "object",
+      "properties": {
+        "roundId": { "type": "string" },
+        "roundName": { "type": "string" },
+        "stage": {
+          "anyOf": [
+            { "type": "string", "const": "group" },
+            { "type": "string", "const": "knockout" },
+            { "type": "string", "const": "exhibition" }
+          ]
+        },
+        "groupKey": { "type": "string" },
+        "groupName": { "type": "string" },
+        "publishedFixtures": { "type": "number" },
+        "ratedFixtures": { "type": "number" },
+        "complete": { "type": "boolean" },
+        "report": { "$ref": "#/$defs/Readc89a5cdbe35d" }
+      },
+      "required": [
+        "roundId",
+        "roundName",
+        "stage",
+        "groupKey",
+        "groupName",
+        "publishedFixtures",
+        "ratedFixtures",
+        "complete",
+        "report"
+      ],
       "additionalProperties": false
     },
     "Read8403b8fab385": {
@@ -2416,37 +2457,6 @@
       "type": "array",
       "items": { "$ref": "#/$defs/Read0ffbed7abc76" }
     },
-    "Read9b210264ffce": {
-      "type": "object",
-      "properties": {
-        "roundId": { "type": "string" },
-        "roundName": { "type": "string" },
-        "stage": {
-          "anyOf": [
-            { "type": "string", "const": "group" },
-            { "type": "string", "const": "knockout" }
-          ]
-        },
-        "groupKey": { "type": "string" },
-        "groupName": { "type": "string" },
-        "publishedFixtures": { "type": "number" },
-        "ratedFixtures": { "type": "number" },
-        "complete": { "type": "boolean" },
-        "report": { "$ref": "#/$defs/Readc89a5cdbe35d" }
-      },
-      "required": [
-        "roundId",
-        "roundName",
-        "stage",
-        "groupKey",
-        "groupName",
-        "publishedFixtures",
-        "ratedFixtures",
-        "complete",
-        "report"
-      ],
-      "additionalProperties": false
-    },
     "Read9be53eb4b74e": {
       "type": "object",
       "properties": {
@@ -2509,31 +2519,6 @@
         { "$ref": "#/$defs/Readf19f59b9ac44" }
       ]
     },
-    "Read9e17f1f3125d": {
-      "type": "object",
-      "properties": {
-        "exDeclarations": { "$ref": "#/$defs/Read79d40c7d2bfd" },
-        "fixture": { "$ref": "#/$defs/Readad88f34fa45b" },
-        "round": { "$ref": "#/$defs/Readd0aa18dd3f21" },
-        "teams": { "$ref": "#/$defs/Read22a097ac65c0" },
-        "pool": { "$ref": "#/$defs/Read5cc2238e8dfa" },
-        "result": { "$ref": "#/$defs/Read88d0cc0096e6" },
-        "canApprove": { "type": "boolean" },
-        "canRecord": { "type": "boolean" },
-        "canViewAll": { "type": "boolean" }
-      },
-      "required": [
-        "exDeclarations",
-        "fixture",
-        "teams",
-        "pool",
-        "result",
-        "canApprove",
-        "canRecord",
-        "canViewAll"
-      ],
-      "additionalProperties": false
-    },
     "Read9ee538274272": {
       "anyOf": [
         { "type": "null" },
@@ -2557,6 +2542,31 @@
         { "type": "null", "x-oclr-undefined": true },
         { "$ref": "#/$defs/Readee20e8d93147" }
       ]
+    },
+    "Reada5c4cda73733": {
+      "type": "object",
+      "properties": {
+        "exDeclarations": { "$ref": "#/$defs/Read79d40c7d2bfd" },
+        "fixture": { "$ref": "#/$defs/Readad88f34fa45b" },
+        "round": { "$ref": "#/$defs/Read1e24ba30e3f7" },
+        "teams": { "$ref": "#/$defs/Read22a097ac65c0" },
+        "pool": { "$ref": "#/$defs/Read5cc2238e8dfa" },
+        "result": { "$ref": "#/$defs/Read88d0cc0096e6" },
+        "canApprove": { "type": "boolean" },
+        "canRecord": { "type": "boolean" },
+        "canViewAll": { "type": "boolean" }
+      },
+      "required": [
+        "exDeclarations",
+        "fixture",
+        "teams",
+        "pool",
+        "result",
+        "canApprove",
+        "canRecord",
+        "canViewAll"
+      ],
+      "additionalProperties": false
     },
     "Reada67a91240459": {
       "type": "object",
@@ -2822,6 +2832,38 @@
       "required": ["approvedOn", "source"],
       "additionalProperties": false
     },
+    "Readb240b8e1e2a1": {
+      "type": "object",
+      "properties": {
+        "stage": {
+          "anyOf": [
+            { "type": "string", "const": "group" },
+            { "type": "string", "const": "knockout" },
+            { "type": "string", "const": "exhibition" }
+          ]
+        },
+        "id": { "type": "string" },
+        "editionSlug": { "type": "string" },
+        "stageId": { "type": "string" },
+        "name": { "type": "string" },
+        "position": { "type": "number" },
+        "version": { "type": "number" },
+        "scoringRules": { "$ref": "#/$defs/Read18a79bebc577" },
+        "standingsRules": { "$ref": "#/$defs/Read40392e30233b" }
+      },
+      "required": [
+        "stage",
+        "id",
+        "editionSlug",
+        "stageId",
+        "name",
+        "position",
+        "version",
+        "scoringRules",
+        "standingsRules"
+      ],
+      "additionalProperties": false
+    },
     "Readb601a645d9a3": {
       "type": "object",
       "properties": {
@@ -2892,6 +2934,10 @@
     "Readbbdc288242d8": {
       "type": "array",
       "items": { "$ref": "#/$defs/Read4a9962284c09" }
+    },
+    "Readbbdc44daf782": {
+      "type": "array",
+      "items": { "$ref": "#/$defs/Read82edd1e17f27" }
     },
     "Readbcbbfd10e5db": {
       "anyOf": [{ "type": "null" }, { "$ref": "#/$defs/Readb601a645d9a3" }]
@@ -3192,43 +3238,6 @@
     },
     "Readd099871c66a2": {
       "anyOf": [{ "type": "null" }, { "$ref": "#/$defs/Reade049eaf550b3" }]
-    },
-    "Readd0aa18dd3f21": {
-      "anyOf": [
-        { "type": "null", "x-oclr-undefined": true },
-        { "$ref": "#/$defs/Readd1b6e6ab38f7" }
-      ]
-    },
-    "Readd1b6e6ab38f7": {
-      "type": "object",
-      "properties": {
-        "stage": {
-          "anyOf": [
-            { "type": "string", "const": "group" },
-            { "type": "string", "const": "knockout" }
-          ]
-        },
-        "id": { "type": "string" },
-        "editionSlug": { "type": "string" },
-        "stageId": { "type": "string" },
-        "name": { "type": "string" },
-        "position": { "type": "number" },
-        "version": { "type": "number" },
-        "scoringRules": { "$ref": "#/$defs/Read18a79bebc577" },
-        "standingsRules": { "$ref": "#/$defs/Read40392e30233b" }
-      },
-      "required": [
-        "stage",
-        "id",
-        "editionSlug",
-        "stageId",
-        "name",
-        "position",
-        "version",
-        "scoringRules",
-        "standingsRules"
-      ],
-      "additionalProperties": false
     },
     "Readd2164f46f709": {
       "type": "object",
@@ -3540,6 +3549,26 @@
       "type": "array",
       "items": { "$ref": "#/$defs/Read897ffb1214dd" }
     },
+    "Readed45c4cb4ec0": {
+      "type": "object",
+      "properties": {
+        "editionSlug": { "type": "string" },
+        "editionName": { "type": "string" },
+        "poolId": { "type": "string" },
+        "poolName": { "type": "string" },
+        "slot": { "type": "string" },
+        "beatmapId": { "type": "number" }
+      },
+      "required": [
+        "editionSlug",
+        "editionName",
+        "poolId",
+        "poolName",
+        "slot",
+        "beatmapId"
+      ],
+      "additionalProperties": false
+    },
     "Readed79fffe39ce": {
       "type": "object",
       "properties": {
@@ -3782,6 +3811,13 @@
       "required": ["category", "label", "text", "source"],
       "additionalProperties": false
     },
+    "Readf43873178edf": {
+      "anyOf": [
+        { "type": "null", "x-oclr-undefined": true },
+        { "type": "null" },
+        { "$ref": "#/$defs/Readed45c4cb4ec0" }
+      ]
+    },
     "Readf4627ef6821d": {
       "type": "object",
       "properties": {
@@ -3940,10 +3976,6 @@
     },
     "Readfbf98bdae6d4": {
       "anyOf": [{ "type": "null" }, { "$ref": "#/$defs/Read6cac440a6cdd" }]
-    },
-    "Readfe79813fec5d": {
-      "type": "array",
-      "items": { "$ref": "#/$defs/Read59eea1be11e7" }
     }
   },
   "resources": {
@@ -3995,7 +4027,7 @@
           "properties": {
             "fixtures": {
               "type": "array",
-              "items": { "$ref": "#/$defs/Read519857e96882" }
+              "items": { "$ref": "#/$defs/Read427353d84539" }
             },
             "groups": {
               "type": "array",
@@ -4218,7 +4250,7 @@
         }
       ]
     },
-    "publicMappools": { "$ref": "#/$defs/Readfe79813fec5d" },
+    "publicMappools": { "$ref": "#/$defs/Read703890674839" },
     "publishedTeams": {
       "type": "array",
       "items": {
@@ -4329,7 +4361,7 @@
       ]
     },
     "publicBroadcastDraft": { "$ref": "#/$defs/Readd099871c66a2" },
-    "publicRoundRatings": { "$ref": "#/$defs/Read1c7d052b03b6" },
+    "publicRoundRatings": { "$ref": "#/$defs/Readbbdc44daf782" },
     "publicAwards": {
       "anyOf": [
         { "type": "null" },
@@ -4678,7 +4710,8 @@
             "stage": {
               "anyOf": [
                 { "type": "string", "const": "group" },
-                { "type": "string", "const": "knockout" }
+                { "type": "string", "const": "knockout" },
+                { "type": "string", "const": "exhibition" }
               ]
             },
             "position": { "type": "number" },
@@ -5270,7 +5303,8 @@
               "stage": {
                 "anyOf": [
                   { "type": "string", "const": "group" },
-                  { "type": "string", "const": "knockout" }
+                  { "type": "string", "const": "knockout" },
+                  { "type": "string", "const": "exhibition" }
                 ]
               },
               "position": { "type": "number" },
@@ -5365,6 +5399,7 @@
             "type": "object",
             "properties": {
               "id": { "type": "string" },
+              "position": { "type": "number" },
               "poolId": { "type": "string" },
               "category": {
                 "anyOf": [
@@ -5376,20 +5411,20 @@
                   { "type": "string", "const": "FM" }
                 ]
               },
-              "position": { "type": "number" },
               "beatmapId": { "type": "number" },
               "metadata": { "$ref": "#/$defs/Read04063581a56c" },
               "metadataFetchedAt": {
                 "type": "string",
                 "format": "date-time",
                 "x-oclr-date": true
-              }
+              },
+              "source": { "$ref": "#/$defs/Readf43873178edf" }
             },
             "required": [
               "id",
+              "position",
               "poolId",
               "category",
-              "position",
               "beatmapId",
               "metadata",
               "metadataFetchedAt"
@@ -5426,7 +5461,8 @@
               "kind": {
                 "anyOf": [
                   { "type": "string", "const": "group" },
-                  { "type": "string", "const": "knockout" }
+                  { "type": "string", "const": "knockout" },
+                  { "type": "string", "const": "exhibition" }
                 ]
               },
               "version": { "type": "number" },
@@ -5634,7 +5670,8 @@
               "stage": {
                 "anyOf": [
                   { "type": "string", "const": "group" },
-                  { "type": "string", "const": "knockout" }
+                  { "type": "string", "const": "knockout" },
+                  { "type": "string", "const": "exhibition" }
                 ]
               }
             },
@@ -5787,7 +5824,7 @@
             { "type": "string", "const": "relative-game-mean-v1" }
           ]
         },
-        "roundRatings": { "$ref": "#/$defs/Read1c7d052b03b6" },
+        "roundRatings": { "$ref": "#/$defs/Readbbdc44daf782" },
         "edition": {
           "type": "object",
           "properties": {
@@ -6296,7 +6333,7 @@
     "matchReview": {
       "type": "object",
       "properties": {
-        "context": { "$ref": "#/$defs/Read9e17f1f3125d" },
+        "context": { "$ref": "#/$defs/Reada5c4cda73733" },
         "source": {
           "anyOf": [
             { "type": "null" },
@@ -7537,7 +7574,7 @@
       "anyOf": [{ "type": "null" }, { "$ref": "#/$defs/Readf2137768624e" }]
     },
     "ownEligibility": { "$ref": "#/$defs/Readae1bdb242375" },
-    "fixtureForReview": { "$ref": "#/$defs/Read9e17f1f3125d" },
+    "fixtureForReview": { "$ref": "#/$defs/Reada5c4cda73733" },
     "staffBws": {
       "type": "object",
       "properties": {
@@ -8501,7 +8538,7 @@
       "type": "object",
       "properties": {
         "nextFixture": {
-          "anyOf": [{ "type": "null" }, { "$ref": "#/$defs/Read519857e96882" }]
+          "anyOf": [{ "type": "null" }, { "$ref": "#/$defs/Read427353d84539" }]
         },
         "stage": {
           "anyOf": [
@@ -8513,7 +8550,8 @@
                 "kind": {
                   "anyOf": [
                     { "type": "string", "const": "group" },
-                    { "type": "string", "const": "knockout" }
+                    { "type": "string", "const": "knockout" },
+                    { "type": "string", "const": "exhibition" }
                   ]
                 },
                 "round": {
@@ -8533,7 +8571,7 @@
             }
           ]
         },
-        "mappools": { "$ref": "#/$defs/Readfe79813fec5d" }
+        "mappools": { "$ref": "#/$defs/Read703890674839" }
       },
       "required": ["nextFixture", "stage", "mappools"],
       "additionalProperties": false
@@ -8639,7 +8677,8 @@
               "stage": {
                 "anyOf": [
                   { "type": "string", "const": "group" },
-                  { "type": "string", "const": "knockout" }
+                  { "type": "string", "const": "knockout" },
+                  { "type": "string", "const": "exhibition" }
                 ]
               },
               "position": { "type": "number" }

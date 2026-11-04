@@ -71,7 +71,7 @@ async function loadNews(now: Date, tr: AppTranslator) {
           editionSlug: slug,
           kind: "fixture",
           id: f.id,
-          title: tr("Fixture published: {label}", { label: f.label }),
+          title: `${f.stage === "exhibition" ? `${tr("Exhibition")} · ` : ""}${tr("Fixture published: {label}", { label: f.label })}`,
           summary: tr(
             "{round}: {home} vs {away}. {time} A published fixture does not establish a completed result.",
             {
@@ -93,7 +93,7 @@ async function loadNews(now: Date, tr: AppTranslator) {
             editionSlug: slug,
             kind: "result",
             id: f.id,
-            title: tr("Result published: {label}", { label: f.label }),
+            title: `${f.stage === "exhibition" ? `${tr("Exhibition")} · ` : ""}${tr("Result published: {label}", { label: f.label })}`,
             summary: tr(
               "{round}: {home} {homeWins}–{awayWins} {away}. View the approved match result and latest published updates.",
               {

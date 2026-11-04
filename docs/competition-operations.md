@@ -560,3 +560,26 @@ relay wire 使用保留值 roomId 0 表示開房接收器，目標 BanchoBot；s
 timer 只接受相同秒數的送後 BanchoBot 倒數回覆；addref 只接受同名 Added ... to the match referees。網站仍重新核對房間、來源、baseline ID 及同步投影，送出／觀測確認不同於因果或 exactly-once 保證。addref 的實際建立者權限仍由 Bancho 控制。
 
 bind 新增可選能力 receiptReasons:true；reason 是有限 enum，存入既有 recordError 的 relay: 前綴、以固定三語言文案顯示，無 DB migration。新桌面向舊網站不送 reason，舊客戶端沒有 reason 時維持原有狀態顯示。未取得精確回覆時保留 unknown，不以網站已連接標記宣稱命令已執行。新增中文提示待組織者審閱。
+
+## Exhibition rounds (#788)
+
+Round management and mappool management have a separate **Exhibition** stage.
+Create the round in that stage, then configure its scoring/referee rules and
+fixtures through the existing tools. The stage is a stored classification;
+renaming a round does not change whether its results count. Ordinary round
+edits cannot change its stage, and approved fixture history still protects its
+round, participants, pool and progression references.
+
+Exhibition fixtures use the same reporting, Admin approval and explicit public
+release workflow. Released schedules and match details identify the exhibition
+stage and explain its scope. Exhibition results are excluded from official group
+standings, knockout progression, player career wins/losses and placements,
+MatchRating, round/series ratings, per-player map performance and award inputs.
+They do not count as missing official fixtures when checking award completeness.
+Participation/roster facts retain their existing publication rules.
+
+Migration `0074_exhibition_rounds.sql` adds the exhibition enum value and nullable
+map-source provenance. Existing stages and records remain unchanged; existing
+map entries have no inferred historical source. Apply through the approved
+migration workflow before running the new app; this feature does not authorize
+production migration or deployment.

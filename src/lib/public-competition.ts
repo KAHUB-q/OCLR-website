@@ -79,7 +79,7 @@ export type PublicFixture = {
   roundName: string;
   roundPosition: number;
   stageId: string;
-  stage: "group" | "knockout";
+  stage: "group" | "knockout" | "exhibition";
   position: number;
   home: PublicSlot;
   away: PublicSlot;
@@ -470,7 +470,10 @@ async function databasePublicFixture(
       const games = (await approvedRatingGames(slug, tx)).filter(
         (g) => g.fixtureId === id && g.revision === fixture.result!.revision,
       );
-      if (!games.some((g) => g.scores.some((s) => !identities.has(s.userId))))
+      if (
+        fixture.stage !== "exhibition" &&
+        !games.some((g) => g.scores.some((s) => !identities.has(s.userId)))
+      )
         details.rating = ratingSnapshot(games, identities);
       return { ...fixture, details };
     },

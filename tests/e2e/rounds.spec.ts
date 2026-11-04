@@ -373,7 +373,7 @@ test.describe("independent round management and safe deletion", () => {
         })
       ).status(),
     ).toBe(200);
-    for (const locale of ["en", "zh-Hans", "zh-Hant"])
+    for (const locale of ["en", "zh-Hans", "zh-Hant"] as const)
       for (const theme of ["light", "dark"])
         for (const appearance of ["default", "cute-pastel"]) {
           await context.addCookies(
@@ -392,7 +392,16 @@ test.describe("independent round management and safe deletion", () => {
             .locator("ul[aria-label] > li")
             .filter({ has: page.getByRole("heading", { name: /^Synthetic/ }) });
           await row.getByRole("button").first().click();
-          await expect(row.locator("input[type=number]")).toHaveValue("1");
+          await expect(
+            row.getByLabel(
+              {
+                en: "Round order",
+                "zh-Hans": "轮次顺序",
+                "zh-Hant": "輪次順序",
+              }[locale],
+              { exact: true },
+            ),
+          ).toHaveValue("1");
           expect(
             await page.evaluate(
               () => document.documentElement.scrollWidth <= innerWidth,

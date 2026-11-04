@@ -64,7 +64,17 @@ export function ExhibitionPoolImport({
   return (
     <details
       open={open}
-      onToggle={(event) => setOpen(event.currentTarget.open)}
+      onToggle={(event) => {
+        const nextOpen = event.currentTarget.open;
+        if (nextOpen) {
+          // A slot key can now identify a different map. Require a fresh
+          // selection for each newly fetched source snapshot.
+          setSources(null);
+          setError("");
+          reset();
+        }
+        setOpen(nextOpen);
+      }}
       className="mappool-setup"
     >
       <summary>{tr("Choose from historical mappools")}</summary>

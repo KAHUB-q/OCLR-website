@@ -159,12 +159,12 @@ function placements(
  * published archive snapshots are compared by team score totals.
  */
 function mapResult(game: MapPlay[], teamId: string): PlayerMapRow["result"] {
+  const explicit = game.find((play) => play.winnerTeamId)?.winnerTeamId;
+  if (explicit) return explicit === teamId ? "win" : "loss";
   const totals = new Map<string, number>();
   for (const play of game)
     totals.set(play.teamId, (totals.get(play.teamId) ?? 0) + play.score);
   if (totals.size < 2) return null;
-  const explicit = game.find((play) => play.winnerTeamId)?.winnerTeamId;
-  if (explicit) return explicit === teamId ? "win" : "loss";
   const ranked = [...totals].sort((a, b) => b[1] - a[1]);
   if (ranked[0][1] === ranked[1][1]) return "tie";
   return ranked[0][0] === teamId ? "win" : "loss";

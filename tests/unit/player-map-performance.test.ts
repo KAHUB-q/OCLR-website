@@ -274,6 +274,51 @@ describe("liveMapPlays", () => {
   const stages = new Map([["fixture", "group"]]);
   const slots = new Map([["round:42", "NM1"]]);
 
+  it.each([2000, 1999, 0])(
+    "retains the approved winner when the opponent scores %i",
+    (opponentScore) => {
+      const plays = liveMapPlays(
+        [
+          game({
+            scores: [
+              { userId: 1, total: 500000, teamId: "a", accuracy: 0.9 },
+              { userId: 2, total: opponentScore, teamId: "b", accuracy: 0.1 },
+            ],
+          }),
+        ],
+        stages,
+        slots,
+      );
+      const result = mapPerformance(plays, 1, ["a"]);
+      expect(result.maps).toHaveLength(1);
+      expect(result.mapsWon).toBe(1);
+      expect(result.maps[0].result).toBe("win");
+      expect(mapPerformance(plays, 2).maps).toHaveLength(
+        opponentScore >= 2000 ? 1 : 0,
+      );
+    },
+  );
+
+  it.each([1999, 0])(
+    "keeps a result unknown without an approved winner after filtering %i",
+    (opponentScore) => {
+      const plays = liveMapPlays(
+        [
+          game({
+            winnerTeamId: null,
+            scores: [
+              { userId: 1, total: 500000, teamId: "a", accuracy: 0.9 },
+              { userId: 2, total: opponentScore, teamId: "b", accuracy: 0.1 },
+            ],
+          }),
+        ],
+        stages,
+        slots,
+      );
+      expect(mapPerformance(plays, 1).maps[0].result).toBeNull();
+    },
+  );
+
   it("projects approved games into per-map plays", () => {
     const [row] = liveMapPlays([game()], stages, slots);
     expect(row).toMatchObject({

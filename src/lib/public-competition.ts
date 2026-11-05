@@ -35,7 +35,9 @@ import {
 } from "./match-details-model";
 import { calculateStandings } from "./standings";
 import { readTournament } from "./tournaments";
+import { openExhibitionSides } from "./exhibition-sides";
 export type PublicTeam = {
+  exhibition?: boolean;
   id: string;
   name: string;
   avatarKey?: string | null;
@@ -203,11 +205,26 @@ async function databasePublicCompetition(slug: string, reader?: RatingReader) {
       if (!row) return null;
       visiting.add(id);
       const f = row.fixture;
+      const sides = openExhibitionSides(f, row.stage);
+      const homeId = sides?.redId ?? f.homeTeamId;
+      const awayId = sides?.blueId ?? f.awayTeamId;
       const slot = (side: "home" | "away"): PublicSlot => {
         const sourceId = side === "home" ? f.homeSourceId : f.awaySourceId;
         const outcome =
           side === "home" ? f.homeSourceOutcome : f.awaySourceOutcome;
-        const teamId = side === "home" ? f.homeTeamId : f.awayTeamId;
+        const teamId = side === "home" ? homeId : awayId;
+        if (sides)
+          return {
+            team: {
+              id: teamId!,
+              name: side === "home" ? sides.redName : sides.blueName,
+              avatarKey: null,
+              exhibition: true,
+            },
+            label: side === "home" ? sides.redName : sides.blueName,
+            sourceId: null,
+            outcome: null,
+          };
         if (!sourceId) {
           const team = identities.find((t) => t.id === teamId) ?? null;
           return {
@@ -252,16 +269,16 @@ async function databasePublicCompetition(slug: string, reader?: RatingReader) {
         home.team &&
         away.team &&
         home.team.id !== away.team.id &&
-        home.team.id === f.homeTeamId &&
-        away.team.id === f.awayTeamId,
+        home.team.id === homeId &&
+        away.team.id === awayId,
       );
       const parsed = reviewedResultSchema.safeParse(row.proposal);
       const p = parsed.success ? parsed.data : null;
       const aligned =
         p &&
         p.roundId === f.roundId &&
-        p.teamIds[0] === f.homeTeamId &&
-        p.teamIds[1] === f.awayTeamId;
+        p.teamIds[0] === homeId &&
+        p.teamIds[1] === awayId;
       const result: PublicMatchResult | null =
         confirmed &&
         f.status !== "cancelled" &&
@@ -458,11 +475,24 @@ async function databasePublicFixture(
         )
       )
         return result;
-      const identities = await ratingIdentities(
-        slug,
-        tx,
-        proposal.data.teamIds,
-      );
+      const identities = fixture.home.team?.exhibition
+        ? new Map(
+            proposal.data.games.flatMap((game) =>
+              (game.attribution ?? []).flatMap((score) =>
+                score.osuId === null
+                  ? []
+                  : [
+                      [
+                        score.osuId,
+                        source.data.players?.find(
+                          (p) => p.osuId === score.osuId,
+                        )?.username ?? String(score.osuId),
+                      ] as const,
+                    ],
+              ),
+            ),
+          )
+        : await ratingIdentities(slug, tx, proposal.data.teamIds);
       const ezScoreMultiplier =
         (await readTournament(slug, tx, true))?.edition.ezScoreMultiplier ?? 1;
       const details = withStatisticsScores(

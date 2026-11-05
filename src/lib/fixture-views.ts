@@ -1,5 +1,6 @@
 import type { FixtureWorkspace } from "./fixtures";
 import type { ResolvedBracket, ResolvedSlot } from "./bracket-model";
+import { openExhibitionSides } from "./exhibition-sides";
 type Fixture = FixtureWorkspace["fixtures"][number];
 export function chronologicalFixtures(fixtures: Fixture[]) {
   return [...fixtures].sort(
@@ -15,6 +16,17 @@ export function fixtureSlot(
   fixture: Fixture,
   side: "home" | "away",
 ): ResolvedSlot {
+  const sides = openExhibitionSides(
+    fixture,
+    data.rounds.find((r) => r.round.id === fixture.roundId)?.stage,
+  );
+  if (sides)
+    return {
+      teamId: side === "home" ? sides.redId : sides.blueId,
+      label: side === "home" ? sides.redName : sides.blueName,
+      sourceMatchId: null,
+      kind: "team",
+    };
   const teamId = side === "home" ? fixture.homeTeamId : fixture.awayTeamId;
   const sourceId =
     side === "home" ? fixture.homeSourceId : fixture.awaySourceId;

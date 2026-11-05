@@ -23,8 +23,9 @@ export async function seedResultReview(
   adminId: number,
   refereeId: number,
   base: number,
-  stage: "group" | "knockout" = "group",
+  stage: "group" | "knockout" | "exhibition" = "group",
   withPool = false,
+  openExhibition = false,
 ) {
   const url = process.env.TEST_DATABASE_URL;
   assertTestDatabase(url);
@@ -105,8 +106,8 @@ export async function seedResultReview(
     action: "create",
     label: "Synthetic Reviewed Fixture",
     roundId,
-    homeTeamId: home.teamId,
-    awayTeamId: away.teamId,
+    homeTeamId: openExhibition ? null : home.teamId,
+    awayTeamId: openExhibition ? null : away.teamId,
     position: 1,
     scheduledAt: null,
     timeZone: "Asia/Taipei",
@@ -127,7 +128,9 @@ export async function seedResultReview(
     published: true,
   });
   const context = await fixtureForReview(actor, "test-cup", fixtureId);
-  const ids = context.teams.flatMap((t) => t.members.map((m) => m.osuId));
+  const ids = openExhibition
+    ? [9901001, 9901002, 9901003, 9901004]
+    : context.teams.flatMap((t) => t.members.map((m) => m.osuId));
   const games = [
     syntheticApiGame(1),
     syntheticApiGame(2, 100, 200),
@@ -149,7 +152,12 @@ export async function seedResultReview(
       difficulty: "Synthetic Difficulty",
     },
     scores: g.scores.map((s, i) => ({
-      osuId: ids[i],
+      osuId:
+        openExhibition && g.id === 2
+          ? ids[(i + 2) % 4]
+          : openExhibition && g.id === 3 && i === 0
+            ? 9901005
+            : ids[i],
       total: s.total_score,
       team: s.match.team,
       slot: s.match.slot,
@@ -163,6 +171,14 @@ export async function seedResultReview(
   }));
   const source = matchSourceSchema.parse({
     schemaVersion: 1,
+    ...(openExhibition
+      ? {
+          players: [...ids, 9901005].map((osuId) => ({
+            osuId,
+            username: `Synthetic Open Player ${osuId}`,
+          })),
+        }
+      : {}),
     apiVersion: "20220705",
     fetchedAt: new Date().toISOString(),
     fingerprint: createHash("sha256")

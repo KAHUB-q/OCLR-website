@@ -39,6 +39,59 @@ function context(change: Record<string, unknown> = {}): MatchContext {
   };
 }
 describe("fixture-bound candidate scoring and explicit game review", () => {
+  it("maps open exhibition players by each game's colors, including new players and side switches", async () => {
+    const games = [syntheticApiGame(1), syntheticApiGame(2)];
+    games[1].scores = games[1].scores.map((s, i) => ({
+      ...s,
+      user_id: i === 0 ? 800001 : games[0].scores[(i + 2) % 4].user_id,
+    }));
+    const source = await sourceOf(games);
+    const c = context();
+    c.fixture.openExhibition = true;
+    c.teams = c.teams.map((t) => ({ ...t, members: [] }));
+    const preview = previewMatch(source, c, choices([1, 2]));
+    expect(preview.blockers).toEqual([]);
+    expect(preview.canSubmit).toBe(true);
+    expect(preview.series).toMatchObject({
+      homeWins: 0,
+      awayWins: 2,
+      winnerTeamId: c.fixture.awayTeamId,
+    });
+    expect(preview.games.every((g) => g.confidence === "provider")).toBe(true);
+    expect(
+      preview.games[0].players.find((p) => p.osuId === 1001),
+    ).toMatchObject({ teamId: c.fixture.awayTeamId, evidence: "provider" });
+    expect(
+      preview.games[1].players.find((p) => p.osuId === 1001),
+    ).toMatchObject({ teamId: c.fixture.homeTeamId, evidence: "provider" });
+    expect(
+      preview.games[1].players.find((p) => p.osuId === 800001),
+    ).toMatchObject({ teamId: c.fixture.awayTeamId, evidence: "provider" });
+    const official = {
+      ...c,
+      fixture: { ...c.fixture, openExhibition: undefined },
+    };
+    expect(previewMatch(source, official, choices([1, 2])).canSubmit).toBe(
+      false,
+    );
+    source.games[0].scores[0].team = null;
+    expect(previewMatch(source, c, choices([1, 2])).canSubmit).toBe(false);
+    source.games[0].scores[0].team = "blue";
+    const reassigned = choices([1, 2]);
+    reassigned[0].substitutions = [
+      {
+        osuId: 1001,
+        teamId: c.fixture.homeTeamId,
+        reason: "Attempt to override MP colors",
+      },
+    ];
+    expect(previewMatch(source, c, reassigned).canSubmit).toBe(false);
+    c.round.scoringRules = {
+      ...syntheticScoringRules,
+      teamType: "head-to-head",
+    };
+    expect(previewMatch(source, c, choices([1, 2])).canSubmit).toBe(false);
+  });
   it("uses only saved EX declarations for reduced lineups and rejects ambiguous or unconfigured EX", async () => {
     const game = syntheticApiGame(1);
     game.scores = game.scores.filter((_, i) => i === 0 || i === 2);

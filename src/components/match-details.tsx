@@ -15,11 +15,12 @@ export function MatchDetailsView({
 }: {
   details: MatchDetails | null;
   slug: string;
-  teams: { id: string; name: string }[];
+  teams: { id: string; name: string; exhibition?: boolean }[];
   timeZone: string;
   historical?: boolean;
 }) {
   const tr = useAppTranslations();
+  const exhibition = teams.some((t) => t.exhibition);
   const number = (value: number | null | undefined) =>
     value == null ? tr("Not recorded") : value.toLocaleString(tr.locale);
   const team = (id: string | null) =>
@@ -106,8 +107,12 @@ export function MatchDetailsView({
             <p>
               <strong>
                 {g.included
-                  ? tr("Included in official result")
-                  : tr("Excluded from official result")}
+                  ? exhibition
+                    ? tr("Included in exhibition result")
+                    : tr("Included in official result")
+                  : exhibition
+                    ? tr("Excluded from exhibition result")
+                    : tr("Excluded from official result")}
               </strong>{" "}
               · {g.modsKnown ? g.mods.join(" / ") || "NM" : tr("Not recorded")}{" "}
               · {g.mode ?? tr("Not recorded")} ·{" "}
@@ -203,12 +208,22 @@ export function MatchDetailsView({
                       {g.scores.map((s, index) => (
                         <tr key={`${s.osuId}:${index}`}>
                           <th scope="row">
-                            <Link
-                              className="text-link"
-                              href={`/players/${s.osuId}?edition=${slug}`}
-                            >
-                              {s.username}
-                            </Link>
+                            {exhibition ? (
+                              <a
+                                className="text-link"
+                                href={`https://osu.ppy.sh/users/${s.osuId}`}
+                                rel="noreferrer"
+                              >
+                                {s.username}
+                              </a>
+                            ) : (
+                              <Link
+                                className="text-link"
+                                href={`/players/${s.osuId}?edition=${slug}`}
+                              >
+                                {s.username}
+                              </Link>
+                            )}
                             {s.mapping === "substitution" && (
                               <span className="small">
                                 {" "}
@@ -217,7 +232,12 @@ export function MatchDetailsView({
                             )}
                           </th>
                           <td>
-                            {s.teamId ? (
+                            {s.teamId &&
+                            teams.some(
+                              (t) => t.id === s.teamId && t.exhibition,
+                            ) ? (
+                              team(s.teamId)
+                            ) : s.teamId ? (
                               <Link
                                 className="text-link"
                                 href={`/tournaments/${slug}/teams/${s.teamId}`}
@@ -314,7 +334,13 @@ export function MatchDetailsView({
       </section>
       <section className="section-space stack">
         <h2>{tr("Match Rating")}</h2>
-        {details.rating ? (
+        {exhibition ? (
+          <p className="notice">
+            {tr(
+              "Exhibition results do not count toward official standings or career history.",
+            )}
+          </p>
+        ) : details.rating ? (
           <PlayerRatings
             report={details.rating}
             slug={slug}

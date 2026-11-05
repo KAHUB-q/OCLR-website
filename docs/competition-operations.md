@@ -561,7 +561,7 @@ timer 只接受相同秒數的送後 BanchoBot 倒數回覆；addref 只接受�
 
 bind 新增可選能力 receiptReasons:true；reason 是有限 enum，存入既有 recordError 的 relay: 前綴、以固定三語言文案顯示，無 DB migration。新桌面向舊網站不送 reason，舊客戶端沒有 reason 時維持原有狀態顯示。未取得精確回覆時保留 unknown，不以網站已連接標記宣稱命令已執行。新增中文提示待組織者審閱。
 
-## Exhibition rounds (#788)
+## Exhibition rounds (#788, #890)
 
 Round management and mappool management have a separate **Exhibition** stage.
 Create the round in that stage, then configure its scoring/referee rules and
@@ -577,6 +577,32 @@ standings, knockout progression, player career wins/losses and placements,
 MatchRating, round/series ratings, per-player map performance and award inputs.
 They do not count as missing official fixtures when checking award completeness.
 Participation/roster facts retain their existing publication rules.
+
+New exhibition fixtures need no official team selection. Their editable red/blue
+names default to 紅隊 / 藍隊; stable fixture-local side IDs are stored independently
+of the official team directory. Renaming either side does not change its picks,
+scores or approved result revision. A legacy exhibition with official teams keeps
+its existing reporting semantics and protected history; saving an unchanged
+legacy side name retains those teams. Converting participants after submission
+or approval is blocked by the existing structural-history rules.
+
+Open participants join the osu! MP room freely. They need no accepted registration,
+draft membership or captain assignment. Every reviewed game's saved provider
+red/blue colors determine attribution independently, so players can join, leave
+or switch sides between maps. Missing player/color evidence, duplicate scores,
+invalid modes and incomplete games still block submission. The configured round
+player count, modifiers, scoring and series rules still apply. Substitution
+assignments cannot override provider colors. Provisional referee MP scoring uses
+this same trusted exhibition mapping; no captain invites are fabricated.
+
+Only approved included player scores are released. Minimal public MP participant
+IDs/names are saved with the source snapshot and link to osu!; they do not create
+registrations, directory teams or OCLR career appearances. Unknown saved names
+fall back to the numeric ID. Referee assignments, Admin approval, explicit release,
+version checks, game ownership and automatic audit writes remain unchanged.
+Migrations `0075_open_exhibition_sides.sql` and
+`0076_exhibition_referee_order.sql` add nullable exhibition state; existing
+fixtures and official referee team foreign keys are retained.
 
 Migration `0074_exhibition_rounds.sql` adds the exhibition enum value and nullable
 map-source provenance. Existing stages and records remain unchanged; existing

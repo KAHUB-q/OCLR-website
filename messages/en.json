@@ -3885,6 +3885,15 @@
     "mb4b32c350c0b": "Difficulty preview only. Follow the published tournament mod rules.",
     "mf84d00a44dab": "AR / OD / CS / HP",
     "m7b3da353e8cb": "AR and OD include clock-rate timing; CS and HP are difficulty settings.",
-    "m87c588c29211": "Current calculation, not a historical difficulty snapshot."
+    "m87c588c29211": "Current calculation, not a historical difficulty snapshot.",
+    "me2fcc0db942a": "Open participation; sides follow each game’s recorded red and blue colors.",
+    "meeaf2545fcff": "Included in exhibition result",
+    "m441460a01568": "Excluded from exhibition result",
+    "mee3117356d2a": "Exhibition results do not count toward official standings or career history.",
+    "m9ea8602e73e6": "Exhibition sides and scoring rules",
+    "mcdf0ed299df8": "Custom side names are only available for exhibition fixtures.",
+    "m9fcd0308273d": "Open exhibitions use fixture-local red and blue sides without official teams or progression links.",
+    "mae33aa19a3fd": "Match history exceeds the participant identity limit.",
+    "m6b8936768246": "Open exhibitions already have red and blue sides. Import the match without completing official teams."
   }
 }

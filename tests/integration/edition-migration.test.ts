@@ -1017,7 +1017,7 @@ describe.skipIf(!base)(
               expect(
                 (
                   await pool.query(
-                    `SELECT ${table === "registrations" ? "to_jsonb(t) - 'configuration_version' - 'eligibility_acknowledged' - 'source' - 'eligibility_verification' - 'attempt'" : table === "fixtures" ? "to_jsonb(t) - 'assignment_revision' - 'stream_revision'" : table === "staff_roles" ? "to_jsonb(t) - 'about_published'" : table === "teams" ? "to_jsonb(t) - 'avatar_key'" : table === "mappools" ? "to_jsonb(t) - 'selection_locked_at' - 'showcase_at'" : table === "mappool_entries" ? "to_jsonb(t) - 'source'" : "to_jsonb(t)"} AS row FROM ${table} t ORDER BY to_jsonb(t)::text`,
+                    `SELECT ${table === "registrations" ? "to_jsonb(t) - 'configuration_version' - 'eligibility_acknowledged' - 'source' - 'eligibility_verification' - 'attempt'" : table === "fixtures" ? "to_jsonb(t) - 'assignment_revision' - 'stream_revision' - 'exhibition_sides'" : table === "staff_roles" ? "to_jsonb(t) - 'about_published'" : table === "teams" ? "to_jsonb(t) - 'avatar_key'" : table === "mappools" ? "to_jsonb(t) - 'selection_locked_at' - 'showcase_at'" : table === "mappool_entries" ? "to_jsonb(t) - 'source'" : "to_jsonb(t)"} AS row FROM ${table} t ORDER BY to_jsonb(t)::text`,
                   )
                 ).rows,
               ).toEqual(before.get(table));
@@ -2161,7 +2161,7 @@ describe.skipIf(!base)("Multiple commentary task upgrade (#667)", () => {
         ).rows;
         await migrate(drizzle(pool), { migrationsFolder: "./drizzle" });
         expect((await pool.query("SELECT * FROM fixtures")).rows).toEqual([
-          fixture,
+          { ...fixture, exhibition_sides: null },
         ]);
         expect(
           (await pool.query("SELECT * FROM fixture_streams")).rows,

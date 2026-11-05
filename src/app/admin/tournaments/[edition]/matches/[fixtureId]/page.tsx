@@ -61,6 +61,7 @@ async function Issue271Page({
         const fixture = workspace.fixtures.find((f) => f.id === fixtureId);
         if (
           !fixture ||
+          fixture.exhibitionSides ||
           (workspace.teams.some((t) => t.id === fixture.homeTeamId) &&
             workspace.teams.some((t) => t.id === fixture.awayTeamId))
         )

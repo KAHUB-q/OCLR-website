@@ -1,3 +1,4 @@
+import { openExhibitionSides } from "./exhibition-sides";
 import { and, eq, isNull, inArray, or, asc } from "drizzle-orm";
 import { z } from "zod";
 import { db, readOnlyData } from "@/db";
@@ -148,6 +149,7 @@ export async function desktopFixtures(request: Request) {
     for (const row of allowed.slice(offset, offset + limit)) {
       const f = row.fixture;
       const slots = [];
+      const sides = openExhibitionSides(f);
       for (const slot of ["home", "away"] as const) {
         const id = slot === "home" ? f.homeTeamId : f.awayTeamId;
         const [team] = id
@@ -160,9 +162,14 @@ export async function desktopFixtures(request: Request) {
           : [];
         slots.push({
           slot,
-          resolution: team ? "resolved" : "unresolved",
-          team: team ?? null,
-          sourceLabel: team ? null : "TBD",
+          resolution: sides || team ? "resolved" : "unresolved",
+          team: sides
+            ? {
+                id: slot === "home" ? sides.redId : sides.blueId,
+                name: slot === "home" ? sides.redName : sides.blueName,
+              }
+            : (team ?? null),
+          sourceLabel: sides || team ? null : "TBD",
         });
       }
       items.push({

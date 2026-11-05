@@ -1,3 +1,4 @@
+import { openExhibitionSides } from "./exhibition-sides";
 import { streamingFilters } from "./read-api-queries";
 export { streamingFilters } from "./read-api-queries";
 import { db } from "@/db";
@@ -110,6 +111,7 @@ async function databaseStreamingWorkspace(
           status: fixtures.status,
           version: fixtures.version,
           streamRevision: fixtures.streamRevision,
+          exhibitionSides: fixtures.exhibitionSides,
           homeTeamId: fixtures.homeTeamId,
           awayTeamId: fixtures.awayTeamId,
           homeSourceId: fixtures.homeSourceId,
@@ -155,6 +157,13 @@ async function databaseStreamingWorkspace(
       const filters = parsed.data;
       const workspace = rows.map((f) => {
         const slot = (side: "home" | "away") => {
+          const sides = openExhibitionSides(f);
+          if (sides)
+            return {
+              name: side === "home" ? sides.redName : sides.blueName,
+              source: null,
+              outcome: null,
+            };
           const id = side === "home" ? f.homeTeamId : f.awayTeamId;
           const sourceId = side === "home" ? f.homeSourceId : f.awaySourceId;
           const outcome =

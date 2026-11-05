@@ -238,6 +238,7 @@ const pageSchema = z.object({
   latest_event_id: z.number().int().nonnegative(),
   current_game_id: z.number().int().positive().nullable(),
   events: z.array(z.unknown()).max(101),
+  users: z.array(z.unknown()).max(10000).optional(),
 });
 export async function fetchMatchSource(matchId: number): Promise<MatchSource> {
   if (!Number.isSafeInteger(matchId) || matchId <= 0)
@@ -245,6 +246,7 @@ export async function fetchMatchSource(matchId: number): Promise<MatchSource> {
   const events = new Map<number, MatchSource["events"][number]>();
   const games = new Map<number, MatchGame>();
   const warnings = new Set<string>();
+  const players = new Map<number, string>();
   let first: z.infer<typeof pageSchema> | undefined;
   let cursor = 0;
   let pages = 0;
@@ -277,6 +279,17 @@ export async function fetchMatchSource(matchId: number): Promise<MatchSource> {
         "osu! returned incomplete or mismatched match history.",
       );
     const page = parsed.data;
+    for (const value of page.users ?? []) {
+      const user = object(value);
+      const userId = number(user.id, 1),
+        username = text(user.username, 64);
+      if (userId && username) players.set(userId, username);
+    }
+    if (players.size > 10000)
+      throw new HttpError(
+        413,
+        "Match history exceeds the participant identity limit.",
+      );
     if (
       page.first_event_id > page.latest_event_id ||
       Boolean(page.first_event_id) !== Boolean(page.latest_event_id)
@@ -380,8 +393,21 @@ export async function fetchMatchSource(matchId: number): Promise<MatchSource> {
   }
   if (!first.match.end_time || first.current_game_id)
     warnings.add(OPEN_MATCH_WARNING);
+  const scoredIds = new Set(
+    [...games.values()].flatMap((game) =>
+      game.scores.map((score) => score.osuId),
+    ),
+  );
   const facts = {
     schemaVersion: 1 as const,
+    ...(players.size
+      ? {
+          players: [...players]
+            .filter(([id]) => scoredIds.has(id))
+            .sort((a, b) => a[0] - b[0])
+            .map(([osuId, username]) => ({ osuId, username })),
+        }
+      : {}),
     apiVersion: "20220705" as const,
     match: {
       id: matchId,

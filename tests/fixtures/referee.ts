@@ -42,7 +42,10 @@ export const syntheticRefereePolicy: RefereePolicy = {
   },
 };
 /** Only isolated automated-test databases. This helper never touches the local preview database. */
-export async function seedRefereeFixture(configure = true) {
+export async function seedRefereeFixture(
+  configure = true,
+  openExhibition = false,
+) {
   assertTestDatabase(process.env.TEST_DATABASE_URL);
   if (
     new URL(process.env.TEST_DATABASE_URL!).pathname === "/oclr_frontend_test"
@@ -58,8 +61,9 @@ export async function seedRefereeFixture(configure = true) {
     refereeTestAdmin.osuId,
     refereeTestUser.osuId,
     891100,
-    "knockout",
+    openExhibition ? "exhibition" : "knockout",
     true,
+    openExhibition,
   );
   await db()
     .insert(mappoolEntries)

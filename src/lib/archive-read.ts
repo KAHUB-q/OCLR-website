@@ -1,9 +1,15 @@
-import { and, desc, eq } from "drizzle-orm";
+import { alias } from "drizzle-orm/pg-core";
+import { normalizedArchive, syncArchiveRelations } from "./archive-relations";
+import { editionSchema, normalizeEditionBranding } from "./editions";
+import { supportsArchiveStatistics } from "./archive-statistics-model";
+import { STATISTICS_SCORE_POLICY } from "./statistics-score";
+import { and, desc, eq, inArray, or, gte } from "drizzle-orm";
 import { db } from "@/db";
 import {
   archiveReadVersions,
   editionState,
   historicalStatistics,
+  historicalStatisticsSources,
   archiveReadTeams,
   archiveReadPeople,
   archiveReadPicks,
@@ -192,6 +198,8 @@ async function loadData(
 
 /** Internal reader: caller retains the current edition's publication/permission gate. */
 export async function relationalArchive(state: ArchiveState, reader: Reader) {
+  const normalized = await normalizedArchive(state, reader);
+  if (normalized) return normalized;
   const version = await currentVersion(state, reader);
   if (!version) return undefined;
   const data = await loadData(reader, version.id);
@@ -211,6 +219,7 @@ export async function rebuildArchiveReadData(
   slug: string,
   force = false,
 ) {
+  await syncArchiveRelations(tx, slug, force);
   const [state] = await tx
     .select()
     .from(editionState)
@@ -220,7 +229,8 @@ export async function rebuildArchiveReadData(
   const rows = await tx
     .select()
     .from(historicalStatistics)
-    .where(eq(historicalStatistics.editionSlug, slug));
+    .where(eq(historicalStatistics.editionSlug, slug))
+    .for("share");
   const sourceHash = archiveSourceHash(state, rows);
   const [existing] = await tx
     .select()
@@ -262,6 +272,10 @@ export async function rebuildArchiveReadData(
       sourceHash,
       projectorVersion: ARCHIVE_PROJECTOR_VERSION,
       header: built.header,
+      statisticsManifestHash: await statisticsManifestHash(tx, slug),
+      statisticsScorePolicy: STATISTICS_SCORE_POLICY,
+      ezScoreMultiplier: state.configuration.ezScoreMultiplier ?? 1,
+      publicStatistics: built.publicStatistics,
     })
     .returning();
   const data = built.data,
@@ -484,4 +498,120 @@ export async function relationalPublicPlays(
     )
     .orderBy(archiveReadPlays.position);
   return result.map((row) => archivePlayPayload(row.payload));
+}
+
+/** A missing sidecar row disables the shortcut; it never hides a source. */
+async function statisticsManifestHash(reader: Reader, slug: string) {
+  const sources = await reader
+    .select({
+      mpId: historicalStatistics.mpId,
+      sourceHash: historicalStatisticsSources.sourceHash,
+    })
+    .from(historicalStatistics)
+    .leftJoin(
+      historicalStatisticsSources,
+      and(
+        eq(
+          historicalStatisticsSources.editionSlug,
+          historicalStatistics.editionSlug,
+        ),
+        eq(historicalStatisticsSources.mpId, historicalStatistics.mpId),
+      ),
+    )
+    .where(eq(historicalStatistics.editionSlug, slug))
+    .orderBy(historicalStatistics.mpId);
+  return sources.some((s) => s.sourceHash === null)
+    ? null
+    : archiveContentHash(sources);
+}
+async function currentPublicStatisticsVersion(slug: string, reader: Reader) {
+  if (remoteMode() || process.env.OCLR_ARCHIVE_READ_MODEL === "jsonb")
+    return undefined;
+  const [state] = await reader
+    .select()
+    .from(editionState)
+    .where(eq(editionState.slug, slug));
+  if (
+    state?.configuration?.published !== true ||
+    !supportsArchiveStatistics(slug)
+  )
+    return undefined;
+  const edition = editionSchema.parse(
+    normalizeEditionBranding({ ...state.configuration, slug }),
+  );
+  if (!edition.archive) return undefined;
+  const version = await currentVersion(state, reader);
+  if (
+    !version?.publicStatistics ||
+    !version.statisticsManifestHash ||
+    version.statisticsScorePolicy !== STATISTICS_SCORE_POLICY ||
+    version.ezScoreMultiplier !== (edition.ezScoreMultiplier ?? 1) ||
+    version.statisticsManifestHash !==
+      (await statisticsManifestHash(reader, slug))
+  )
+    return undefined;
+  return version;
+}
+
+/** Already validated summary and facts: no MP source JSONB is read on this path. */
+export async function relationalPublicStatistics(slug: string, reader: Reader) {
+  const version = await currentPublicStatisticsVersion(slug, reader);
+  if (!version) return undefined;
+  const facts = await reader
+    .select({ payload: archiveReadPlays.payload })
+    .from(archiveReadPlays)
+    .where(eq(archiveReadPlays.generationId, version.id))
+    .orderBy(archiveReadPlays.position);
+  return {
+    summary: version.publicStatistics!,
+    plays: facts.map((f) => archivePlayPayload(f.payload)),
+  };
+}
+
+/** Keep entire games, including opponents and bench games for the player's teams. */
+export async function relationalPlayerArchivePlays(
+  slug: string,
+  reader: Reader,
+  osuId: number,
+  rosterTeams: string[],
+  minimumScore: number,
+) {
+  const version = await currentPublicStatisticsVersion(slug, reader);
+  if (!version) return undefined;
+  const scope = alias(archiveReadPlays, "player_game_scope"),
+    own = alias(archiveReadPlays, "player_team_scope");
+  const observedTeams = reader
+    .select({ teamId: own.teamId })
+    .from(own)
+    .where(
+      and(
+        eq(own.generationId, version.id),
+        eq(own.osuId, osuId),
+        gte(own.rawScore, minimumScore),
+      ),
+    );
+  const games = reader
+    .select({ gameId: scope.gameId })
+    .from(scope)
+    .where(
+      and(
+        eq(scope.generationId, version.id),
+        or(
+          eq(scope.osuId, osuId),
+          inArray(scope.teamId, rosterTeams),
+          inArray(scope.teamId, observedTeams),
+        ),
+      ),
+    );
+  const facts = await reader
+    .select({ payload: archiveReadPlays.payload })
+    .from(archiveReadPlays)
+    .where(
+      and(
+        eq(archiveReadPlays.generationId, version.id),
+        inArray(archiveReadPlays.gameId, games),
+      ),
+    )
+    .orderBy(archiveReadPlays.position);
+  return facts.map((f) => archivePlayPayload(f.payload));
 }

@@ -1,3 +1,4 @@
+import { syncArchiveRelations } from "./archive-relations";
 import { and, eq } from "drizzle-orm";
 import { isDeepStrictEqual } from "node:util";
 import { db } from "@/db";
@@ -203,6 +204,7 @@ export async function correctS2PoolData(
           })),
         },
       });
+      await syncArchiveRelations(tx, "s2");
       return { ...report, applied: true };
     },
     {

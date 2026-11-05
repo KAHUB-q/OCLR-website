@@ -1,0 +1,2532 @@
+[
+  {
+    "kind": "archive",
+    "root": "archive_rel_archive",
+    "entities": [
+      {
+        "key": "archive_rel_archive",
+        "fields": [
+          {
+            "column": "value_format_version",
+            "type": "number",
+            "array": false
+          },
+          { "column": "value_edition_slug", "type": "string", "array": false },
+          { "column": "value_source_url", "type": "string", "array": false },
+          { "column": "value_captured_on", "type": "string", "array": false },
+          {
+            "column": "value_season_starts_at",
+            "type": "string",
+            "array": false
+          },
+          {
+            "column": "value_season_ends_at",
+            "type": "string",
+            "array": false
+          },
+          {
+            "column": "value_season_time_zone",
+            "type": "string",
+            "array": false
+          },
+          {
+            "column": "value_season_precision",
+            "type": "string",
+            "array": false
+          },
+          { "column": "value_notes", "type": "string", "array": true },
+          { "column": "value_draft_mode", "type": "string", "array": false }
+        ],
+        "node": {
+          "type": "object",
+          "properties": {
+            "formatVersion": {
+              "type": "scalar",
+              "column": "value_format_version",
+              "scalar": "number",
+              "array": false
+            },
+            "editionSlug": {
+              "type": "scalar",
+              "column": "value_edition_slug",
+              "scalar": "string",
+              "array": false
+            },
+            "sourceUrl": {
+              "type": "scalar",
+              "column": "value_source_url",
+              "scalar": "string",
+              "array": false
+            },
+            "capturedOn": {
+              "type": "scalar",
+              "column": "value_captured_on",
+              "scalar": "string",
+              "array": false
+            },
+            "season": {
+              "type": "object",
+              "properties": {
+                "startsAt": {
+                  "type": "scalar",
+                  "column": "value_season_starts_at",
+                  "scalar": "string",
+                  "array": false
+                },
+                "endsAt": {
+                  "type": "scalar",
+                  "column": "value_season_ends_at",
+                  "scalar": "string",
+                  "array": false
+                },
+                "timeZone": {
+                  "type": "scalar",
+                  "column": "value_season_time_zone",
+                  "scalar": "string",
+                  "array": false
+                },
+                "precision": {
+                  "type": "scalar",
+                  "column": "value_season_precision",
+                  "scalar": "string",
+                  "array": false
+                }
+              }
+            },
+            "finalPlacements": {
+              "type": "relation",
+              "mode": "array",
+              "entity": "archive_rel_archive_final_placements"
+            },
+            "notes": {
+              "type": "scalar",
+              "column": "value_notes",
+              "scalar": "string",
+              "array": true
+            },
+            "links": {
+              "type": "relation",
+              "mode": "array",
+              "entity": "archive_rel_archive_links"
+            },
+            "teams": {
+              "type": "relation",
+              "mode": "array",
+              "entity": "archive_rel_archive_teams"
+            },
+            "players": {
+              "type": "relation",
+              "mode": "array",
+              "entity": "archive_rel_archive_players"
+            },
+            "unresolvedPlayers": {
+              "type": "relation",
+              "mode": "array",
+              "entity": "archive_rel_archive_unresolved_players"
+            },
+            "rosterReplacements": {
+              "type": "relation",
+              "mode": "array",
+              "entity": "archive_rel_archive_roster_replacements"
+            },
+            "qualifiers": {
+              "type": "relation",
+              "mode": "array",
+              "entity": "archive_rel_archive_qualifiers"
+            },
+            "reviewTables": {
+              "type": "relation",
+              "mode": "array",
+              "entity": "archive_rel_archive_review_tables"
+            },
+            "sourceFacts": {
+              "type": "relation",
+              "mode": "array",
+              "entity": "archive_rel_archive_source_facts"
+            },
+            "picks": {
+              "type": "relation",
+              "mode": "array",
+              "entity": "archive_rel_archive_picks"
+            },
+            "draftMode": {
+              "type": "scalar",
+              "column": "value_draft_mode",
+              "scalar": "string",
+              "array": false
+            },
+            "staff": {
+              "type": "relation",
+              "mode": "array",
+              "entity": "archive_rel_archive_staff"
+            },
+            "standings": {
+              "type": "relation",
+              "mode": "array",
+              "entity": "archive_rel_archive_standings"
+            },
+            "matches": {
+              "type": "relation",
+              "mode": "array",
+              "entity": "archive_rel_archive_matches"
+            },
+            "pools": {
+              "type": "relation",
+              "mode": "array",
+              "entity": "archive_rel_archive_pools"
+            }
+          }
+        }
+      },
+      {
+        "key": "archive_rel_archive_final_placements",
+        "parent": "archive_rel_archive",
+        "fields": [
+          { "column": "value_team_id", "type": "string", "array": false },
+          {
+            "column": "value_placement_start",
+            "type": "integer",
+            "array": false
+          },
+          {
+            "column": "value_placement_end",
+            "type": "integer",
+            "array": false
+          },
+          { "column": "value_tied", "type": "boolean", "array": false },
+          { "column": "value_qualified", "type": "boolean", "array": false },
+          { "column": "value_official", "type": "boolean", "array": false },
+          { "column": "value_note", "type": "string", "array": false },
+          { "column": "value_scope", "type": "string", "array": false },
+          { "column": "value_source", "type": "string", "array": false }
+        ],
+        "node": {
+          "type": "object",
+          "properties": {
+            "teamId": {
+              "type": "scalar",
+              "column": "value_team_id",
+              "scalar": "string",
+              "array": false
+            },
+            "placement": {
+              "type": "object",
+              "properties": {
+                "start": {
+                  "type": "scalar",
+                  "column": "value_placement_start",
+                  "scalar": "integer",
+                  "array": false
+                },
+                "end": {
+                  "type": "scalar",
+                  "column": "value_placement_end",
+                  "scalar": "integer",
+                  "array": false
+                }
+              }
+            },
+            "tied": {
+              "type": "scalar",
+              "column": "value_tied",
+              "scalar": "boolean",
+              "array": false
+            },
+            "qualified": {
+              "type": "scalar",
+              "column": "value_qualified",
+              "scalar": "boolean",
+              "array": false
+            },
+            "official": {
+              "type": "scalar",
+              "column": "value_official",
+              "scalar": "boolean",
+              "array": false
+            },
+            "note": {
+              "type": "scalar",
+              "column": "value_note",
+              "scalar": "string",
+              "array": false
+            },
+            "scope": {
+              "type": "scalar",
+              "column": "value_scope",
+              "scalar": "string",
+              "array": false
+            },
+            "source": {
+              "type": "scalar",
+              "column": "value_source",
+              "scalar": "string",
+              "array": false
+            }
+          }
+        }
+      },
+      {
+        "key": "archive_rel_archive_links",
+        "parent": "archive_rel_archive",
+        "fields": [
+          { "column": "value_label", "type": "string", "array": false },
+          { "column": "value_url", "type": "string", "array": false }
+        ],
+        "node": {
+          "type": "object",
+          "properties": {
+            "label": {
+              "type": "scalar",
+              "column": "value_label",
+              "scalar": "string",
+              "array": false
+            },
+            "url": {
+              "type": "scalar",
+              "column": "value_url",
+              "scalar": "string",
+              "array": false
+            }
+          }
+        }
+      },
+      {
+        "key": "archive_rel_archive_teams",
+        "parent": "archive_rel_archive",
+        "fields": [
+          { "column": "value_id", "type": "string", "array": false },
+          { "column": "value_name", "type": "string", "array": false },
+          { "column": "value_source", "type": "string", "array": false }
+        ],
+        "node": {
+          "type": "object",
+          "properties": {
+            "id": {
+              "type": "scalar",
+              "column": "value_id",
+              "scalar": "string",
+              "array": false
+            },
+            "name": {
+              "type": "scalar",
+              "column": "value_name",
+              "scalar": "string",
+              "array": false
+            },
+            "source": {
+              "type": "scalar",
+              "column": "value_source",
+              "scalar": "string",
+              "array": false
+            }
+          }
+        }
+      },
+      {
+        "key": "archive_rel_archive_players",
+        "parent": "archive_rel_archive",
+        "fields": [
+          { "column": "value_osu_id", "type": "integer", "array": false },
+          { "column": "value_username", "type": "string", "array": false },
+          { "column": "value_team_id", "type": "string", "array": false },
+          { "column": "value_role", "type": "string", "array": false },
+          { "column": "value_source_role", "type": "string", "array": false },
+          { "column": "value_tier", "type": "integer", "array": false },
+          { "column": "value_source", "type": "string", "array": false }
+        ],
+        "node": {
+          "type": "object",
+          "properties": {
+            "osuId": {
+              "type": "scalar",
+              "column": "value_osu_id",
+              "scalar": "integer",
+              "array": false
+            },
+            "username": {
+              "type": "scalar",
+              "column": "value_username",
+              "scalar": "string",
+              "array": false
+            },
+            "teamId": {
+              "type": "scalar",
+              "column": "value_team_id",
+              "scalar": "string",
+              "array": false
+            },
+            "role": {
+              "type": "scalar",
+              "column": "value_role",
+              "scalar": "string",
+              "array": false
+            },
+            "sourceRole": {
+              "type": "scalar",
+              "column": "value_source_role",
+              "scalar": "string",
+              "array": false
+            },
+            "tier": {
+              "type": "scalar",
+              "column": "value_tier",
+              "scalar": "integer",
+              "array": false
+            },
+            "source": {
+              "type": "scalar",
+              "column": "value_source",
+              "scalar": "string",
+              "array": false
+            }
+          }
+        }
+      },
+      {
+        "key": "archive_rel_archive_unresolved_players",
+        "parent": "archive_rel_archive",
+        "fields": [
+          { "column": "value_id", "type": "string", "array": false },
+          { "column": "value_username", "type": "string", "array": false },
+          { "column": "value_team_id", "type": "string", "array": false },
+          { "column": "value_role", "type": "string", "array": false },
+          { "column": "value_tier", "type": "integer", "array": false },
+          { "column": "value_source_role", "type": "string", "array": false },
+          { "column": "value_source", "type": "string", "array": false }
+        ],
+        "node": {
+          "type": "object",
+          "properties": {
+            "id": {
+              "type": "scalar",
+              "column": "value_id",
+              "scalar": "string",
+              "array": false
+            },
+            "username": {
+              "type": "scalar",
+              "column": "value_username",
+              "scalar": "string",
+              "array": false
+            },
+            "teamId": {
+              "type": "scalar",
+              "column": "value_team_id",
+              "scalar": "string",
+              "array": false
+            },
+            "role": {
+              "type": "scalar",
+              "column": "value_role",
+              "scalar": "string",
+              "array": false
+            },
+            "tier": {
+              "type": "scalar",
+              "column": "value_tier",
+              "scalar": "integer",
+              "array": false
+            },
+            "sourceRole": {
+              "type": "scalar",
+              "column": "value_source_role",
+              "scalar": "string",
+              "array": false
+            },
+            "source": {
+              "type": "scalar",
+              "column": "value_source",
+              "scalar": "string",
+              "array": false
+            }
+          }
+        }
+      },
+      {
+        "key": "archive_rel_archive_roster_replacements",
+        "parent": "archive_rel_archive",
+        "fields": [
+          { "column": "value_id", "type": "string", "array": false },
+          { "column": "value_team_id", "type": "string", "array": false },
+          { "column": "value_tier", "type": "integer", "array": false },
+          { "column": "value_replaced_at", "type": "string", "array": false },
+          { "column": "value_note", "type": "string", "array": false },
+          { "column": "value_source", "type": "string", "array": false }
+        ],
+        "node": {
+          "type": "object",
+          "properties": {
+            "id": {
+              "type": "scalar",
+              "column": "value_id",
+              "scalar": "string",
+              "array": false
+            },
+            "teamId": {
+              "type": "scalar",
+              "column": "value_team_id",
+              "scalar": "string",
+              "array": false
+            },
+            "tier": {
+              "type": "scalar",
+              "column": "value_tier",
+              "scalar": "integer",
+              "array": false
+            },
+            "people": {
+              "type": "relation",
+              "mode": "array",
+              "entity": "archive_rel_archive_roster_replacements_people"
+            },
+            "replacedAt": {
+              "type": "scalar",
+              "column": "value_replaced_at",
+              "scalar": "string",
+              "array": false
+            },
+            "note": {
+              "type": "scalar",
+              "column": "value_note",
+              "scalar": "string",
+              "array": false
+            },
+            "source": {
+              "type": "scalar",
+              "column": "value_source",
+              "scalar": "string",
+              "array": false
+            }
+          }
+        }
+      },
+      {
+        "key": "archive_rel_archive_roster_replacements_people",
+        "parent": "archive_rel_archive_roster_replacements",
+        "fields": [
+          { "column": "value_osu_id", "type": "integer", "array": false },
+          { "column": "value_username", "type": "string", "array": false },
+          { "column": "value_source", "type": "string", "array": false }
+        ],
+        "node": {
+          "type": "object",
+          "properties": {
+            "osuId": {
+              "type": "scalar",
+              "column": "value_osu_id",
+              "scalar": "integer",
+              "array": false
+            },
+            "username": {
+              "type": "scalar",
+              "column": "value_username",
+              "scalar": "string",
+              "array": false
+            },
+            "source": {
+              "type": "scalar",
+              "column": "value_source",
+              "scalar": "string",
+              "array": false
+            }
+          }
+        }
+      },
+      {
+        "key": "archive_rel_archive_qualifiers",
+        "parent": "archive_rel_archive",
+        "fields": [
+          { "column": "value_name", "type": "string", "array": false },
+          { "column": "value_pool_id", "type": "string", "array": false },
+          { "column": "value_source", "type": "string", "array": false }
+        ],
+        "node": {
+          "type": "object",
+          "properties": {
+            "name": {
+              "type": "scalar",
+              "column": "value_name",
+              "scalar": "string",
+              "array": false
+            },
+            "poolId": {
+              "type": "scalar",
+              "column": "value_pool_id",
+              "scalar": "string",
+              "array": false
+            },
+            "source": {
+              "type": "scalar",
+              "column": "value_source",
+              "scalar": "string",
+              "array": false
+            },
+            "records": {
+              "type": "relation",
+              "mode": "array",
+              "entity": "archive_rel_archive_qualifiers_records"
+            }
+          }
+        }
+      },
+      {
+        "key": "archive_rel_archive_qualifiers_records",
+        "parent": "archive_rel_archive_qualifiers",
+        "fields": [
+          { "column": "value_username", "type": "string", "array": false },
+          { "column": "value_source", "type": "string", "array": false }
+        ],
+        "node": {
+          "type": "object",
+          "properties": {
+            "username": {
+              "type": "scalar",
+              "column": "value_username",
+              "scalar": "string",
+              "array": false
+            },
+            "scores": {
+              "type": "relation",
+              "mode": "array",
+              "entity": "archive_rel_archive_qualifiers_records_scores"
+            },
+            "source": {
+              "type": "scalar",
+              "column": "value_source",
+              "scalar": "string",
+              "array": false
+            }
+          }
+        }
+      },
+      {
+        "key": "archive_rel_archive_qualifiers_records_scores",
+        "parent": "archive_rel_archive_qualifiers_records",
+        "fields": [
+          { "column": "value_slot", "type": "string", "array": false },
+          { "column": "value_score", "type": "integer", "array": false }
+        ],
+        "node": {
+          "type": "object",
+          "properties": {
+            "slot": {
+              "type": "scalar",
+              "column": "value_slot",
+              "scalar": "string",
+              "array": false
+            },
+            "score": {
+              "type": "scalar",
+              "column": "value_score",
+              "scalar": "integer",
+              "array": false
+            }
+          }
+        }
+      },
+      {
+        "key": "archive_rel_archive_review_tables",
+        "parent": "archive_rel_archive",
+        "fields": [
+          { "column": "value_name", "type": "string", "array": false },
+          { "column": "value_note", "type": "string", "array": false }
+        ],
+        "node": {
+          "type": "object",
+          "properties": {
+            "name": {
+              "type": "scalar",
+              "column": "value_name",
+              "scalar": "string",
+              "array": false
+            },
+            "note": {
+              "type": "scalar",
+              "column": "value_note",
+              "scalar": "string",
+              "array": false
+            },
+            "rows": {
+              "type": "relation",
+              "mode": "array",
+              "entity": "archive_rel_archive_review_tables_rows"
+            }
+          }
+        }
+      },
+      {
+        "key": "archive_rel_archive_review_tables_rows",
+        "parent": "archive_rel_archive_review_tables",
+        "fields": [
+          { "column": "value_team_id", "type": "string", "array": false },
+          { "column": "value_wins", "type": "integer", "array": false },
+          { "column": "value_losses", "type": "integer", "array": false },
+          { "column": "value_maps_won", "type": "integer", "array": false },
+          { "column": "value_maps_lost", "type": "integer", "array": false }
+        ],
+        "node": {
+          "type": "object",
+          "properties": {
+            "teamId": {
+              "type": "scalar",
+              "column": "value_team_id",
+              "scalar": "string",
+              "array": false
+            },
+            "wins": {
+              "type": "scalar",
+              "column": "value_wins",
+              "scalar": "integer",
+              "array": false
+            },
+            "losses": {
+              "type": "scalar",
+              "column": "value_losses",
+              "scalar": "integer",
+              "array": false
+            },
+            "mapsWon": {
+              "type": "scalar",
+              "column": "value_maps_won",
+              "scalar": "integer",
+              "array": false
+            },
+            "mapsLost": {
+              "type": "scalar",
+              "column": "value_maps_lost",
+              "scalar": "integer",
+              "array": false
+            }
+          }
+        }
+      },
+      {
+        "key": "archive_rel_archive_source_facts",
+        "parent": "archive_rel_archive",
+        "fields": [
+          { "column": "value_category", "type": "string", "array": false },
+          { "column": "value_label", "type": "string", "array": false },
+          { "column": "value_text", "type": "string", "array": false },
+          { "column": "value_source", "type": "string", "array": false }
+        ],
+        "node": {
+          "type": "object",
+          "properties": {
+            "category": {
+              "type": "scalar",
+              "column": "value_category",
+              "scalar": "string",
+              "array": false
+            },
+            "label": {
+              "type": "scalar",
+              "column": "value_label",
+              "scalar": "string",
+              "array": false
+            },
+            "text": {
+              "type": "scalar",
+              "column": "value_text",
+              "scalar": "string",
+              "array": false
+            },
+            "source": {
+              "type": "scalar",
+              "column": "value_source",
+              "scalar": "string",
+              "array": false
+            }
+          }
+        }
+      },
+      {
+        "key": "archive_rel_archive_picks",
+        "parent": "archive_rel_archive",
+        "fields": [
+          { "column": "value_round", "type": "integer", "array": false },
+          { "column": "value_pick", "type": "integer", "array": false },
+          { "column": "value_team_id", "type": "string", "array": false },
+          { "column": "value_osu_id", "type": "integer", "array": false },
+          { "column": "value_source", "type": "string", "array": false }
+        ],
+        "node": {
+          "type": "object",
+          "properties": {
+            "round": {
+              "type": "scalar",
+              "column": "value_round",
+              "scalar": "integer",
+              "array": false
+            },
+            "pick": {
+              "type": "scalar",
+              "column": "value_pick",
+              "scalar": "integer",
+              "array": false
+            },
+            "teamId": {
+              "type": "scalar",
+              "column": "value_team_id",
+              "scalar": "string",
+              "array": false
+            },
+            "osuId": {
+              "type": "scalar",
+              "column": "value_osu_id",
+              "scalar": "integer",
+              "array": false
+            },
+            "source": {
+              "type": "scalar",
+              "column": "value_source",
+              "scalar": "string",
+              "array": false
+            }
+          }
+        }
+      },
+      {
+        "key": "archive_rel_archive_staff",
+        "parent": "archive_rel_archive",
+        "fields": [
+          { "column": "value_osu_id", "type": "integer", "array": false },
+          { "column": "value_username", "type": "string", "array": false },
+          { "column": "value_position", "type": "string", "array": false },
+          { "column": "value_source", "type": "string", "array": false }
+        ],
+        "node": {
+          "type": "object",
+          "properties": {
+            "osuId": {
+              "type": "scalar",
+              "column": "value_osu_id",
+              "scalar": "integer",
+              "array": false
+            },
+            "username": {
+              "type": "scalar",
+              "column": "value_username",
+              "scalar": "string",
+              "array": false
+            },
+            "position": {
+              "type": "scalar",
+              "column": "value_position",
+              "scalar": "string",
+              "array": false
+            },
+            "source": {
+              "type": "scalar",
+              "column": "value_source",
+              "scalar": "string",
+              "array": false
+            }
+          }
+        }
+      },
+      {
+        "key": "archive_rel_archive_standings",
+        "parent": "archive_rel_archive",
+        "fields": [
+          { "column": "value_group", "type": "string", "array": false },
+          {
+            "column": "value_placement_start",
+            "type": "integer",
+            "array": false
+          },
+          {
+            "column": "value_placement_end",
+            "type": "integer",
+            "array": false
+          },
+          { "column": "value_tied", "type": "boolean", "array": false },
+          { "column": "value_qualified", "type": "boolean", "array": false },
+          { "column": "value_official", "type": "boolean", "array": false },
+          { "column": "value_note", "type": "string", "array": false },
+          { "column": "value_scope", "type": "string", "array": false },
+          { "column": "value_team_id", "type": "string", "array": false },
+          { "column": "value_rank", "type": "integer", "array": false },
+          { "column": "value_wins", "type": "integer", "array": false },
+          { "column": "value_losses", "type": "integer", "array": false },
+          { "column": "value_maps_won", "type": "integer", "array": false },
+          { "column": "value_maps_lost", "type": "integer", "array": false },
+          { "column": "value_source", "type": "string", "array": false }
+        ],
+        "node": {
+          "type": "object",
+          "properties": {
+            "group": {
+              "type": "scalar",
+              "column": "value_group",
+              "scalar": "string",
+              "array": false
+            },
+            "placement": {
+              "type": "object",
+              "properties": {
+                "start": {
+                  "type": "scalar",
+                  "column": "value_placement_start",
+                  "scalar": "integer",
+                  "array": false
+                },
+                "end": {
+                  "type": "scalar",
+                  "column": "value_placement_end",
+                  "scalar": "integer",
+                  "array": false
+                }
+              }
+            },
+            "tied": {
+              "type": "scalar",
+              "column": "value_tied",
+              "scalar": "boolean",
+              "array": false
+            },
+            "qualified": {
+              "type": "scalar",
+              "column": "value_qualified",
+              "scalar": "boolean",
+              "array": false
+            },
+            "official": {
+              "type": "scalar",
+              "column": "value_official",
+              "scalar": "boolean",
+              "array": false
+            },
+            "note": {
+              "type": "scalar",
+              "column": "value_note",
+              "scalar": "string",
+              "array": false
+            },
+            "scope": {
+              "type": "scalar",
+              "column": "value_scope",
+              "scalar": "string",
+              "array": false
+            },
+            "teamId": {
+              "type": "scalar",
+              "column": "value_team_id",
+              "scalar": "string",
+              "array": false
+            },
+            "rank": {
+              "type": "scalar",
+              "column": "value_rank",
+              "scalar": "integer",
+              "array": false
+            },
+            "wins": {
+              "type": "scalar",
+              "column": "value_wins",
+              "scalar": "integer",
+              "array": false
+            },
+            "losses": {
+              "type": "scalar",
+              "column": "value_losses",
+              "scalar": "integer",
+              "array": false
+            },
+            "mapsWon": {
+              "type": "scalar",
+              "column": "value_maps_won",
+              "scalar": "integer",
+              "array": false
+            },
+            "mapsLost": {
+              "type": "scalar",
+              "column": "value_maps_lost",
+              "scalar": "integer",
+              "array": false
+            },
+            "source": {
+              "type": "scalar",
+              "column": "value_source",
+              "scalar": "string",
+              "array": false
+            }
+          }
+        }
+      },
+      {
+        "key": "archive_rel_archive_matches",
+        "parent": "archive_rel_archive",
+        "fields": [
+          { "column": "value_id", "type": "string", "array": false },
+          { "column": "value_label", "type": "string", "array": false },
+          { "column": "value_stage", "type": "string", "array": false },
+          { "column": "value_round_phase", "type": "string", "array": false },
+          { "column": "value_round_index", "type": "integer", "array": false },
+          {
+            "column": "value_format_best_of",
+            "type": "integer",
+            "array": false
+          },
+          {
+            "column": "value_format_max_games",
+            "type": "integer",
+            "array": false
+          },
+          {
+            "column": "value_format_wins_required",
+            "type": "integer",
+            "array": false
+          },
+          { "column": "value_time_zone", "type": "string", "array": false },
+          {
+            "column": "value_adjudication_kind",
+            "type": "string",
+            "array": false
+          },
+          {
+            "column": "value_adjudication_note",
+            "type": "string",
+            "array": false
+          },
+          {
+            "column": "value_adjudication_evidence_url",
+            "type": "string",
+            "array": false
+          },
+          { "column": "value_pool_id", "type": "string", "array": false },
+          { "column": "value_team_a", "type": "string", "array": false },
+          { "column": "value_team_b", "type": "string", "array": false },
+          { "column": "value_scheduled_at", "type": "string", "array": false },
+          {
+            "column": "value_room_opened_at",
+            "type": "string",
+            "array": false
+          },
+          { "column": "value_score", "type": "integer", "array": true },
+          { "column": "value_review_status", "type": "string", "array": false },
+          {
+            "column": "value_review_approval_approved_on",
+            "type": "string",
+            "array": false
+          },
+          {
+            "column": "value_review_approval_approved_by",
+            "type": "string",
+            "array": false
+          },
+          {
+            "column": "value_review_approval_evidence_url",
+            "type": "string",
+            "array": false
+          },
+          {
+            "column": "value_review_approval_source",
+            "type": "string",
+            "array": false
+          },
+          {
+            "column": "value_review_working_score",
+            "type": "integer",
+            "array": true
+          },
+          {
+            "column": "value_review_raw_score",
+            "type": "integer",
+            "array": true
+          },
+          {
+            "column": "value_review_possible_score",
+            "type": "integer",
+            "array": true
+          },
+          { "column": "value_review_note", "type": "string", "array": false },
+          {
+            "column": "value_review_started_at",
+            "type": "string",
+            "array": false
+          },
+          {
+            "column": "value_review_red_team_id",
+            "type": "string",
+            "array": false
+          },
+          {
+            "column": "value_review_blue_team_id",
+            "type": "string",
+            "array": false
+          },
+          {
+            "column": "value_forfeit_winner",
+            "type": "number",
+            "array": false
+          },
+          { "column": "value_mp_urls", "type": "string", "array": true },
+          { "column": "value_vod_url", "type": "string", "array": false },
+          { "column": "value_referee", "type": "string", "array": false },
+          { "column": "value_streamer", "type": "string", "array": false },
+          { "column": "value_commentators", "type": "string", "array": false },
+          { "column": "value_bans_a", "type": "string", "array": false },
+          { "column": "value_bans_b", "type": "string", "array": false },
+          { "column": "value_source", "type": "string", "array": false }
+        ],
+        "node": {
+          "type": "object",
+          "properties": {
+            "id": {
+              "type": "scalar",
+              "column": "value_id",
+              "scalar": "string",
+              "array": false
+            },
+            "label": {
+              "type": "scalar",
+              "column": "value_label",
+              "scalar": "string",
+              "array": false
+            },
+            "stage": {
+              "type": "scalar",
+              "column": "value_stage",
+              "scalar": "string",
+              "array": false
+            },
+            "round": {
+              "type": "object",
+              "properties": {
+                "phase": {
+                  "type": "scalar",
+                  "column": "value_round_phase",
+                  "scalar": "string",
+                  "array": false
+                },
+                "index": {
+                  "type": "scalar",
+                  "column": "value_round_index",
+                  "scalar": "integer",
+                  "array": false
+                }
+              }
+            },
+            "format": {
+              "type": "object",
+              "properties": {
+                "bestOf": {
+                  "type": "scalar",
+                  "column": "value_format_best_of",
+                  "scalar": "integer",
+                  "array": false
+                },
+                "maxGames": {
+                  "type": "scalar",
+                  "column": "value_format_max_games",
+                  "scalar": "integer",
+                  "array": false
+                },
+                "winsRequired": {
+                  "type": "scalar",
+                  "column": "value_format_wins_required",
+                  "scalar": "integer",
+                  "array": false
+                }
+              }
+            },
+            "timeZone": {
+              "type": "scalar",
+              "column": "value_time_zone",
+              "scalar": "string",
+              "array": false
+            },
+            "adjudication": {
+              "type": "object",
+              "properties": {
+                "kind": {
+                  "type": "scalar",
+                  "column": "value_adjudication_kind",
+                  "scalar": "string",
+                  "array": false
+                },
+                "note": {
+                  "type": "scalar",
+                  "column": "value_adjudication_note",
+                  "scalar": "string",
+                  "array": false
+                },
+                "evidenceUrl": {
+                  "type": "scalar",
+                  "column": "value_adjudication_evidence_url",
+                  "scalar": "string",
+                  "array": false
+                }
+              }
+            },
+            "poolId": {
+              "type": "scalar",
+              "column": "value_pool_id",
+              "scalar": "string",
+              "array": false
+            },
+            "teamA": {
+              "type": "scalar",
+              "column": "value_team_a",
+              "scalar": "string",
+              "array": false
+            },
+            "teamB": {
+              "type": "scalar",
+              "column": "value_team_b",
+              "scalar": "string",
+              "array": false
+            },
+            "scheduledAt": {
+              "type": "scalar",
+              "column": "value_scheduled_at",
+              "scalar": "string",
+              "array": false
+            },
+            "roomOpenedAt": {
+              "type": "scalar",
+              "column": "value_room_opened_at",
+              "scalar": "string",
+              "array": false
+            },
+            "score": {
+              "type": "scalar",
+              "column": "value_score",
+              "scalar": "integer",
+              "array": true
+            },
+            "review": {
+              "type": "object",
+              "properties": {
+                "status": {
+                  "type": "scalar",
+                  "column": "value_review_status",
+                  "scalar": "string",
+                  "array": false
+                },
+                "approval": {
+                  "type": "object",
+                  "properties": {
+                    "approvedOn": {
+                      "type": "scalar",
+                      "column": "value_review_approval_approved_on",
+                      "scalar": "string",
+                      "array": false
+                    },
+                    "approvedBy": {
+                      "type": "scalar",
+                      "column": "value_review_approval_approved_by",
+                      "scalar": "string",
+                      "array": false
+                    },
+                    "evidenceUrl": {
+                      "type": "scalar",
+                      "column": "value_review_approval_evidence_url",
+                      "scalar": "string",
+                      "array": false
+                    },
+                    "source": {
+                      "type": "scalar",
+                      "column": "value_review_approval_source",
+                      "scalar": "string",
+                      "array": false
+                    }
+                  }
+                },
+                "workingScore": {
+                  "type": "scalar",
+                  "column": "value_review_working_score",
+                  "scalar": "integer",
+                  "array": true
+                },
+                "rawScore": {
+                  "type": "scalar",
+                  "column": "value_review_raw_score",
+                  "scalar": "integer",
+                  "array": true
+                },
+                "possibleScore": {
+                  "type": "scalar",
+                  "column": "value_review_possible_score",
+                  "scalar": "integer",
+                  "array": true
+                },
+                "note": {
+                  "type": "scalar",
+                  "column": "value_review_note",
+                  "scalar": "string",
+                  "array": false
+                },
+                "startedAt": {
+                  "type": "scalar",
+                  "column": "value_review_started_at",
+                  "scalar": "string",
+                  "array": false
+                },
+                "redTeamId": {
+                  "type": "scalar",
+                  "column": "value_review_red_team_id",
+                  "scalar": "string",
+                  "array": false
+                },
+                "blueTeamId": {
+                  "type": "scalar",
+                  "column": "value_review_blue_team_id",
+                  "scalar": "string",
+                  "array": false
+                },
+                "games": {
+                  "type": "relation",
+                  "mode": "array",
+                  "entity": "archive_rel_archive_matches_review_games"
+                }
+              }
+            },
+            "forfeitWinner": {
+              "type": "scalar",
+              "column": "value_forfeit_winner",
+              "scalar": "number",
+              "array": false
+            },
+            "mpUrls": {
+              "type": "scalar",
+              "column": "value_mp_urls",
+              "scalar": "string",
+              "array": true
+            },
+            "vodUrl": {
+              "type": "scalar",
+              "column": "value_vod_url",
+              "scalar": "string",
+              "array": false
+            },
+            "referee": {
+              "type": "scalar",
+              "column": "value_referee",
+              "scalar": "string",
+              "array": false
+            },
+            "streamer": {
+              "type": "scalar",
+              "column": "value_streamer",
+              "scalar": "string",
+              "array": false
+            },
+            "commentators": {
+              "type": "scalar",
+              "column": "value_commentators",
+              "scalar": "string",
+              "array": false
+            },
+            "bansA": {
+              "type": "scalar",
+              "column": "value_bans_a",
+              "scalar": "string",
+              "array": false
+            },
+            "bansB": {
+              "type": "scalar",
+              "column": "value_bans_b",
+              "scalar": "string",
+              "array": false
+            },
+            "source": {
+              "type": "scalar",
+              "column": "value_source",
+              "scalar": "string",
+              "array": false
+            }
+          }
+        }
+      },
+      {
+        "key": "archive_rel_archive_matches_review_games",
+        "parent": "archive_rel_archive_matches",
+        "fields": [
+          { "column": "value_game_id", "type": "integer", "array": false },
+          { "column": "value_beatmap_id", "type": "integer", "array": false },
+          { "column": "value_pool_slot", "type": "string", "array": false },
+          { "column": "value_start_time", "type": "string", "array": false },
+          { "column": "value_end_time", "type": "string", "array": false },
+          { "column": "value_disposition", "type": "string", "array": false },
+          { "column": "value_totals_red", "type": "integer", "array": false },
+          { "column": "value_totals_blue", "type": "integer", "array": false },
+          {
+            "column": "value_positive_players_red",
+            "type": "integer",
+            "array": false
+          },
+          {
+            "column": "value_positive_players_blue",
+            "type": "integer",
+            "array": false
+          },
+          {
+            "column": "value_team_fail_red",
+            "type": "boolean",
+            "array": false
+          },
+          {
+            "column": "value_team_fail_blue",
+            "type": "boolean",
+            "array": false
+          },
+          { "column": "value_winning_color", "type": "string", "array": false },
+          {
+            "column": "value_interpretation_status",
+            "type": "string",
+            "array": false
+          }
+        ],
+        "node": {
+          "type": "object",
+          "properties": {
+            "gameId": {
+              "type": "scalar",
+              "column": "value_game_id",
+              "scalar": "integer",
+              "array": false
+            },
+            "beatmapId": {
+              "type": "scalar",
+              "column": "value_beatmap_id",
+              "scalar": "integer",
+              "array": false
+            },
+            "poolSlot": {
+              "type": "scalar",
+              "column": "value_pool_slot",
+              "scalar": "string",
+              "array": false
+            },
+            "startTime": {
+              "type": "scalar",
+              "column": "value_start_time",
+              "scalar": "string",
+              "array": false
+            },
+            "endTime": {
+              "type": "scalar",
+              "column": "value_end_time",
+              "scalar": "string",
+              "array": false
+            },
+            "disposition": {
+              "type": "scalar",
+              "column": "value_disposition",
+              "scalar": "string",
+              "array": false
+            },
+            "totals": {
+              "type": "object",
+              "properties": {
+                "red": {
+                  "type": "scalar",
+                  "column": "value_totals_red",
+                  "scalar": "integer",
+                  "array": false
+                },
+                "blue": {
+                  "type": "scalar",
+                  "column": "value_totals_blue",
+                  "scalar": "integer",
+                  "array": false
+                }
+              }
+            },
+            "positivePlayers": {
+              "type": "object",
+              "properties": {
+                "red": {
+                  "type": "scalar",
+                  "column": "value_positive_players_red",
+                  "scalar": "integer",
+                  "array": false
+                },
+                "blue": {
+                  "type": "scalar",
+                  "column": "value_positive_players_blue",
+                  "scalar": "integer",
+                  "array": false
+                }
+              }
+            },
+            "teamFail": {
+              "type": "object",
+              "properties": {
+                "red": {
+                  "type": "scalar",
+                  "column": "value_team_fail_red",
+                  "scalar": "boolean",
+                  "array": false
+                },
+                "blue": {
+                  "type": "scalar",
+                  "column": "value_team_fail_blue",
+                  "scalar": "boolean",
+                  "array": false
+                }
+              }
+            },
+            "winningColor": {
+              "type": "scalar",
+              "column": "value_winning_color",
+              "scalar": "string",
+              "array": false
+            },
+            "interpretationStatus": {
+              "type": "scalar",
+              "column": "value_interpretation_status",
+              "scalar": "string",
+              "array": false
+            }
+          }
+        }
+      },
+      {
+        "key": "archive_rel_archive_pools",
+        "parent": "archive_rel_archive",
+        "fields": [
+          { "column": "value_id", "type": "string", "array": false },
+          { "column": "value_name", "type": "string", "array": false },
+          { "column": "value_source", "type": "string", "array": false }
+        ],
+        "node": {
+          "type": "object",
+          "properties": {
+            "id": {
+              "type": "scalar",
+              "column": "value_id",
+              "scalar": "string",
+              "array": false
+            },
+            "name": {
+              "type": "scalar",
+              "column": "value_name",
+              "scalar": "string",
+              "array": false
+            },
+            "source": {
+              "type": "scalar",
+              "column": "value_source",
+              "scalar": "string",
+              "array": false
+            },
+            "maps": {
+              "type": "relation",
+              "mode": "array",
+              "entity": "archive_rel_archive_pools_maps"
+            }
+          }
+        }
+      },
+      {
+        "key": "archive_rel_archive_pools_maps",
+        "parent": "archive_rel_archive_pools",
+        "fields": [
+          { "column": "value_slot", "type": "string", "array": false },
+          { "column": "value_beatmap_id", "type": "integer", "array": false },
+          {
+            "column": "value_difficulty_snapshot_beatmap_id",
+            "type": "integer",
+            "array": false
+          },
+          {
+            "column": "value_difficulty_snapshot_ruleset",
+            "type": "string",
+            "array": false
+          },
+          {
+            "column": "value_difficulty_snapshot_checksum",
+            "type": "string",
+            "array": false
+          },
+          {
+            "column": "value_difficulty_snapshot_fetched_at",
+            "type": "string",
+            "array": false
+          },
+          {
+            "column": "value_difficulty_snapshot_base_stars",
+            "type": "number",
+            "array": false
+          },
+          {
+            "column": "value_difficulty_snapshot_base_bpm",
+            "type": "number",
+            "array": false
+          },
+          {
+            "column": "value_difficulty_snapshot_base_duration",
+            "type": "number",
+            "array": false
+          },
+          {
+            "column": "value_difficulty_snapshot_base_ar",
+            "type": "number",
+            "array": false
+          },
+          {
+            "column": "value_difficulty_snapshot_base_od",
+            "type": "number",
+            "array": false
+          },
+          {
+            "column": "value_difficulty_snapshot_base_cs",
+            "type": "number",
+            "array": false
+          },
+          {
+            "column": "value_difficulty_snapshot_base_hp",
+            "type": "number",
+            "array": false
+          },
+          { "column": "value_original_id", "type": "integer", "array": false },
+          { "column": "value_title", "type": "string", "array": false },
+          { "column": "value_mapper", "type": "string", "array": false },
+          { "column": "value_stars", "type": "number", "array": false },
+          { "column": "value_bpm", "type": "number", "array": false },
+          { "column": "value_drain_seconds", "type": "number", "array": false },
+          { "column": "value_cs", "type": "number", "array": false },
+          { "column": "value_ar", "type": "number", "array": false },
+          { "column": "value_od", "type": "number", "array": false },
+          { "column": "value_source", "type": "string", "array": false }
+        ],
+        "node": {
+          "type": "object",
+          "properties": {
+            "slot": {
+              "type": "scalar",
+              "column": "value_slot",
+              "scalar": "string",
+              "array": false
+            },
+            "beatmapId": {
+              "type": "scalar",
+              "column": "value_beatmap_id",
+              "scalar": "integer",
+              "array": false
+            },
+            "difficultySnapshot": {
+              "type": "object",
+              "properties": {
+                "beatmapId": {
+                  "type": "scalar",
+                  "column": "value_difficulty_snapshot_beatmap_id",
+                  "scalar": "integer",
+                  "array": false
+                },
+                "ruleset": {
+                  "type": "scalar",
+                  "column": "value_difficulty_snapshot_ruleset",
+                  "scalar": "string",
+                  "array": false
+                },
+                "checksum": {
+                  "type": "scalar",
+                  "column": "value_difficulty_snapshot_checksum",
+                  "scalar": "string",
+                  "array": false
+                },
+                "fetchedAt": {
+                  "type": "scalar",
+                  "column": "value_difficulty_snapshot_fetched_at",
+                  "scalar": "string",
+                  "array": false
+                },
+                "base": {
+                  "type": "object",
+                  "properties": {
+                    "stars": {
+                      "type": "scalar",
+                      "column": "value_difficulty_snapshot_base_stars",
+                      "scalar": "number",
+                      "array": false
+                    },
+                    "bpm": {
+                      "type": "scalar",
+                      "column": "value_difficulty_snapshot_base_bpm",
+                      "scalar": "number",
+                      "array": false
+                    },
+                    "duration": {
+                      "type": "scalar",
+                      "column": "value_difficulty_snapshot_base_duration",
+                      "scalar": "number",
+                      "array": false
+                    },
+                    "ar": {
+                      "type": "scalar",
+                      "column": "value_difficulty_snapshot_base_ar",
+                      "scalar": "number",
+                      "array": false
+                    },
+                    "od": {
+                      "type": "scalar",
+                      "column": "value_difficulty_snapshot_base_od",
+                      "scalar": "number",
+                      "array": false
+                    },
+                    "cs": {
+                      "type": "scalar",
+                      "column": "value_difficulty_snapshot_base_cs",
+                      "scalar": "number",
+                      "array": false
+                    },
+                    "hp": {
+                      "type": "scalar",
+                      "column": "value_difficulty_snapshot_base_hp",
+                      "scalar": "number",
+                      "array": false
+                    }
+                  }
+                },
+                "variants": {
+                  "type": "relation",
+                  "mode": "record",
+                  "entity": "archive_rel_archive_pools_maps_difficulty_snapshot_variants"
+                }
+              }
+            },
+            "originalId": {
+              "type": "scalar",
+              "column": "value_original_id",
+              "scalar": "integer",
+              "array": false
+            },
+            "title": {
+              "type": "scalar",
+              "column": "value_title",
+              "scalar": "string",
+              "array": false
+            },
+            "mapper": {
+              "type": "scalar",
+              "column": "value_mapper",
+              "scalar": "string",
+              "array": false
+            },
+            "stars": {
+              "type": "scalar",
+              "column": "value_stars",
+              "scalar": "number",
+              "array": false
+            },
+            "bpm": {
+              "type": "scalar",
+              "column": "value_bpm",
+              "scalar": "number",
+              "array": false
+            },
+            "drainSeconds": {
+              "type": "scalar",
+              "column": "value_drain_seconds",
+              "scalar": "number",
+              "array": false
+            },
+            "cs": {
+              "type": "scalar",
+              "column": "value_cs",
+              "scalar": "number",
+              "array": false
+            },
+            "ar": {
+              "type": "scalar",
+              "column": "value_ar",
+              "scalar": "number",
+              "array": false
+            },
+            "od": {
+              "type": "scalar",
+              "column": "value_od",
+              "scalar": "number",
+              "array": false
+            },
+            "source": {
+              "type": "scalar",
+              "column": "value_source",
+              "scalar": "string",
+              "array": false
+            }
+          }
+        }
+      },
+      {
+        "key": "archive_rel_archive_pools_maps_difficulty_snapshot_variants",
+        "parent": "archive_rel_archive_pools_maps",
+        "fields": [
+          { "column": "value_configuration", "type": "string", "array": false },
+          { "column": "value_mods", "type": "string", "array": true },
+          { "column": "value_ruleset", "type": "string", "array": false },
+          { "column": "value_stars", "type": "number", "array": false },
+          { "column": "value_max_combo", "type": "integer", "array": false },
+          { "column": "value_fetched_at", "type": "string", "array": false }
+        ],
+        "node": {
+          "type": "object",
+          "properties": {
+            "configuration": {
+              "type": "scalar",
+              "column": "value_configuration",
+              "scalar": "string",
+              "array": false
+            },
+            "mods": {
+              "type": "scalar",
+              "column": "value_mods",
+              "scalar": "string",
+              "array": true
+            },
+            "ruleset": {
+              "type": "scalar",
+              "column": "value_ruleset",
+              "scalar": "string",
+              "array": false
+            },
+            "stars": {
+              "type": "scalar",
+              "column": "value_stars",
+              "scalar": "number",
+              "array": false
+            },
+            "maxCombo": {
+              "type": "scalar",
+              "column": "value_max_combo",
+              "scalar": "integer",
+              "array": false
+            },
+            "values": {
+              "type": "relation",
+              "mode": "record",
+              "entity": "archive_rel_archive_pools_maps_difficulty_snapsh_00b1b39990"
+            },
+            "fetchedAt": {
+              "type": "scalar",
+              "column": "value_fetched_at",
+              "scalar": "string",
+              "array": false
+            }
+          }
+        }
+      },
+      {
+        "key": "archive_rel_archive_pools_maps_difficulty_snapsh_00b1b39990",
+        "parent": "archive_rel_archive_pools_maps_difficulty_snapshot_variants",
+        "fields": [
+          { "column": "value_item", "type": "number", "array": false }
+        ],
+        "node": {
+          "type": "scalar",
+          "column": "value_item",
+          "scalar": "number",
+          "array": false
+        }
+      }
+    ]
+  },
+  {
+    "kind": "statistics",
+    "root": "archive_rel_statistics",
+    "entities": [
+      {
+        "key": "archive_rel_statistics",
+        "fields": [
+          { "column": "value_archive_key", "type": "string", "array": false },
+          {
+            "column": "value_source_schema_version",
+            "type": "number",
+            "array": false
+          },
+          {
+            "column": "value_source_api_version",
+            "type": "string",
+            "array": false
+          },
+          {
+            "column": "value_source_fetched_at",
+            "type": "string",
+            "array": false
+          },
+          {
+            "column": "value_source_fingerprint",
+            "type": "string",
+            "array": false
+          },
+          {
+            "column": "value_source_match_id",
+            "type": "integer",
+            "array": false
+          },
+          {
+            "column": "value_source_match_title",
+            "type": "string",
+            "array": false
+          },
+          {
+            "column": "value_source_match_start_time",
+            "type": "string",
+            "array": false
+          },
+          {
+            "column": "value_source_match_end_time",
+            "type": "string",
+            "array": false
+          },
+          {
+            "column": "value_source_first_event_id",
+            "type": "integer",
+            "array": false
+          },
+          {
+            "column": "value_source_latest_event_id",
+            "type": "integer",
+            "array": false
+          },
+          {
+            "column": "value_source_current_game_id",
+            "type": "integer",
+            "array": false
+          },
+          { "column": "value_source_pages", "type": "integer", "array": false },
+          {
+            "column": "value_source_complete",
+            "type": "boolean",
+            "array": false
+          },
+          {
+            "column": "value_source_warnings",
+            "type": "string",
+            "array": true
+          },
+          { "column": "value_pool_id", "type": "string", "array": false },
+          { "column": "value_included", "type": "integer", "array": true },
+          {
+            "column": "value_allow_unlisted_maps",
+            "type": "boolean",
+            "array": false
+          },
+          {
+            "column": "value_roster_team_games",
+            "type": "integer",
+            "array": true
+          },
+          {
+            "column": "value_technical_adjudication",
+            "type": "boolean",
+            "array": false
+          },
+          {
+            "column": "value_adjudication_kind",
+            "type": "string",
+            "array": false
+          },
+          {
+            "column": "value_adjudication_note",
+            "type": "string",
+            "array": false
+          },
+          {
+            "column": "value_adjudication_evidence_url",
+            "type": "string",
+            "array": false
+          },
+          { "column": "value_reviewed_by", "type": "integer", "array": false },
+          { "column": "value_reviewed_at", "type": "string", "array": false },
+          { "column": "value_evidence_url", "type": "string", "array": false }
+        ],
+        "node": {
+          "type": "object",
+          "properties": {
+            "archiveKey": {
+              "type": "scalar",
+              "column": "value_archive_key",
+              "scalar": "string",
+              "array": false
+            },
+            "source": {
+              "type": "object",
+              "properties": {
+                "schemaVersion": {
+                  "type": "scalar",
+                  "column": "value_source_schema_version",
+                  "scalar": "number",
+                  "array": false
+                },
+                "apiVersion": {
+                  "type": "scalar",
+                  "column": "value_source_api_version",
+                  "scalar": "string",
+                  "array": false
+                },
+                "fetchedAt": {
+                  "type": "scalar",
+                  "column": "value_source_fetched_at",
+                  "scalar": "string",
+                  "array": false
+                },
+                "fingerprint": {
+                  "type": "scalar",
+                  "column": "value_source_fingerprint",
+                  "scalar": "string",
+                  "array": false
+                },
+                "players": {
+                  "type": "relation",
+                  "mode": "array",
+                  "entity": "archive_rel_statistics_source_players"
+                },
+                "match": {
+                  "type": "object",
+                  "properties": {
+                    "id": {
+                      "type": "scalar",
+                      "column": "value_source_match_id",
+                      "scalar": "integer",
+                      "array": false
+                    },
+                    "title": {
+                      "type": "scalar",
+                      "column": "value_source_match_title",
+                      "scalar": "string",
+                      "array": false
+                    },
+                    "startTime": {
+                      "type": "scalar",
+                      "column": "value_source_match_start_time",
+                      "scalar": "string",
+                      "array": false
+                    },
+                    "endTime": {
+                      "type": "scalar",
+                      "column": "value_source_match_end_time",
+                      "scalar": "string",
+                      "array": false
+                    }
+                  }
+                },
+                "firstEventId": {
+                  "type": "scalar",
+                  "column": "value_source_first_event_id",
+                  "scalar": "integer",
+                  "array": false
+                },
+                "latestEventId": {
+                  "type": "scalar",
+                  "column": "value_source_latest_event_id",
+                  "scalar": "integer",
+                  "array": false
+                },
+                "currentGameId": {
+                  "type": "scalar",
+                  "column": "value_source_current_game_id",
+                  "scalar": "integer",
+                  "array": false
+                },
+                "pages": {
+                  "type": "scalar",
+                  "column": "value_source_pages",
+                  "scalar": "integer",
+                  "array": false
+                },
+                "complete": {
+                  "type": "scalar",
+                  "column": "value_source_complete",
+                  "scalar": "boolean",
+                  "array": false
+                },
+                "warnings": {
+                  "type": "scalar",
+                  "column": "value_source_warnings",
+                  "scalar": "string",
+                  "array": true
+                },
+                "events": {
+                  "type": "relation",
+                  "mode": "array",
+                  "entity": "archive_rel_statistics_source_events"
+                },
+                "games": {
+                  "type": "relation",
+                  "mode": "array",
+                  "entity": "archive_rel_statistics_source_games"
+                }
+              }
+            },
+            "poolId": {
+              "type": "scalar",
+              "column": "value_pool_id",
+              "scalar": "string",
+              "array": false
+            },
+            "included": {
+              "type": "scalar",
+              "column": "value_included",
+              "scalar": "integer",
+              "array": true
+            },
+            "allowUnlistedMaps": {
+              "type": "scalar",
+              "column": "value_allow_unlisted_maps",
+              "scalar": "boolean",
+              "array": false
+            },
+            "excludedScores": {
+              "type": "relation",
+              "mode": "array",
+              "entity": "archive_rel_statistics_excluded_scores"
+            },
+            "rosterTeamGames": {
+              "type": "scalar",
+              "column": "value_roster_team_games",
+              "scalar": "integer",
+              "array": true
+            },
+            "technicalAdjudication": {
+              "type": "scalar",
+              "column": "value_technical_adjudication",
+              "scalar": "boolean",
+              "array": false
+            },
+            "adjudication": {
+              "type": "object",
+              "properties": {
+                "kind": {
+                  "type": "scalar",
+                  "column": "value_adjudication_kind",
+                  "scalar": "string",
+                  "array": false
+                },
+                "note": {
+                  "type": "scalar",
+                  "column": "value_adjudication_note",
+                  "scalar": "string",
+                  "array": false
+                },
+                "evidenceUrl": {
+                  "type": "scalar",
+                  "column": "value_adjudication_evidence_url",
+                  "scalar": "string",
+                  "array": false
+                }
+              }
+            },
+            "excludedGames": {
+              "type": "relation",
+              "mode": "array",
+              "entity": "archive_rel_statistics_excluded_games"
+            },
+            "reviewedBy": {
+              "type": "scalar",
+              "column": "value_reviewed_by",
+              "scalar": "integer",
+              "array": false
+            },
+            "reviewedAt": {
+              "type": "scalar",
+              "column": "value_reviewed_at",
+              "scalar": "string",
+              "array": false
+            },
+            "evidenceUrl": {
+              "type": "scalar",
+              "column": "value_evidence_url",
+              "scalar": "string",
+              "array": false
+            }
+          }
+        }
+      },
+      {
+        "key": "archive_rel_statistics_source_players",
+        "parent": "archive_rel_statistics",
+        "fields": [
+          { "column": "value_osu_id", "type": "integer", "array": false },
+          { "column": "value_username", "type": "string", "array": false }
+        ],
+        "node": {
+          "type": "object",
+          "properties": {
+            "osuId": {
+              "type": "scalar",
+              "column": "value_osu_id",
+              "scalar": "integer",
+              "array": false
+            },
+            "username": {
+              "type": "scalar",
+              "column": "value_username",
+              "scalar": "string",
+              "array": false
+            }
+          }
+        }
+      },
+      {
+        "key": "archive_rel_statistics_source_events",
+        "parent": "archive_rel_statistics",
+        "fields": [
+          { "column": "value_id", "type": "integer", "array": false },
+          { "column": "value_at", "type": "string", "array": false },
+          { "column": "value_type", "type": "string", "array": false },
+          { "column": "value_actor_osu_id", "type": "integer", "array": false },
+          { "column": "value_game_id", "type": "integer", "array": false }
+        ],
+        "node": {
+          "type": "object",
+          "properties": {
+            "id": {
+              "type": "scalar",
+              "column": "value_id",
+              "scalar": "integer",
+              "array": false
+            },
+            "at": {
+              "type": "scalar",
+              "column": "value_at",
+              "scalar": "string",
+              "array": false
+            },
+            "type": {
+              "type": "scalar",
+              "column": "value_type",
+              "scalar": "string",
+              "array": false
+            },
+            "actorOsuId": {
+              "type": "scalar",
+              "column": "value_actor_osu_id",
+              "scalar": "integer",
+              "array": false
+            },
+            "gameId": {
+              "type": "scalar",
+              "column": "value_game_id",
+              "scalar": "integer",
+              "array": false
+            }
+          }
+        }
+      },
+      {
+        "key": "archive_rel_statistics_source_games",
+        "parent": "archive_rel_statistics",
+        "fields": [
+          { "column": "value_id", "type": "integer", "array": false },
+          { "column": "value_beatmap_id", "type": "integer", "array": false },
+          { "column": "value_start_time", "type": "string", "array": false },
+          { "column": "value_end_time", "type": "string", "array": false },
+          { "column": "value_mode", "type": "string", "array": false },
+          { "column": "value_team_type", "type": "string", "array": false },
+          { "column": "value_scoring_type", "type": "string", "array": false },
+          { "column": "value_mods", "type": "string", "array": true },
+          { "column": "value_problems", "type": "string", "array": true },
+          {
+            "column": "value_beatmap_set_id",
+            "type": "integer",
+            "array": false
+          },
+          { "column": "value_beatmap_title", "type": "string", "array": false },
+          {
+            "column": "value_beatmap_artist",
+            "type": "string",
+            "array": false
+          },
+          {
+            "column": "value_beatmap_difficulty",
+            "type": "string",
+            "array": false
+          }
+        ],
+        "node": {
+          "type": "object",
+          "properties": {
+            "id": {
+              "type": "scalar",
+              "column": "value_id",
+              "scalar": "integer",
+              "array": false
+            },
+            "beatmapId": {
+              "type": "scalar",
+              "column": "value_beatmap_id",
+              "scalar": "integer",
+              "array": false
+            },
+            "startTime": {
+              "type": "scalar",
+              "column": "value_start_time",
+              "scalar": "string",
+              "array": false
+            },
+            "endTime": {
+              "type": "scalar",
+              "column": "value_end_time",
+              "scalar": "string",
+              "array": false
+            },
+            "mode": {
+              "type": "scalar",
+              "column": "value_mode",
+              "scalar": "string",
+              "array": false
+            },
+            "teamType": {
+              "type": "scalar",
+              "column": "value_team_type",
+              "scalar": "string",
+              "array": false
+            },
+            "scoringType": {
+              "type": "scalar",
+              "column": "value_scoring_type",
+              "scalar": "string",
+              "array": false
+            },
+            "mods": {
+              "type": "scalar",
+              "column": "value_mods",
+              "scalar": "string",
+              "array": true
+            },
+            "scores": {
+              "type": "relation",
+              "mode": "array",
+              "entity": "archive_rel_statistics_source_games_scores"
+            },
+            "problems": {
+              "type": "scalar",
+              "column": "value_problems",
+              "scalar": "string",
+              "array": true
+            },
+            "beatmap": {
+              "type": "object",
+              "properties": {
+                "setId": {
+                  "type": "scalar",
+                  "column": "value_beatmap_set_id",
+                  "scalar": "integer",
+                  "array": false
+                },
+                "title": {
+                  "type": "scalar",
+                  "column": "value_beatmap_title",
+                  "scalar": "string",
+                  "array": false
+                },
+                "artist": {
+                  "type": "scalar",
+                  "column": "value_beatmap_artist",
+                  "scalar": "string",
+                  "array": false
+                },
+                "difficulty": {
+                  "type": "scalar",
+                  "column": "value_beatmap_difficulty",
+                  "scalar": "string",
+                  "array": false
+                }
+              }
+            }
+          }
+        }
+      },
+      {
+        "key": "archive_rel_statistics_source_games_scores",
+        "parent": "archive_rel_statistics_source_games",
+        "fields": [
+          { "column": "value_osu_id", "type": "integer", "array": false },
+          { "column": "value_total", "type": "integer", "array": false },
+          { "column": "value_team", "type": "string", "array": false },
+          { "column": "value_slot", "type": "integer", "array": false },
+          { "column": "value_passed", "type": "boolean", "array": false },
+          { "column": "value_mods", "type": "string", "array": true },
+          { "column": "value_accuracy", "type": "number", "array": false },
+          { "column": "value_combo", "type": "integer", "array": false },
+          {
+            "column": "value_hit_counts_great",
+            "type": "integer",
+            "array": false
+          },
+          {
+            "column": "value_hit_counts_ok",
+            "type": "integer",
+            "array": false
+          },
+          {
+            "column": "value_hit_counts_meh",
+            "type": "integer",
+            "array": false
+          },
+          {
+            "column": "value_hit_counts_miss",
+            "type": "integer",
+            "array": false
+          },
+          { "column": "value_problems", "type": "string", "array": true }
+        ],
+        "node": {
+          "type": "object",
+          "properties": {
+            "osuId": {
+              "type": "scalar",
+              "column": "value_osu_id",
+              "scalar": "integer",
+              "array": false
+            },
+            "total": {
+              "type": "scalar",
+              "column": "value_total",
+              "scalar": "integer",
+              "array": false
+            },
+            "team": {
+              "type": "scalar",
+              "column": "value_team",
+              "scalar": "string",
+              "array": false
+            },
+            "slot": {
+              "type": "scalar",
+              "column": "value_slot",
+              "scalar": "integer",
+              "array": false
+            },
+            "passed": {
+              "type": "scalar",
+              "column": "value_passed",
+              "scalar": "boolean",
+              "array": false
+            },
+            "mods": {
+              "type": "scalar",
+              "column": "value_mods",
+              "scalar": "string",
+              "array": true
+            },
+            "accuracy": {
+              "type": "scalar",
+              "column": "value_accuracy",
+              "scalar": "number",
+              "array": false
+            },
+            "combo": {
+              "type": "scalar",
+              "column": "value_combo",
+              "scalar": "integer",
+              "array": false
+            },
+            "hitCounts": {
+              "type": "object",
+              "properties": {
+                "great": {
+                  "type": "scalar",
+                  "column": "value_hit_counts_great",
+                  "scalar": "integer",
+                  "array": false
+                },
+                "ok": {
+                  "type": "scalar",
+                  "column": "value_hit_counts_ok",
+                  "scalar": "integer",
+                  "array": false
+                },
+                "meh": {
+                  "type": "scalar",
+                  "column": "value_hit_counts_meh",
+                  "scalar": "integer",
+                  "array": false
+                },
+                "miss": {
+                  "type": "scalar",
+                  "column": "value_hit_counts_miss",
+                  "scalar": "integer",
+                  "array": false
+                }
+              }
+            },
+            "providerFields": {
+              "type": "relation",
+              "mode": "record",
+              "entity": "archive_rel_statistics_source_games_scores_provider_fields"
+            },
+            "problems": {
+              "type": "scalar",
+              "column": "value_problems",
+              "scalar": "string",
+              "array": true
+            }
+          }
+        }
+      },
+      {
+        "key": "archive_rel_statistics_source_games_scores_provider_fields",
+        "parent": "archive_rel_statistics_source_games_scores",
+        "fields": [{ "column": "value_item", "type": "mixed", "array": false }],
+        "node": {
+          "type": "scalar",
+          "column": "value_item",
+          "scalar": "mixed",
+          "array": false
+        }
+      },
+      {
+        "key": "archive_rel_statistics_excluded_scores",
+        "parent": "archive_rel_statistics",
+        "fields": [
+          { "column": "value_game_id", "type": "integer", "array": false },
+          { "column": "value_osu_id", "type": "integer", "array": false },
+          { "column": "value_reason", "type": "string", "array": false }
+        ],
+        "node": {
+          "type": "object",
+          "properties": {
+            "gameId": {
+              "type": "scalar",
+              "column": "value_game_id",
+              "scalar": "integer",
+              "array": false
+            },
+            "osuId": {
+              "type": "scalar",
+              "column": "value_osu_id",
+              "scalar": "integer",
+              "array": false
+            },
+            "reason": {
+              "type": "scalar",
+              "column": "value_reason",
+              "scalar": "string",
+              "array": false
+            }
+          }
+        }
+      },
+      {
+        "key": "archive_rel_statistics_excluded_games",
+        "parent": "archive_rel_statistics",
+        "fields": [
+          { "column": "value_game_id", "type": "integer", "array": false },
+          { "column": "value_reason", "type": "string", "array": false }
+        ],
+        "node": {
+          "type": "object",
+          "properties": {
+            "gameId": {
+              "type": "scalar",
+              "column": "value_game_id",
+              "scalar": "integer",
+              "array": false
+            },
+            "reason": {
+              "type": "scalar",
+              "column": "value_reason",
+              "scalar": "string",
+              "array": false
+            }
+          }
+        }
+      }
+    ]
+  }
+]

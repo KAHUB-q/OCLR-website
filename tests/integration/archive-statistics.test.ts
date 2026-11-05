@@ -1,3 +1,4 @@
+import { verifyArchiveRelations } from "../../src/lib/archive-relations";
 import {
   beforeAll,
   beforeEach,
@@ -133,6 +134,9 @@ describe.skipIf(!url)("historical statistics transactions", () => {
     await statisticsCommand(referee, "s7", imported);
     await statisticsCommand(referee, "s7", reviewed);
     await statisticsCommand(admin, "s7", publish);
+    expect(await verifyArchiveRelations(db(), "s7")).toMatchObject({
+      documents: 3,
+    });
     const before = await publicArchiveStatistics("s7", "one");
     const storedBefore = await db().select().from(historicalStatistics);
     const current = (await readTournament("s7"))!;

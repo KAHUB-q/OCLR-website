@@ -1837,6 +1837,13 @@ export const archiveReadVersions = pgTable(
     configurationVersion: integer("configuration_version").notNull(),
     archiveHash: text("archive_hash").notNull(),
     sourceHash: text("source_hash").notNull(),
+    statisticsManifestHash: text("statistics_manifest_hash"),
+    statisticsScorePolicy: text("statistics_score_policy"),
+    ezScoreMultiplier: doublePrecision("ez_score_multiplier"),
+    publicStatistics:
+      jsonb("public_statistics").$type<
+        import("@/lib/archive-statistics-projection").ArchiveStatisticsSummary
+      >(),
     projectorVersion: integer("projector_version").notNull(),
     header: jsonb("header").$type<Record<string, unknown>>().notNull(),
     createdAt: timestamp("created_at", { withTimezone: true })
@@ -2203,6 +2210,8 @@ export const archiveReadPlays = pgTable(
   (t) => [
     primaryKey({ columns: [t.generationId, t.position] }),
     index("archive_read_play_uid_idx").on(t.generationId, t.osuId),
+    index("archive_read_play_team_idx").on(t.generationId, t.teamId),
+    index("archive_read_play_game_idx").on(t.generationId, t.gameId),
     index("archive_read_play_scope_idx").on(
       t.generationId,
       t.fixtureId,
@@ -2241,5 +2250,103 @@ export const historicalStatisticsRevisions = pgTable(
   },
   (t) => [
     primaryKey({ columns: [t.editionSlug, t.mpId, t.version, t.contentHash] }),
+  ],
+);
+
+// Small, transaction-maintained digests; no raw MP JSONB is duplicated here.
+export const historicalStatisticsSources = pgTable(
+  "historical_statistics_sources",
+  {
+    editionSlug: text("edition_slug").notNull(),
+    mpId: bigint("mp_id", { mode: "number" }).notNull(),
+    sourceHash: text("source_hash").notNull(),
+  },
+  (t) => [
+    primaryKey({ columns: [t.editionSlug, t.mpId] }),
+    foreignKey({
+      columns: [t.editionSlug, t.mpId],
+      foreignColumns: [
+        historicalStatistics.editionSlug,
+        historicalStatistics.mpId,
+      ],
+    })
+      .onDelete("cascade")
+      .onUpdate("cascade"),
+    check(
+      "historical_statistics_source_hash",
+      sql`${t.sourceHash} ~ '^[a-f0-9]{64}$'`,
+    ),
+  ],
+);
+
+// Complete typed historical documents. Original JSONB/revisions remain evidence.
+export const archiveRelationDocuments = pgTable(
+  "archive_relation_documents",
+  {
+    id: uuid("id").primaryKey().defaultRandom(),
+    editionSlug: text("edition_slug")
+      .notNull()
+      .references(() => editionState.slug),
+    documentKey: text("document_key").notNull(),
+    kind: text("kind").notNull(),
+    mpId: bigint("mp_id", { mode: "number" }),
+    snapshotKind: text("snapshot_kind"),
+    contentHash: text("content_hash").notNull(),
+    codecVersion: integer("codec_version").notNull(),
+    createdAt: timestamp("created_at", { withTimezone: true })
+      .notNull()
+      .defaultNow(),
+  },
+  (t) => [
+    unique("archive_relation_document_scope").on(
+      t.editionSlug,
+      t.documentKey,
+      t.id,
+    ),
+    index("archive_relation_document_content_idx").on(
+      t.editionSlug,
+      t.documentKey,
+      t.codecVersion,
+      t.contentHash,
+    ),
+    index("archive_relation_document_mp_idx").on(
+      t.editionSlug,
+      t.mpId,
+      t.snapshotKind,
+    ),
+    check(
+      "archive_relation_document_kind",
+      sql`${t.kind} IN ('archive','statistics')`,
+    ),
+    check(
+      "archive_relation_document_source",
+      sql`(${t.kind}='archive' AND ${t.mpId} IS NULL AND ${t.snapshotKind} IS NULL) OR (${t.kind}='statistics' AND ${t.mpId} IS NOT NULL AND ${t.snapshotKind} IS NOT NULL AND ${t.mpId}>0 AND ${t.snapshotKind} IN ('draft','published'))`,
+    ),
+    check(
+      "archive_relation_document_hash",
+      sql`${t.contentHash} ~ '^[a-f0-9]{64}$'`,
+    ),
+  ],
+);
+export const archiveRelationHeads = pgTable(
+  "archive_relation_heads",
+  {
+    editionSlug: text("edition_slug")
+      .notNull()
+      .references(() => editionState.slug),
+    documentKey: text("document_key").notNull(),
+    documentId: uuid("document_id").notNull(),
+    sourceHash: text("source_hash").notNull(),
+  },
+  (t) => [
+    primaryKey({ columns: [t.editionSlug, t.documentKey] }),
+    foreignKey({
+      columns: [t.editionSlug, t.documentKey, t.documentId],
+      foreignColumns: [
+        archiveRelationDocuments.editionSlug,
+        archiveRelationDocuments.documentKey,
+        archiveRelationDocuments.id,
+      ],
+    }),
   ],
 );

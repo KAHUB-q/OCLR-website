@@ -59,15 +59,16 @@ Public App Router pages are server components. For example, `src/app/page.tsx` c
 
 The main sources are:
 
-| Page content                                                       | Source                                                                            |
-| ------------------------------------------------------------------ | --------------------------------------------------------------------------------- |
-| Tournament name, branding, registration windows, rules, milestones | `edition_state.configuration` (JSONB), with versions in `edition_revisions`       |
-| Participant directory and profiles                                 | `users`, accepted `registrations`, `user_profile_cache`                           |
-| Captains, teams and rosters                                        | `captains`, `teams`, `memberships` and their publication flags                    |
-| Mappools and beatmap metadata                                      | `tournament_rounds`, `mappools`, `mappool_entries`                                |
-| Fixtures, brackets and approved results                            | `tournament_stages`, `fixtures`, `match_results`, `result_revisions`              |
-| Appearance default                                                 | `site_settings`                                                                   |
-| Authored announcements and historical source material              | Repository JSON under `src/content`; explicit import/configuration where required |
+| Page content                                                       | Source                                                                                                                                                          |
+| ------------------------------------------------------------------ | --------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| Tournament name, branding, registration windows, rules, milestones | `edition_state.configuration` (JSONB), with versions in `edition_revisions`                                                                                     |
+| Historical archives and saved MP statistics                        | Complete `archive_rel_*` typed relations with immutable documents/current heads; source JSONB and revisions retained ([rollout](archive-relational-queries.md)) |
+| Participant directory and profiles                                 | `users`, accepted `registrations`, `user_profile_cache`                                                                                                         |
+| Captains, teams and rosters                                        | `captains`, `teams`, `memberships` and their publication flags                                                                                                  |
+| Mappools and beatmap metadata                                      | `tournament_rounds`, `mappools`, `mappool_entries`                                                                                                              |
+| Fixtures, brackets and approved results                            | `tournament_stages`, `fixtures`, `match_results`, `result_revisions`                                                                                            |
+| Appearance default                                                 | `site_settings`                                                                                                                                                 |
+| Authored announcements and historical source material              | Repository JSON under `src/content`; explicit import/configuration where required                                                                               |
 
 Client interactions call the corresponding `/api/...` route, which reuses the same services and server-side permission checks. Initial page rendering can query these services directly without making a browser API request. The homepage combines database events with authored announcement JSON; it does not scrape the live website. In database mode, a missing `DATABASE_URL` produces an empty tournament list, while a configured but unreachable/unmigrated database can fail queries. Explicit remote mode instead uses the adapter and connection states described below; it never falls back to local database reads. `/api/health` returns HTTP 200 only when a database query succeeds; it does not verify schema migrations or demo content.
 

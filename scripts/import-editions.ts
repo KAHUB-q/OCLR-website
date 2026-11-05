@@ -1,3 +1,4 @@
+import { syncArchiveRelations } from "../src/lib/archive-relations";
 /** One-time migration command. The web application never imports this module or reads this JSON. */
 import { readFileSync } from "node:fs";
 import { and, eq } from "drizzle-orm";
@@ -93,6 +94,7 @@ export async function importLegacyEditions(
       await tx
         .insert(editionRevisions)
         .values({ editionSlug: slug, version: revision, configuration });
+      await syncArchiveRelations(tx, slug);
       await tx.insert(editionEvents).values({
         editionSlug: slug,
         kind: "tournament_legacy_import",

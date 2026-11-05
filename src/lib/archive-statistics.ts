@@ -1,4 +1,17 @@
-import { relationalStatistics, relationalPublicPlays } from "./archive-read";
+import {
+  releasedArchiveStatistics,
+  archiveStatisticsSummary,
+} from "./archive-statistics-projection";
+import {
+  normalizedStatistics,
+  syncArchiveRelations,
+} from "./archive-relations";
+import {
+  relationalStatistics,
+  relationalPublicPlays,
+  relationalPublicStatistics,
+  relationalPlayerArchivePlays,
+} from "./archive-read";
 import { statisticsArchiveKey } from "./archive-statistics-key";
 import { archiveEvidenceUrl } from "./archive-metadata";
 import {
@@ -13,10 +26,7 @@ import {
   archiveMatchDetails,
   withStatisticsScores,
 } from "./match-details-model";
-import {
-  archivePoolFixtures,
-  type EventPoolFixture,
-} from "./archive-mappool-statistics";
+
 import { ratingSnapshot } from "./ratings";
 import type { RatingGame } from "./yumu-rating";
 import { db } from "@/db";
@@ -54,7 +64,7 @@ import {
 import { HttpError } from "./http";
 import { fetchMatchSource } from "./osu-matches";
 import { readTournament } from "./tournaments";
-import { statisticsScore, STATISTICS_SCORE_POLICY } from "./statistics-score";
+import { statisticsScore } from "./statistics-score";
 
 const integer = z.number().int().nonnegative();
 const commandSchema = z.discriminatedUnion("action", [
@@ -106,11 +116,23 @@ async function archiveFor(
 function where(slug: string) {
   return eq(historicalStatistics.editionSlug, slug);
 }
-async function stored(slug: string, reader: Reader = db(), relational = false) {
-  const rows = await reader
-    .select()
-    .from(historicalStatistics)
-    .where(where(slug));
+async function stored(
+  slug: string,
+  reader: Reader = db(),
+  relational = false,
+  fixtureId?: string,
+) {
+  const rows =
+    (await normalizedStatistics(slug, reader, fixtureId)) ??
+    (await reader
+      .select()
+      .from(historicalStatistics)
+      .where(
+        and(
+          where(slug),
+          fixtureId ? eq(historicalStatistics.fixtureId, fixtureId) : undefined,
+        ),
+      ));
   const values = relational
     ? await relationalStatistics(slug, rows, reader)
     : rows;
@@ -665,39 +687,94 @@ export async function statisticsCommand(
           : { versions: c.expectedVersions }),
       },
     });
+    await syncArchiveRelations(tx, slug);
   });
   return statisticsWorkspace(actor, slug, fixture.id);
 }
+function publicArchiveMatchDetails(
+  archive: HistoricalArchive,
+  fixtures: ReturnType<typeof statisticsFixtures>,
+  published: Awaited<ReturnType<typeof stored>>,
+  ezScoreMultiplier: number,
+) {
+  return fixtures.flatMap((f) => {
+    const sources = published.filter((r) => r.fixtureId === f.id);
+    if (!sources.length) return [];
+    // Published snapshot identity, not the mutable draft version, anchors the report.
+    const details = withStatisticsScores(
+      archiveMatchDetails(
+        archive,
+        f.id,
+        sources.map((r) => ({
+          snapshot: r.published!,
+          revision: createHash("sha256")
+            .update(JSON.stringify(r.published))
+            .digest("hex"),
+        })),
+      ),
+      ezScoreMultiplier,
+    );
+    const games: RatingGame[] = details.games
+      .filter((g) => g.included)
+      .map((g) => ({
+        fixtureId: f.id,
+        gameId: g.gameId,
+        // Historical snapshots have no numeric result revision; fingerprint is authoritative.
+        revision: 0,
+        fingerprint: g.revision,
+        approvalFingerprint: g.revision,
+        ...(ezScoreMultiplier === 1 ? {} : { ezScoreMultiplier }),
+        at: g.startTime,
+        teamIds: details.teamIds,
+        winnerTeamId:
+          g.effectiveTotals[0] === g.effectiveTotals[1]
+            ? null
+            : details.teamIds[
+                g.effectiveTotals[0]! > g.effectiveTotals[1]! ? 0 : 1
+              ],
+        scores: g.scores
+          .filter((s) => s.included)
+          .map((s) => ({
+            userId: s.osuId,
+            teamId: s.teamId!,
+            total: statisticsScore(
+              s.effectiveTotal!,
+              [...g.mods, ...s.mods],
+              ezScoreMultiplier,
+            ).score,
+            rawTotal: s.total!,
+            mods: [...new Set([...g.mods, ...s.mods])].sort(),
+          })),
+      }));
+    details.rating = ratingSnapshot(
+      games,
+      new Map(archive.players.map((p) => [p.osuId, p.username])),
+    );
+    return [{ fixtureId: f.id, details }];
+  });
+}
+
 async function databasePublicArchiveStatistics(
   slug: string,
   fixtureId?: string,
 ) {
   return db().transaction(
     async (tx) => {
+      if (!fixtureId) {
+        const fast = await relationalPublicStatistics(slug, tx);
+        if (fast)
+          return {
+            ...fast.summary,
+            plays: fast.plays,
+            matchDetails: [] as ReturnType<typeof publicArchiveMatchDetails>,
+          };
+      }
       const archive = await archiveFor(slug, tx, true);
       const ezScoreMultiplier =
         (await readTournament(slug, tx, true))?.edition.ezScoreMultiplier ?? 1;
-      const key = statisticsArchiveKey(archive);
-      const rows = await stored(slug, tx);
-      const fixtures = statisticsFixtures(archive).filter(
-        (f) => !fixtureId || f.id === fixtureId,
-      );
-      const published = fixtures.flatMap((fixture) => {
-        const sources = rows.filter(
-          (r) =>
-            r.fixtureId === fixture.id &&
-            fixture.mpUrls.some((u) => archiveMpId(u) === r.mpId),
-        );
-        if (
-          !sources.length ||
-          sources.some((r) => !r.published || r.published.archiveKey !== key)
-        )
-          return [];
-        const snapshots = sources.map((r) => r.published!);
-        if (fixtureStatisticsIssues(archive, fixture.id, snapshots).length)
-          return [];
-        return sources;
-      });
+      const rows = await stored(slug, tx, false, fixtureId);
+      const release = releasedArchiveStatistics(archive, rows, fixtureId);
+      const { fixtures, published } = release;
       const plays =
         (await relationalPublicPlays(slug, rows, tx, { fixtureId })) ??
         published.flatMap((r) =>
@@ -709,107 +786,19 @@ async function databasePublicArchiveStatistics(
           ),
         );
       return {
-        slug,
-        archiveKey: key,
-        ezScoreMultiplier: ezScoreMultiplier as number | undefined,
-        statisticsScorePolicy: STATISTICS_SCORE_POLICY as string | undefined,
-        matchDetails: (fixtureId ? fixtures : []).flatMap((f) => {
-          const sources = published.filter((r) => r.fixtureId === f.id);
-          if (!sources.length) return [];
-          // Published snapshot identity, not the mutable draft version, anchors the report.
-          const details = withStatisticsScores(
-            archiveMatchDetails(
-              archive,
-              f.id,
-              sources.map((r) => ({
-                snapshot: r.published!,
-                revision: createHash("sha256")
-                  .update(JSON.stringify(r.published))
-                  .digest("hex"),
-              })),
-            ),
-            ezScoreMultiplier,
-          );
-          const games: RatingGame[] = details.games
-            .filter((g) => g.included)
-            .map((g) => ({
-              fixtureId: f.id,
-              gameId: g.gameId,
-              // Historical snapshots have no numeric result revision; fingerprint is authoritative.
-              revision: 0,
-              fingerprint: g.revision,
-              approvalFingerprint: g.revision,
-              ...(ezScoreMultiplier === 1 ? {} : { ezScoreMultiplier }),
-              at: g.startTime,
-              teamIds: details.teamIds,
-              winnerTeamId:
-                g.effectiveTotals[0] === g.effectiveTotals[1]
-                  ? null
-                  : details.teamIds[
-                      g.effectiveTotals[0]! > g.effectiveTotals[1]! ? 0 : 1
-                    ],
-              scores: g.scores
-                .filter((s) => s.included)
-                .map((s) => ({
-                  userId: s.osuId,
-                  teamId: s.teamId!,
-                  total: statisticsScore(
-                    s.effectiveTotal!,
-                    [...g.mods, ...s.mods],
-                    ezScoreMultiplier,
-                  ).score,
-                  rawTotal: s.total!,
-                  mods: [...new Set([...g.mods, ...s.mods])].sort(),
-                })),
-            }));
-          details.rating = ratingSnapshot(
-            games,
-            new Map(archive.players.map((p) => [p.osuId, p.username])),
-          );
-          return [{ fixtureId: f.id, details }];
-        }),
-        players: archive.players.map(
-          ({ osuId, username, teamId, role, tier }) => ({
-            osuId,
-            username,
-            teamId,
-            role,
-            tier,
-          }),
-        ),
-        teams: archive.teams.map(({ id, name }) => ({ id, name })),
-        stages: [...new Set(fixtures.map((m) => m.stage))],
-        fixtures: fixtures.map((m) => ({
-          id: m.id,
-          label: m.label,
-          stage: m.stage,
-          covered: published.some((r) => r.fixtureId === m.id),
-          technicalAdjudication: published.some(
-            (r) =>
-              r.fixtureId === m.id &&
-              !!r.published &&
-              hasStatisticsAdjudication(r.published),
-          ),
-          score: m.score,
-        })),
-        plays,
-        // Optional on the wire so an older read backend remains consumable;
-        // the frontend leaves eligibility and coverage unknown when absent.
-        poolFixtures: archivePoolFixtures(
+        ...archiveStatisticsSummary(
           archive,
-          published.map((r) => ({
-            fixtureId: r.fixtureId,
-            snapshot: r.published!,
-          })),
-        ).filter((f) => !fixtureId || f.id === fixtureId) as
-          EventPoolFixture[] | undefined,
-        publishedAt:
-          published
-            .map((r) => r.publishedAt!.toISOString())
-            .sort()
-            .at(-1) ?? null,
-        mpTotal: fixtures.reduce((n, m) => n + m.mpUrls.length, 0),
-        mpCovered: published.length,
+          release,
+          ezScoreMultiplier,
+          fixtureId,
+        ),
+        plays,
+        matchDetails: publicArchiveMatchDetails(
+          archive,
+          fixtureId ? fixtures : [],
+          published,
+          ezScoreMultiplier,
+        ),
       };
     },
     { isolationLevel: "repeatable read", accessMode: "read only" },
@@ -830,3 +819,27 @@ export async function publicArchiveStatistics(
 export type PublicArchiveStatistics = Awaited<
   ReturnType<typeof publicArchiveStatistics>
 >;
+
+/** Local profile reads keep full relevant games; remote keeps its existing resource. */
+export async function publicArchivePlayerPlays(
+  slug: string,
+  osuId: number,
+  rosterTeams: string[],
+  minimumScore: number,
+) {
+  if (!remoteMode()) {
+    const plays = await db().transaction(
+      (tx) =>
+        relationalPlayerArchivePlays(
+          slug,
+          tx,
+          osuId,
+          rosterTeams,
+          minimumScore,
+        ),
+      { isolationLevel: "repeatable read", accessMode: "read only" },
+    );
+    if (plays !== undefined) return plays;
+  }
+  return (await publicArchiveStatistics(slug)).plays;
+}

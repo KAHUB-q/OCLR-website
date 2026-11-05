@@ -7,6 +7,12 @@ migration 0057; only a global Admin can open it or clear a bounded rectangle.
 Edition-only Admin grants do not authorize canvas moderation. No runtime role,
 credential, production migration or deployment is part of this implementation.
 
+Every authenticated browser-session user can place pixels, including users with
+only the global Developer role (#895). Canvas participation does not grant
+tournament business writes or canvas moderation. Developer Bearer access,
+delegated read channels and the remote frontend remain read-only; the game API
+continues to require a same-origin browser session.
+
 Selecting a cell never writes. Dragging scrolls the canvas; zoom buttons and
 numeric X/Y controls provide touch and keyboard access. A separate confirmation
 saves the selected color. Uncertain writes (network errors or server failures) retain

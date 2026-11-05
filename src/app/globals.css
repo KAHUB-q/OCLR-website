@@ -300,6 +300,10 @@ button:hover {
   min-width: 0;
   overflow-wrap: anywhere;
 }
+/* The shared footer renders this even when the optional S9 CSS is absent. */
+.glacier-attribution {
+  display: none;
+}
 .footer-actions {
   display: flex;
   align-items: center;

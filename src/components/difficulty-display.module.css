@@ -3,7 +3,9 @@
   align-items: center;
   flex-wrap: wrap;
   gap: 0.6rem 1rem;
-  margin-block: 0.75rem;
+  min-width: 0;
+  max-width: 100%;
+  font-size: var(--text-support);
 }
 .fm {
   display: flex;
@@ -11,4 +13,18 @@
   gap: 0.5rem;
   flex-wrap: wrap;
   font-weight: 600;
+}
+.fmOptions {
+  display: flex;
+  gap: 0.25rem;
+}
+.controls .fmOptions button {
+  min-width: 2.75rem;
+  min-height: 2.75rem;
+  padding-inline: 0.65rem;
+}
+.controls .fmOptions button[aria-pressed="true"] {
+  border-color: var(--site-primary);
+  color: var(--site-on-primary);
+  background: var(--site-primary);
 }

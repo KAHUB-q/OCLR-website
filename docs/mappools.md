@@ -68,9 +68,11 @@ disclosure. This read-only display enrichment does not rewrite archive imports.
 
 ## Public difficulty preview (#851)
 
-Published native pools and historical pools share a Mod-adjusted values toggle
-(off shows base values). FM uses single-selection HD / HR / EZ buttons; clicking
-the selected button clears it. Selecting a Mod enables the toggle, and toggling
+Published native pools and historical pools share an Enable modded difficulty
+toggle (off shows base values), alongside the Mod filters below the search/view
+toolbar. The settings wrap onto their own line when space is limited. FM uses
+single-selection HD / HR / EZ buttons with individual borders; clicking the
+selected button clears it. Selecting a Mod enables the toggle, and toggling
 off preserves the FM selection for comparison. Cards, compact tables, sorting and
 map details use the same selection. HD, HR and DT slots default to their named Mod
 when no explicit calculation combination is saved; a saved complete combination takes precedence.

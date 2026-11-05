@@ -134,16 +134,22 @@ test("single pool and duplicate authored names retain context", async ({
 // cache identity are covered in unit/integration tests without a locale matrix.
 test("difficulty choices stay consistent across native/archive cards, tables and details", async ({
   page,
-}) => {
+}, info) => {
+  await page.setViewportSize({
+    width: info.project.name === "mobile" ? 390 : 877,
+    height: 819,
+  });
   const writes: string[] = [];
   page.on("request", (r) => {
     if (!["GET", "HEAD"].includes(r.method())) writes.push(r.url());
   });
   for (const archive of [false, true]) {
     await page.goto(
-      `/public-mappools?difficulty&${archive ? "archive" : "detail"}`,
+      `/public-mappools?difficulty&appearance=skyline-pop&${archive ? "archive" : "detail"}`,
     );
-    const toggle = page.getByRole("switch", { name: "Mod-adjusted values" });
+    const toggle = page.getByRole("switch", {
+      name: "Enable modded difficulty",
+    });
     await toggle.focus();
     await page.keyboard.press("Space");
     await expect(toggle).toBeChecked();
@@ -153,6 +159,27 @@ test("difficulty choices stay consistent across native/archive cards, tables and
     const fm = page.locator('.map-browse-card[data-category="FM"]');
     await expect(fm.locator(".map-card-star")).toContainText("5.7");
     const selector = page.getByRole("group", { name: "FM preview" });
+    await expect(
+      page.locator(".map-browse-settings").getByRole("switch"),
+    ).toBeVisible();
+    expect(
+      (await page.locator(".map-browse-toolbar").boundingBox())!.y,
+    ).toBeLessThan((await selector.boundingBox())!.y);
+    await expect(selector.locator(".event-pills")).toHaveCount(0);
+    const borders = await selector.getByRole("button").evaluateAll((buttons) =>
+      buttons.map((button) => {
+        const style = getComputedStyle(button);
+        return {
+          border: style.borderTopWidth,
+          radius: style.borderTopLeftRadius,
+        };
+      }),
+    );
+    expect(
+      borders.every(
+        (style) => style.border === "1px" && style.radius === borders[0].radius,
+      ),
+    ).toBe(true);
     await expect(selector.getByRole("button")).toHaveText(["HD", "HR", "EZ"]);
     await expect(
       page.getByRole("combobox", { name: "FM preview" }),
@@ -164,6 +191,25 @@ test("difficulty choices stay consistent across native/archive cards, tables and
     await expect(
       selector.getByRole("button", { name: "HR", exact: true }),
     ).toHaveAttribute("aria-pressed", "true");
+    const selectedColors = await selector
+      .getByRole("button", { name: "HR", exact: true })
+      .evaluate((button) => ({
+        foreground: getComputedStyle(button).color,
+        background: getComputedStyle(button).backgroundColor,
+      }));
+    const idleColors = await selector
+      .getByRole("button", { name: "HD", exact: true })
+      .evaluate((button) => ({
+        foreground: getComputedStyle(button).color,
+        background: getComputedStyle(button).backgroundColor,
+      }));
+    expect(selectedColors.background).not.toBe(idleColors.background);
+    expect(selectedColors.foreground).not.toBe(selectedColors.background);
+    await page.screenshot({
+      path: info.outputPath(
+        `difficulty-toolbar-${archive ? "archive" : "native"}.png`,
+      ),
+    });
     await expect(fm.locator(".map-card-star")).toContainText("6.8");
     await fm.locator(".map-open-button").click();
     const dialog = page.getByRole("dialog");
@@ -199,7 +245,9 @@ test("missing official snapshots do not erase known native or recorded historica
     await page.goto(
       `/public-mappools?difficulty&missing-variants&no-snapshot&${archive ? "archive" : "detail"}`,
     );
-    const toggle = page.getByRole("switch", { name: "Mod-adjusted values" });
+    const toggle = page.getByRole("switch", {
+      name: "Enable modded difficulty",
+    });
     await toggle.check();
     const dt = page.locator('.map-browse-card[data-category="DT"]');
     await expect(dt.locator(".map-card-values")).toContainText("270");

@@ -850,6 +850,21 @@ html[data-theme="dark"] {
 .map-browse-toolbar .map-view-control {
   order: 4;
 }
+.map-browse-settings {
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 0.5rem 1rem;
+  min-width: 0;
+  margin-bottom: 0.75rem;
+}
+.map-browse-settings > :first-child {
+  flex: 1 1 26rem;
+  min-width: 0;
+}
+.map-browse-settings > :last-child {
+  flex: 0 1 auto;
+}
 .map-values-note {
   margin: 0.5rem 0;
 }

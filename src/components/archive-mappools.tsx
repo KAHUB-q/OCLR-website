@@ -340,11 +340,6 @@ export function ArchiveMappools({
           })}
         </p>
       </div>
-      <DifficultyControls
-        choice={choice}
-        onChange={setChoice}
-        hasFM={pool.maps.some((m) => /^FM\d*$/.test(m.slot))}
-      />
       <div className="map-browse-toolbar">
         <div
           className="event-pills map-view-control"
@@ -394,17 +389,24 @@ export function ArchiveMappools({
           />
         </label>
       </div>
-      <WorkspaceTabs
-        id={tabId}
-        label={tr("Mod filter")}
-        appearance="line"
-        value={mod}
-        onChange={setMod}
-        items={[
-          { value: "all", label: tr("All mods") },
-          ...mods.map((value) => ({ value, label: value })),
-        ]}
-      />
+      <div className="map-browse-settings">
+        <WorkspaceTabs
+          id={tabId}
+          label={tr("Mod filter")}
+          appearance="line"
+          value={mod}
+          onChange={setMod}
+          items={[
+            { value: "all", label: tr("All mods") },
+            ...mods.map((value) => ({ value, label: value })),
+          ]}
+        />
+        <DifficultyControls
+          choice={choice}
+          onChange={setChoice}
+          hasFM={pool.maps.some((m) => /^FM\d*$/.test(m.slot))}
+        />
+      </div>
       <div
         id={`${tabId}-panel`}
         role="tabpanel"

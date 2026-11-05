@@ -24,14 +24,14 @@ export function DifficultyControls({
   return (
     <div className={styles.controls}>
       <PublicationSwitch
-        label={tr("Mod-adjusted values")}
+        label={tr("Enable modded difficulty")}
         checked={choice.adjusted}
         onChange={(adjusted) => onChange({ ...choice, adjusted })}
       />
       {hasFM && (
         <div className={styles.fm} role="group" aria-label={tr("FM preview")}>
           <span>{tr("FM preview")}</span>
-          <div className="event-pills">
+          <div className={styles.fmOptions}>
             {(["HD", "HR", "EZ"] as const).map((mod) => (
               <button
                 type="button"

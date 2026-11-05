@@ -11,7 +11,7 @@ import {
 } from "../../src/lib/historical-archive";
 import snapshot from "../../src/data/archive-beatmaps.json";
 import early from "../../docs/imports/early-season-mappools.json";
-import { archiveMappoolMaps } from "../../src/lib/archive-mappool-slots";
+import { correctS2PoolArchive } from "../../src/lib/archive-pool-correction-model";
 import { statisticsArchiveKey } from "../../src/lib/archive-statistics";
 
 function archive(season: string) {
@@ -288,7 +288,11 @@ describe("historical map metadata supplementation", () => {
     ] as const;
     let slots = 0;
     let missingTitles = 0;
-    for (const [season, pools] of Object.entries(early.seasons)) {
+    for (const [season, capturedPools] of Object.entries(early.seasons)) {
+      const pools = correctS2PoolArchive({
+        editionSlug: season,
+        pools: capturedPools,
+      }).pools;
       for (const pool of pools) {
         const before = structuredClone(pool);
         const {
@@ -354,11 +358,14 @@ describe("historical map metadata supplementation", () => {
       expect(result.supplemented).toContain("title");
     }
   });
-  it("removes only the two S2 GS phantom slots from every count without changing statistical identity", () => {
-    const pools = early.seasons.s2;
+  it("counts and renders corrected saved data without hiding raw source slots", () => {
+    const pools = correctS2PoolArchive({
+      editionSlug: "s2",
+      pools: early.seasons.s2,
+    }).pools;
     const gs = pools.find((pool) => pool.id === "gs")!;
     const final = pools.find((pool) => pool.id === "final")!;
-    expect(archiveMappoolMaps(gs, "s2")).toHaveLength(18);
+    expect(gs.maps).toHaveLength(18);
     const gsSlots = archivePoolMetadata(gs, "s2").pool.maps.map((m) => m.slot);
     expect(gsSlots).not.toContain("DT5");
     expect(gsSlots).not.toContain("TB1");
@@ -371,13 +378,21 @@ describe("historical map metadata supplementation", () => {
       beatmapId: 1962336,
       title: expect.any(String),
     });
-    expect(archiveMappoolMaps(gs, "s1")).toEqual(gs.maps);
-    expect(archiveMappoolMaps({ ...gs, id: "other" }, "s2")).toEqual(gs.maps);
+    expect(
+      correctS2PoolArchive({ editionSlug: "s1", pools: early.seasons.s2 })
+        .pools,
+    ).toEqual(early.seasons.s2);
+    expect(
+      correctS2PoolArchive({
+        editionSlug: "s2",
+        pools: [{ ...gs, id: "other" }],
+      }).pools[0].maps,
+    ).toEqual(gs.maps);
     const raw = { ...archive("s4"), editionSlug: "s2", pools };
     const key = statisticsArchiveKey(raw);
     expect(archiveCounts(raw).maps).toBe(68);
     raw.pools.forEach((pool) => archivePoolMetadata(pool, "s2"));
     expect(statisticsArchiveKey(raw)).toBe(key);
-    expect(gs.maps).toHaveLength(20);
+    expect(early.seasons.s2.find((p) => p.id === "gs")!.maps).toHaveLength(20);
   });
 });

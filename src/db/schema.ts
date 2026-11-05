@@ -1,9 +1,9 @@
 import { sql } from "drizzle-orm";
 import {
   pgEnum,
+  doublePrecision,
   check,
   integer,
-  doublePrecision,
   boolean,
   primaryKey,
   foreignKey,
@@ -1823,5 +1823,423 @@ export const playerWorkspaceEvents = pgTable(
       "player_workspace_resource_valid",
       sql`${t.resource} IN ('practice','availability')`,
     ),
+  ],
+);
+
+// Rebuildable historical read models. Source JSONB and revisions are never removed.
+export const archiveReadVersions = pgTable(
+  "archive_read_versions",
+  {
+    id: uuid("id").primaryKey().defaultRandom(),
+    editionSlug: text("edition_slug")
+      .notNull()
+      .references(() => editionState.slug),
+    configurationVersion: integer("configuration_version").notNull(),
+    archiveHash: text("archive_hash").notNull(),
+    sourceHash: text("source_hash").notNull(),
+    projectorVersion: integer("projector_version").notNull(),
+    header: jsonb("header").$type<Record<string, unknown>>().notNull(),
+    createdAt: timestamp("created_at", { withTimezone: true })
+      .notNull()
+      .defaultNow(),
+  },
+  (t) => [
+    index("archive_read_current_idx").on(
+      t.editionSlug,
+      t.configurationVersion,
+      t.projectorVersion,
+      t.sourceHash,
+    ),
+    check(
+      "archive_read_version_positive",
+      sql`${t.configurationVersion} >= 0 AND ${t.projectorVersion} > 0`,
+    ),
+  ],
+);
+
+const archiveBigint = (name: string) => bigint(name, { mode: "number" });
+
+export const archiveReadTeams = pgTable(
+  "archive_read_teams",
+  {
+    generationId: uuid("generation_id")
+      .notNull()
+      .references(() => archiveReadVersions.id),
+    position: integer("position").notNull(),
+    teamKey: text("team_key").notNull(),
+    name: text("name").notNull(),
+    payload: jsonb("payload").$type<Record<string, unknown>>().notNull(),
+  },
+  (t) => [
+    primaryKey({ columns: [t.generationId, t.position] }),
+    unique("archive_read_team_key").on(t.generationId, t.teamKey),
+  ],
+);
+
+export const archiveReadPeople = pgTable(
+  "archive_read_people",
+  {
+    generationId: uuid("generation_id")
+      .notNull()
+      .references(() => archiveReadVersions.id),
+    position: integer("position").notNull(),
+    kind: text("kind").notNull(),
+    sourcePosition: integer("source_position").notNull(),
+    personPosition: integer("person_position").notNull(),
+    osuId: archiveBigint("osu_id"),
+    username: text("username").notNull(),
+    teamId: text("team_id"),
+    role: text("role").notNull(),
+    tier: integer("tier"),
+    payload: jsonb("payload").$type<Record<string, unknown>>().notNull(),
+  },
+  (t) => [
+    primaryKey({ columns: [t.generationId, t.position] }),
+    index("archive_read_person_uid_idx").on(t.osuId, t.generationId),
+    index("archive_read_person_team_idx").on(t.generationId, t.teamId),
+  ],
+);
+
+export const archiveReadPicks = pgTable(
+  "archive_read_picks",
+  {
+    generationId: uuid("generation_id")
+      .notNull()
+      .references(() => archiveReadVersions.id),
+    position: integer("position").notNull(),
+    round: integer("round").notNull(),
+    pick: integer("pick").notNull(),
+    teamId: text("team_id"),
+    osuId: archiveBigint("osu_id"),
+    payload: jsonb("payload").$type<Record<string, unknown>>().notNull(),
+  },
+  (t) => [primaryKey({ columns: [t.generationId, t.position] })],
+);
+
+export const archiveReadMatches = pgTable(
+  "archive_read_matches",
+  {
+    generationId: uuid("generation_id")
+      .notNull()
+      .references(() => archiveReadVersions.id),
+    position: integer("position").notNull(),
+    fixtureId: text("fixture_id").notNull(),
+    stage: text("stage").notNull(),
+    phase: text("phase"),
+    roundIndex: integer("round_index"),
+    teamA: text("team_a").notNull(),
+    teamB: text("team_b").notNull(),
+    scheduledAt: text("scheduled_at"),
+    recorded: boolean("recorded").notNull(),
+    label: text("label").notNull(),
+    scoreA: integer("score_a"),
+    scoreB: integer("score_b"),
+    forfeitWinner: integer("forfeit_winner"),
+    adjudication: text("adjudication"),
+    payload: jsonb("payload").$type<Record<string, unknown>>().notNull(),
+  },
+  (t) => [
+    primaryKey({ columns: [t.generationId, t.position] }),
+    unique("archive_read_fixture_key").on(t.generationId, t.fixtureId),
+    index("archive_read_match_stage_idx").on(t.generationId, t.stage),
+  ],
+);
+
+export const archiveReadMps = pgTable(
+  "archive_read_mps",
+  {
+    generationId: uuid("generation_id")
+      .notNull()
+      .references(() => archiveReadVersions.id),
+    position: integer("position").notNull(),
+    fixtureId: text("fixture_id").notNull(),
+    mpId: archiveBigint("mp_id").notNull(),
+    url: text("url").notNull(),
+    payload: jsonb("payload").$type<Record<string, unknown>>().notNull(),
+  },
+  (t) => [
+    primaryKey({ columns: [t.generationId, t.position] }),
+    index("archive_read_mp_idx").on(t.mpId, t.generationId),
+    foreignKey({
+      columns: [t.generationId, t.fixtureId],
+      foreignColumns: [
+        archiveReadMatches.generationId,
+        archiveReadMatches.fixtureId,
+      ],
+    }),
+  ],
+);
+
+export const archiveReadPools = pgTable(
+  "archive_read_pools",
+  {
+    generationId: uuid("generation_id")
+      .notNull()
+      .references(() => archiveReadVersions.id),
+    position: integer("position").notNull(),
+    poolId: text("pool_id").notNull(),
+    name: text("name").notNull(),
+    payload: jsonb("payload").$type<Record<string, unknown>>().notNull(),
+  },
+  (t) => [
+    primaryKey({ columns: [t.generationId, t.position] }),
+    unique("archive_read_pool_key").on(t.generationId, t.poolId),
+  ],
+);
+
+export const archiveReadMaps = pgTable(
+  "archive_read_maps",
+  {
+    generationId: uuid("generation_id")
+      .notNull()
+      .references(() => archiveReadVersions.id),
+    position: integer("position").notNull(),
+    poolId: text("pool_id").notNull(),
+    slot: text("slot").notNull(),
+    beatmapId: archiveBigint("beatmap_id"),
+    title: text("title"),
+    mapper: text("mapper"),
+    stars: doublePrecision("stars"),
+    bpm: doublePrecision("bpm"),
+    drainSeconds: doublePrecision("drain_seconds"),
+    cs: doublePrecision("cs"),
+    ar: doublePrecision("ar"),
+    od: doublePrecision("od"),
+    payload: jsonb("payload").$type<Record<string, unknown>>().notNull(),
+  },
+  (t) => [
+    primaryKey({ columns: [t.generationId, t.position] }),
+    unique("archive_read_map_slot").on(t.generationId, t.poolId, t.slot),
+    index("archive_read_map_bid_idx").on(t.beatmapId, t.generationId),
+    foreignKey({
+      columns: [t.generationId, t.poolId],
+      foreignColumns: [archiveReadPools.generationId, archiveReadPools.poolId],
+    }),
+  ],
+);
+
+export const archiveReadPlacements = pgTable(
+  "archive_read_placements",
+  {
+    generationId: uuid("generation_id")
+      .notNull()
+      .references(() => archiveReadVersions.id),
+    position: integer("position").notNull(),
+    kind: text("kind").notNull(),
+    teamId: text("team_id"),
+    scope: text("scope").notNull(),
+    placementStart: integer("placement_start"),
+    placementEnd: integer("placement_end"),
+    rank: integer("rank"),
+    wins: integer("wins"),
+    losses: integer("losses"),
+    mapsWon: integer("maps_won"),
+    mapsLost: integer("maps_lost"),
+    tied: boolean("tied"),
+    qualified: boolean("qualified"),
+    official: boolean("official"),
+    payload: jsonb("payload").$type<Record<string, unknown>>().notNull(),
+  },
+  (t) => [primaryKey({ columns: [t.generationId, t.position] })],
+);
+
+export const archiveReadSnapshots = pgTable(
+  "archive_read_snapshots",
+  {
+    generationId: uuid("generation_id")
+      .notNull()
+      .references(() => archiveReadVersions.id),
+    mpId: archiveBigint("mp_id").notNull(),
+    kind: text("kind").notNull(),
+    fixtureId: text("fixture_id").notNull(),
+    rowVersion: integer("row_version").notNull(),
+    snapshotHash: text("snapshot_hash").notNull(),
+    archiveKey: text("archive_key").notNull(),
+    sourceFingerprint: text("source_fingerprint").notNull(),
+    poolId: text("pool_id").notNull(),
+    publishedAt: timestamp("published_at", { withTimezone: true }),
+    updatedAt: timestamp("updated_at", { withTimezone: true }).notNull(),
+    reviewedBy: archiveBigint("reviewed_by"),
+    reviewedAt: text("reviewed_at"),
+    adjudication: text("adjudication"),
+    payload: jsonb("payload").$type<Record<string, unknown>>().notNull(),
+  },
+  (t) => [primaryKey({ columns: [t.generationId, t.mpId, t.kind] })],
+);
+
+export const archiveReadGames = pgTable(
+  "archive_read_games",
+  {
+    generationId: uuid("generation_id")
+      .notNull()
+      .references(() => archiveReadVersions.id),
+    mpId: archiveBigint("mp_id").notNull(),
+    kind: text("kind").notNull(),
+    position: integer("position").notNull(),
+    gameId: archiveBigint("game_id").notNull(),
+    beatmapId: archiveBigint("beatmap_id"),
+    included: boolean("included").notNull(),
+    scoringType: text("scoring_type"),
+    startTime: text("start_time"),
+    endTime: text("end_time"),
+    mode: text("mode"),
+    teamType: text("team_type"),
+    mods: text("mods").array().notNull(),
+    payload: jsonb("payload").$type<Record<string, unknown>>().notNull(),
+  },
+  (t) => [
+    primaryKey({ columns: [t.generationId, t.mpId, t.kind, t.position] }),
+    foreignKey({
+      columns: [t.generationId, t.mpId, t.kind],
+      foreignColumns: [
+        archiveReadSnapshots.generationId,
+        archiveReadSnapshots.mpId,
+        archiveReadSnapshots.kind,
+      ],
+    }),
+  ],
+);
+
+export const archiveReadScores = pgTable(
+  "archive_read_scores",
+  {
+    generationId: uuid("generation_id")
+      .notNull()
+      .references(() => archiveReadVersions.id),
+    mpId: archiveBigint("mp_id").notNull(),
+    kind: text("kind").notNull(),
+    gamePosition: integer("game_position").notNull(),
+    position: integer("position").notNull(),
+    osuId: archiveBigint("osu_id"),
+    total: archiveBigint("total"),
+    accuracy: doublePrecision("accuracy"),
+    combo: archiveBigint("combo"),
+    passed: boolean("passed"),
+    rawTeam: text("raw_team"),
+    mods: text("mods").array().notNull(),
+    hitGreat: archiveBigint("hit_great"),
+    hitOk: archiveBigint("hit_ok"),
+    hitMeh: archiveBigint("hit_meh"),
+    hitMiss: archiveBigint("hit_miss"),
+    payload: jsonb("payload").$type<Record<string, unknown>>().notNull(),
+  },
+  (t) => [
+    primaryKey({
+      columns: [t.generationId, t.mpId, t.kind, t.gamePosition, t.position],
+    }),
+    index("archive_read_score_uid_idx").on(t.osuId, t.generationId),
+    foreignKey({
+      columns: [t.generationId, t.mpId, t.kind, t.gamePosition],
+      foreignColumns: [
+        archiveReadGames.generationId,
+        archiveReadGames.mpId,
+        archiveReadGames.kind,
+        archiveReadGames.position,
+      ],
+    }),
+  ],
+);
+
+export const archiveReadDecisions = pgTable(
+  "archive_read_decisions",
+  {
+    generationId: uuid("generation_id")
+      .notNull()
+      .references(() => archiveReadVersions.id),
+    mpId: archiveBigint("mp_id").notNull(),
+    kind: text("kind").notNull(),
+    position: integer("position").notNull(),
+    decision: text("decision").notNull(),
+    gameId: archiveBigint("game_id").notNull(),
+    osuId: archiveBigint("osu_id"),
+    reason: text("reason"),
+    payload: jsonb("payload").$type<Record<string, unknown>>().notNull(),
+  },
+  (t) => [
+    primaryKey({ columns: [t.generationId, t.mpId, t.kind, t.position] }),
+    foreignKey({
+      columns: [t.generationId, t.mpId, t.kind],
+      foreignColumns: [
+        archiveReadSnapshots.generationId,
+        archiveReadSnapshots.mpId,
+        archiveReadSnapshots.kind,
+      ],
+    }),
+  ],
+);
+
+export const archiveReadPlays = pgTable(
+  "archive_read_plays",
+  {
+    generationId: uuid("generation_id")
+      .notNull()
+      .references(() => archiveReadVersions.id),
+    position: integer("position").notNull(),
+    fixtureId: text("fixture_id").notNull(),
+    mpId: archiveBigint("mp_id").notNull(),
+    gameId: archiveBigint("game_id").notNull(),
+    osuId: archiveBigint("osu_id"),
+    teamId: text("team_id"),
+    stage: text("stage").notNull(),
+    slot: text("slot").notNull(),
+    beatmapId: archiveBigint("beatmap_id"),
+    score: archiveBigint("score").notNull(),
+    rawScore: archiveBigint("raw_score").notNull(),
+    scoreMultiplier: doublePrecision("score_multiplier").notNull(),
+    playedAt: text("played_at").notNull(),
+    scoringType: text("scoring_type").notNull(),
+    winnerTeamId: text("winner_team_id"),
+    accuracy: doublePrecision("accuracy"),
+    combo: archiveBigint("combo"),
+    passed: boolean("passed"),
+    relative: doublePrecision("relative"),
+    mods: text("mods").array().notNull(),
+    hitGreat: archiveBigint("hit_great"),
+    hitOk: archiveBigint("hit_ok"),
+    hitMeh: archiveBigint("hit_meh"),
+    hitMiss: archiveBigint("hit_miss"),
+    payload: jsonb("payload").$type<Record<string, unknown>>().notNull(),
+  },
+  (t) => [
+    primaryKey({ columns: [t.generationId, t.position] }),
+    index("archive_read_play_uid_idx").on(t.generationId, t.osuId),
+    index("archive_read_play_scope_idx").on(
+      t.generationId,
+      t.fixtureId,
+      t.stage,
+      t.teamId,
+    ),
+    index("archive_read_play_map_idx").on(t.generationId, t.beatmapId),
+  ],
+);
+
+// Immutable MP JSONB history, populated transactionally by migration 0077's trigger.
+export const historicalStatisticsRevisions = pgTable(
+  "historical_statistics_revisions",
+  {
+    editionSlug: text("edition_slug")
+      .notNull()
+      .references(() => editionState.slug),
+    mpId: bigint("mp_id", { mode: "number" }).notNull(),
+    version: integer("version").notNull(),
+    contentHash: text("content_hash").notNull(),
+    fixtureId: text("fixture_id").notNull(),
+    draft: jsonb("draft")
+      .$type<import("@/lib/statistics-snapshot").StatisticsSnapshot>()
+      .notNull(),
+    published:
+      jsonb("published").$type<
+        import("@/lib/statistics-snapshot").StatisticsSnapshot
+      >(),
+    publishedAt: timestamp("published_at", { withTimezone: true }),
+    sourceUpdatedAt: timestamp("source_updated_at", {
+      withTimezone: true,
+    }).notNull(),
+    recordedAt: timestamp("recorded_at", { withTimezone: true })
+      .notNull()
+      .defaultNow(),
+  },
+  (t) => [
+    primaryKey({ columns: [t.editionSlug, t.mpId, t.version, t.contentHash] }),
   ],
 );

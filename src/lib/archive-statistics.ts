@@ -1,3 +1,5 @@
+import { relationalStatistics, relationalPublicPlays } from "./archive-read";
+import { statisticsArchiveKey } from "./archive-statistics-key";
 import { archiveEvidenceUrl } from "./archive-metadata";
 import {
   statisticsAdjudicationSchema,
@@ -89,54 +91,8 @@ const commandSchema = z.discriminatedUnion("action", [
     .strict(),
 ]);
 type Reader = Pick<ReturnType<typeof db>, "select">;
-export function statisticsArchiveKey(a: HistoricalArchive) {
-  return createHash("sha256")
-    .update(
-      JSON.stringify({
-        editionSlug: a.editionSlug,
-        teams: a.teams.map(({ id, name }) => ({ id, name })),
-        players: a.players.map(({ osuId, username, teamId, role, tier }) => ({
-          osuId,
-          username,
-          teamId,
-          role,
-          tier,
-        })),
-        matches: a.matches.map(
-          ({
-            id,
-            label,
-            stage,
-            teamA,
-            teamB,
-            scheduledAt,
-            score,
-            forfeitWinner,
-            mpUrls,
-          }) => ({
-            id,
-            label,
-            stage,
-            teamA,
-            teamB,
-            scheduledAt,
-            score,
-            forfeitWinner,
-            mpUrls,
-          }),
-        ),
-        pools: a.pools.map(({ id, maps }) => ({
-          id,
-          maps: maps.map(({ beatmapId, title, slot }) => ({
-            beatmapId,
-            title,
-            slot,
-          })),
-        })),
-      }),
-    )
-    .digest("hex");
-}
+export { statisticsArchiveKey } from "./archive-statistics-key";
+
 async function archiveFor(
   slug: string,
   reader: Reader = db(),
@@ -150,12 +106,15 @@ async function archiveFor(
 function where(slug: string) {
   return eq(historicalStatistics.editionSlug, slug);
 }
-async function stored(slug: string, reader: Reader = db()) {
+async function stored(slug: string, reader: Reader = db(), relational = false) {
   const rows = await reader
     .select()
     .from(historicalStatistics)
     .where(where(slug));
-  return rows.map((r) => ({
+  const values = relational
+    ? await relationalStatistics(slug, rows, reader)
+    : rows;
+  return values.map((r) => ({
     ...r,
     draft: parseStatisticsSnapshot(r.draft),
     published: r.published ? parseStatisticsSnapshot(r.published) : null,
@@ -322,7 +281,7 @@ async function databaseStatisticsWorkspace(
   await assertReadCapability(actor, "record_results", slug);
   const archive = await archiveFor(slug);
   const key = statisticsArchiveKey(archive);
-  const rows = (await stored(slug)).filter((r) =>
+  const rows = (await stored(slug, db(), true)).filter((r) =>
     statisticsFixtures(archive).some(
       (f) =>
         f.id === r.fixtureId && f.mpUrls.some((u) => archiveMpId(u) === r.mpId),
@@ -739,14 +698,16 @@ async function databasePublicArchiveStatistics(
           return [];
         return sources;
       });
-      const plays = published.flatMap((r) =>
-        projectStatistics(
-          archive,
-          r.fixtureId,
-          r.published!,
-          ezScoreMultiplier,
-        ),
-      );
+      const plays =
+        (await relationalPublicPlays(slug, rows, tx, { fixtureId })) ??
+        published.flatMap((r) =>
+          projectStatistics(
+            archive,
+            r.fixtureId,
+            r.published!,
+            ezScoreMultiplier,
+          ),
+        );
       return {
         slug,
         archiveKey: key,

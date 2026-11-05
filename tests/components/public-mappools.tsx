@@ -7,7 +7,7 @@ import { PageHeading } from "../../src/components/ui";
 import { syntheticPublicPools } from "../fixtures/public-mappools";
 import { legacyS5Mappool } from "../fixtures/legacy-s5-mappool";
 import { archivePoolMetadata } from "../../src/lib/archive-map-metadata";
-import { archiveMappoolMaps } from "../../src/lib/archive-mappool-slots";
+import { correctS2PoolArchive } from "../../src/lib/archive-pool-correction-model";
 import earlyInventory from "../../docs/imports/early-season-mappools.json";
 import { baseDifficulty } from "../../src/lib/difficulty-display";
 import {
@@ -33,8 +33,14 @@ document.documentElement.dataset.appearance =
 const messages = locale === "en" ? en : locale === "zh-Hans" ? hans : hant;
 const earlySeason = (params.get("early-season") ??
   "s1") as keyof typeof earlyInventory.seasons;
+// Fixture preparation represents the corrected persisted archive, not a display filter.
 const earlyPools = params.has("early-season")
-  ? earlyInventory.seasons[earlySeason]
+  ? earlySeason === "s2"
+    ? correctS2PoolArchive({
+        editionSlug: "s2",
+        pools: earlyInventory.seasons.s2,
+      }).pools
+    : earlyInventory.seasons[earlySeason]
   : null;
 const earlyPool = earlyPools?.find(
   (pool) => pool.id === (params.get("pool") ?? "gs"),
@@ -167,7 +173,7 @@ createRoot(document.getElementById("root")!).render(
               earlyPools?.map((pool) => ({
                 id: pool.id,
                 name: pool.name,
-                count: archiveMappoolMaps(pool, earlySeason).length,
+                count: pool.maps.length,
                 href: `/public-mappools?archive&early-season=${earlySeason}&pool=${pool.id}`,
               })) ?? [
                 {

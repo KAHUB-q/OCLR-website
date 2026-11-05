@@ -9,6 +9,7 @@ import {
   formatBeatmapNumber,
 } from "@/lib/mappool-model";
 import styles from "./difficulty-display.module.css";
+import { PublicationSwitch } from "./publication-switch";
 
 export function DifficultyControls({
   choice,
@@ -22,57 +23,30 @@ export function DifficultyControls({
   const tr = useAppTranslations();
   return (
     <div className={styles.controls}>
-      <div
-        className="event-pills"
-        role="group"
-        aria-label={tr("Difficulty values")}
-      >
-        <button
-          type="button"
-          className="secondary"
-          aria-pressed={!choice.adjusted}
-          data-difficulty-mode="base"
-          onClick={() => onChange({ ...choice, adjusted: false })}
-        >
-          {tr("Base values")}
-        </button>
-        <button
-          type="button"
-          className="secondary"
-          aria-pressed={choice.adjusted}
-          data-difficulty-mode="adjusted"
-          onClick={() => onChange({ ...choice, adjusted: true })}
-        >
-          {tr("Mod-adjusted values")}
-        </button>
-      </div>
+      <PublicationSwitch
+        label={tr("Mod-adjusted values")}
+        checked={choice.adjusted}
+        onChange={(adjusted) => onChange({ ...choice, adjusted })}
+      />
       {hasFM && (
-        <label className="field">
-          {tr("FM preview")}
-          <select
-            value={choice.fm}
-            onChange={(e) =>
-              onChange({
-                adjusted: true,
-                fm: e.target.value as DifficultyChoice["fm"],
-              })
-            }
-          >
-            <option value="">{tr("Not selected")}</option>
-            {["HD", "HR", "EZ"].map((mod) => (
-              <option key={mod} value={mod}>
+        <div className={styles.fm} role="group" aria-label={tr("FM preview")}>
+          <span>{tr("FM preview")}</span>
+          <div className="event-pills">
+            {(["HD", "HR", "EZ"] as const).map((mod) => (
+              <button
+                type="button"
+                className="secondary"
+                key={mod}
+                aria-pressed={choice.fm === mod}
+                onClick={() =>
+                  onChange({ adjusted: true, fm: choice.fm === mod ? "" : mod })
+                }
+              >
                 {mod}
-              </option>
+              </button>
             ))}
-          </select>
-        </label>
-      )}
-      {choice.adjusted && (
-        <p className="muted small">
-          {tr(
-            "Difficulty preview only. Follow the published tournament mod rules.",
-          )}
-        </p>
+          </div>
+        </div>
       )}
     </div>
   );
@@ -85,6 +59,9 @@ export function DifficultyStatus({
   const tr = useAppTranslations();
   return (
     <span className="map-difficulty-status muted small" role="status">
+      {d.fallback
+        ? `${d.fallback === "recorded" ? tr("Recorded historical values") : tr("Base values")} · `
+        : ""}
       {d.status === "base"
         ? tr("Base values")
         : d.status === "recorded"
@@ -93,9 +70,9 @@ export function DifficultyStatus({
             ? tr("Official Mod SR")
             : d.status === "variable"
               ? tr("Variable")
-              : tr("Not calculated")}
+              : `${tr("Official Mod SR")} · ${tr("Not calculated")}`}
       {d.configuration && d.status !== "base" && d.status !== "recorded"
-        ? ` · ${d.configuration} · ${d.rate}×`
+        ? ` · ${d.configuration}${d.fallback ? "" : ` · ${d.rate}×`}`
         : ""}
     </span>
   );
@@ -128,7 +105,7 @@ export function DifficultyReadout({
           </div>
         ))}
       </dl>
-      {d.status === "adjusted" && (
+      {(d.status === "adjusted" || (d.status === "missing" && !d.fallback)) && (
         <p className="muted small">
           {tr(
             "AR and OD include clock-rate timing; CS and HP are difficulty settings.",

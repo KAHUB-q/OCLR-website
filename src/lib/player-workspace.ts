@@ -16,7 +16,7 @@ import {
   playerWorkspaceEvents,
 } from "@/db/schema";
 import type { User } from "./auth/sessions";
-import { assertBusinessWrite } from "./auth/staff";
+import { assertUserWriteChannel } from "./auth/staff";
 import { remoteMode } from "./data-source";
 import { inReadChannel } from "./read-channel";
 import { HttpError } from "./http";
@@ -138,20 +138,10 @@ async function context(reader: Reader, actor: User, slug: string) {
     ),
   };
 }
-async function readOnly(
-  actor: User,
-  c: Awaited<ReturnType<typeof context>>,
-  reader: Reader,
-) {
-  if (c.state.lockedAt || c.state.configuration?.status === "completed")
-    return true;
-  try {
-    await assertBusinessWrite(actor, c.state.slug, reader);
-    return false;
-  } catch (error) {
-    if (error instanceof HttpError && error.status === 403) return true;
-    throw error;
-  }
+function readOnly(c: Awaited<ReturnType<typeof context>>) {
+  return Boolean(
+    c.state.lockedAt || c.state.configuration?.status === "completed",
+  );
 }
 function checkWritable(c: Awaited<ReturnType<typeof context>>) {
   if (c.state.lockedAt || c.state.configuration?.status === "completed")
@@ -230,7 +220,7 @@ export async function playerPracticeWorkspace(
       actorId: actor.osuId,
       team: c.team ? { id: c.team.id, name: c.team.name } : null,
       participants: c.roster,
-      readOnly: await readOnly(actor, c, db()),
+      readOnly: readOnly(c),
       pools: pools.map((p) => ({
         id: p.id,
         name: p.name,
@@ -331,7 +321,7 @@ export async function playerTimetableWorkspace(
           }))
         : [],
       timeZone: c.state.configuration!.timeZone,
-      canEdit: ownerId === actor.osuId && !(await readOnly(actor, c, db())),
+      canEdit: ownerId === actor.osuId && !readOnly(c),
       intervals: row?.intervals ?? [],
       version: row?.version ?? 0,
       updatedAt: row ? row.updatedAt.toISOString() : null,
@@ -358,7 +348,7 @@ export async function playerPracticeCommand(
       .for("update");
     const c = await context(tx, actor, slug);
     checkWritable(c);
-    await assertBusinessWrite(actor, slug, tx);
+    assertUserWriteChannel();
     const [entry] = await tx
       .select({ entry: mappoolEntries, pool: mappools })
       .from(mappoolEntries)
@@ -486,7 +476,7 @@ export async function playerTimetableCommand(
       .for("update");
     const c = await context(tx, actor, slug);
     checkWritable(c);
-    await assertBusinessWrite(actor, slug, tx);
+    assertUserWriteChannel();
     const [receipt] = await tx
       .select()
       .from(playerWorkspaceEvents)

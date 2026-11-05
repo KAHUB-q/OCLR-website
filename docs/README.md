@@ -30,6 +30,7 @@ The repository root README ([English](../README.md) / [简体中文](../README.z
 - [Full coverage and service boundaries](remote-coverage.md), [generated page/module inventory](remote-coverage.json).
 - [Read API contract and browser/SSR examples](read-api.md), [OpenAPI](read-api.openapi.json).
 - [Developer grant, short-lived access and exact-origin CORS](developer-api.md).
+- [Developer website permission audit](developer-permissions.md) — ordinary frontend participation, staff reads and delegated read-only boundaries (#904).
 
 Local synthetic acceptance and actual CI are recorded per commit on #271/#272;
 real grants/OAuth/deployment and new Chinese wording acceptance remain separate.

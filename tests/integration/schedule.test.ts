@@ -213,6 +213,64 @@ describe.skipIf(!url)("private schedule negotiation #591", () => {
       expect(await conflicts()).toEqual([[], []]);
     },
   );
+  it("lets Developer players report availability and appointed captains negotiate without granting staff approval", async () => {
+    await db()
+      .insert(staffRoles)
+      .values(
+        [a, b, player, other].map((u) => ({
+          userId: u.osuId,
+          role: "developer" as const,
+          grantedBy: admin.osuId,
+        })),
+      );
+    await scheduleCommand(
+      player,
+      slug,
+      command("availability", {
+        expectedVersion: 0,
+        intervals: [{ start: official, end: proposed }],
+      }),
+    );
+    expect((await db().select().from(scheduleAvailability))[0].userId).toBe(
+      player.osuId,
+    );
+    await expect(scheduleWorkspace(other, slug)).rejects.toMatchObject({
+      status: 403,
+    });
+    await expect(
+      scheduleCommand(
+        player,
+        slug,
+        command("propose", {
+          requestId: null,
+          expectedVersion: 0,
+          proposedAt: proposed,
+        }),
+      ),
+    ).rejects.toMatchObject({ status: 403 });
+    const request = await pending();
+    expect((await db().select().from(scheduleRequests))[0].status).toBe(
+      "pending",
+    );
+    await expect(
+      scheduleCommand(
+        a,
+        slug,
+        command("approve", { requestId: request.id, expectedVersion: 2 }),
+      ),
+    ).rejects.toMatchObject({ status: 403 });
+    expect(
+      (await db().select().from(fixtures))[0].scheduledAt?.toISOString(),
+    ).toBe(official);
+    await scheduleCommand(
+      admin,
+      slug,
+      command("approve", { requestId: request.id, expectedVersion: 2 }),
+    );
+    expect(
+      (await db().select().from(fixtures))[0].scheduledAt?.toISOString(),
+    ).toBe(proposed);
+  });
   it("only changes the official time after two captains and independent staff approval; retry is idempotent", async () => {
     await db()
       .insert(fixtureStreams)

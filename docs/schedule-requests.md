@@ -83,3 +83,8 @@ must retain these tables, events and invalidation triggers; do not remove saved
 requests or rewrite history. This document does not authorize a production
 migration, role grant or deployment. The organizer approved the new Chinese interface wording on 2026-10-31 during
 [#591 acceptance](verification/issue-591/README.md#acceptance-audit--2026-10-31).
+
+A Developer using a direct website session can report their own availability and,
+when actually appointed as a participating captain, negotiate requests (#904).
+Developer alone cannot approve requests or inspect unrelated teams' private
+availability. Staff review still requires independent `manage_fixtures` authority.

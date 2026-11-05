@@ -85,13 +85,19 @@ export async function assertReadCapability(
   if (!canRead(await staffAccess(user, reader), capability, edition))
     throw new HttpError(403, "You do not have permission for this operation.");
 }
+/** Normal browser participation is independent of staff roles. The caller must
+ * still enforce ownership, eligibility and any operation-specific permission. */
+export function assertUserWriteChannel() {
+  if (remoteMode() || inReadChannel())
+    throw new HttpError(403, "Developer access is read-only.");
+}
+/** Staff operations must also check their specific capability or assignment. */
 export async function assertBusinessWrite(
   user: User,
   edition?: string,
   reader?: StaffReader,
 ) {
-  if (remoteMode() || inReadChannel())
-    throw new HttpError(403, "Developer access is read-only.");
+  assertUserWriteChannel();
   const grants = await staffAccess(user, reader);
   if (
     isDeveloper(grants) &&

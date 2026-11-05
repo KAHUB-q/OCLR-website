@@ -16,6 +16,7 @@ import {
   registrations,
   editionState,
   registrationEvents,
+  staffRoles,
 } from "../../src/db/schema";
 import {
   registrationAvailability,
@@ -24,6 +25,7 @@ import {
   ownRegistrations,
 } from "../../src/lib/registrations";
 import { edition } from "../fixtures/edition";
+import { withReadChannel } from "../../src/lib/read-channel";
 const testUrl = process.env.TEST_DATABASE_URL;
 const a = { osuId: 20001, username: "Synthetic Registration A" };
 const b = { osuId: 20002, username: "Synthetic Registration B" };
@@ -48,6 +50,40 @@ describe.skipIf(!testUrl)("individual registration transactions", () => {
   afterAll(async () => {
     await closeDb();
     vi.unstubAllEnvs();
+  });
+  it("allows Developer self-registration and withdrawal while preserving ownership and read-only transports", async () => {
+    await db()
+      .insert(staffRoles)
+      .values({ userId: a.osuId, role: "developer", grantedBy: a.osuId });
+    const saved = await submitRegistration(a, edition.slug, valid);
+    expect(saved).toMatchObject({ userId: a.osuId, status: "pending" });
+    await expect(
+      withReadChannel(() =>
+        withdrawRegistration(a, saved.id, { confirmed: true }),
+      ),
+    ).rejects.toMatchObject({ status: 403 });
+    await expect(
+      withReadChannel(() => submitRegistration(a, edition.slug, valid)),
+    ).rejects.toMatchObject({ status: 403 });
+    vi.stubEnv("OCLR_DATA_SOURCE", "remote");
+    try {
+      await expect(
+        submitRegistration(a, edition.slug, valid),
+      ).rejects.toMatchObject({ status: 403 });
+      await expect(
+        withdrawRegistration(a, saved.id, { confirmed: true }),
+      ).rejects.toMatchObject({ status: 403 });
+    } finally {
+      vi.stubEnv("OCLR_DATA_SOURCE", "database");
+    }
+    const other = await submitRegistration(b, edition.slug, valid);
+    await expect(
+      withdrawRegistration(a, other.id, { confirmed: true }),
+    ).rejects.toMatchObject({ status: 404 });
+    expect(
+      (await withdrawRegistration(a, saved.id, { confirmed: true })).status,
+    ).toBe("withdrawn");
+    expect((await ownRegistrations(b.osuId))[0].status).toBe("pending");
   });
   it("commits exactly one concurrent application with a database unique constraint", async () => {
     const results = await Promise.allSettled(

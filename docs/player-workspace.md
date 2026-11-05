@@ -153,8 +153,8 @@ Per-fixture Schedule reports and rescheduling requests retain their own workflow
 
 - Browser-session APIs: `/api/tournaments/[edition]/player/practice` and
   `/api/tournaments/[edition]/player/availability` (GET/POST).
-- POST requires same-origin JSON, current eligibility and business-write
-  authorization. The owner is derived from the authenticated session; commands
+- POST requires same-origin JSON, a direct browser session and current
+  eligibility. The owner is derived from the authenticated session; commands
   reject extra owner fields. Completed/locked editions are read-only.
 - Commands use optimistic versions, a chart-context check where applicable,
   edition locking and idempotency keys. An uncertain response can be retried
@@ -163,8 +163,9 @@ Per-fixture Schedule reports and rescheduling requests retain their own workflow
   `player_season_availability` and `player_workspace_events`. Private events are
   kept outside generic staff audit projections.
 - Responses use private/no-store caching. Personal routes are excluded from
-  Developer saved-read resources and delegated remote coverage. Developer-only
-  accounts retain the existing read-only write restriction.
+  Developer saved-read resources and delegated remote coverage. A Developer using
+  a normal website session can edit their own practice and availability under
+  the same eligibility and ownership rules as other players (#904).
 
 The new Chinese interface wording is prepared for organizer review. Local
 verification and implementation do not establish deployment or organizer

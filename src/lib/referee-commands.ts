@@ -232,6 +232,7 @@ export function refereeCommands(input: RefereeCommandInput): RefereeCommand[] {
       "Assign an active Streamer in this fixture’s streaming task.",
     ),
     ...teams.flatMap((team) => {
+      if (team.captainId === null && team.members?.length === 0) return [];
       const seen = new Set<number>();
       const players = [
         {

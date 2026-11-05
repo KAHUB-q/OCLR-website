@@ -15,6 +15,7 @@ function gamePreview(
   decision: GameDecision | null,
   repeated: boolean,
 ): GamePreview {
+  const openExhibition = context.fixture.openExhibition === true;
   const problems = [...game.problems];
   const warnings: string[] = [];
   const declarations =
@@ -37,6 +38,14 @@ function gamePreview(
   );
   const teamIds = [context.fixture.homeTeamId, context.fixture.awayTeamId];
   const substitutions = new Map<number, { teamId: string; reason: string }>();
+  if (openExhibition && decision?.substitutions.length)
+    problems.push(
+      "Open exhibition sides are determined by the recorded red and blue colors, not substitutions.",
+    );
+  if (openExhibition && rules?.teamType !== "team-vs")
+    problems.push(
+      "Open exhibitions require red/blue team-versus scoring rules.",
+    );
   for (const sub of decision?.substitutions ?? []) {
     if (
       substitutions.has(sub.osuId) ||
@@ -81,8 +90,15 @@ function gamePreview(
     if (score.slot !== null) slots.add(score.slot);
     const ownTeam = score.osuId ? roster.get(score.osuId) : undefined;
     const sub = score.osuId ? substitutions.get(score.osuId) : undefined;
-    const teamId =
-      ownTeam ?? (rules?.allowSubstitutions ? sub?.teamId : undefined) ?? null;
+    const teamId = openExhibition
+      ? score.osuId && score.team === "red"
+        ? teamIds[0]
+        : score.osuId && score.team === "blue"
+          ? teamIds[1]
+          : null
+      : (ownTeam ??
+        (rules?.allowSubstitutions ? sub?.teamId : undefined) ??
+        null);
     if (!teamId)
       problems.push(
         `Player ${score.osuId ?? "unknown"} has no verified fixture-team attribution.`,
@@ -100,11 +116,14 @@ function gamePreview(
     return {
       ...score,
       teamId,
-      evidence: ownTeam
-        ? ("roster" as const)
-        : teamId
-          ? ("substitution" as const)
-          : null,
+      evidence:
+        openExhibition && teamId
+          ? ("provider" as const)
+          : ownTeam
+            ? ("roster" as const)
+            : teamId
+              ? ("substitution" as const)
+              : null,
     };
   });
   const colorTeams = (color: string) =>
@@ -230,9 +249,11 @@ function gamePreview(
     },
     confidence: players.some((p) => !p.teamId)
       ? "unresolved"
-      : players.some((p) => p.evidence === "substitution")
-        ? "manual"
-        : "roster",
+      : openExhibition
+        ? "provider"
+        : players.some((p) => p.evidence === "substitution")
+          ? "manual"
+          : "roster",
     homeScore,
     awayScore,
     winnerTeamId,

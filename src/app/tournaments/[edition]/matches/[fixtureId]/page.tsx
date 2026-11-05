@@ -57,7 +57,7 @@ async function Issue271Page({
       <section className="panel stack">
         <div className="match-versus">
           <span>
-            {f.home.team ? (
+            {f.home.team && !f.home.team.exhibition ? (
               <Link
                 className="text-link"
                 href={`/tournaments/${slug}/teams/${f.home.team.id}`}
@@ -72,7 +72,7 @@ async function Issue271Page({
             {result ? `${result.homeWins} : ${result.awayWins}` : tr("vs")}
           </strong>
           <span>
-            {f.away.team ? (
+            {f.away.team && !f.away.team.exhibition ? (
               <Link
                 className="text-link"
                 href={`/tournaments/${slug}/teams/${f.away.team.id}`}

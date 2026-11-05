@@ -14,9 +14,18 @@ import {
   resultAuditEvents,
   teams,
   tournamentRounds,
+  tournamentStages,
   users,
 } from "@/db/schema";
-import { and, eq, inArray, isNull, or, sql } from "drizzle-orm";
+import {
+  and,
+  eq,
+  inArray,
+  isNull,
+  or,
+  sql,
+  getTableColumns,
+} from "drizzle-orm";
 import { isDeepStrictEqual } from "node:util";
 import { createHash, randomUUID } from "node:crypto";
 import { z } from "zod";
@@ -48,6 +57,10 @@ import {
   type RefereeModelInput,
 } from "./referee-model";
 
+import {
+  openExhibitionSides,
+  exhibitionParticipants,
+} from "./exhibition-sides";
 type Reader = Pick<ReturnType<typeof db>, "select">;
 export type RefereeBasis = Pick<
   RefereeModelInput,
@@ -140,8 +153,15 @@ export async function readRefereeWorkspace(
   if (!edition?.configuration)
     throw new HttpError(404, "Tournament not found.");
   const [round] = await reader
-    .select()
+    .select({
+      ...getTableColumns(tournamentRounds),
+      stage: tournamentStages.kind,
+    })
     .from(tournamentRounds)
+    .innerJoin(
+      tournamentStages,
+      eq(tournamentStages.id, tournamentRounds.stageId),
+    )
     .where(
       and(
         eq(tournamentRounds.id, fixture.roundId),
@@ -172,21 +192,25 @@ export async function readRefereeWorkspace(
       ),
     )
     .limit(1);
-  const ids = [fixture.homeTeamId, fixture.awayTeamId].filter(
-    (id): id is string => Boolean(id),
-  );
-  const teamRows = ids.length
-    ? await reader
-        .select()
-        .from(teams)
-        .where(
-          and(
-            eq(teams.editionSlug, slug),
-            inArray(teams.id, ids),
-            isNull(teams.archivedAt),
-          ),
-        )
-    : [];
+  const sides = openExhibitionSides(fixture, round.stage);
+  const ids = (
+    sides
+      ? [sides.redId, sides.blueId]
+      : [fixture.homeTeamId, fixture.awayTeamId]
+  ).filter((id): id is string => Boolean(id));
+  const teamRows =
+    !sides && ids.length
+      ? await reader
+          .select()
+          .from(teams)
+          .where(
+            and(
+              eq(teams.editionSlug, slug),
+              inArray(teams.id, ids),
+              isNull(teams.archivedAt),
+            ),
+          )
+      : [];
   const names = teamRows.length
     ? await reader
         .select({ osuId: users.osuId, username: users.username })
@@ -198,10 +222,19 @@ export async function readRefereeWorkspace(
           ),
         )
     : [];
-  const orderedTeams = ids.flatMap((id) => {
-    const team = teamRows.find((t) => t.id === id);
-    return team ? [team] : [];
-  });
+  const orderedTeams = sides
+    ? exhibitionParticipants(sides).map((side) => ({
+        ...side,
+        captainId: null,
+        archivedAt: null,
+        finalizedAt: null,
+        identityPublished: true,
+        rosterPublished: true,
+      }))
+    : ids.flatMap((id) => {
+        const team = teamRows.find((t) => t.id === id);
+        return team ? [team] : [];
+      });
   const [pool] = fixture.mappoolId
     ? await reader
         .select()
@@ -239,7 +272,7 @@ export async function readRefereeWorkspace(
   >();
   if (orderedTeams.length !== 2)
     readiness.push("Both fixture teams must be resolved.");
-  else {
+  else if (!sides) {
     // This private workspace already checked edition and fixture appointment.
     // BP and invitations use saved active memberships, including unpublished drafts.
     const members = await reader
@@ -292,8 +325,9 @@ export async function readRefereeWorkspace(
     fixture: {
       version: fixture.version,
       roundId: fixture.roundId,
-      home: fixture.homeTeamId,
-      away: fixture.awayTeamId,
+      home: sides?.redId ?? fixture.homeTeamId,
+      away: sides?.blueId ?? fixture.awayTeamId,
+      ...(sides ? { exhibitionSides: sides } : {}),
       poolId: fixture.mappoolId,
       status: fixture.status,
     },
@@ -343,7 +377,7 @@ export async function readRefereeWorkspace(
     readiness.push(
       "Fixture dependencies changed. Withdraw affected steps and recheck the saved configuration.",
     );
-  const orders = {
+  const orders = sessionRow?.exhibitionOrder ?? {
     firstBanTeamId: sessionRow?.firstBanTeamId ?? null,
     firstPickTeamId: sessionRow?.firstPickTeamId ?? null,
   };
@@ -369,8 +403,9 @@ export async function readRefereeWorkspace(
       label: fixture.label,
       roundId: fixture.roundId,
       status: fixture.status,
-      homeTeamId: fixture.homeTeamId,
-      awayTeamId: fixture.awayTeamId,
+      homeTeamId: sides?.redId ?? fixture.homeTeamId,
+      awayTeamId: sides?.blueId ?? fixture.awayTeamId,
+      ...(sides ? { openExhibition: true as const } : {}),
       version: fixture.version,
     },
     round: { id: round.id, name: round.name },
@@ -391,8 +426,7 @@ export async function readRefereeWorkspace(
     session: sessionRow
       ? {
           revision: sessionRow.revision,
-          firstBanTeamId: sessionRow.firstBanTeamId,
-          firstPickTeamId: sessionRow.firstPickTeamId,
+          ...orders,
           // Effective settings always inherit current saved sources. Historical
           // settings_saved events and stored session snapshots are left intact.
           settings: inheritedSettings,
@@ -613,8 +647,13 @@ export async function refereeCommand(
     const nextRevision = revision + 1;
     const state = {
       revision: nextRevision,
-      firstBanTeamId,
-      firstPickTeamId,
+      firstBanTeamId: workspace.fixture.openExhibition ? null : firstBanTeamId,
+      firstPickTeamId: workspace.fixture.openExhibition
+        ? null
+        : firstPickTeamId,
+      exhibitionOrder: workspace.fixture.openExhibition
+        ? { firstBanTeamId, firstPickTeamId }
+        : null,
       settings,
       basis,
       dependencyFingerprint,

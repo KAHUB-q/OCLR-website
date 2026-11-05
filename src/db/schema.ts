@@ -918,6 +918,10 @@ export const fixtures = pgTable(
     label: text("label").notNull(),
     homeTeamId: uuid("home_team_id"),
     awayTeamId: uuid("away_team_id"),
+    exhibitionSides:
+      jsonb("exhibition_sides").$type<
+        import("../lib/exhibition-sides").ExhibitionSides
+      >(),
     scheduledAt: timestamp("scheduled_at", { withTimezone: true }),
     timeZone: text("time_zone").notNull(),
     status: fixtureStatus("status").notNull().default("scheduled"),
@@ -963,6 +967,10 @@ export const fixtures = pgTable(
     unique("fixture_id_edition_unique").on(t.id, t.editionSlug),
     unique("fixture_round_position_unique").on(t.roundId, t.position),
     check("fixture_distinct_teams", sql`${t.homeTeamId} <> ${t.awayTeamId}`),
+    check(
+      "fixture_exhibition_sides_independent",
+      sql`${t.exhibitionSides} IS NULL OR (${t.homeTeamId} IS NULL AND ${t.awayTeamId} IS NULL AND ${t.homeSourceId} IS NULL AND ${t.awaySourceId} IS NULL)`,
+    ),
     check("fixture_positive_position", sql`${t.position} > 0`),
     check(
       "fixture_home_source_pair",
@@ -1380,6 +1388,10 @@ export const refereeSessions = pgTable(
     revision: integer("revision").notNull().default(0),
     firstBanTeamId: uuid("first_ban_team_id"),
     firstPickTeamId: uuid("first_pick_team_id"),
+    exhibitionOrder:
+      jsonb("exhibition_order").$type<
+        import("../lib/referee-model").RefereeOrders
+      >(),
     settings: jsonb("settings")
       .$type<import("../lib/referee-commands").RefereeSettings>()
       .notNull(),
@@ -1407,6 +1419,10 @@ export const refereeSessions = pgTable(
       columns: [t.firstPickTeamId, t.editionSlug],
       foreignColumns: [teams.id, teams.editionSlug],
     }),
+    check(
+      "referee_exhibition_order_independent",
+      sql`${t.exhibitionOrder} IS NULL OR (${t.firstBanTeamId} IS NULL AND ${t.firstPickTeamId} IS NULL)`,
+    ),
     check("referee_session_revision_nonnegative", sql`${t.revision} >= 0`),
     check(
       "referee_session_fingerprint",

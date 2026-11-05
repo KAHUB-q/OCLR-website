@@ -65,6 +65,12 @@ export const matchSourceSchema = z
     apiVersion: z.literal("20220705"),
     fetchedAt: z.iso.datetime(),
     fingerprint: z.string().regex(/^[a-f0-9]{64}$/),
+    players: z
+      .array(
+        z.object({ osuId: id, username: z.string().min(1).max(64) }).strict(),
+      )
+      .max(10000)
+      .optional(),
     match: z
       .object({
         id,
@@ -123,10 +129,10 @@ export type GamePreview = {
   game: MatchGame;
   players: (MatchScore & {
     teamId: string | null;
-    evidence: "roster" | "substitution" | null;
+    evidence: "roster" | "substitution" | "provider" | null;
   })[];
   colors: { blueTeamId: string | null; redTeamId: string | null };
-  confidence: "roster" | "manual" | "unresolved";
+  confidence: "roster" | "manual" | "provider" | "unresolved";
   homeScore: number | null;
   awayScore: number | null;
   winnerTeamId: string | null;
@@ -170,6 +176,7 @@ export type MatchContext = {
     id: string;
     homeTeamId: string;
     awayTeamId: string;
+    openExhibition?: boolean;
     status: string;
   };
   round: { scoringRules: unknown };
@@ -231,14 +238,18 @@ export const reviewedResultSchema = z
         z
           .object({
             gameId: id,
-            confidence: z.enum(["roster", "manual", "unresolved"]).optional(),
+            confidence: z
+              .enum(["roster", "manual", "provider", "unresolved"])
+              .optional(),
             attribution: z
               .array(
                 z
                   .object({
                     osuId: id.nullable(),
                     teamId: z.uuid().nullable(),
-                    evidence: z.enum(["roster", "substitution"]).nullable(),
+                    evidence: z
+                      .enum(["roster", "substitution", "provider"])
+                      .nullable(),
                   })
                   .strict(),
               )

@@ -1,0 +1,2 @@
+ALTER TABLE "fixtures" ADD COLUMN "exhibition_sides" jsonb;--> statement-breakpoint
+ALTER TABLE "fixtures" ADD CONSTRAINT "fixture_exhibition_sides_independent" CHECK ("fixtures"."exhibition_sides" IS NULL OR ("fixtures"."home_team_id" IS NULL AND "fixtures"."away_team_id" IS NULL AND "fixtures"."home_source_id" IS NULL AND "fixtures"."away_source_id" IS NULL));

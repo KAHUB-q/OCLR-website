@@ -105,8 +105,11 @@ describe("official MP history normalization", () => {
       `/matches/${syntheticMatchId}?after=100&limit=100`,
       `/matches/${syntheticMatchId}?after=200&limit=100`,
     ]);
+    expect(source.players).toEqual([
+      { osuId: 1001, username: "Synthetic Provider" },
+    ]);
     expect(JSON.stringify(source)).not.toMatch(
-      /unrelated_profile|DO_NOT_PERSIST|username/,
+      /unrelated_profile|DO_NOT_PERSIST/,
     );
     expect((await fetchMatchSource(syntheticMatchId)).fingerprint).toBe(
       source.fingerprint,

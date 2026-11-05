@@ -50,6 +50,16 @@ function FixtureForm({
   );
   const [homeTeamId, setHome] = useState(fixture?.homeTeamId ?? "");
   const [awayTeamId, setAway] = useState(fixture?.awayTeamId ?? "");
+  const [redName, setRedName] = useState(
+    fixture?.exhibitionSides?.redName ??
+      data.teams.find((t) => t.id === fixture?.homeTeamId)?.name ??
+      tr("Red Team"),
+  );
+  const [blueName, setBlueName] = useState(
+    fixture?.exhibitionSides?.blueName ??
+      data.teams.find((t) => t.id === fixture?.awayTeamId)?.name ??
+      tr("Blue Team"),
+  );
   const [mappoolId, setPool] = useState(fixture?.mappoolId ?? "");
   function nextPosition(id: string) {
     return String(
@@ -77,20 +87,31 @@ function FixtureForm({
     fixture?.awaySourceOutcome ?? "winner",
   );
   const round = data.rounds.find((r) => r.round.id === roundId);
+  const exhibition = round?.stage === "exhibition";
+  // Keep legacy official-team result history intact when only editing its schedule.
+  const legacyExhibition =
+    exhibition &&
+    !fixture?.exhibitionSides &&
+    Boolean(fixture?.homeTeamId || fixture?.awayTeamId) &&
+    redName === data.teams.find((t) => t.id === fixture?.homeTeamId)?.name &&
+    blueName === data.teams.find((t) => t.id === fixture?.awayTeamId)?.name;
   const payload = {
     label,
     roundId,
-    homeTeamId: homeTeamId || null,
-    awayTeamId: awayTeamId || null,
+    homeTeamId: exhibition && !legacyExhibition ? null : homeTeamId || null,
+    awayTeamId: exhibition && !legacyExhibition ? null : awayTeamId || null,
+    ...(exhibition && !legacyExhibition
+      ? { exhibitionNames: { red: redName, blue: blueName } }
+      : {}),
     mappoolId: mappoolId || null,
     position: Number(position),
     scheduledAt: time,
     timeZone,
     status,
-    homeSourceId: homeSourceId || null,
-    homeSourceOutcome: homeSourceId ? homeSourceOutcome : null,
-    awaySourceId: awaySourceId || null,
-    awaySourceOutcome: awaySourceId ? awaySourceOutcome : null,
+    homeSourceId: !exhibition && homeSourceId ? homeSourceId : null,
+    homeSourceOutcome: !exhibition && homeSourceId ? homeSourceOutcome : null,
+    awaySourceId: !exhibition && awaySourceId ? awaySourceId : null,
+    awaySourceOutcome: !exhibition && awaySourceId ? awaySourceOutcome : null,
     action: fixture ? "edit" : "create",
     ...(fixture
       ? { fixtureId: fixture.id, expectedVersion: fixture.version }
@@ -189,41 +210,67 @@ function FixtureForm({
         </div>
         <fieldset className="fixture-form-section">
           <legend>{tr("Teams")}</legend>
+          {exhibition && (
+            <p className="muted small">
+              {tr(
+                "Open participation; sides follow each game’s recorded red and blue colors.",
+              )}
+            </p>
+          )}
           <div className="form-grid">
             <label className="field">
               <span>{tr("Red Team")}</span>
-              <select
-                value={homeTeamId}
-                onChange={(e) => setHome(e.target.value)}
-              >
-                <option value="">{tr("Team TBD")}</option>
-                {teamOptions}
-              </select>
+              {exhibition ? (
+                <input
+                  value={redName}
+                  onChange={(e) => setRedName(e.target.value)}
+                  maxLength={100}
+                  required
+                />
+              ) : (
+                <select
+                  value={homeTeamId}
+                  onChange={(e) => setHome(e.target.value)}
+                >
+                  <option value="">{tr("Team TBD")}</option>
+                  {teamOptions}
+                </select>
+              )}
             </label>
             <label className="field">
               <span>{tr("Blue Team")}</span>
-              <select
-                value={awayTeamId}
-                onChange={(e) => setAway(e.target.value)}
-              >
-                <option value="">{tr("Team TBD")}</option>
-                {teamOptions}
-              </select>
+              {exhibition ? (
+                <input
+                  value={blueName}
+                  onChange={(e) => setBlueName(e.target.value)}
+                  maxLength={100}
+                  required
+                />
+              ) : (
+                <select
+                  value={awayTeamId}
+                  onChange={(e) => setAway(e.target.value)}
+                >
+                  <option value="">{tr("Team TBD")}</option>
+                  {teamOptions}
+                </select>
+              )}
             </label>
           </div>
         </fieldset>
-        {(!homeTeamId ||
-          !awayTeamId ||
-          data.teams.some(
-            (t) =>
-              t.unpublished && (t.id === homeTeamId || t.id === awayTeamId),
-          )) && (
-          <p className="muted small">
-            {tr(
-              "Unpublished teams can be saved in private fixtures for testing. Reporting and publication still require finalized, published teams.",
-            )}
-          </p>
-        )}
+        {!exhibition &&
+          (!homeTeamId ||
+            !awayTeamId ||
+            data.teams.some(
+              (t) =>
+                t.unpublished && (t.id === homeTeamId || t.id === awayTeamId),
+            )) && (
+            <p className="muted small">
+              {tr(
+                "Unpublished teams can be saved in private fixtures for testing. Reporting and publication still require finalized, published teams.",
+              )}
+            </p>
+          )}
         <ZonedDateInput
           label={tr("Scheduled date and time")}
           value={time}
@@ -302,8 +349,15 @@ function FixtureForm({
           onSuccess={onSaved}
           disabled={!timeValid}
           canConfirm={
-            Boolean(label.trim() && roundId) &&
-            (!homeTeamId || !awayTeamId || homeTeamId !== awayTeamId) &&
+            Boolean(
+              label.trim() &&
+              roundId &&
+              (!exhibition || (redName.trim() && blueName.trim())),
+            ) &&
+            (exhibition ||
+              !homeTeamId ||
+              !awayTeamId ||
+              homeTeamId !== awayTeamId) &&
             Number.isInteger(Number(position)) &&
             Number(position) >= 1 &&
             Number(position) <= 999

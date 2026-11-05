@@ -1,3 +1,4 @@
+import { openExhibitionSides } from "./exhibition-sides";
 import { createHash } from "node:crypto";
 import { and, asc, eq, inArray, isNull, sql } from "drizzle-orm";
 import { z } from "zod";
@@ -287,8 +288,14 @@ export async function scheduleWorkspace(actor: User, slug: string) {
             timeZone: f.timeZone,
             scheduledAt: f.scheduledAt?.toISOString() ?? null,
             eligible,
-            home: c.teamRows.find((t) => t.id === f.homeTeamId)?.name ?? "TBA",
-            away: c.teamRows.find((t) => t.id === f.awayTeamId)?.name ?? "TBA",
+            home:
+              openExhibitionSides(f)?.redName ??
+              c.teamRows.find((t) => t.id === f.homeTeamId)?.name ??
+              "TBA",
+            away:
+              openExhibitionSides(f)?.blueName ??
+              c.teamRows.find((t) => t.id === f.awayTeamId)?.name ??
+              "TBA",
             participant: Boolean(
               ownTeamId && [f.homeTeamId, f.awayTeamId].includes(ownTeamId),
             ),

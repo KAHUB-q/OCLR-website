@@ -1,0 +1,2 @@
+ALTER TABLE "referee_sessions" ADD COLUMN "exhibition_order" jsonb;--> statement-breakpoint
+ALTER TABLE "referee_sessions" ADD CONSTRAINT "referee_exhibition_order_independent" CHECK ("referee_sessions"."exhibition_order" IS NULL OR ("referee_sessions"."first_ban_team_id" IS NULL AND "referee_sessions"."first_pick_team_id" IS NULL));

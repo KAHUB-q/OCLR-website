@@ -25,7 +25,7 @@ export type MatchDetailScore = {
   modsKnown: boolean;
   hits: NonNullable<MatchScore["hitCounts"]> | null;
   included: boolean;
-  mapping: "roster" | "substitution" | null;
+  mapping: "roster" | "substitution" | "provider" | null;
   providerScores: {
     score: number | null;
     legacy: number | null;

@@ -62,6 +62,11 @@ import { HttpError } from "./http";
 import { persistRoundRefereePolicy } from "./round-referee-policy";
 import { refereePolicyForWins } from "./referee-series";
 import { refereePolicySchema } from "./referee-model";
+import {
+  exhibitionNamesSchema,
+  openExhibitionSides,
+  exhibitionParticipants,
+} from "./exhibition-sides";
 const confirmation = {
   confirmed: z.literal(true),
 };
@@ -70,6 +75,7 @@ const fixtureFields = {
   roundId: z.uuid(),
   homeTeamId: z.uuid().nullable(),
   awayTeamId: z.uuid().nullable(),
+  exhibitionNames: exhibitionNamesSchema.nullable().optional(),
   scheduledAt: z.iso.datetime({ offset: true }).nullable(),
   timeZone: z.string().trim().max(80).refine(validTimeZone),
   status: z.enum(["scheduled", "in_progress", "cancelled"]),
@@ -491,8 +497,9 @@ async function databaseStaffFixtures(actor: User, slug: string) {
         canManage,
         canViewAll: viewAll,
         timeZone: edition.timeZone,
-        fixtures: rows.map((f) => ({
+        fixtures: rows.map(({ exhibitionSides, ...f }) => ({
           ...f,
+          ...(exhibitionSides ? { exhibitionSides } : {}),
           referees: assignments
             .filter((a) => a.fixtureId === f.id)
             .map((a) => ({
@@ -581,9 +588,24 @@ async function databaseFixtureForReview(
         eq(tournamentStages.id, tournamentRounds.stageId),
       )
       .where(eq(tournamentRounds.id, fixture.roundId));
-    const official = await officialTeams(tx, slug);
-    const home = official.find((t) => t.id === fixture.homeTeamId);
-    const away = official.find((t) => t.id === fixture.awayTeamId);
+    const { exhibitionSides, ...fixtureRecord } = fixture;
+    const sides = openExhibitionSides(
+      { ...fixtureRecord, exhibitionSides },
+      round?.stage,
+    );
+    const official = sides
+      ? exhibitionParticipants(sides).map((side) => ({
+          ...side,
+          captainId: null,
+          members: [] as { osuId: number; username: string }[],
+        }))
+      : await officialTeams(tx, slug);
+    const home = official.find(
+      (t) => t.id === (sides?.redId ?? fixture.homeTeamId),
+    );
+    const away = official.find(
+      (t) => t.id === (sides?.blueId ?? fixture.awayTeamId),
+    );
     if (!home || !away)
       throw new HttpError(
         409,
@@ -633,7 +655,14 @@ async function databaseFixtureForReview(
       .where(eq(matchResults.fixtureId, id));
     return {
       exDeclarations: [...exPicks.values()],
-      fixture: { ...fixture, homeTeamId: home.id, awayTeamId: away.id },
+      fixture: {
+        ...fixtureRecord,
+        homeTeamId: home.id,
+        awayTeamId: away.id,
+        ...(sides
+          ? { exhibitionSides: sides, openExhibition: true as const }
+          : {}),
+      },
       round,
       teams: [home, away] as const,
       pool: pool
@@ -1214,6 +1243,39 @@ export async function fixtureCommand(
           ),
         );
       if (!round) throw new HttpError(404, "Round not found in this edition.");
+      const [stage] = await tx
+        .select({ kind: tournamentStages.kind })
+        .from(tournamentStages)
+        .where(eq(tournamentStages.id, round.stageId));
+      if (c.exhibitionNames && stage?.kind !== "exhibition")
+        throw new HttpError(
+          400,
+          "Custom side names are only available for exhibition fixtures.",
+        );
+      const open =
+        stage?.kind === "exhibition" && !c.homeTeamId && !c.awayTeamId;
+      if (
+        (open && (c.homeSourceId || c.awaySourceId)) ||
+        (c.exhibitionNames && !open)
+      )
+        throw new HttpError(
+          400,
+          "Open exhibitions use fixture-local red and blue sides without official teams or progression links.",
+        );
+      const exhibitionSides = open
+        ? {
+            redId: before?.exhibitionSides?.redId ?? randomUUID(),
+            blueId: before?.exhibitionSides?.blueId ?? randomUUID(),
+            redName:
+              c.exhibitionNames?.red ??
+              before?.exhibitionSides?.redName ??
+              "紅隊",
+            blueName:
+              c.exhibitionNames?.blue ??
+              before?.exhibitionSides?.blueName ??
+              "藍隊",
+          }
+        : null;
       if (c.mappoolId) {
         const [pool] = await tx
           .select()
@@ -1252,7 +1314,11 @@ export async function fixtureCommand(
         result &&
         (result.state !== "draft" || result.publishedRevision !== null) &&
         before &&
-        (before.homeTeamId !== c.homeTeamId ||
+        ((before.exhibitionSides?.redId ?? null) !==
+          (exhibitionSides?.redId ?? null) ||
+          (before.exhibitionSides?.blueId ?? null) !==
+            (exhibitionSides?.blueId ?? null) ||
+          before.homeTeamId !== c.homeTeamId ||
           before.awayTeamId !== c.awayTeamId ||
           before.roundId !== c.roundId ||
           before.mappoolId !== c.mappoolId ||
@@ -1267,7 +1333,11 @@ export async function fixtureCommand(
         );
       if (
         before &&
-        (before.homeTeamId !== c.homeTeamId ||
+        ((before.exhibitionSides?.redId ?? null) !==
+          (exhibitionSides?.redId ?? null) ||
+          (before.exhibitionSides?.blueId ?? null) !==
+            (exhibitionSides?.blueId ?? null) ||
+          before.homeTeamId !== c.homeTeamId ||
           before.awayTeamId !== c.awayTeamId ||
           before.roundId !== c.roundId ||
           before.mappoolId !== c.mappoolId ||
@@ -1307,6 +1377,7 @@ export async function fixtureCommand(
         roundId: c.roundId,
         homeTeamId: c.homeTeamId,
         awayTeamId: c.awayTeamId,
+        exhibitionSides,
         scheduledAt: c.scheduledAt ? new Date(c.scheduledAt) : null,
         timeZone: c.timeZone,
         status: c.status,

@@ -1,6 +1,6 @@
 import { defineConfig } from "@playwright/test";
 import base from "./playwright.config";
-// Complete functional regression, excluding the separately sharded header matrix.
+// Complete functional regression, excluding the separate header integration.
 export default defineConfig({
   ...base,
   testIgnore: "**/header-overlap.spec.ts",

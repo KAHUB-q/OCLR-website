@@ -446,7 +446,7 @@ test.describe("referee command workspace", () => {
     context,
     isMobile,
     baseURL,
-  }, info) => {
+  }) => {
     test.setTimeout(180000);
     const seeded = await seed();
     await context.addCookies([seeded.cookie]);
@@ -471,11 +471,6 @@ test.describe("referee command workspace", () => {
           await page.evaluate(() => document.documentElement.scrollWidth),
           `${appearance} ${theme} ${width}`,
         ).toBeLessThanOrEqual(width);
-        await page.screenshot({
-          path: info.outputPath(`referee-${appearance}-${theme}-${width}.png`),
-          fullPage: true,
-          animations: "disabled",
-        });
       }
     for (const locale of ["zh-Hans", "zh-Hant", "en"]) {
       await context.addCookies([
@@ -485,11 +480,6 @@ test.describe("referee command workspace", () => {
       expect(
         await page.evaluate(() => document.documentElement.scrollWidth),
       ).toBeLessThanOrEqual(width);
-      await page.screenshot({
-        path: info.outputPath(`referee-${locale}-${width}.png`),
-        fullPage: true,
-        animations: "disabled",
-      });
     }
   });
 });

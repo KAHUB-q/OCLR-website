@@ -1,5 +1,5 @@
 import { englishStorage } from "../fixtures/preferences";
-import { captureResponsiveLayout } from "./responsive";
+import { expectWorkflowFits } from "./responsive";
 import { openTournamentTool } from "./navigation";
 import { test, expect } from "@playwright/test";
 import AxeBuilder from "@axe-core/playwright";
@@ -20,7 +20,7 @@ test.describe("published mappools and restricted editing", () => {
     context,
     browser,
     isMobile,
-  }, info) => {
+  }) => {
     const id = isMobile ? 200101 : 200001;
     const adminId = isMobile ? 70001 : 60001;
     const cookie = await seedSession(id);
@@ -292,11 +292,6 @@ test.describe("published mappools and restricted editing", () => {
           ),
         ).toBe(true);
       await guestPage.evaluate(() => window.scrollTo(0, 0));
-      await guestPage.screenshot({
-        path: info.outputPath("public-mappool.png"),
-        fullPage: true,
-        animations: "disabled",
-      });
       await page
         .getByRole("switch", { name: "Publish pool", exact: true })
         .click();
@@ -333,7 +328,7 @@ test.describe("published mappools and restricted editing", () => {
     page,
     context,
     isMobile,
-  }, info) => {
+  }) => {
     const actor = isMobile ? 70001 : 60001;
     await db().execute(sql`TRUNCATE edition_state, users CASCADE`);
     await context.addCookies([await seedSession(actor)]);
@@ -426,15 +421,10 @@ test.describe("published mappools and restricted editing", () => {
       page.getByRole("combobox", { name: "FM policy", exact: true }),
     ).toBeHidden();
     await page.evaluate(() => window.scrollTo(0, 0));
-    await page.screenshot({
-      path: info.outputPath("mappool-workspace.png"),
-      fullPage: true,
-      animations: "disabled",
-    });
     await page.getByRole("tab", { name: "Bulk import", exact: true }).click();
     await expect(page.getByLabel("Map rows", { exact: true })).toBeVisible();
     await expect(page.getByText(/Optional: prefix a row/)).toBeHidden();
-    await captureResponsiveLayout(page, info, "minimal-mappool-import");
+    await expectWorkflowFits(page);
 
     await expect(
       page.getByRole("combobox", { name: "FM policy", exact: true }),

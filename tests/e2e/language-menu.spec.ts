@@ -15,7 +15,7 @@ test.describe("custom language menu", () => {
     page,
     context,
     isMobile,
-  }, info) => {
+  }) => {
     test.setTimeout(120000);
     const slug = "language-menu-fixture";
     await seedEditions([
@@ -106,10 +106,6 @@ test.describe("custom language menu", () => {
               .analyze()
           ).violations,
         ).toEqual([]);
-        await page.screenshot({
-          path: info.outputPath(`language-${theme}-${width}.png`),
-          animations: "disabled",
-        });
         if (isMobile) await options.nth(2).tap();
         else await options.nth(2).click();
         await expect(page.locator("html")).toHaveAttribute("lang", "en");

@@ -16,7 +16,7 @@ test.describe("team configuration batch #543–#546", () => {
     page,
     context,
     isMobile,
-  }, info) => {
+  }) => {
     assertTestDatabase(process.env.TEST_DATABASE_URL);
     process.env.DATABASE_URL = process.env.TEST_DATABASE_URL;
     await db().execute(sql`TRUNCATE edition_state, users CASCADE`);
@@ -83,10 +83,6 @@ test.describe("team configuration batch #543–#546", () => {
       ).toBe(true);
       await page.getByRole("heading", { level: 1 }).click();
       await page.evaluate(() => window.scrollTo(0, 0));
-      await page.screenshot({
-        path: info.outputPath(`teams-${theme}.png`),
-        fullPage: true,
-      });
     }
     await page.goto("/admin/tournaments/test-cup/matches");
     await page.goto("/admin/tournaments/test-cup/rounds");
@@ -155,9 +151,5 @@ test.describe("team configuration batch #543–#546", () => {
     );
     await page.getByRole("heading", { level: 1 }).click();
     await page.evaluate(() => window.scrollTo(0, 0));
-    await page.screenshot({
-      path: info.outputPath("teams-coaching-enabled.png"),
-      fullPage: true,
-    });
   });
 });

@@ -15,7 +15,7 @@ test.describe("public draft results navigation", () => {
     page,
     context,
     isMobile,
-  }, info) => {
+  }) => {
     process.env.DATABASE_URL = process.env.TEST_DATABASE_URL;
     const base = isMobile ? 120001 : 110001;
     process.env.ADMIN_OSU_IDS = String(base);
@@ -138,12 +138,6 @@ test.describe("public draft results navigation", () => {
           expect(
             await page.evaluate(() => document.documentElement.scrollWidth),
           ).toBeLessThanOrEqual(page.viewportSize()!.width);
-          await page.screenshot({
-            path: info.outputPath(
-              `${slug === current ? "current" : "historical"}-${appearance}-${theme}.png`,
-            ),
-            fullPage: true,
-          });
         }
       }
     }

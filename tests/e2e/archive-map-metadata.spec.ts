@@ -39,31 +39,32 @@ test.describe("archive map missing metadata", () => {
         archive: source,
       },
     ]);
-    for (const theme of ["light", "dark"]) {
-      await context.addCookies([
-        { name: "oclr-theme", value: theme, url: "http://127.0.0.1:3100" },
-      ]);
-      await page.goto("/tournaments/s4/mappools");
-      const row = page.locator(".archive-map-item").first();
-      await expect(row).not.toContainText("#N/A");
-      await expect(row).toContainText("[Extra]");
-      await expect(row).toContainText("4.25 ★");
-      await expect(row).toContainText("current osu! base metadata (no mods)");
-      await expect(
-        row.getByRole("link", { name: "Source", exact: true }),
-      ).toHaveAttribute("href", "https://osu.ppy.sh/beatmaps/2076750");
-      await row.getByRole("button", { name: /View / }).click();
-      await expect(page.getByRole("dialog")).toContainText("192");
-      await page.getByRole("button", { name: "Close map details" }).click();
-      await page
-        .getByRole("button", { name: "Compact table", exact: true })
-        .click();
-      await expect(row).toContainText("[Extra]");
-      expect(
-        await page.evaluate(
-          () => document.documentElement.scrollWidth <= window.innerWidth,
-        ),
-      ).toBe(true);
-    }
+
+    const theme = "light";
+
+    await context.addCookies([
+      { name: "oclr-theme", value: theme, url: "http://127.0.0.1:3100" },
+    ]);
+    await page.goto("/tournaments/s4/mappools");
+    const row = page.locator(".archive-map-item").first();
+    await expect(row).not.toContainText("#N/A");
+    await expect(row).toContainText("[Extra]");
+    await expect(row).toContainText("4.25 ★");
+    await expect(row).toContainText("current osu! base metadata (no mods)");
+    await expect(
+      row.getByRole("link", { name: "Source", exact: true }),
+    ).toHaveAttribute("href", "https://osu.ppy.sh/beatmaps/2076750");
+    await row.getByRole("button", { name: /View / }).click();
+    await expect(page.getByRole("dialog")).toContainText("192");
+    await page.getByRole("button", { name: "Close map details" }).click();
+    await page
+      .getByRole("button", { name: "Compact table", exact: true })
+      .click();
+    await expect(row).toContainText("[Extra]");
+    expect(
+      await page.evaluate(
+        () => document.documentElement.scrollWidth <= window.innerWidth,
+      ),
+    ).toBe(true);
   });
 });

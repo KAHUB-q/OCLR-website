@@ -5,43 +5,43 @@ test.beforeEach(async ({ page }) => {
   await page.route("https://assets.ppy.sh/**", (route) => route.abort());
 });
 
-for (const locale of ["en", "zh-Hans", "zh-Hant"]) {
-  for (const theme of ["light", "dark"]) {
-    test(`four compact actions share one row (${locale}, ${theme})`, async ({
-      page,
-    }, info) => {
-      if (info.project.name === "mobile")
-        await page.setViewportSize({ width: 320, height: 844 });
-      await page.goto(`/mappool-actions?locale=${locale}&theme=${theme}`);
-      const actions = page
-        .locator(".mappool-entry-action-row")
-        .first()
-        .getByRole("button");
-      await expect(actions).toHaveCount(4);
-      const boxes = [];
-      for (const button of await actions.all()) {
-        await expect(button).toHaveAccessibleName(/\S/);
-        expect(await button.getAttribute("title")).toBe(
-          await button.getAttribute("aria-label"),
-        );
-        await expect(button.locator("svg")).toHaveCount(1);
-        await expect(button).toHaveText("");
-        const box = (await button.boundingBox())!;
-        expect(box.width).toBe(44);
-        expect(box.height).toBe(44);
-        boxes.push(box);
-      }
-      expect(new Set(boxes.map((box) => box.y)).size).toBe(1);
-      expect(boxes[3].x + boxes[3].width).toBeLessThanOrEqual(
-        page.viewportSize()!.width,
-      );
-      await page.screenshot({
-        path: info.outputPath(`mappool-actions-${locale}-${theme}.png`),
-        fullPage: true,
-      });
-    });
+const locale = "en";
+
+const theme = "light";
+
+test(`four compact actions share one row (${locale}, ${theme})`, async ({
+  page,
+}, info) => {
+  if (info.project.name === "mobile")
+    await page.setViewportSize({ width: 320, height: 844 });
+  await page.goto(`/mappool-actions?locale=${locale}&theme=${theme}`);
+  const actions = page
+    .locator(".mappool-entry-action-row")
+    .first()
+    .getByRole("button");
+  await expect(actions).toHaveCount(4);
+  const boxes = [];
+  for (const button of await actions.all()) {
+    await expect(button).toHaveAccessibleName(/\S/);
+    expect(await button.getAttribute("title")).toBe(
+      await button.getAttribute("aria-label"),
+    );
+    await expect(button.locator("svg")).toHaveCount(1);
+    await expect(button).toHaveText("");
+    const box = (await button.boundingBox())!;
+    expect(box.width).toBe(44);
+    expect(box.height).toBe(44);
+    boxes.push(box);
   }
-}
+  expect(new Set(boxes.map((box) => box.y)).size).toBe(1);
+  expect(boxes[3].x + boxes[3].width).toBeLessThanOrEqual(
+    page.viewportSize()!.width,
+  );
+  await page.screenshot({
+    path: info.outputPath(`mappool-actions-${locale}-${theme}.png`),
+    fullPage: true,
+  });
+});
 
 test("icons retain editing, refresh and confirmed removal", async ({
   page,

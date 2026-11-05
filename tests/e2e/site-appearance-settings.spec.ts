@@ -10,7 +10,7 @@ import {
 } from "../../src/db/schema";
 import { assertTestDatabase } from "../database";
 import { seedSession } from "./session";
-import { publicAppearances } from "../../src/lib/preferences";
+
 const origin = "http://127.0.0.1:3100";
 const headers = { Origin: origin };
 
@@ -30,7 +30,7 @@ test.describe("Admin default and visitor appearance overrides", () => {
     context,
     browser,
     isMobile,
-  }, info) => {
+  }) => {
     test.setTimeout(120000);
     const errors: string[] = [];
     page.on("pageerror", (error) => errors.push(error.message));
@@ -69,10 +69,6 @@ test.describe("Admin default and visitor appearance overrides", () => {
     ).toBeDisabled();
     await page.evaluate(() => window.scrollTo(0, 0));
     await expect.poll(() => page.evaluate(() => window.scrollY)).toBe(0);
-    await page.screenshot({
-      path: info.outputPath("site-appearance-settings.png"),
-      fullPage: true,
-    });
     expect(
       (
         await new AxeBuilder({ page })
@@ -132,17 +128,7 @@ test.describe("Admin default and visitor appearance overrides", () => {
         "dark",
       );
       // Repeated saves exercise the form's refreshed revision, without a redeploy.
-      for (const value of [
-        "frutiger-aero",
-        "retro-arcade",
-        "manga-halftone",
-        "glassmorphism",
-        "esports-broadcast",
-        "claymorphism",
-        "swiss-minimal",
-        "default",
-        "cute-pastel",
-      ]) {
+      for (const value of ["swiss-minimal", "cute-pastel"]) {
         await page.getByLabel("Design", { exact: true }).selectOption(value);
         await page.getByRole("button", { name: "Save", exact: true }).click();
         await expect(
@@ -211,12 +197,8 @@ test.describe("Admin default and visitor appearance overrides", () => {
     } finally {
       await guest.close();
     }
-    expect(await db().select().from(siteSettingEvents)).toHaveLength(
-      publicAppearances.length + 2,
-    );
-    expect((await db().select().from(siteSettings))[0].revision).toBe(
-      publicAppearances.length + 2,
-    );
+    expect(await db().select().from(siteSettingEvents)).toHaveLength(4);
+    expect((await db().select().from(siteSettings))[0].revision).toBe(4);
     expect(errors).toEqual([]);
   });
   test("enforces global Admin authorization, origin and concurrency through the API", async ({

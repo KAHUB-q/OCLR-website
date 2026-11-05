@@ -71,10 +71,6 @@ test.describe("competition times and overview synchronization #430", () => {
       .click();
     await page.evaluate(() => window.scrollTo(0, 0));
     mkdirSync("docs/verification/issue-430", { recursive: true });
-    await page.screenshot({
-      path: `docs/verification/issue-430/settings-${isMobile ? "mobile" : "desktop"}.png`,
-      fullPage: true,
-    });
     await page.goto(`/tournaments/${slug}`);
     const rows = page.locator("#schedule tbody tr");
     await expect(rows).toHaveCount(4);
@@ -97,10 +93,6 @@ test.describe("competition times and overview synchronization #430", () => {
       .getByRole("link")
       .focus();
     await page.evaluate(() => window.scrollTo(0, 0));
-    await page.screenshot({
-      path: `docs/verification/issue-430/overview-${isMobile ? "mobile" : "desktop"}.png`,
-      fullPage: true,
-    });
     for (const appearance of ["default", "cute-pastel", "swiss-minimal"]) {
       for (const theme of ["light", "dark"]) {
         await context.addCookies([
@@ -120,11 +112,6 @@ test.describe("competition times and overview synchronization #430", () => {
             () => document.documentElement.scrollWidth <= innerWidth,
           ),
         ).toBe(true);
-        if (appearance === "default" && theme === "dark")
-          await page.screenshot({
-            path: `docs/verification/issue-430/overview-dark-${isMobile ? "mobile" : "desktop"}.png`,
-            fullPage: true,
-          });
       }
     }
   });

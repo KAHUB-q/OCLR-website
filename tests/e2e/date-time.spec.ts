@@ -8,7 +8,7 @@ import { edition } from "../fixtures/edition";
 import { seedEditions } from "../fixtures/editions";
 import { seedSession } from "./session";
 import { mappoolCommand } from "../../src/lib/mappools";
-import { captureResponsiveLayout } from "./responsive";
+import { expectWorkflowFits } from "./responsive";
 
 test.describe("compact zoned date and 24-hour time editing", () => {
   test.skip(!process.env.TEST_DATABASE_URL, "Requires isolated PostgreSQL");
@@ -18,7 +18,7 @@ test.describe("compact zoned date and 24-hour time editing", () => {
     page,
     context,
     isMobile,
-  }, info) => {
+  }) => {
     const adminId = isMobile ? 70001 : 60001;
     const slug = `date-time-${isMobile ? "mobile" : "desktop"}`;
     await context.addCookies([await seedSession(adminId)]);
@@ -153,7 +153,7 @@ test.describe("compact zoned date and 24-hour time editing", () => {
           .analyze()
       ).violations,
     ).toEqual([]);
-    await captureResponsiveLayout(page, info, "compact-registration-time");
+    await expectWorkflowFits(page);
     for (const field of await page
       .locator(".zoned-date-fields input:visible")
       .all()) {
@@ -262,9 +262,6 @@ test.describe("compact zoned date and 24-hour time editing", () => {
         () => document.documentElement.scrollWidth <= innerWidth,
       ),
     ).toBe(true);
-    await page.screenshot({
-      path: info.outputPath("compact-fixture-time.png"),
-    });
     await dialog
       .getByRole("button", { name: "Create fixture", exact: true })
       .click();

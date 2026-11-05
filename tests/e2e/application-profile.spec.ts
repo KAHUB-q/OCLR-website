@@ -83,7 +83,7 @@ test.describe("private applicant statistics", () => {
     page,
     context,
     isMobile,
-  }, info) => {
+  }) => {
     test.setTimeout(120000);
     await context.addCookies([await seedSession(60001)]);
     const [r] = await db()
@@ -159,14 +159,6 @@ test.describe("private applicant statistics", () => {
               () => document.documentElement.scrollWidth <= innerWidth,
             ),
           ).toBe(true);
-          if ([390, 1440].includes(width))
-            await page.screenshot({
-              path: info.outputPath(
-                `review-stats-${locale}-${theme}-${width}.png`,
-              ),
-              fullPage: true,
-              animations: "disabled",
-            });
         }
         expect(
           (

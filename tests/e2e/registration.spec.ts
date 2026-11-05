@@ -11,7 +11,7 @@ test.describe("player registration with persistent sessions", () => {
     context,
     isMobile,
     browser,
-  }, testInfo) => {
+  }) => {
     const id = isMobile ? 40001 : 30001;
     await context.addCookies([await seedSession(id)]);
     await page.goto("/dashboard");
@@ -86,11 +86,6 @@ test.describe("player registration with persistent sessions", () => {
           .analyze()
       ).violations,
     ).toEqual([]);
-    await page.screenshot({
-      path: testInfo.outputPath("dashboard.png"),
-      fullPage: true,
-      animations: "disabled",
-    });
     await page.getByRole("button", { name: "Withdraw application" }).click();
     await expect(page.getByRole("dialog")).toBeVisible();
     await page.getByRole("button", { name: "Cancel", exact: true }).click();

@@ -15,7 +15,7 @@ test.describe("anonymous inline mappool browser", () => {
     page,
     context,
     isMobile,
-  }, info) => {
+  }) => {
     assertTestDatabase(process.env.TEST_DATABASE_URL);
     const adminId = isMobile ? 70001 : 60001;
     await seedSession(adminId);
@@ -214,11 +214,6 @@ test.describe("anonymous inline mappool browser", () => {
             .analyze()
         ).violations,
       ).toEqual([]);
-      await page.screenshot({
-        path: info.outputPath(`inline-mappools-${width}.png`),
-        fullPage: true,
-        animations: "disabled",
-      });
     }
     await opening.click();
     await page

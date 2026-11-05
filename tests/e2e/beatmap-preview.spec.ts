@@ -18,7 +18,7 @@ test.describe("automatic beatmap preview boundaries", () => {
     page,
     context,
     isMobile,
-  }, info) => {
+  }) => {
     const id = isMobile ? 201101 : 201001;
     await context.addCookies([await seedSession(id)]);
     await db().insert(staffRoles).values({
@@ -138,11 +138,6 @@ test.describe("automatic beatmap preview boundaries", () => {
     await page
       .getByRole("spinbutton", { name: "Slot number", exact: true })
       .fill("3");
-    await page.screenshot({
-      path: info.outputPath("beatmap-preview.png"),
-      fullPage: true,
-      animations: "disabled",
-    });
     expect(
       (
         await new AxeBuilder({ page })

@@ -23,7 +23,7 @@ test.describe("confirmed historical player exchange", () => {
     page,
     context,
     isMobile,
-  }, info) => {
+  }) => {
     await context.addCookies([
       await seedSession(isMobile ? 70001 : 60001),
       { name: "oclr-theme", value: "light", domain: "127.0.0.1", path: "/" },
@@ -155,11 +155,9 @@ test.describe("confirmed historical player exchange", () => {
       expect(
         await page.evaluate(() => document.documentElement.scrollWidth),
       ).toBeLessThanOrEqual(isMobile ? 390 : 1440);
-      await dialog.getByRole("button", { name: "Confirm", exact: true }).focus();
-      await page.screenshot({
-        path: info.outputPath(`exchange-confirm-${theme}.png`),
-        fullPage: false,
-      });
+      await dialog
+        .getByRole("button", { name: "Confirm", exact: true })
+        .focus();
     }
     await dialog.getByRole("button", { name: "Confirm", exact: true }).click();
     await expect(dialog).not.toBeVisible();
@@ -203,10 +201,6 @@ test.describe("confirmed historical player exchange", () => {
         )
       ).status(),
     ).toBe(401);
-    await guestPage.screenshot({
-      path: info.outputPath("exchange-public-statistics.png"),
-      fullPage: true,
-    });
     await guest.close();
   });
 });

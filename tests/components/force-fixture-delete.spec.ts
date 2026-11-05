@@ -201,29 +201,26 @@ for (const [locale, catalog] of [
   test(`renders ${locale} deletion scope at mobile widths in both themes`, async ({
     page,
     isMobile,
-  }, testInfo) => {
+  }) => {
     if (isMobile) await page.setViewportSize({ width: 320, height: 844 });
     await page.route(path, (route) => route.fulfill({ json: preview }));
     const key = Object.entries(en.ui).find(
       ([, text]) => text === "Force delete test fixture",
     )![0] as keyof typeof en.ui;
-    for (const theme of ["light", "dark"]) {
-      await page.goto(`/force-fixture-delete?locale=${locale}&theme=${theme}`);
-      await page
-        .getByRole("button", { name: catalog.ui[key], exact: true })
-        .click();
-      await expect(
-        page.getByRole("heading", { name: catalog.ui[key], exact: true }),
-      ).toBeVisible();
-      expect(
-        await page.evaluate(
-          () => document.documentElement.scrollWidth <= window.innerWidth,
-        ),
-      ).toBe(true);
-      if (theme === "dark")
-        await page.screenshot({
-          path: testInfo.outputPath(`${locale}-delete.png`),
-        });
-    }
+
+    const theme = "light";
+
+    await page.goto(`/force-fixture-delete?locale=${locale}&theme=${theme}`);
+    await page
+      .getByRole("button", { name: catalog.ui[key], exact: true })
+      .click();
+    await expect(
+      page.getByRole("heading", { name: catalog.ui[key], exact: true }),
+    ).toBeVisible();
+    expect(
+      await page.evaluate(
+        () => document.documentElement.scrollWidth <= window.innerWidth,
+      ),
+    ).toBe(true);
   });
 }

@@ -24,7 +24,7 @@ test.describe("Schedule requests #591", () => {
     browser,
     isMobile,
     baseURL,
-  }, info) => {
+  }) => {
     test.setTimeout(150000);
     const actorBase = 59100000000 + parseInt(randomUUID().slice(0, 8), 16) * 10,
       adminId = actorBase + 3;
@@ -342,10 +342,6 @@ test.describe("Schedule requests #591", () => {
           ),
         ).toBe(true);
         await page.evaluate(() => window.scrollTo(0, 0));
-        await page.screenshot({
-          path: info.outputPath(`schedule-${theme}.png`),
-          fullPage: true,
-        });
       }
       for (const locale of ["zh-Hans", "zh-Hant"]) {
         await context.addCookies([
@@ -365,10 +361,6 @@ test.describe("Schedule requests #591", () => {
           ),
         ).toBe(true);
         await page.evaluate(() => window.scrollTo(0, 0));
-        await page.screenshot({
-          path: info.outputPath(`schedule-${locale}.png`),
-          fullPage: true,
-        });
       }
       const a11y = await new AxeBuilder({ page })
         .include(".schedule-tool")

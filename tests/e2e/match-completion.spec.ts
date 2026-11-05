@@ -20,7 +20,7 @@ test.describe("historical MP completion", () => {
     page,
     context,
     isMobile,
-  }, info) => {
+  }) => {
     const actor = {
       osuId: isMobile ? 70001 : 60001,
       username: "Synthetic Admin",
@@ -87,10 +87,6 @@ test.describe("historical MP completion", () => {
       ),
     ).toBe(true);
     await page.evaluate(() => window.scrollTo(0, 0));
-    await page.screenshot({
-      path: info.outputPath("private-completion-preview.png"),
-      fullPage: true,
-    });
     await page
       .getByRole("button", {
         name: "Confirm teams & import source",

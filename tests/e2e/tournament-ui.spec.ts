@@ -12,7 +12,7 @@ test.describe("registration readiness and confirmation layout", () => {
     context,
     browser,
     isMobile,
-  }, info) => {
+  }) => {
     await context.addCookies([await seedSession(isMobile ? 70001 : 60001)]);
     // Repeats must not delete an edition referenced by registrations/audit events.
     const slug = `ui-${isMobile ? "mobile" : "desktop"}-${randomUUID().slice(0, 8)}-test`;
@@ -122,11 +122,6 @@ test.describe("registration readiness and confirmation layout", () => {
       if (document.activeElement instanceof HTMLElement)
         document.activeElement.blur();
     });
-    await page.screenshot({
-      path: info.outputPath("tournament-settings-tabs.png"),
-      fullPage: true,
-      animations: "disabled",
-    });
     await tabs.getByRole("tab", { name: "Publication", exact: true }).click();
     await page
       .getByRole("button", { name: "Publish tournament", exact: true })
@@ -183,10 +178,6 @@ test.describe("registration readiness and confirmation layout", () => {
     await dialog.getByRole("button", { name: "Confirm", exact: true }).click();
     await expect(dialog.getByRole("alert")).toContainText("settings changed");
     await centered();
-    await page.screenshot({
-      path: info.outputPath("centered-error-dialog.png"),
-      fullPage: true,
-    });
     await dialog.getByRole("button", { name: "Cancel", exact: true }).click();
     const now = Date.now();
     await command("registration", {
@@ -273,10 +264,6 @@ test.describe("registration readiness and confirmation layout", () => {
       expect(checksBox.y).toBeGreaterThan(datesBox.y + datesBox.height);
     else expect(Math.abs(checksBox.y - datesBox.y)).toBeLessThan(2);
     await page.evaluate(() => window.scrollTo(0, 0));
-    await page.screenshot({
-      path: info.outputPath("compact-tournament-dashboard.png"),
-      fullPage: true,
-    });
     if (!isMobile) {
       await page.setViewportSize({ width: 900, height: 900 });
       expect(

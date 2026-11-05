@@ -12,7 +12,7 @@ test.describe("anonymous published player directory", () => {
     page,
     context,
     isMobile,
-  }, info) => {
+  }) => {
     const base = isMobile ? 240101 : 240001;
     const fixture = await seedPublicDirectory(base);
     expect(
@@ -94,11 +94,6 @@ test.describe("anonymous published player directory", () => {
     }
     await page.setViewportSize({ width: isMobile ? 390 : 1280, height: 900 });
     await page.evaluate(() => window.scrollTo(0, 0));
-    await page.screenshot({
-      path: info.outputPath("players.png"),
-      fullPage: true,
-      animations: "disabled",
-    });
     await page.goto("/tournaments/test-cup/teams");
     await page
       .getByRole("link", {

@@ -9,7 +9,7 @@ test.describe("staff multi-role editing (#260)", () => {
     page,
     context,
     isMobile,
-  }, info) => {
+  }) => {
     test.setTimeout(90000);
     const admin = isMobile ? 70001 : 60001;
     const target = isMobile ? 897002 : 897001;
@@ -128,10 +128,6 @@ test.describe("staff multi-role editing (#260)", () => {
               .analyze()
           ).violations,
         ).toEqual([]);
-        await page.screenshot({
-          path: info.outputPath(`staff-${appearance}-${theme}.png`),
-          fullPage: true,
-        });
       }
     }
   });

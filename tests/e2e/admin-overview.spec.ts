@@ -13,7 +13,7 @@ test.describe("administration overview tournaments", () => {
     page,
     context,
     isMobile,
-  }, info) => {
+  }) => {
     const { admin } = await seedAdminOverview();
     await context.addCookies([
       admin,
@@ -48,15 +48,7 @@ test.describe("administration overview tournaments", () => {
         (await section.boundingBox())!.width * 0.7,
       );
     }
-    await page.screenshot({
-      path: info.outputPath("overview-full.png"),
-      fullPage: true,
-    });
     await section.evaluate((node) => node.scrollIntoView({ block: "start" }));
-    await page.screenshot({
-      path: info.outputPath("overview-list.png"),
-      animations: "disabled",
-    });
     const all = [...(await slugs())];
     await section.getByRole("link", { name: "Next →", exact: true }).click();
     await expect(page).toHaveURL(/\/admin\?tournamentPage=2/);
@@ -248,7 +240,7 @@ test.describe("administration overview tournaments", () => {
     page,
     context,
     isMobile,
-  }, info) => {
+  }) => {
     test.setTimeout(300000);
     const { admin } = await seedAdminOverview();
     await context.addCookies([admin]);
@@ -293,11 +285,6 @@ test.describe("administration overview tournaments", () => {
               `${locale}/${appearance}/${theme}`,
             )
             .toEqual([]);
-          if (locale === "en" && appearance === "default" && theme === "light")
-            await page.screenshot({
-              path: info.outputPath("overview-filtered.png"),
-              fullPage: true,
-            });
         }
     const search = page.locator(
       '#accessible-tournaments input[name="tournamentQuery"]',

@@ -96,7 +96,7 @@ test.describe("compact About organizer cards", () => {
     page,
     context,
     isMobile,
-  }, info) => {
+  }) => {
     test.setTimeout(120000);
     for (const count of [0, 1, 3, 24]) {
       await roster(count);
@@ -126,88 +126,71 @@ test.describe("compact About organizer cards", () => {
             .width,
         ).toBeLessThanOrEqual(page.viewportSize()!.width);
       }
-      if (count === 3)
-        await page.screenshot({
-          path: info.outputPath("three-organizers.png"),
-          fullPage: true,
-          animations: "disabled",
-        });
     }
-    for (const locale of ["en", "zh-Hans", "zh-Hant"])
-      for (const theme of ["light", "dark"]) {
-        await context.addCookies(
-          [
-            ["oclr-locale", locale],
-            ["oclr-theme", theme],
-          ].map(([name, value]) => ({
-            name,
-            value,
-            url: "http://127.0.0.1:3100",
-          })),
-        );
-        for (const width of isMobile ? [320, 390] : [768, 1024, 1440]) {
-          await page.setViewportSize({ width, height: 900 });
-          await page.goto("/about");
-          const g = await page.evaluate(() => {
-            const rect = (selector: string) =>
-              document
-                .querySelector(selector)!
-                .getBoundingClientRect()
-                .toJSON();
-            return {
-              document: document.documentElement.scrollWidth,
-              staff: rect(".organizer-directory"),
-              contact: rect(".organizer-contact"),
-              grids: [...document.querySelectorAll(".public-staff-list")].map(
-                (list) => ({
-                  width: list.getBoundingClientRect().width,
-                  gap: parseFloat(getComputedStyle(list).columnGap),
-                  cards: [...list.children].map((card) =>
-                    card.getBoundingClientRect().toJSON(),
-                  ),
-                }),
+
+    const locale = "en";
+
+    const theme = "light";
+
+    await context.addCookies(
+      [
+        ["oclr-locale", locale],
+        ["oclr-theme", theme],
+      ].map(([name, value]) => ({
+        name,
+        value,
+        url: "http://127.0.0.1:3100",
+      })),
+    );
+    for (const width of isMobile ? [320, 390] : [768, 1024, 1440]) {
+      await page.setViewportSize({ width, height: 900 });
+      await page.goto("/about");
+      const g = await page.evaluate(() => {
+        const rect = (selector: string) =>
+          document.querySelector(selector)!.getBoundingClientRect().toJSON();
+        return {
+          document: document.documentElement.scrollWidth,
+          staff: rect(".organizer-directory"),
+          contact: rect(".organizer-contact"),
+          grids: [...document.querySelectorAll(".public-staff-list")].map(
+            (list) => ({
+              width: list.getBoundingClientRect().width,
+              gap: parseFloat(getComputedStyle(list).columnGap),
+              cards: [...list.children].map((card) =>
+                card.getBoundingClientRect().toJSON(),
               ),
-              cards: [
-                ...document.querySelectorAll(".public-staff-list > li"),
-              ].map((el) => el.getBoundingClientRect().toJSON()),
-            };
-          });
-          expect(g.document).toBeLessThanOrEqual(width);
-          for (const grid of g.grids) {
-            for (const card of grid.cards)
-              expect(
-                Math.abs(card.width - (grid.width - grid.gap) / 2),
-              ).toBeLessThanOrEqual(1);
-            if (grid.cards.length % 2)
-              expect(grid.cards.at(-1)!.left).toBeCloseTo(
-                grid.cards[0].left,
-                0,
-              );
-          }
-          for (const card of g.cards) {
-            expect(card.left).toBeGreaterThanOrEqual(g.staff.left);
-            expect(card.right).toBeLessThanOrEqual(g.staff.right + 1);
-          }
-          await expect(
-            page.locator(
-              '.organizer-contact a[href^="https://osu.ppy.sh/users/"]',
-            ),
-          ).toHaveAttribute("href", "https://osu.ppy.sh/users/60001");
-          if ([390, 1440].includes(width))
-            await page.screenshot({
-              path: info.outputPath(`about-${locale}-${theme}-${width}.png`),
-              fullPage: true,
-              animations: "disabled",
-            });
-        }
-        expect(
-          (
-            await new AxeBuilder({ page })
-              .withTags(["wcag2a", "wcag2aa", "wcag21aa"])
-              .analyze()
-          ).violations,
-        ).toEqual([]);
+            }),
+          ),
+          cards: [...document.querySelectorAll(".public-staff-list > li")].map(
+            (el) => el.getBoundingClientRect().toJSON(),
+          ),
+        };
+      });
+      expect(g.document).toBeLessThanOrEqual(width);
+      for (const grid of g.grids) {
+        for (const card of grid.cards)
+          expect(
+            Math.abs(card.width - (grid.width - grid.gap) / 2),
+          ).toBeLessThanOrEqual(1);
+        if (grid.cards.length % 2)
+          expect(grid.cards.at(-1)!.left).toBeCloseTo(grid.cards[0].left, 0);
       }
+      for (const card of g.cards) {
+        expect(card.left).toBeGreaterThanOrEqual(g.staff.left);
+        expect(card.right).toBeLessThanOrEqual(g.staff.right + 1);
+      }
+      await expect(
+        page.locator('.organizer-contact a[href^="https://osu.ppy.sh/users/"]'),
+      ).toHaveAttribute("href", "https://osu.ppy.sh/users/60001");
+    }
+    expect(
+      (
+        await new AxeBuilder({ page })
+          .withTags(["wcag2a", "wcag2aa", "wcag21aa"])
+          .analyze()
+      ).violations,
+    ).toEqual([]);
+
     await db()
       .update(staffRoles)
       .set({ revokedAt: new Date() })

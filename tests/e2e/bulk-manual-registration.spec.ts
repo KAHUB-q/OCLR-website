@@ -22,7 +22,7 @@ test.describe("bulk assisted registrations", () => {
     page,
     context,
     isMobile,
-  }, info) => {
+  }) => {
     const labels = {
       en: ["Add multiple registrants", "Preview players"],
       "zh-Hans": ["批量添加报名选手", "预览选手"],
@@ -101,11 +101,6 @@ test.describe("bulk assisted registrations", () => {
                 .analyze()
             ).violations,
           ).toEqual([]);
-          if (locale === "zh-Hans" && theme === "light")
-            await page.screenshot({
-              path: info.outputPath(`batch-${appearance}.png`),
-              fullPage: true,
-            });
           const confirmationLabel =
             locale === "en"
               ? "Confirm selected registrants"
@@ -117,11 +112,6 @@ test.describe("bulk assisted registrations", () => {
           });
           await confirmation.scrollIntoViewIfNeeded();
           await expect(confirmation).toBeInViewport();
-          if (locale === "zh-Hans" && theme === "light")
-            await page.screenshot({
-              path: info.outputPath(`batch-${appearance}-confirmation.png`),
-              fullPage: true,
-            });
           await page.keyboard.press("Escape");
           await expect(dialog).not.toBeVisible();
           await expect(button).toBeFocused();

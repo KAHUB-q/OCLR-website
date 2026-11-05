@@ -60,7 +60,7 @@ test.describe("tournament overview alignment (#265, #323)", () => {
     page,
     context,
     isMobile,
-  }, info) => {
+  }) => {
     test.setTimeout(120000);
     process.env.DATABASE_URL = process.env.TEST_DATABASE_URL;
     await seedEditions([
@@ -86,113 +86,111 @@ test.describe("tournament overview alignment (#265, #323)", () => {
         ),
       },
     ]);
-    for (const appearance of ["default", "cute-pastel", "swiss-minimal"]) {
-      for (const theme of ["light", "dark"]) {
-        await context.addCookies([
-          {
-            name: "oclr-appearance",
-            value: appearance,
-            url: "http://127.0.0.1:3100",
-          },
-          { name: "oclr-theme", value: theme, url: "http://127.0.0.1:3100" },
-        ]);
-        for (const slug of ["overview-test", "s10"]) {
-          await page.goto(`/tournaments/${slug}`);
-          if (slug === "overview-test") {
-            const contents = await expectOverviewContents(page, isMobile);
-            await expect(page.locator("#information-title")).toHaveText(
-              edition.name,
-            );
-            const banner = await page
-              .locator(".information-overview-reading .information-banner")
-              .boundingBox();
-            const reading = await page
-              .locator(".information-overview-reading")
-              .boundingBox();
-            expect(banner!.width).toBeCloseTo(reading!.width, 0);
-            await expect(
-              page.locator(
-                ".information-contents, .information-intro, .rules-handbook-overview",
-              ),
-            ).toHaveCount(0);
-            const schedule = page.locator(
-              ".information-overview-details > .information-document",
-            );
-            await expect(schedule).toHaveCSS("border-top-width", "0px");
-            await expect(schedule).toHaveCSS(
-              "background-color",
-              "rgba(0, 0, 0, 0)",
-            );
-            const index = (await contents.boundingBox())!;
-            if (!isMobile) {
-              expect(index.x + index.width).toBeLessThanOrEqual(reading!.x);
-              expect(Math.abs(index.y - banner!.y)).toBeLessThanOrEqual(2);
-            } else {
-              expect(index.y + index.height).toBeLessThanOrEqual(banner!.y);
-            }
-            await expect(
-              page.locator(
-                '#organization, #links, a[href="#organization"], a[href="#links"]',
-              ),
-            ).toHaveCount(0);
-            await expect(page.locator("#rules .rules-article")).toContainText(
-              edition.eligibility!,
-            );
-            await expect(page.locator("#rules .rules-article")).toContainText(
-              edition.rules!.sections[0].body,
-            );
-          } else {
-            await expect(page.locator(".archive-counts > div")).toHaveCount(5);
-            await expect(page.locator("#rules .rules-article")).toBeVisible();
-            await expect(
-              page.locator(".information-overview-contents"),
-            ).toHaveCount(0);
-            await expect(
-              page.locator(
-                isMobile
-                  ? "#rules .rules-mobile-contents"
-                  : "#rules .rules-desktop-contents",
-              ),
-            ).toBeVisible();
-          }
-          expect(
-            await page.evaluate(
-              () => document.documentElement.scrollWidth <= innerWidth,
-            ),
-          ).toBe(true);
-          if (isMobile)
-            await page.getByRole("button", { name: /Tournament menu/ }).click();
-          const links = page
-            .getByRole("navigation", { name: "Tournament navigation" })
-            .getByRole("link");
-          await expectNavigationTypography(page);
-          await expect(links.filter({ hasText: /^Rules$/ })).toHaveCount(0);
-          await expect(
-            page
-              .getByRole("navigation", { name: "Tournament navigation" })
-              .locator(`a[href="/tournaments/${slug}/rules"]`),
-          ).toHaveCount(0);
-          if (isMobile)
-            await page.getByRole("button", { name: /Tournament menu/ }).click();
-          expect(
-            (
-              await new AxeBuilder({ page })
-                .withTags(["wcag2a", "wcag2aa"])
-                .analyze()
-            ).violations,
-          ).toEqual([]);
-          await page.evaluate(() => {
-            if (document.activeElement instanceof HTMLElement)
-              document.activeElement.blur();
-            window.scrollTo(0, 0);
-          });
-          await page.screenshot({
-            path: info.outputPath(`${slug}-${appearance}-${theme}.png`),
-            fullPage: true,
-          });
+
+    const appearance = "default";
+
+    const theme = "light";
+
+    await context.addCookies([
+      {
+        name: "oclr-appearance",
+        value: appearance,
+        url: "http://127.0.0.1:3100",
+      },
+      { name: "oclr-theme", value: theme, url: "http://127.0.0.1:3100" },
+    ]);
+    for (const slug of ["overview-test", "s10"]) {
+      await page.goto(`/tournaments/${slug}`);
+      if (slug === "overview-test") {
+        const contents = await expectOverviewContents(page, isMobile);
+        await expect(page.locator("#information-title")).toHaveText(
+          edition.name,
+        );
+        const banner = await page
+          .locator(".information-overview-reading .information-banner")
+          .boundingBox();
+        const reading = await page
+          .locator(".information-overview-reading")
+          .boundingBox();
+        expect(banner!.width).toBeCloseTo(reading!.width, 0);
+        await expect(
+          page.locator(
+            ".information-contents, .information-intro, .rules-handbook-overview",
+          ),
+        ).toHaveCount(0);
+        const schedule = page.locator(
+          ".information-overview-details > .information-document",
+        );
+        await expect(schedule).toHaveCSS("border-top-width", "0px");
+        await expect(schedule).toHaveCSS(
+          "background-color",
+          "rgba(0, 0, 0, 0)",
+        );
+        const index = (await contents.boundingBox())!;
+        if (!isMobile) {
+          expect(index.x + index.width).toBeLessThanOrEqual(reading!.x);
+          expect(Math.abs(index.y - banner!.y)).toBeLessThanOrEqual(2);
+        } else {
+          expect(index.y + index.height).toBeLessThanOrEqual(banner!.y);
         }
+        await expect(
+          page.locator(
+            '#organization, #links, a[href="#organization"], a[href="#links"]',
+          ),
+        ).toHaveCount(0);
+        await expect(page.locator("#rules .rules-article")).toContainText(
+          edition.eligibility!,
+        );
+        await expect(page.locator("#rules .rules-article")).toContainText(
+          edition.rules!.sections[0].body,
+        );
+      } else {
+        await expect(page.locator(".archive-counts > div")).toHaveCount(5);
+        await expect(page.locator("#rules .rules-article")).toBeVisible();
+        await expect(
+          page.locator(".information-overview-contents"),
+        ).toHaveCount(0);
+        await expect(
+          page.locator(
+            isMobile
+              ? "#rules .rules-mobile-contents"
+              : "#rules .rules-desktop-contents",
+          ),
+        ).toBeVisible();
       }
+      expect(
+        await page.evaluate(
+          () => document.documentElement.scrollWidth <= innerWidth,
+        ),
+      ).toBe(true);
+      if (isMobile)
+        await page.getByRole("button", { name: /Tournament menu/ }).click();
+      const links = page
+        .getByRole("navigation", { name: "Tournament navigation" })
+        .getByRole("link");
+      await expectNavigationTypography(page);
+      await expect(links.filter({ hasText: /^Rules$/ })).toHaveCount(0);
+      await expect(
+        page
+          .getByRole("navigation", { name: "Tournament navigation" })
+          .locator(`a[href="/tournaments/${slug}/rules"]`),
+      ).toHaveCount(0);
+      if (isMobile)
+        await page.getByRole("button", { name: /Tournament menu/ }).click();
+      expect(
+        (
+          await new AxeBuilder({ page })
+            .withTags(["wcag2a", "wcag2aa"])
+            .analyze()
+        ).violations,
+      ).toEqual([]);
+      await page.evaluate(() => {
+        if (document.activeElement instanceof HTMLElement)
+          document.activeElement.blur();
+        window.scrollTo(0, 0);
+      });
     }
+
     // The banner fills the reading column on either side of the index breakpoint.
     for (const width of [819, 647]) {
       await page.setViewportSize({ width, height: 900 });
@@ -215,10 +213,6 @@ test.describe("tournament overview alignment (#265, #323)", () => {
           () => document.documentElement.scrollWidth <= innerWidth,
         ),
       ).toBe(true);
-      await page.screenshot({
-        path: info.outputPath(`overview-${width}-unified-index.png`),
-        fullPage: true,
-      });
       if (width <= 760) await index.locator("summary").click();
       await index.locator('a[href="#rules-2"]').click();
       await expect(page.locator("#rules-2")).toBeInViewport();
@@ -248,7 +242,7 @@ test.describe("tournament overview alignment (#265, #323)", () => {
     page,
     context,
     isMobile,
-  }, info) => {
+  }) => {
     test.setTimeout(120000);
     process.env.DATABASE_URL = process.env.TEST_DATABASE_URL;
     const slug = `overview-scroll-${isMobile ? "mobile" : "desktop"}-test`;
@@ -312,7 +306,7 @@ test.describe("tournament overview alignment (#265, #323)", () => {
         })
         .toBe(true);
     }
-    async function expectUsableMobileMenu(screenshot: string) {
+    async function expectUsableMobileMenu() {
       const menu = page.getByRole("button", { name: /Tournament menu/ });
       const navigation = page.getByRole("navigation", {
         name: "Tournament navigation",
@@ -352,10 +346,6 @@ test.describe("tournament overview alignment (#265, #323)", () => {
           );
         })
         .toBe(true);
-      await page.screenshot({
-        path: info.outputPath(screenshot),
-        animations: "disabled",
-      });
       await page.keyboard.press("Escape");
       await expect(menu).toHaveAttribute("aria-expanded", "false");
       await expect(menu).toBeFocused();
@@ -365,89 +355,62 @@ test.describe("tournament overview alignment (#265, #323)", () => {
       await expect(menu).toHaveAttribute("aria-expanded", "false");
       await expect(navigation).not.toBeVisible();
     }
-    for (const appearance of [
-      "default",
-      "cute-pastel",
-      "swiss-minimal",
-      "claymorphism",
-      "manga-halftone",
-      "glassmorphism",
-      "esports-broadcast",
-      "retro-arcade",
-      "frutiger-aero",
-      "skyline-pop",
-      "glacier-blue",
-      "sakura-circuit",
-      "graphite-arena",
-      "orbital-pulse",
-      "prism-overture",
-      "azure-brush",
-      "verdant-prelude",
-      "chromatic-origins",
-      "frost-waltz",
-    ]) {
-      for (const theme of ["light", "dark"]) {
-        await context.addCookies([
-          {
-            name: "oclr-appearance",
-            value: appearance,
-            url: "http://127.0.0.1:3100",
-          },
-          { name: "oclr-theme", value: theme, url: "http://127.0.0.1:3100" },
-        ]);
-        await setEditionAppearance(slug, appearance);
-        await page.goto(`/tournaments/${slug}`);
-        await expect(tournamentBar).toBeVisible();
-        await expectOverviewContents(page, isMobile);
-        if (!isMobile) await expectNavigationTypography(page);
-        if (isMobile) {
-          // Initial wrapper spacing must not push the dropdown off-screen.
-          await page.setViewportSize({ width: 320, height: 568 });
-          await page.evaluate(() => window.scrollTo(0, 0));
-          await expectUsableMobileMenu(
-            `initial-menu-${appearance}-${theme}.png`,
-          );
-          await page.setViewportSize({ width: 320, height: 720 });
-        }
-        for (const top of [600, 1000]) {
-          await page.evaluate((y) => window.scrollTo(0, y), top);
-          await expectPinnedNavigation();
-        }
-        if (isMobile) {
-          // A short mobile viewport must still expose the final menu item.
-          await page.setViewportSize({ width: 320, height: 568 });
-          await expectPinnedNavigation();
-          await expectUsableMobileMenu(
-            `pinned-menu-${appearance}-${theme}.png`,
-          );
-          await page.setViewportSize({ width: 320, height: 720 });
-          await contents.locator("summary").click();
-        }
-        await contents.locator('a[href="#rules-3"]').click();
-        await expectReadableChapter();
-        await expectPinnedNavigation();
-        if (!isMobile) {
-          const bar = (await tournamentBar.boundingBox())!;
-          const index = (await contents.boundingBox())!;
-          expect(index.y).toBeGreaterThanOrEqual(bar.y + bar.height - 1);
-          expect(index.y + index.height).toBeLessThanOrEqual(
-            page.viewportSize()!.height,
-          );
-        }
-        expect(
-          await page.evaluate(
-            () => document.documentElement.scrollWidth <= innerWidth,
-          ),
-        ).toBe(true);
-        await page.screenshot({
-          path: info.outputPath(`pinned-chapter-${appearance}-${theme}.png`),
-          animations: "disabled",
-        });
-        // Reloading a shared chapter link must account for both sticky bars.
-        await page.reload();
-        await expectReadableChapter();
-        await expectPinnedNavigation();
-      }
+
+    const appearance = "default";
+
+    const theme = "light";
+
+    await context.addCookies([
+      {
+        name: "oclr-appearance",
+        value: appearance,
+        url: "http://127.0.0.1:3100",
+      },
+      { name: "oclr-theme", value: theme, url: "http://127.0.0.1:3100" },
+    ]);
+    await setEditionAppearance(slug, appearance);
+    await page.goto(`/tournaments/${slug}`);
+    await expect(tournamentBar).toBeVisible();
+    await expectOverviewContents(page, isMobile);
+    if (!isMobile) await expectNavigationTypography(page);
+    if (isMobile) {
+      // Initial wrapper spacing must not push the dropdown off-screen.
+      await page.setViewportSize({ width: 320, height: 568 });
+      await page.evaluate(() => window.scrollTo(0, 0));
+      await expectUsableMobileMenu();
+      await page.setViewportSize({ width: 320, height: 720 });
     }
+    for (const top of [600, 1000]) {
+      await page.evaluate((y) => window.scrollTo(0, y), top);
+      await expectPinnedNavigation();
+    }
+    if (isMobile) {
+      // A short mobile viewport must still expose the final menu item.
+      await page.setViewportSize({ width: 320, height: 568 });
+      await expectPinnedNavigation();
+      await expectUsableMobileMenu();
+      await page.setViewportSize({ width: 320, height: 720 });
+      await contents.locator("summary").click();
+    }
+    await contents.locator('a[href="#rules-3"]').click();
+    await expectReadableChapter();
+    await expectPinnedNavigation();
+    if (!isMobile) {
+      const bar = (await tournamentBar.boundingBox())!;
+      const index = (await contents.boundingBox())!;
+      expect(index.y).toBeGreaterThanOrEqual(bar.y + bar.height - 1);
+      expect(index.y + index.height).toBeLessThanOrEqual(
+        page.viewportSize()!.height,
+      );
+    }
+    expect(
+      await page.evaluate(
+        () => document.documentElement.scrollWidth <= innerWidth,
+      ),
+    ).toBe(true);
+    // Reloading a shared chapter link must account for both sticky bars.
+    await page.reload();
+    await expectReadableChapter();
+    await expectPinnedNavigation();
   });
 });

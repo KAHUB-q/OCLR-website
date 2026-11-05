@@ -29,7 +29,7 @@ test.describe("independent round management and safe deletion", () => {
     page,
     context,
     isMobile,
-  }, info) => {
+  }) => {
     test.setTimeout(120000);
     await context.addCookies([await seedSession(isMobile ? 70001 : 60001)]);
     await openTournamentTool(page, "test-cup", "Rounds", isMobile);
@@ -202,10 +202,6 @@ test.describe("independent round management and safe deletion", () => {
           candidate.round.name === "Final renamed",
       ),
     ).toBe(true);
-    await page.screenshot({
-      path: info.outputPath("round-workspace.png"),
-      fullPage: true,
-    });
   });
   test("enforces scoped roles, stale deletes, revocation and API authorization", async ({
     page,
@@ -356,7 +352,7 @@ test.describe("independent round management and safe deletion", () => {
     page,
     context,
     isMobile,
-  }, info) => {
+  }) => {
     test.setTimeout(120000);
     await context.addCookies([await seedSession(isMobile ? 70001 : 60001)]);
     expect(
@@ -417,10 +413,6 @@ test.describe("independent round management and safe deletion", () => {
                   .analyze()
               ).violations,
             ).toEqual([]);
-          await page.screenshot({
-            path: info.outputPath(`${locale}-${theme}-${appearance}.png`),
-            fullPage: true,
-          });
           await page.keyboard.press("Escape");
         }
   });

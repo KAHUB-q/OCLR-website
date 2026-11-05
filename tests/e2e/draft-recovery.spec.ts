@@ -44,7 +44,7 @@ test.describe("editable tournament and explicit draft recovery", () => {
     context,
     isMobile,
     request,
-  }, info) => {
+  }) => {
     const base = isMobile ? 120001 : 110001,
       slug = `recovery-${base}-test`;
     await setup(context, base);
@@ -127,10 +127,6 @@ test.describe("editable tournament and explicit draft recovery", () => {
             () => document.documentElement.scrollWidth <= innerWidth,
           ),
         ).toBe(true);
-        await page.screenshot({
-          path: info.outputPath(`settings-${section}-${locale}.png`),
-          fullPage: true,
-        });
       }
     await preferences(context);
     await page.goto(`/admin/tournaments/${slug}/settings?section=registration`);
@@ -166,7 +162,7 @@ test.describe("editable tournament and explicit draft recovery", () => {
     context,
     isMobile,
     browser,
-  }, info) => {
+  }) => {
     const base = isMobile ? 120001 : 110001,
       slug = `recovery-${base}-test`;
     const f = await setup(context, base);
@@ -277,10 +273,6 @@ test.describe("editable tournament and explicit draft recovery", () => {
             () => document.documentElement.scrollWidth <= innerWidth,
           ),
         ).toBe(true);
-        await page.screenshot({
-          path: info.outputPath(`paused-edit-${locale}-${theme}.png`),
-          fullPage: true,
-        });
       }
     await preferences(context);
     await page.goto(`/admin/tournaments/${slug}/draft`);
@@ -300,10 +292,6 @@ test.describe("editable tournament and explicit draft recovery", () => {
       .getByRole("button", { name: "Reset draft", exact: true })
       .click();
     await expect(page.getByRole("dialog")).toContainText("Picks are voided");
-    await page.screenshot({
-      path: info.outputPath("reset-confirmation.png"),
-      fullPage: true,
-    });
     await page.getByRole("button", { name: "Confirm", exact: true }).click();
     await expect(
       page.getByRole("button", { name: "Start draft", exact: true }),

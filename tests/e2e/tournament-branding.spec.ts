@@ -63,7 +63,7 @@ test.describe("tournament artwork options (#356)", () => {
     page,
     context,
     isMobile,
-  }, info) => {
+  }) => {
     test.setTimeout(120000);
     await context.addCookies([await seedSession(isMobile ? 70001 : 60001)]);
     await seedEditions([edition]);
@@ -99,9 +99,6 @@ test.describe("tournament artwork options (#356)", () => {
               .locator(".settings-artwork-preview")
               .all())
               await expect(preview).toHaveJSProperty("naturalWidth", 1920);
-            await page.locator(".settings-artwork-grid").screenshot({
-              path: info.outputPath(`beta-${locale}-${width}.png`),
-            });
           }
           for (const asset of assets) {
             await logo.selectOption(asset.src);
@@ -126,10 +123,6 @@ test.describe("tournament artwork options (#356)", () => {
               ),
             ).toBe(true);
           }
-          if (locale === "zh-Hant")
-            await page.locator(".settings-artwork-grid").screenshot({
-              path: info.outputPath(`branding-${theme}-${width}.png`),
-            });
         }
       }
   });
@@ -138,7 +131,7 @@ test.describe("tournament artwork options (#356)", () => {
     context,
     browser,
     isMobile,
-  }, info) => {
+  }) => {
     test.setTimeout(90000);
     const slug = `branding-${isMobile ? "mobile" : "desktop"}-test`;
     const archive = { ...historicalArchive, editionSlug: slug };
@@ -221,11 +214,6 @@ test.describe("tournament artwork options (#356)", () => {
               () => document.documentElement.scrollWidth <= innerWidth,
             ),
           ).toBe(true);
-          await publicPage.locator(".archive-overview-summary").screenshot({
-            path: info.outputPath(
-              `public-s${assets.indexOf(asset) + 8}-${theme}.png`,
-            ),
-          });
         }
       }
       for (const value of ["/oclr-s11-key-visual.webp", ""]) {

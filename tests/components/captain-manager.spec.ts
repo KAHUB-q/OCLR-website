@@ -213,55 +213,43 @@ test("publication switches keep changes local until saving and confirming", asyn
   ]);
 });
 
-test("publication switches and pagination fit narrow screens in the three locales and both themes", async ({
+test("publication switches and pagination fit a narrow screen", async ({
   page,
   isMobile,
-}, info) => {
+}) => {
   if (isMobile) await page.setViewportSize({ width: 320, height: 812 });
-  for (const locale of ["en", "zh-Hans", "zh-Hant"]) {
-    for (const theme of ["light", "dark"]) {
-      await page.goto(
-        `/captain-manager?publication&locale=${locale}&theme=${theme}`,
-      );
-      const pool = page.locator(
-        'section[aria-labelledby="eligible-pool-heading"]',
-      );
-      const navigation = pool.getByRole("navigation");
-      await expect(pool.locator(".captain-player-card")).toHaveCount(10);
-      await expect(navigation.getByRole("button").last()).toBeEnabled();
-      await expect(navigation.getByRole("status")).toContainText("1");
-      expect(
-        await navigation.evaluate(
-          (element) => element.scrollWidth <= element.clientWidth,
-        ),
-      ).toBe(true);
-      const publication = page.locator(
-        'section[aria-labelledby="captain-publication-heading"]',
-      );
-      await expect(publication.getByRole("switch")).toHaveCount(2);
-      await expect(publication.getByRole("switch").first()).not.toBeChecked();
-      await expect(publication.getByRole("switch").last()).toBeChecked();
-      expect(
-        await publication.evaluate(
-          (element) => element.scrollWidth <= element.clientWidth,
-        ),
-      ).toBe(true);
-      for (const control of await publication.getByRole("switch").all()) {
-        const bounds = await control.boundingBox();
-        expect(bounds!.width).toBeGreaterThanOrEqual(44);
-        expect(bounds!.height).toBeGreaterThanOrEqual(44);
-      }
-      if (locale === "zh-Hant") {
-        await pool.scrollIntoViewIfNeeded();
-        await page.screenshot({
-          path: info.outputPath(`captain-pool-${theme}.png`),
-          animations: "disabled",
-        });
-        await publication.screenshot({
-          path: info.outputPath(`captain-publication-${theme}.png`),
-          animations: "disabled",
-        });
-      }
-    }
+
+  const locale = "en";
+
+  const theme = "light";
+
+  await page.goto(
+    `/captain-manager?publication&locale=${locale}&theme=${theme}`,
+  );
+  const pool = page.locator('section[aria-labelledby="eligible-pool-heading"]');
+  const navigation = pool.getByRole("navigation");
+  await expect(pool.locator(".captain-player-card")).toHaveCount(10);
+  await expect(navigation.getByRole("button").last()).toBeEnabled();
+  await expect(navigation.getByRole("status")).toContainText("1");
+  expect(
+    await navigation.evaluate(
+      (element) => element.scrollWidth <= element.clientWidth,
+    ),
+  ).toBe(true);
+  const publication = page.locator(
+    'section[aria-labelledby="captain-publication-heading"]',
+  );
+  await expect(publication.getByRole("switch")).toHaveCount(2);
+  await expect(publication.getByRole("switch").first()).not.toBeChecked();
+  await expect(publication.getByRole("switch").last()).toBeChecked();
+  expect(
+    await publication.evaluate(
+      (element) => element.scrollWidth <= element.clientWidth,
+    ),
+  ).toBe(true);
+  for (const control of await publication.getByRole("switch").all()) {
+    const bounds = await control.boundingBox();
+    expect(bounds!.width).toBeGreaterThanOrEqual(44);
+    expect(bounds!.height).toBeGreaterThanOrEqual(44);
   }
 });

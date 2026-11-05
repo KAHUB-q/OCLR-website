@@ -10,7 +10,7 @@ test("presentation tools are scoped staff controls and OBS remains a released-da
   page,
   context,
   isMobile,
-}, info) => {
+}) => {
   const id = isMobile ? 928000 : 927000;
   const slug = `broadcast-${id}-test`;
   const cookie = await seedSession(id);
@@ -28,14 +28,12 @@ test("presentation tools are scoped staff controls and OBS remains a released-da
   expect(
     (await page.goto(`/tournaments/${slug}/draft?presenter=1`))?.status(),
   ).toBe(404);
-  await db()
-    .insert(staffRoles)
-    .values({
-      userId: id,
-      role: "streamer",
-      editionSlug: "test-cup",
-      grantedBy: id,
-    });
+  await db().insert(staffRoles).values({
+    userId: id,
+    role: "streamer",
+    editionSlug: "test-cup",
+    grantedBy: id,
+  });
   expect(
     (await page.goto(`/tournaments/${slug}/draft?presenter=1`))?.status(),
   ).toBe(404);
@@ -53,7 +51,6 @@ test("presentation tools are scoped staff controls and OBS remains a released-da
   await expect(
     page.getByRole("link", { name: "Open broadcast overlay" }),
   ).toBeVisible();
-  await page.screenshot({ path: info.outputPath("staff-broadcast-tools.png") });
   await context.clearCookies();
   expect(
     (

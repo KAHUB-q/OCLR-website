@@ -27,7 +27,7 @@ test.describe("withdrawn registration reapplication", () => {
       context,
       browser,
       isMobile,
-    }, info) => {
+    }) => {
       test.setTimeout(90000);
       const adminCookie = await seedSession(isMobile ? 70001 : 60001);
       const userId = isMobile ? 116011 : 116010;
@@ -121,10 +121,6 @@ test.describe("withdrawn registration reapplication", () => {
                 })),
               );
               await page.reload();
-              await page.screenshot({
-                path: info.outputPath(`reapply-${locale}-${theme}.png`),
-                fullPage: true,
-              });
             }
         await context.addCookies([
           { name: "oclr-locale", value: "en", domain: "127.0.0.1", path: "/" },

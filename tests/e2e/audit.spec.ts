@@ -112,10 +112,6 @@ test.describe("central Admin audit browser", () => {
     await expect(page).toHaveURL(/module=tournament.*page=2/);
     await page.getByText("More filters", { exact: true }).click();
     await page.evaluate(() => window.scrollTo(0, 0));
-    await page.screenshot({
-      path: test.info().outputPath("audit-log.png"),
-      fullPage: true,
-    });
     await tabs.getByRole("tab", { name: "Captains", exact: true }).click();
     await expect(
       page.getByText("No matching audit events.", { exact: true }),

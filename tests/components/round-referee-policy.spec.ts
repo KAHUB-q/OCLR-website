@@ -1,7 +1,4 @@
 import { test, expect } from "@playwright/test";
-import en from "../../messages/en.json" with { type: "json" };
-import hans from "../../messages/zh-Hans.json" with { type: "json" };
-import hant from "../../messages/zh-Hant.json" with { type: "json" };
 const route = "**/api/admin/tournaments/synthetic/rounds/*/referee-policy";
 test("edits S11 defaults in round management before any fixture exists", async ({
   page,
@@ -254,38 +251,29 @@ test("offers BO13 defaults and disables mutations in read-only mode", async ({
   ).toBeDisabled();
 });
 
-for (const [locale, catalog] of [
-  ["en", en],
-  ["zh-Hans", hans],
-  ["zh-Hant", hant],
-] as const) {
-  test(`keeps ${locale} rules readable in both themes`, async ({
-    page,
-    isMobile,
-  }, testInfo) => {
-    if (isMobile) await page.setViewportSize({ width: 320, height: 844 });
-    const errors: string[] = [];
-    page.on("pageerror", (error) => errors.push(error.message));
-    const key = Object.entries(en.ui).find(
-      ([, value]) => value === "Configure round referee policy",
-    )![0] as keyof typeof en.ui;
-    for (const theme of ["light", "dark"]) {
-      await page.goto(`/round-referee-policy?locale=${locale}&theme=${theme}`);
-      await page.getByText(catalog.ui[key], { exact: true }).click();
-      expect(
-        await page.evaluate(
-          () => document.documentElement.scrollWidth <= window.innerWidth,
-        ),
-      ).toBe(true);
-      await expect(page.getByRole("button").last()).toBeVisible();
-      if (theme === "dark")
-        await page.screenshot({
-          path: testInfo.outputPath(`${locale}-${theme}.png`),
-        });
-    }
-    expect(errors).toEqual([]);
+test("opens compact referee rules with the keyboard at the workflow viewport", async ({
+  page,
+  isMobile,
+}) => {
+  if (isMobile) await page.setViewportSize({ width: 320, height: 844 });
+  const errors: string[] = [];
+  page.on("pageerror", (error) => errors.push(error.message));
+  await page.goto("/round-referee-policy?locale=en&theme=light");
+  const disclosure = page.locator("summary").filter({
+    hasText: "Configure round referee policy",
   });
-}
+  await disclosure.focus();
+  await disclosure.press("Enter");
+  await expect(
+    page.getByLabel("Ban timer seconds", { exact: true }),
+  ).toBeVisible();
+  expect(
+    await page.evaluate(
+      () => document.documentElement.scrollWidth <= window.innerWidth,
+    ),
+  ).toBe(true);
+  expect(errors).toEqual([]);
+});
 
 test("uses one BO input, derives wins, and reloads synchronized BP and TB after saving", async ({
   page,

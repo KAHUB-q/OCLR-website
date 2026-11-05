@@ -243,10 +243,6 @@ test.describe("automatic staff auditing", () => {
       ),
     ).toBe(true);
     await page.evaluate(() => window.scrollTo(0, 0));
-    await page.screenshot({
-      path: test.info().outputPath("captain-player-board.png"),
-      fullPage: true,
-    });
     await page
       .getByRole("button", { name: "Lock draft setup", exact: true })
       .first()

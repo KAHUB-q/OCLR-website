@@ -11,7 +11,7 @@ test.describe("complete directory statistics (#266)", () => {
   test("shows cached rank and PP for all 27 players, including zero PP", async ({
     page,
     isMobile,
-  }, info) => {
+  }) => {
     process.env.DATABASE_URL = process.env.TEST_DATABASE_URL;
     const slug = isMobile ? "stats-mobile-test" : "stats-desktop-test";
     await seedEditions([{ ...edition, slug }]);
@@ -93,8 +93,5 @@ test.describe("complete directory statistics (#266)", () => {
         () => document.documentElement.scrollWidth <= innerWidth,
       ),
     ).toBe(true);
-    await page.screenshot({
-      path: info.outputPath("directory-statistics.png"),
-    });
   });
 });

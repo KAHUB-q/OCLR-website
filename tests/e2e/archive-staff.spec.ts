@@ -53,7 +53,7 @@ test.describe("historical staff categories and verified username lookup", () => 
     request,
     browser,
     isMobile,
-  }, info) => {
+  }) => {
     assertTestDatabase(process.env.TEST_DATABASE_URL);
     process.env.DATABASE_URL = process.env.TEST_DATABASE_URL;
     await db().execute(
@@ -158,10 +158,6 @@ test.describe("historical staff categories and verified username lookup", () => 
         document.activeElement.blur();
       window.scrollTo(0, 0);
     });
-    await page.screenshot({
-      path: info.outputPath("staff-candidate.png"),
-      fullPage: true,
-    });
     await form
       .getByRole("button", {
         name: "Link historical staff identity",
@@ -221,10 +217,6 @@ test.describe("historical staff categories and verified username lookup", () => 
       expect(
         await page.evaluate(() => document.documentElement.scrollWidth),
       ).toBeLessThanOrEqual(page.viewportSize()!.width);
-      await page.screenshot({
-        path: info.outputPath(`staff-resolver-${theme}.png`),
-        fullPage: true,
-      });
       await page.goto(`/tournaments/${slug}/staff`);
       await expect(
         page.getByRole("link", { name: "[Test Player]", exact: true }),
@@ -235,10 +227,6 @@ test.describe("historical staff categories and verified username lookup", () => 
       expect(
         await page.evaluate(() => document.documentElement.scrollWidth),
       ).toBeLessThanOrEqual(page.viewportSize()!.width);
-      await page.screenshot({
-        path: info.outputPath(`staff-public-${theme}.png`),
-        fullPage: true,
-      });
       await page.goto(`/admin/tournaments/${slug}/archive`);
     }
     expect(
@@ -254,7 +242,7 @@ test.describe("historical staff categories and verified username lookup", () => 
     page,
     context,
     isMobile,
-  }, info) => {
+  }) => {
     test.setTimeout(180000);
     assertTestDatabase(process.env.TEST_DATABASE_URL);
     process.env.DATABASE_URL = process.env.TEST_DATABASE_URL;
@@ -303,19 +291,11 @@ test.describe("historical staff categories and verified username lookup", () => 
           page.getByRole("heading", { name: commentator, exact: true }),
         ).toHaveCount(1);
         await overflow();
-        await page.screenshot({
-          path: info.outputPath(`groups-${locale}-${theme}.png`),
-          fullPage: true,
-        });
         await page.goto(`/admin/tournaments/${slug}/archive`);
         await expect(
           page.locator(".archive-staff-resolver select"),
         ).toBeEnabled();
         await overflow();
-        await page.screenshot({
-          path: info.outputPath(`resolver-${locale}-${theme}.png`),
-          fullPage: true,
-        });
       }
     }
     await context.addCookies([

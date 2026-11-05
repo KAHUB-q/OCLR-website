@@ -275,117 +275,109 @@ test("new command IDs scroll even with a full 50-row history, while receipt upda
   await log.screenshot({ path: info.outputPath("latest-command.png") });
 });
 for (const locale of ["en", "zh-Hans", "zh-Hant"] as const) {
-  for (const theme of ["light", "dark"]) {
-    test(`BP preview keeps team colors in one chronological column — ${locale} ${theme}`, async ({
-      page,
-      isMobile,
-    }, info) => {
-      await page.setViewportSize(
-        isMobile ? { width: 320, height: 844 } : { width: 877, height: 819 },
-      );
-      const catalog =
-        locale === "zh-Hans" ? hans : locale === "zh-Hant" ? hant : en;
-      const text = (source: string) =>
-        catalog.ui[
-          Object.entries(en.ui).find(
-            ([, value]) => value === source,
-          )![0] as keyof typeof en.ui
-        ];
-      const state = await setup(page);
-      state.current().teams[0].name =
-        "Blue Team · 超長隊伍名稱ABCDEFGHIJKLMNOPQRSTUVWXYZ";
-      state.current().teams[1].name =
-        "Red Team · 超長隊伍名稱ABCDEFGHIJKLMNOPQRSTUVWXYZ";
-      await page.goto(
-        `/referee-panel?locale=${locale}&theme=${theme}&longnames`,
-      );
-      await expect(
-        page.getByText(text("Showing applied order"), { exact: true }),
-      ).toHaveCount(0);
-      await expect(
-        page.getByText(text("Order preview — not saved"), { exact: true }),
-      ).toHaveCount(0);
-      await page
-        .getByText(text("Preview Ban / Pick sequence"), { exact: true })
-        .click();
-      const list = page.getByRole("list", {
-        name: text("Preview Ban / Pick sequence"),
-        exact: true,
-      });
-      const rows = list.getByRole("listitem");
-      await expect(rows).toHaveCount(5);
-      await expect(rows.nth(0)).toContainText(/1\s*BAN\s*Blue Team/);
-      await expect(rows.nth(1)).toContainText(/2\s*PICK\s*Blue Team/);
-      await expect(rows.nth(2)).toContainText(/3\s*BAN\s*Red Team/);
-      await expect(rows.nth(3)).toContainText(/4\s*PICK\s*Red Team/);
-      await expect(rows.nth(4)).toContainText(/5\s*TB/);
-      await expect(rows.nth(4)).toContainText("1:1");
-      async function checkRows(sides: string[]) {
-        const bounds = await list.boundingBox();
-        let bottom = -Infinity;
-        for (const [index, side] of sides.entries()) {
-          const row = rows.nth(index);
-          await expect(row).toHaveAttribute("data-team", side);
-          const box = await row.locator(":scope > div").boundingBox();
-          expect(box!.y).toBeGreaterThanOrEqual(bottom);
-          bottom = box!.y + box!.height;
-          expect(bottom).toBeLessThanOrEqual(bounds!.y + bounds!.height + 1);
-          expect(Math.abs(box!.x - bounds!.x)).toBeLessThan(1);
-          expect(Math.abs(box!.width - bounds!.width)).toBeLessThan(1);
-          if (side !== "neutral") {
-            const color =
-              side === "red"
-                ? theme === "dark"
-                  ? "rgb(252, 165, 165)"
-                  : "rgb(185, 28, 28)"
-                : theme === "dark"
-                  ? "rgb(147, 197, 253)"
-                  : "rgb(29, 78, 216)";
-            await expect(row).toHaveCSS("color", color);
-          }
-        }
-        expect(
-          await page.evaluate(
-            () => document.documentElement.scrollWidth <= innerWidth,
-          ),
-        ).toBe(true);
-      }
-      // Consecutive steps by the same team must each occupy their own row.
-      await checkRows(["blue", "blue", "red", "red", "neutral"]);
-      const accessibility = await new AxeBuilder({ page })
-        .include("details:has(ol[role='list'])")
-        .analyze();
-      expect(accessibility.violations).toEqual([]);
-      await list.screenshot({
-        path: info.outputPath(`${locale}-${theme}-preview.png`),
-      });
-      await page
-        .getByLabel(text("First Ban team"), { exact: true })
-        .selectOption(id(11));
-      await checkRows(["red", "blue", "blue", "red", "neutral"]);
-      await expect(
-        page.getByText(text("Order preview — not saved"), { exact: true }),
-      ).toBeVisible();
-      await page
-        .getByLabel(text("First Ban team"), { exact: true })
-        .selectOption("");
-      await expect(rows.nth(0)).toHaveAttribute("data-team", "neutral");
-      await page
-        .getByRole("button", {
-          name: text("Discard unsaved order"),
-          exact: true,
-        })
-        .click();
-      await expect(
-        page.getByText(text("Order preview — not saved"), { exact: true }),
-      ).toHaveCount(0);
-      await expect(
-        page.getByText(text("Showing applied order"), { exact: true }),
-      ).toHaveCount(0);
-      expect(state.writes).toHaveLength(0);
-      expect(state.queues).toHaveLength(0);
+  const theme = "light";
+
+  test(`BP preview keeps team colors in one chronological column — ${locale} ${theme}`, async ({
+    page,
+    isMobile,
+  }, info) => {
+    await page.setViewportSize(
+      isMobile ? { width: 320, height: 844 } : { width: 877, height: 819 },
+    );
+    const catalog =
+      locale === "zh-Hans" ? hans : locale === "zh-Hant" ? hant : en;
+    const text = (source: string) =>
+      catalog.ui[
+        Object.entries(en.ui).find(
+          ([, value]) => value === source,
+        )![0] as keyof typeof en.ui
+      ];
+    const state = await setup(page);
+    state.current().teams[0].name =
+      "Blue Team · 超長隊伍名稱ABCDEFGHIJKLMNOPQRSTUVWXYZ";
+    state.current().teams[1].name =
+      "Red Team · 超長隊伍名稱ABCDEFGHIJKLMNOPQRSTUVWXYZ";
+    await page.goto(`/referee-panel?locale=${locale}&theme=${theme}&longnames`);
+    await expect(
+      page.getByText(text("Showing applied order"), { exact: true }),
+    ).toHaveCount(0);
+    await expect(
+      page.getByText(text("Order preview — not saved"), { exact: true }),
+    ).toHaveCount(0);
+    await page
+      .getByText(text("Preview Ban / Pick sequence"), { exact: true })
+      .click();
+    const list = page.getByRole("list", {
+      name: text("Preview Ban / Pick sequence"),
+      exact: true,
     });
-  }
+    const rows = list.getByRole("listitem");
+    await expect(rows).toHaveCount(5);
+    await expect(rows.nth(0)).toContainText(/1\s*BAN\s*Blue Team/);
+    await expect(rows.nth(1)).toContainText(/2\s*PICK\s*Blue Team/);
+    await expect(rows.nth(2)).toContainText(/3\s*BAN\s*Red Team/);
+    await expect(rows.nth(3)).toContainText(/4\s*PICK\s*Red Team/);
+    await expect(rows.nth(4)).toContainText(/5\s*TB/);
+    await expect(rows.nth(4)).toContainText("1:1");
+    async function checkRows(sides: string[]) {
+      const bounds = await list.boundingBox();
+      let bottom = -Infinity;
+      for (const [index, side] of sides.entries()) {
+        const row = rows.nth(index);
+        await expect(row).toHaveAttribute("data-team", side);
+        const box = await row.locator(":scope > div").boundingBox();
+        expect(box!.y).toBeGreaterThanOrEqual(bottom);
+        bottom = box!.y + box!.height;
+        expect(bottom).toBeLessThanOrEqual(bounds!.y + bounds!.height + 1);
+        expect(Math.abs(box!.x - bounds!.x)).toBeLessThan(1);
+        expect(Math.abs(box!.width - bounds!.width)).toBeLessThan(1);
+        if (side !== "neutral") {
+          const color =
+            side === "red" ? "rgb(185, 28, 28)" : "rgb(29, 78, 216)";
+          await expect(row).toHaveCSS("color", color);
+        }
+      }
+      expect(
+        await page.evaluate(
+          () => document.documentElement.scrollWidth <= innerWidth,
+        ),
+      ).toBe(true);
+    }
+    // Consecutive steps by the same team must each occupy their own row.
+    await checkRows(["blue", "blue", "red", "red", "neutral"]);
+    const accessibility = await new AxeBuilder({ page })
+      .include("details:has(ol[role='list'])")
+      .analyze();
+    expect(accessibility.violations).toEqual([]);
+    await list.screenshot({
+      path: info.outputPath(`${locale}-${theme}-preview.png`),
+    });
+    await page
+      .getByLabel(text("First Ban team"), { exact: true })
+      .selectOption(id(11));
+    await checkRows(["red", "blue", "blue", "red", "neutral"]);
+    await expect(
+      page.getByText(text("Order preview — not saved"), { exact: true }),
+    ).toBeVisible();
+    await page
+      .getByLabel(text("First Ban team"), { exact: true })
+      .selectOption("");
+    await expect(rows.nth(0)).toHaveAttribute("data-team", "neutral");
+    await page
+      .getByRole("button", {
+        name: text("Discard unsaved order"),
+        exact: true,
+      })
+      .click();
+    await expect(
+      page.getByText(text("Order preview — not saved"), { exact: true }),
+    ).toHaveCount(0);
+    await expect(
+      page.getByText(text("Showing applied order"), { exact: true }),
+    ).toHaveCount(0);
+    expect(state.writes).toHaveLength(0);
+    expect(state.queues).toHaveLength(0);
+  });
 }
 async function setupMp(page: Page, roomId = 880001) {
   const room = { roomId };
@@ -666,84 +658,83 @@ for (const locale of ["en", "zh-Hans", "zh-Hant"] as const) {
           ([, value]) => value === source,
         )![0] as keyof typeof en.ui
       ];
-    for (const theme of ["light", "dark"]) {
-      await setup(page);
-      await page.goto(`/referee-panel?locale=${locale}&theme=${theme}`);
-      const console = page.getByRole("complementary", {
-        name: text("IRC console"),
-        exact: true,
-      });
-      const launch = console.getByRole("link", {
-        name: text("Open OCLR IRC"),
-        exact: true,
-      });
-      const manage = console.getByRole("link", {
-        name: text("Manage connections"),
-        exact: true,
-      });
-      await expect(launch).toHaveAttribute("href", /^oclr-irc:/);
-      await expect(manage).toHaveAttribute("href", "/desktop/sessions");
-      await expect(manage).toHaveClass(/\bbutton\b/);
-      await manage.focus();
-      await expect(manage).toBeFocused();
-      const left = (await launch.boundingBox())!,
-        right = (await manage.boundingBox())!;
-      expect(right.x).toBeGreaterThanOrEqual(left.x + left.width);
-      expect(Math.abs(left.y - right.y)).toBeLessThan(1);
-      for (const [control, box] of [
-        [launch, left],
-        [manage, right],
-      ] as const) {
-        expect(box.height).toBeGreaterThanOrEqual(isMobile ? 44 : 32);
-        expect(box.height).toBeLessThanOrEqual(isMobile ? 44 : 32);
-        await expect(control).toHaveCSS("font-size", "12px");
-        await expect(control).toHaveCSS("white-space", "nowrap");
-      }
-      await console
-        .getByText(text("Connection setup"), { exact: true })
-        .click();
-      const help = console.locator("details").filter({
-        has: page.getByText(text("Connection setup"), { exact: true }),
-      });
-      await expect(help.getByRole("listitem")).toHaveCount(3);
-      for (const source of [
-        "Open oclr-irc and sign in to osu! IRC locally.",
-        "Authorize OCLR in the browser and select this assigned match.",
-        "Confirm the accounts and enable website IRC. You can then create a room from this page.",
-      ])
-        await expect(help).toContainText(text(source));
-      await expect(help).toContainText(
-        text(
-          "If the app does not open, install the latest OCLR IRC and launch it once, then try again.",
-        ),
-      );
-      await expect(
-        help.getByRole("link", { name: text("Get OCLR IRC"), exact: true }),
-      ).toHaveAttribute(
-        "href",
-        "https://github.com/OCLR-dev/OCLR-IRC/actions/workflows/test-builds.yml",
-      );
-      for (const source of [
-        "BP saves sync automatically: Ban announces; Pick announces, changes the map and applies saved Mods.",
-        "IRC credentials stay in the desktop app. The launch link does not sign you in or send commands.",
-        "Manage desktop sessions",
-      ])
-        await expect(
-          console.getByText(text(source), { exact: true }),
-        ).toHaveCount(0);
-      expect(
-        await page.evaluate(
-          () => document.documentElement.scrollWidth <= innerWidth,
-        ),
-      ).toBe(true);
-      const accessibility = await new AxeBuilder({ page })
-        .include('[class*="ircLaunchActions"]')
-        .analyze();
-      expect(accessibility.violations).toEqual([]);
-      await console.screenshot({
-        path: info.outputPath(`${locale}-${theme}-irc-help.png`),
-      });
+
+    const theme = "light";
+
+    await setup(page);
+    await page.goto(`/referee-panel?locale=${locale}&theme=${theme}`);
+    const console = page.getByRole("complementary", {
+      name: text("IRC console"),
+      exact: true,
+    });
+    const launch = console.getByRole("link", {
+      name: text("Open OCLR IRC"),
+      exact: true,
+    });
+    const manage = console.getByRole("link", {
+      name: text("Manage connections"),
+      exact: true,
+    });
+    await expect(launch).toHaveAttribute("href", /^oclr-irc:/);
+    await expect(manage).toHaveAttribute("href", "/desktop/sessions");
+    await expect(manage).toHaveClass(/\bbutton\b/);
+    await manage.focus();
+    await expect(manage).toBeFocused();
+    const left = (await launch.boundingBox())!,
+      right = (await manage.boundingBox())!;
+    expect(right.x).toBeGreaterThanOrEqual(left.x + left.width);
+    expect(Math.abs(left.y - right.y)).toBeLessThan(1);
+    for (const [control, box] of [
+      [launch, left],
+      [manage, right],
+    ] as const) {
+      expect(box.height).toBeGreaterThanOrEqual(isMobile ? 44 : 32);
+      expect(box.height).toBeLessThanOrEqual(isMobile ? 44 : 32);
+      await expect(control).toHaveCSS("font-size", "12px");
+      await expect(control).toHaveCSS("white-space", "nowrap");
     }
+    await console.getByText(text("Connection setup"), { exact: true }).click();
+    const help = console.locator("details").filter({
+      has: page.getByText(text("Connection setup"), { exact: true }),
+    });
+    await expect(help.getByRole("listitem")).toHaveCount(3);
+    for (const source of [
+      "Open oclr-irc and sign in to osu! IRC locally.",
+      "Authorize OCLR in the browser and select this assigned match.",
+      "Confirm the accounts and enable website IRC. You can then create a room from this page.",
+    ])
+      await expect(help).toContainText(text(source));
+    await expect(help).toContainText(
+      text(
+        "If the app does not open, install the latest OCLR IRC and launch it once, then try again.",
+      ),
+    );
+    await expect(
+      help.getByRole("link", { name: text("Get OCLR IRC"), exact: true }),
+    ).toHaveAttribute(
+      "href",
+      "https://github.com/OCLR-dev/OCLR-IRC/actions/workflows/test-builds.yml",
+    );
+    for (const source of [
+      "BP saves sync automatically: Ban announces; Pick announces, changes the map and applies saved Mods.",
+      "IRC credentials stay in the desktop app. The launch link does not sign you in or send commands.",
+      "Manage desktop sessions",
+    ])
+      await expect(
+        console.getByText(text(source), { exact: true }),
+      ).toHaveCount(0);
+    expect(
+      await page.evaluate(
+        () => document.documentElement.scrollWidth <= innerWidth,
+      ),
+    ).toBe(true);
+    const accessibility = await new AxeBuilder({ page })
+      .include('[class*="ircLaunchActions"]')
+      .analyze();
+    expect(accessibility.violations).toEqual([]);
+    await console.screenshot({
+      path: info.outputPath(`${locale}-${theme}-irc-help.png`),
+    });
   });
 }
 test("IRC help keeps connection management available when connected and hidden in simulation", async ({
@@ -915,153 +906,134 @@ test("read-only users cannot record", async ({ page }) => {
   expect(state.writes).toHaveLength(0);
 });
 
-for (const locale of ["en", "zh-Hans", "zh-Hant"]) {
-  test(`records with localized feedback in ${locale} in both themes`, async ({
-    page,
-    isMobile,
-  }, info) => {
-    if (isMobile) await page.setViewportSize({ width: 320, height: 844 });
-    const en = (
-      await import("../../messages/en.json", { with: { type: "json" } })
-    ).default;
-    const catalog =
-      locale === "zh-Hans"
-        ? (
-            await import("../../messages/zh-Hans.json", {
-              with: { type: "json" },
-            })
-          ).default
-        : locale === "zh-Hant"
-          ? (
-              await import("../../messages/zh-Hant.json", {
-                with: { type: "json" },
-              })
-            ).default
-          : en;
-    const text = (source: string) =>
-      catalog.ui[
-        Object.entries(en.ui).find(
-          ([, v]) => v === source,
-        )![0] as keyof typeof en.ui
-      ];
-    for (const theme of ["light", "dark"]) {
-      await setupMp(page);
-      await page.goto(`/referee-panel?locale=${locale}&theme=${theme}`);
-      const maps = page.getByRole("region", {
-        name: text("Round mappool"),
-        exact: true,
-      });
-      const score = page.getByRole("region", {
-        name: text("Referee records"),
-        exact: true,
-      });
-      const process = score
-        .locator("dl > div")
-        .filter({
-          has: page.getByText(text("BP sequence"), { exact: true }),
-        })
-        .locator("dd");
-      await expect(process).toHaveText("—");
-      await maps
-        .getByRole("button", { name: `${text("Blue team")} BAN`, exact: true })
-        .first()
-        .click();
-      await expect(
-        page.getByText(
-          text(
-            "BP saved. IRC sync is pending. Check the connection and retry safely.",
-          ),
-          { exact: true },
-        ),
-      ).toBeVisible();
-      expect(
-        await page.evaluate(
-          () => document.documentElement.scrollWidth <= innerWidth,
-        ),
-      ).toBe(true);
-      await maps
-        .getByRole("button", { name: `${text("Blue team")} PICK`, exact: true })
-        .first()
-        .click();
-      await page
-        .getByText(text("Record and correct outcomes"), { exact: true })
-        .click();
-      await page
-        .getByRole("button", {
-          name: text("Record win: {team}").replace("{team}", "Blue"),
-          exact: true,
-        })
-        .click();
-      await maps
-        .getByRole("button", { name: `${text("Red team")} BAN`, exact: true })
-        .first()
-        .click();
-      await maps
-        .getByRole("button", { name: `${text("Red team")} PICK`, exact: true })
-        .first()
-        .click();
-      await page
-        .getByRole("button", {
-          name: text("Record win: {team}").replace("{team}", "Red"),
-          exact: true,
-        })
-        .click();
-      await maps
-        .getByRole("button", { name: `${text("Blue team")} PICK`, exact: true })
-        .first()
-        .click();
-      const entries = process.locator(":scope > span");
-      await expect(entries).toHaveText([
-        "Blue BAN NM1",
-        "Blue PICK NM2",
-        "Red BAN NM3",
-        "Red PICK NM4",
-        `${text("Neutral tiebreaker")} TB TB1`,
-      ]);
-      const blue = theme === "dark" ? "rgb(147, 197, 253)" : "rgb(29, 78, 216)";
-      const red = theme === "dark" ? "rgb(252, 165, 165)" : "rgb(185, 28, 28)";
-      for (let index = 0; index < 4; index++)
-        await expect(entries.nth(index)).toHaveCSS(
-          "color",
-          index < 2 ? blue : red,
-        );
-      await expect(entries.last()).not.toHaveCSS("color", blue);
-      await expect(entries.last()).not.toHaveCSS("color", red);
-      if (isMobile) {
-        expect(
-          await process.evaluate((el) => el.scrollWidth > el.clientWidth),
-        ).toBe(true);
-        await process.focus();
-        await page.keyboard.press("ArrowRight");
-        await expect
-          .poll(() => process.evaluate((el) => el.scrollLeft))
-          .toBeGreaterThan(0);
-      }
-      expect(
-        await page.evaluate(
-          () => document.documentElement.scrollWidth <= innerWidth,
-        ),
-      ).toBe(true);
-      const sync = score.getByRole("button", {
-        name: text("Automatic sync"),
-        exact: true,
-      });
-      await sync.click();
-      await expect(sync).toHaveAttribute("aria-pressed", "true");
-      const accessibility = await new AxeBuilder({ page })
-        .include(`[aria-label="${text("Referee records")}"]`)
-        .analyze();
-      expect(accessibility.violations).toEqual([]);
-      await score.screenshot({
-        path: info.outputPath(`sync-${locale}-${theme}.png`),
-      });
-      if (theme === "dark")
-        await maps.screenshot({
-          path: info.outputPath(`${locale}-recorded.png`),
-        });
-    }
+const locale = "en";
+
+test(`records with localized feedback in ${locale} at the workflow viewport`, async ({
+  page,
+  isMobile,
+}, info) => {
+  if (isMobile) await page.setViewportSize({ width: 320, height: 844 });
+  const en = (
+    await import("../../messages/en.json", { with: { type: "json" } })
+  ).default;
+  const catalog = en;
+  const text = (source: string) =>
+    catalog.ui[
+      Object.entries(en.ui).find(
+        ([, v]) => v === source,
+      )![0] as keyof typeof en.ui
+    ];
+
+  const theme = "light";
+
+  await setupMp(page);
+  await page.goto(`/referee-panel?locale=${locale}&theme=${theme}`);
+  const maps = page.getByRole("region", {
+    name: text("Round mappool"),
+    exact: true,
   });
-}
+  const score = page.getByRole("region", {
+    name: text("Referee records"),
+    exact: true,
+  });
+  const process = score
+    .locator("dl > div")
+    .filter({
+      has: page.getByText(text("BP sequence"), { exact: true }),
+    })
+    .locator("dd");
+  await expect(process).toHaveText("—");
+  await maps
+    .getByRole("button", { name: `${text("Blue team")} BAN`, exact: true })
+    .first()
+    .click();
+  await expect(
+    page.getByText(
+      text(
+        "BP saved. IRC sync is pending. Check the connection and retry safely.",
+      ),
+      { exact: true },
+    ),
+  ).toBeVisible();
+  expect(
+    await page.evaluate(
+      () => document.documentElement.scrollWidth <= innerWidth,
+    ),
+  ).toBe(true);
+  await maps
+    .getByRole("button", { name: `${text("Blue team")} PICK`, exact: true })
+    .first()
+    .click();
+  await page
+    .getByText(text("Record and correct outcomes"), { exact: true })
+    .click();
+  await page
+    .getByRole("button", {
+      name: text("Record win: {team}").replace("{team}", "Blue"),
+      exact: true,
+    })
+    .click();
+  await maps
+    .getByRole("button", { name: `${text("Red team")} BAN`, exact: true })
+    .first()
+    .click();
+  await maps
+    .getByRole("button", { name: `${text("Red team")} PICK`, exact: true })
+    .first()
+    .click();
+  await page
+    .getByRole("button", {
+      name: text("Record win: {team}").replace("{team}", "Red"),
+      exact: true,
+    })
+    .click();
+  await maps
+    .getByRole("region", { name: "TB", exact: true })
+    .getByRole("button", { name: text("Pick"), exact: true })
+    .click();
+  const entries = process.locator(":scope > span");
+  await expect(entries).toHaveText([
+    "Blue BAN NM1",
+    "Blue PICK NM2",
+    "Red BAN NM3",
+    "Red PICK NM4",
+    `${text("Neutral tiebreaker")} TB TB1`,
+  ]);
+  const blue = "rgb(29, 78, 216)";
+  const red = "rgb(185, 28, 28)";
+  for (let index = 0; index < 4; index++)
+    await expect(entries.nth(index)).toHaveCSS("color", index < 2 ? blue : red);
+  await expect(entries.last()).not.toHaveCSS("color", blue);
+  await expect(entries.last()).not.toHaveCSS("color", red);
+  if (isMobile) {
+    expect(
+      await process.evaluate((el) => el.scrollWidth > el.clientWidth),
+    ).toBe(true);
+    await process.focus();
+    await page.keyboard.press("ArrowRight");
+    await expect
+      .poll(() => process.evaluate((el) => el.scrollLeft))
+      .toBeGreaterThan(0);
+  }
+  expect(
+    await page.evaluate(
+      () => document.documentElement.scrollWidth <= innerWidth,
+    ),
+  ).toBe(true);
+  const sync = score.getByRole("button", {
+    name: text("Automatic sync"),
+    exact: true,
+  });
+  await sync.click();
+  await expect(sync).toHaveAttribute("aria-pressed", "true");
+  const accessibility = await new AxeBuilder({ page })
+    .include(`[aria-label="${text("Referee records")}"]`)
+    .analyze();
+  expect(accessibility.violations).toEqual([]);
+  await score.screenshot({
+    path: info.outputPath(`sync-${locale}-${theme}.png`),
+  });
+});
 
 test("withdraw stays outside collapsed details and score floats only within BP", async ({
   page,

@@ -16,7 +16,7 @@ test.describe("staff registration review", () => {
     context,
     isMobile,
     browser,
-  }, testInfo) => {
+  }) => {
     const staffId = isMobile ? 70001 : 60001;
     const playerId = staffId + 1;
     const staffCookie = await seedSession(staffId);
@@ -140,11 +140,6 @@ test.describe("staff registration review", () => {
           .analyze()
       ).violations,
     ).toEqual([]);
-    await page.screenshot({
-      path: testInfo.outputPath("admin.png"),
-      fullPage: true,
-      animations: "disabled",
-    });
     await page
       .getByRole("link", {
         name: new RegExp(`Review Synthetic Player ${playerId}`),
@@ -157,10 +152,6 @@ test.describe("staff registration review", () => {
     await page.getByRole("button", { name: "Review decision" }).click();
     await page.getByRole("button", { name: "Confirm", exact: true }).click();
     await expect(page.locator("section .badge").first()).toHaveText("deferred");
-    await page.screenshot({
-      path: testInfo.outputPath("deferred-application.png"),
-      fullPage: true,
-    });
     const ownStatus = await other.request.get(
       "http://127.0.0.1:3100/dashboard",
     );

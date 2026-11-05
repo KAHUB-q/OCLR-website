@@ -16,7 +16,7 @@ test.describe("anonymous tournament competition center", () => {
     context,
     browser,
     isMobile,
-  }, info) => {
+  }) => {
     const adminId = isMobile ? 70001 : 60001;
     const refId = isMobile ? 307002 : 306002;
     const adminCookie = await seedSession(adminId);
@@ -146,11 +146,6 @@ test.describe("anonymous tournament competition center", () => {
           exact: true,
         }),
       ).toBeVisible();
-      await page.screenshot({
-        path: info.outputPath("public-match.png"),
-        fullPage: true,
-        animations: "disabled",
-      });
       await page.goto("/tournaments/test-cup/bracket");
       const bracket = await (
         await context.request.get("/api/tournaments/test-cup/bracket")
@@ -164,11 +159,6 @@ test.describe("anonymous tournament competition center", () => {
           exact: true,
         }),
       ).toBeVisible();
-      await page.screenshot({
-        path: info.outputPath("database-bracket.png"),
-        fullPage: true,
-        animations: "disabled",
-      });
       await page.goto("/tournaments/test-cup/results");
       await expect(
         page.getByRole("heading", {

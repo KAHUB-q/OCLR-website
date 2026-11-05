@@ -30,6 +30,7 @@ import {
   publicArchiveStatistics,
 } from "../../src/lib/archive-statistics";
 import { readTournament, tournamentCommand } from "../../src/lib/tournaments";
+import { verifyArchiveRelations } from "../../src/lib/archive-relations";
 
 const url = process.env.TEST_DATABASE_URL;
 function archive() {
@@ -109,6 +110,9 @@ describe.skipIf(!url)("S2 stored pool correction", () => {
       await correctS2PoolData({ apply: true, expectedRevision: 0 }),
     ).toMatchObject({ applied: true });
     const saved = (await readTournament("s2"))!;
+    expect(await verifyArchiveRelations(db(), "s2")).toMatchObject({
+      documents: 3,
+    });
     expect(saved.edition.archive).toEqual(correctS2PoolArchive(archive()));
     const after = await publicArchiveStatistics("s2", "one");
     expect(after.plays).toEqual(before.plays);
@@ -175,6 +179,9 @@ describe.skipIf(!url)("S2 stored pool correction", () => {
         archive: archive(),
       },
     );
+    expect(await verifyArchiveRelations(db(), "s2")).toMatchObject({
+      documents: 3,
+    });
     expect((await readTournament("s2"))!.edition.archive).toEqual(
       correctS2PoolArchive(archive()),
     );

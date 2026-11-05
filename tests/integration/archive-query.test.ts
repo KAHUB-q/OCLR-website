@@ -1,3 +1,4 @@
+import { observe, sourceJson } from "../archive-query-observer";
 import {
   beforeAll,
   beforeEach,
@@ -7,9 +8,8 @@ import {
   expect,
   vi,
 } from "vitest";
-import type { PoolClient } from "pg";
 import { eq, sql } from "drizzle-orm";
-import { db, closeDb, getPool, readOnlyData } from "../../src/db";
+import { db, closeDb, readOnlyData } from "../../src/db";
 import {
   editionState,
   historicalStatistics,
@@ -34,52 +34,6 @@ import { edition } from "../fixtures/edition";
 import { archiveQueryFixture } from "../fixtures/archive-query";
 
 const url = process.env.TEST_DATABASE_URL;
-type Spy = {
-  mock: { calls: unknown[][]; results: { type: string; value: unknown }[] };
-  mockRestore: () => void;
-};
-async function observe<T>(run: () => Promise<T>) {
-  const spies: Spy[] = [],
-    seen = new Set<PoolClient>(),
-    pool = getPool();
-  const acquired = (client: PoolClient) => {
-    if (!seen.has(client)) {
-      seen.add(client);
-      spies.push(vi.spyOn(client, "query"));
-    }
-  };
-  pool.on("acquire", acquired);
-  try {
-    const value = await run();
-    const statements = spies.flatMap((s) =>
-      s.mock.calls.map(([q]) =>
-        typeof q === "string"
-          ? q
-          : typeof q === "object" && q && "text" in q
-            ? String(q.text)
-            : "",
-      ),
-    );
-    let bytes = 0;
-    for (const s of spies)
-      for (const r of s.mock.results)
-        if (r.type === "return") {
-          const result = await r.value;
-          if (result && typeof result === "object" && "rows" in result)
-            bytes += Buffer.byteLength(JSON.stringify(result.rows));
-        }
-    return { value, statements, bytes };
-  } finally {
-    pool.removeListener("acquire", acquired);
-    for (const s of spies) s.mockRestore();
-  }
-}
-const sourceJson = (statements: string[]) =>
-  statements.filter(
-    (s) =>
-      s.includes('from "historical_statistics"') &&
-      /"draft"|"published"/.test(s),
-  );
 describe.skipIf(!url)("bounded historical queries", () => {
   beforeAll(() => {
     assertTestDatabase(url);
@@ -233,7 +187,7 @@ describe.skipIf(!url)("bounded historical queries", () => {
       sourceJson(
         (await observe(() => publicArchiveStatistics("s7"))).statements,
       ).length,
-    ).toBeGreaterThan(0);
+    ).toBe(0);
     await backfillArchiveReads("s7", true);
     await db()
       .update(archiveReadVersions)
@@ -242,7 +196,7 @@ describe.skipIf(!url)("bounded historical queries", () => {
       sourceJson(
         (await observe(() => publicArchiveStatistics("s7"))).statements,
       ).length,
-    ).toBeGreaterThan(0);
+    ).toBe(0);
     await backfillArchiveReads("s7", true, true);
     const [state] = await db().select().from(editionState);
     await db()
@@ -254,7 +208,7 @@ describe.skipIf(!url)("bounded historical queries", () => {
       sourceJson(
         (await observe(() => publicArchiveStatistics("s7"))).statements,
       ).length,
-    ).toBeGreaterThan(0);
+    ).toBe(0);
   });
   it("limits detail reads to the requested fixture's sources", async () => {
     const current = await observe(() => publicArchiveStatistics("s7", "one"));

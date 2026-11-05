@@ -47,6 +47,7 @@ import { mappoolWorkspace, mappoolCommand } from "../../src/lib/mappools";
 import { staffFixtures } from "../../src/lib/fixtures";
 import { matchReview, previewFixtureMatch } from "../../src/lib/results";
 import { statisticsWorkspace } from "../../src/lib/archive-statistics";
+import { backfillArchiveRelations } from "../../src/lib/archive-relations";
 import { awardWorkspace } from "../../src/lib/awards";
 import { HttpError } from "../../src/lib/http";
 
@@ -77,7 +78,8 @@ async function snapshot() {
   );
   const state: Record<string, unknown> = {};
   for (const { tablename } of tables.rows) {
-    if (!/^[a-z_]+$/.test(tablename)) throw new Error("Unexpected test table");
+    if (!/^[a-z_][a-z0-9_]*$/.test(tablename))
+      throw new Error("Unexpected test table");
     const rows = await db().execute(
       sql.raw(
         `SELECT COALESCE(jsonb_agg(to_jsonb(t) ORDER BY to_jsonb(t)::text), '[]') AS rows FROM "${tablename}" t`,
@@ -138,6 +140,7 @@ describe.skipIf(!url)(
         ],
         false,
       );
+      await backfillArchiveRelations("s7", true);
       await changeStaffRole(admin, grant());
       session.user = developer;
     });

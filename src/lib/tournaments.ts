@@ -1,4 +1,5 @@
 import { relationalArchive } from "./archive-read";
+import { syncArchiveRelations } from "./archive-relations";
 import { correctS2PoolArchive } from "./archive-pool-correction-model";
 import { db } from "@/db";
 import {
@@ -827,6 +828,7 @@ export async function tournamentCommand(
         },
       },
     });
+    await syncArchiveRelations(tx, slug);
   });
   return tournamentForAdmin(actor, slug);
 }

@@ -42,6 +42,7 @@ export function BeatmapActions({
   originalBeatmapId,
   originalSetId,
   beatmapMissing = false,
+  preferOriginal = false,
   compact = false,
   showWeb = true,
   name,
@@ -52,6 +53,7 @@ export function BeatmapActions({
   originalBeatmapId?: number | null;
   originalSetId?: number | null;
   beatmapMissing?: boolean;
+  preferOriginal?: boolean;
   compact?: boolean;
   showWeb?: boolean;
   name?: string;
@@ -59,10 +61,12 @@ export function BeatmapActions({
 }) {
   const tr = useAppTranslations();
   const originalLinks = beatmapLinks(originalBeatmapId, originalSetId);
-  // A saved edit whose verified set is gone falls back to the original map it
-  // was based on; keep the difficulty and set destinations distinct.
+  // Confirmed archive corrections may prefer the surviving original even if a
+  // cached set exists or provider lookup is unavailable. Otherwise retain the
+  // missing-edit fallback. Difficulty IDs and set destinations stay distinct.
   const useOriginal =
-    beatmapMissing && !setId && !!(originalLinks.web || originalLinks.direct);
+    (preferOriginal || (beatmapMissing && !setId)) &&
+    !!(originalLinks.web || originalLinks.direct);
   const links = useOriginal ? originalLinks : beatmapLinks(beatmapId, setId);
   const labels = useOriginal
     ? {

@@ -8,6 +8,13 @@ spec.loader.exec_module(capture)
 
 
 class CaptureTests(unittest.TestCase):
+    def test_confirmed_originals_survive_future_snapshot_refreshes(self):
+        ids = capture.expected_ids()
+        self.assertIn(2678913, ids)
+        self.assertIn(2933979, ids)
+        self.assertIn(2720295, ids)
+        self.assertIn(2567502, ids)
+        self.assertEqual(ids, sorted(set(ids)))
     def payload(self, **changes):
         beatmap = dict(id=42, beatmapset_id=7, mode='osu', version='Hard',
                        difficulty_rating=4.2, bpm=180, hit_length=90,

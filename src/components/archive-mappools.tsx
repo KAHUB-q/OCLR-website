@@ -91,6 +91,7 @@ function ArchiveMapDetails({
           originalBeatmapId={map.originalId}
           originalSetId={originalSetId}
           beatmapMissing={beatmapMissing}
+          preferOriginal={map.preferOriginal}
         />
         <div className="map-dialog-navigation">
           <button
@@ -163,45 +164,69 @@ export function ArchiveMappools({
   if (sort === "stars")
     maps.sort((a, b) => (b.stars ?? -Infinity) - (a.stars ?? -Infinity));
   const activeIndex = maps.findIndex((m) => m.slot === selected);
-  const artwork = (m: MapEntry) => ({
-    beatmapMissing: !!m.beatmapId && missingBeatmapIds.includes(m.beatmapId),
-    setId: m.beatmapId ? (artworkSetIds[m.beatmapId] ?? null) : null,
-    originalSetId: m.originalId ? (artworkSetIds[m.originalId] ?? null) : null,
-  });
+  const artwork = (m: MapEntry) => {
+    const originalSetId = m.originalId
+      ? (artworkSetIds[m.originalId] ?? null)
+      : null;
+    return {
+      beatmapMissing: !!m.beatmapId && missingBeatmapIds.includes(m.beatmapId),
+      setId: m.preferOriginal
+        ? originalSetId
+        : m.beatmapId
+          ? (artworkSetIds[m.beatmapId] ?? null)
+          : null,
+      originalSetId,
+    };
+  };
   const active = maps[activeIndex];
   const activeArtwork = active ? artwork(active) : null;
+  const fieldLabels = {
+    title: tr("Song title"),
+    mapper: tr("Mapper"),
+    stars: tr("SR"),
+    bpm: tr("BPM"),
+    drainSeconds: tr("Length"),
+    cs: tr("CS"),
+    ar: tr("AR"),
+    od: tr("OD"),
+  };
   const supplemented = (m: MapEntry) =>
-    !!m.supplemented?.length && (
-      <InfoNote>
-        <p className="muted small">
-          {tr(
-            "Missing archive fields supplemented with current osu! base metadata (no mods): {fields}.",
-            {
-              fields: m.supplemented
-                .map(
-                  (field) =>
-                    ({
-                      title: tr("Song title"),
-                      mapper: tr("Mapper"),
-                      stars: tr("SR"),
-                      bpm: tr("BPM"),
-                      drainSeconds: tr("Length"),
-                      cs: tr("CS"),
-                      ar: tr("AR"),
-                      od: tr("OD"),
-                    })[field],
-                )
-                .join(", "),
-            },
-          )}{" "}
-          <a href={m.metadataSource} target="_blank" rel="noreferrer">
-            {tr("Source")}
-          </a>{" "}
-          <time dateTime={m.metadataFetchedAt}>
-            {m.metadataFetchedAt?.slice(0, 10)}
-          </time>
-        </p>
-      </InfoNote>
+    (m.supplemented?.length || m.archivalSource) && (
+      <>
+        {!!m.supplemented?.length && (
+          <InfoNote>
+            <p className="muted small">
+              {tr(
+                "Missing archive fields supplemented with current osu! base metadata (no mods): {fields}.",
+                {
+                  fields: m.supplemented
+                    .map((field) => fieldLabels[field])
+                    .join(", "),
+                },
+              )}{" "}
+              <a href={m.metadataSource} target="_blank" rel="noreferrer">
+                {tr("Source")}
+              </a>{" "}
+              <time dateTime={m.metadataFetchedAt}>
+                {m.metadataFetchedAt?.slice(0, 10)}
+              </time>
+            </p>
+          </InfoNote>
+        )}
+        {m.archivalSource && (
+          <InfoNote>
+            <p className="muted small">
+              {tr("Historical source")}:{" "}
+              {m.archivalSupplemented
+                ?.map((field) => fieldLabels[field])
+                .join(", ")}{" "}
+              <a href={m.archivalSource} target="_blank" rel="noreferrer">
+                {tr("Source")}
+              </a>
+            </p>
+          </InfoNote>
+        )}
+      </>
     );
   const stats = (m: MapEntry) => (
     <>
@@ -357,6 +382,7 @@ export function ArchiveMappools({
                     originalBeatmapId={m.originalId}
                     originalSetId={originalSetId}
                     beatmapMissing={beatmapMissing}
+                    preferOriginal={m.preferOriginal}
                     stars={m.stars}
                     bpm={m.bpm}
                     durationSeconds={m.drainSeconds}
@@ -423,6 +449,7 @@ export function ArchiveMappools({
                       originalBeatmapId={m.originalId}
                       originalSetId={originalSetId}
                       beatmapMissing={beatmapMissing}
+                      preferOriginal={m.preferOriginal}
                       name={m.slot}
                     />
                   </div>

@@ -1,0 +1,28 @@
+{
+  "s5": [
+    {
+      "poolId": "pool-2",
+      "slot": "DT2",
+      "beatmapId": 2567502,
+      "originalId": 2933979,
+      "source": "https://github.com/OCLR-dev/OCLR-website/blob/a67eef6640c661cbb69c54f0d0c192d8f26dcc03/docs/s5-import-checkpoint.md",
+      "attributes": {}
+    },
+    {
+      "poolId": "pool-2",
+      "slot": "DT4",
+      "beatmapId": 2720295,
+      "originalId": 2678913,
+      "source": "https://github.com/OCLR-dev/OCLR-website/blob/a67eef6640c661cbb69c54f0d0c192d8f26dcc03/docs/s5-import-checkpoint.md",
+      "attributes": {
+        "mapper": "Gaia",
+        "stars": 6.27,
+        "bpm": 210,
+        "drainSeconds": 111,
+        "cs": 4,
+        "ar": 8.5,
+        "od": 8
+      }
+    }
+  ]
+}

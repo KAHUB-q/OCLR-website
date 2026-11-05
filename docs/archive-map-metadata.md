@@ -42,6 +42,7 @@ committing. Public page rendering never performs this capture or writes data.
 New Chinese source-disclosure wording still requires organizer review.
 
 ## Capture coverage — 2026-10-26
+
 The official snapshot resolves 199 of 202 distinct BIDs (221 of 224 pool slots).
 S4: 76/76 slots; S5: 75/77; S6: 70/71. All other pending lookups are complete.
 `unavailable` lists the captured BIDs whose page returns HTTP 404, so the two S5
@@ -51,11 +52,11 @@ Three official beatmap pages returned HTTP 404. Their surviving source values
 remain visible, and missing fields stay unknown unless the import package records
 a surviving original map:
 
-| Season / pool / slot | BID | Missing fields |
-| --- | --- | --- |
-| s5 / 二轮赛图数据 / DT4 | [2720295](https://osu.ppy.sh/beatmaps/2720295) | mapper, stars, bpm, drainSeconds, cs, ar, od |
-| s5 / Final 图池 / NM4 | [2756449](https://osu.ppy.sh/beatmaps/2756449) | cs, ar, od |
-| s6 / 队长资格赛赛图 / NM3 | [2314568](https://osu.ppy.sh/beatmaps/2314568) | cs, ar, od |
+| Season / pool / slot      | BID                                            | Missing fields                               |
+| ------------------------- | ---------------------------------------------- | -------------------------------------------- |
+| s5 / 二轮赛图数据 / DT4   | [2720295](https://osu.ppy.sh/beatmaps/2720295) | mapper, stars, bpm, drainSeconds, cs, ar, od |
+| s5 / Final 图池 / NM4     | [2756449](https://osu.ppy.sh/beatmaps/2756449) | cs, ar, od                                   |
+| s6 / 队长资格赛赛图 / NM3 | [2314568](https://osu.ppy.sh/beatmaps/2314568) | cs, ar, od                                   |
 
 Both S5 rows already carry that provenance in the S5 import package:
 `docs/imports/s5-archive.json` records `originalId` 2678913 for DT4 2720295 and
@@ -74,9 +75,34 @@ still available. `python3 scripts/prepare-s5-archive.py` and
 Completing the remaining S6 record requires a surviving original map file or
 other authoritative source; do not substitute another difficulty of the song.
 
-Unlike snapshot enrichment, which ships with the application, the S5 supplement
-lives in the import package: it appears on published pages only after that
-package is imported again, not by deploying the snapshot.
+The original S5 supplement lived only in the import package, so deploying it did
+not repair already-saved archives. #843 adds the display correction below.
+
+## Existing S5 archives and surviving links (#843)
+
+The organizer reconfirmed DT4 → 2678913 and DT2 → 2933979 on 2026-11-05
+(Asia/Taipei). Both official difficulty pages were checked successfully; DT2's
+Ranked difficulty belongs to set 1424727, and DT4's surviving original belongs to
+set 1290517. Their current official metadata is captured in the snapshot for
+cover lookup, separately from the historical edits' statistics.
+
+`src/data/archive-map-supplements.json` is shared by the S5 import builder and
+`archivePoolMetadata`. It matches only S5 / pool-2 / the recorded DT2 or DT4 slot
+and BID. The display fills missing original IDs and DT4's previously confirmed
+edit attributes while preserving all non-null saved values, including zero.
+It keeps historical BIDs 2567502 and 2720295 for identity/copy/statistics; the
+confirmed originals are preferred for web/osu!direct actions in cards, compact
+rows and details even without a provider 404 response. A different explicitly
+saved original ID remains authoritative. Source disclosure distinguishes these
+archival supplements from current no-mod metadata.
+
+The shared public/preview/remote display path uses enriched original IDs for
+artwork lookup and the snapshot's known unavailable IDs without provider access.
+Deploying this reviewed application change repairs older saved archives without
+reimporting or writing their configuration. MP matching, results and raw saved
+read-API responses retain their recorded BIDs. Archive and official snapshot
+generators both retain the shared supplement; Python tests check package parity
+and refresh coverage so regeneration cannot remove these two original IDs.
 
 ## Local verification — 2026-10-26
 

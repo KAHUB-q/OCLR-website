@@ -90,6 +90,10 @@ request; the visual appearance changes only after its stylesheet loads. Failed
 loads retain the previous appearance and restore the previous preference. Route-inherited choices load before applying their
 selector; visitor and edition authorization rules use the existing resolver.
 
+The shared shell hides the S9 fan-art footer attribution by default (#853).
+Only the active `glacier-blue` stylesheet reveals it, so other appearances and
+navigation away from S9 keep it hidden without loading S9 CSS.
+
 The same generator derives the homepage shell class inventory from its actual
 layout/page component tree. Other page styles load with a React stylesheet
 resource when entering those routes. Generated files under

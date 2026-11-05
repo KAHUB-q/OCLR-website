@@ -499,9 +499,6 @@ html[data-appearance="glacier-blue"]
   }
 }
 
-.glacier-attribution {
-  display: none;
-}
 html[data-appearance="glacier-blue"] .themed-site .glacier-attribution {
   display: block;
 }

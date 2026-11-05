@@ -1,4 +1,5 @@
 import { alias } from "drizzle-orm/pg-core";
+import { normalizedArchive, syncArchiveRelations } from "./archive-relations";
 import { editionSchema, normalizeEditionBranding } from "./editions";
 import { supportsArchiveStatistics } from "./archive-statistics-model";
 import { STATISTICS_SCORE_POLICY } from "./statistics-score";
@@ -197,6 +198,8 @@ async function loadData(
 
 /** Internal reader: caller retains the current edition's publication/permission gate. */
 export async function relationalArchive(state: ArchiveState, reader: Reader) {
+  const normalized = await normalizedArchive(state, reader);
+  if (normalized) return normalized;
   const version = await currentVersion(state, reader);
   if (!version) return undefined;
   const data = await loadData(reader, version.id);
@@ -216,6 +219,7 @@ export async function rebuildArchiveReadData(
   slug: string,
   force = false,
 ) {
+  await syncArchiveRelations(tx, slug, force);
   const [state] = await tx
     .select()
     .from(editionState)

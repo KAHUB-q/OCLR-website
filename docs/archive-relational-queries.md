@@ -1,4 +1,4 @@
-# Historical JSONB correction and relational reads (#899, #900, #902)
+# Historical JSONB correction and relational reads (#899, #900, #902, #905)
 
 JSONB remains the authoritative saved evidence. Corrected current data and old
 evidence are different versions: S2 GS never had DT5 or TB1. They must be removed
@@ -85,7 +85,8 @@ manifest hash, score-policy version and EZ multiplier. A matching public
 statistics read verifies archive/configuration identity and these small digests,
 then reads validated public plays without loading draft/published MP JSONB.
 Missing metadata, old generations, changed policy and any source edit use the
-existing JSONB validation path. Source and digest reads share the same database
+existing snapshot validation path, reading complete relations when available or
+preserved JSONB otherwise. Source and digest reads share the same database
 snapshot. Backfill locks source rows while building its generation so a concurrent
 legacy update cannot associate old facts with a newer digest.
 
@@ -105,11 +106,68 @@ array order and missing-versus-null fields remain significant. Existing
 read-model backfill. Each generation identifies the edition revision, full saved
 statistics manifest, projector version and score policy/EZ multiplier.
 
+### Complete relations for every historical season (#905)
+
+Migration `0079_complete_archive_relations.sql` adds 31 typed domain relations
+and immutable document versions with mutable current pointers. This covers every
+field of the historical archive and statistics schemas: teams/identities, picks,
+standings/placements, fixtures and match-review games, maps/difficulty variants,
+season dates, source facts, qualifiers and individual qualifier scores, replacement
+rosters, review tables, MP participants/events/games/scores/provider fields, and
+all saved review decisions. Nested scalar attributes become typed columns;
+repeated objects have child tables and composite foreign keys. Scalar lists use
+native PostgreSQL arrays. Arbitrary provider keys and difficulty values have typed
+key/value rows. These relations introduce no JSONB columns or payload blobs.
+
+`archive_relation_documents` identifies the edition, MP/review kind where
+applicable, codec version and full content hash. Every child belongs to that
+document and its parent row; current pointers also enforce the edition/document
+key scope. Source positions, optional-field presence and explicit null markers
+preserve unknowns, empty lists, real zeroes and source ordering. Document versions
+and their rows reject UPDATE/DELETE. Moving/removing a pointer never removes old
+typed evidence, source JSONB or immutable source history.
+
+The schema and layout are generated from the existing strict Zod schemas:
+
+```sh
+npm run archive:relations:generate
+npm run db:generate -- --name=reviewed_schema_change
+npm run archive:relations:check
+```
+
+The generated [schema](../src/db/archive-relational-schema.ts) and
+[layout](../src/lib/archive-relational-layout.json) are committed. `npm run check`
+detects schema drift; the codec rejects unknown fields instead of silently
+discarding evidence. Reconstruction uses parent indexes in memory, so large MP
+score collections are not repeatedly scanned for each game.
+Increment `ARCHIVE_RELATION_CODEC` when changing interpretation/encoding; older
+documents remain saved and fall back until normalized under the new codec.
+
+Tournament archive saves, roster corrections, S2 correction, statistics
+import/review/publication/withdrawal and operator import tools synchronize typed
+documents in the same source transaction. Only changed documents are encoded;
+an unchanged published snapshot reuses its existing document when a draft changes.
+A typed insert failure rolls back source writes, pointers, revisions and audit
+writes together. This does not publish data, create accounts or change permission
+checks. Raw JSONB remains saved and is still available for verification/rollback.
+
+Readers prefer matching complete relations and retain the existing public
+sanitizers and analysis algorithms. Scoped fixture reads select only that
+fixture's document identities and MP data. A legacy/direct SQL source change
+invalidates the digest association, so incomplete or stale typed data falls back
+to the preserved JSONB. The v2 validated public-score cache remains a faster
+optional layer; a stale cache can be recomputed from complete typed snapshots.
+Remote resource parameters and response schemas remain unchanged.
+
 ### Saved-only backfill and rollout
 
 After applying the migration, first preview/correct S2 as above. Then:
 
 ```sh
+npm run db:normalize-archives -- --dry-run
+npm run db:normalize-archives -- --apply --verify
+npm run db:normalize-archives -- --verify
+# Optional: refresh the validated public-score cache as well.
 npm run db:backfill-archive-reads -- s2 --dry-run
 npm run db:backfill-archive-reads -- s2 --apply
 npm run db:backfill-archive-reads -- --dry-run
@@ -136,14 +194,23 @@ Source-only appendices and raw MP/event/review data are never public just becaus
 a derived generation exists. Remote frontend mode still uses its backend contract
 and performs no local DB access.
 
-A generation is used only when its source identity and projector version match.
-New archive/configuration revisions fall back to JSONB. New drafts, refreshed
-sources, changes to the EZ policy, publication and withdrawal invalidate the score
-manifest; public statistics fall back to the existing validated published-snapshot
-pipeline immediately. Business writes do not synchronously duplicate an entire
-season or wait for backfill. Re-run backfill when an updated stable archive should
-use relational reads again. Core archive rows may still be used when only MP
-statistics changed and the archive itself is unchanged.
+A cache generation is used only when its source identity and projector version
+match. New drafts, refreshed sources, changes to the EZ policy, publication and
+withdrawal invalidate the score cache; the existing validated published-snapshot
+pipeline can read the transactionally synchronized complete relations immediately.
+Business writes do not duplicate an entire season. Re-run the optional score
+backfill when an updated stable archive should use the faster cache again.
+Existing seasons require the complete-relations apply above after migration;
+before that, or after an unsupported legacy write, JSONB remains the fallback.
+
+The normalization command discovers every saved archive, including S1–S3, without
+a season allowlist; it also supports future valid historical editions. Output
+contains counts only: expected/current/stale documents, obsolete pointers, created
+versions and verification row counts. `--verify` compares all saved typed values
+with preserved JSONB in a read-only consistent snapshot and fails for stale or
+incomplete data. A normal apply is idempotent; `--apply --rebuild` creates fresh
+document versions while retaining all previous evidence. Each season commits
+independently. No live-season business JSONB is converted by this historical tool.
 
 For a read-path rollback, set `OCLR_ARCHIVE_READ_MODEL=jsonb` and restart the
 application with that exported environment. This changes only the reader: it does
@@ -161,6 +228,9 @@ cover all eight maintained S4–S10 import files, including both S6 packages.
 The [#902 verification record](verification/issue-902/README.md) also covers
 transactional digest maintenance, a 0077-to-0078 upgrade, scoped SQL and exact
 analysis equivalence against the forced-JSONB reader.
+The [#905 verification record](verification/issue-905/README.md) covers complete
+typed documents, all-season discovery, a populated 0078 upgrade, transactional
+incremental writes and source/relational equality for every saved field.
 
 Actual production correction/backfill, deployment and performance improvement are
 not established by these tests. Current JSONB must be inspected through the

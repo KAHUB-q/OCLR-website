@@ -17,9 +17,108 @@ import { closeDb } from "../../src/db";
 import { importLegacyEditions } from "../../scripts/import-editions";
 import { edition } from "../fixtures/edition";
 import { archiveQueryFixture } from "../fixtures/archive-query";
+import {
+  backfillArchiveRelations,
+  verifyArchiveRelations,
+} from "../../src/lib/archive-relations";
 import bootstrap from "../../drizzle/legacy-editions.json" with { type: "json" };
 import s10Archive from "../../docs/imports/s10-archive.json" with { type: "json" };
 const base = process.env.TEST_DATABASE_URL;
+
+describe.skipIf(!base)("complete historical relations upgrade (#905)", () => {
+  it("upgrades a populated 0078 database without changing JSONB, revisions or existing read generations", async () =>
+    isolated(async (pool, connection) => {
+      const folder = mkdtempSync(
+        join(tmpdir(), "oclr-complete-relations-upgrade-"),
+      );
+      try {
+        cpSync("drizzle", folder, { recursive: true });
+        const path = join(folder, "meta/_journal.json"),
+          journal = JSON.parse(readFileSync(path, "utf8"));
+        journal.entries = journal.entries.filter(
+          (entry: { idx: number }) => entry.idx < 79,
+        );
+        writeFileSync(path, JSON.stringify(journal));
+        await migrate(drizzle(pool), { migrationsFolder: folder });
+        const fixture = archiveQueryFixture(),
+          row = fixture.rows[0];
+        const { slug: _slug, ...configuration } = {
+          ...edition,
+          slug: "s7",
+          status: "completed",
+          registration: null,
+          archive: fixture.archive,
+        };
+        void _slug;
+        await pool.query(
+          "INSERT INTO edition_state(slug,configuration) VALUES ('s7',$1)",
+          [configuration],
+        );
+        await pool.query(
+          "INSERT INTO historical_statistics(edition_slug,mp_id,fixture_id,version,draft,published,published_at) VALUES ('s7',$1,$2,$3,$4,$5,$6)",
+          [
+            row.mpId,
+            row.fixtureId,
+            row.version,
+            row.draft,
+            row.published,
+            row.publishedAt,
+          ],
+        );
+        await pool.query(
+          "INSERT INTO archive_read_versions(edition_slug,configuration_version,archive_hash,source_hash,projector_version,header) VALUES ('s7',1,$1,$1,2,'{}')",
+          ["a".repeat(64)],
+        );
+        const raw = (await pool.query("SELECT * FROM historical_statistics"))
+          .rows;
+        const revisions = (
+          await pool.query("SELECT * FROM historical_statistics_revisions")
+        ).rows;
+        const generations = (
+          await pool.query("SELECT * FROM archive_read_versions")
+        ).rows;
+        await migrate(drizzle(pool), { migrationsFolder: "./drizzle" });
+        await migrate(drizzle(pool), { migrationsFolder: "./drizzle" });
+        expect(
+          (await pool.query("SELECT * FROM historical_statistics")).rows,
+        ).toEqual(raw);
+        expect(
+          (await pool.query("SELECT * FROM historical_statistics_revisions"))
+            .rows,
+        ).toEqual(revisions);
+        expect(
+          (await pool.query("SELECT * FROM archive_read_versions")).rows,
+        ).toEqual(generations);
+        vi.stubEnv("DATABASE_URL", connection);
+        expect(await backfillArchiveRelations("s7")).toMatchObject({
+          created: 0,
+          stale: 3,
+        });
+        expect(await backfillArchiveRelations("s7", true)).toMatchObject({
+          created: 3,
+          stale: 0,
+        });
+        expect(
+          await verifyArchiveRelations(
+            (await import("../../src/db")).db(),
+            "s7",
+          ),
+        ).toMatchObject({ documents: 3 });
+        expect(
+          (await pool.query("SELECT * FROM historical_statistics")).rows,
+        ).toEqual(raw);
+        expect(
+          (await pool.query("SELECT * FROM historical_statistics_revisions"))
+            .rows,
+        ).toEqual(revisions);
+        expect(
+          (await pool.query("SELECT * FROM archive_read_versions")).rows,
+        ).toEqual(generations);
+      } finally {
+        rmSync(folder, { recursive: true, force: true });
+      }
+    }));
+});
 
 describe.skipIf(!base)("historical source manifests upgrade (#902)", () => {
   it("preserves JSONB and prior generations, with transactional digests and retained deletion history", async () =>

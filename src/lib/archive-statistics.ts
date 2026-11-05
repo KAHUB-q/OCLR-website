@@ -3,6 +3,10 @@ import {
   archiveStatisticsSummary,
 } from "./archive-statistics-projection";
 import {
+  normalizedStatistics,
+  syncArchiveRelations,
+} from "./archive-relations";
+import {
   relationalStatistics,
   relationalPublicPlays,
   relationalPublicStatistics,
@@ -118,15 +122,17 @@ async function stored(
   relational = false,
   fixtureId?: string,
 ) {
-  const rows = await reader
-    .select()
-    .from(historicalStatistics)
-    .where(
-      and(
-        where(slug),
-        fixtureId ? eq(historicalStatistics.fixtureId, fixtureId) : undefined,
-      ),
-    );
+  const rows =
+    (await normalizedStatistics(slug, reader, fixtureId)) ??
+    (await reader
+      .select()
+      .from(historicalStatistics)
+      .where(
+        and(
+          where(slug),
+          fixtureId ? eq(historicalStatistics.fixtureId, fixtureId) : undefined,
+        ),
+      ));
   const values = relational
     ? await relationalStatistics(slug, rows, reader)
     : rows;
@@ -681,6 +687,7 @@ export async function statisticsCommand(
           : { versions: c.expectedVersions }),
       },
     });
+    await syncArchiveRelations(tx, slug);
   });
   return statisticsWorkspace(actor, slug, fixture.id);
 }

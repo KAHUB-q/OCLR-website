@@ -54,7 +54,8 @@ import type { MatchSource } from "../src/lib/match-model";
 import type { HistoricalArchive } from "../src/lib/historical-archive";
 import { HttpError } from "../src/lib/http";
 import { db, closeDb } from "../src/db";
-import { editionEvents, historicalStatistics } from "../src/db/schema";
+import { editionEvents, historicalStatistics, editionState } from "../src/db/schema";
+import { syncArchiveRelations } from "../src/lib/archive-relations";
 import { readTournament } from "../src/lib/tournaments";
 
 type Options = {
@@ -468,6 +469,11 @@ async function backfillEdition(slug: string, options: Options) {
     if (options.dryRun) continue;
 
     await db().transaction(async (tx) => {
+      await tx
+        .select({ slug: editionState.slug })
+        .from(editionState)
+        .where(eq(editionState.slug, slug))
+        .for("update");
       for (const { mpId, draft } of prepared) {
         const existing = rows.find((row) => row.mpId === mpId);
         if (existing)
@@ -494,6 +500,7 @@ async function backfillEdition(slug: string, options: Options) {
             draft,
           });
       }
+      await syncArchiveRelations(tx, slug);
     });
     rows = await rowsFor(slug);
     if (!options.publish) continue;
@@ -536,6 +543,11 @@ async function backfillEdition(slug: string, options: Options) {
     }
     const rules = prepared.map((p) => p.rule).filter(Boolean);
     await db().transaction(async (tx) => {
+      await tx
+        .select({ slug: editionState.slug })
+        .from(editionState)
+        .where(eq(editionState.slug, slug))
+        .for("update");
       for (const row of relevant)
         await tx
           .update(historicalStatistics)
@@ -561,6 +573,7 @@ async function backfillEdition(slug: string, options: Options) {
           ...(rules.some((r) => r !== "reviewed") ? { rules } : {}),
         },
       });
+      await syncArchiveRelations(tx, slug);
     });
     published++;
     rows = await rowsFor(slug);

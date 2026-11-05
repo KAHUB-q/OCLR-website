@@ -11,6 +11,8 @@ import {
 } from "@/lib/mappool-model";
 import { BeatmapCover } from "./beatmap-cover";
 import { BeatmapActions } from "./beatmap-actions";
+import type { DifficultyDisplay } from "@/lib/difficulty-display";
+import { DifficultyStatus } from "./difficulty-display";
 
 type Pool = Awaited<ReturnType<typeof publicMappools>>[number];
 const columns = [
@@ -25,21 +27,25 @@ function MappoolRow({
   entry: e,
   fmMode,
   onSelect,
+  display,
 }: {
   entry: Pool["entries"][number];
   fmMode: Pool["fmMode"];
   onSelect?: (id: string) => void;
+  display?: DifficultyDisplay;
 }) {
   const tr = useAppTranslations();
 
-  const m = e.metadata;
+  const m = display ? { ...e.metadata, ...display.values } : e.metadata;
   const url = `https://osu.ppy.sh/beatmaps/${e.beatmapId}`;
   const fields = [
     <span className="mappool-base-sr" key="base">
       {formatBeatmapNumber(m.stars, 2)}
       <span aria-hidden="true"> ★</span>
     </span>,
-    m.attributes ? (
+    display ? (
+      <DifficultyStatus key="mods" display={display} />
+    ) : m.attributes ? (
       <details className="mappool-mod-attributes" key="mods">
         <summary>
           {formatBeatmapNumber(m.attributes.stars, 2)}
@@ -137,16 +143,18 @@ function MappoolRow({
         <details className="mappool-mobile-details">
           <summary>
             <span>
-              {formatBeatmapNumber(m.stars, 2)} {tr(" ★ base ·")}{" "}
-              {formatBeatmapNumber(m.bpm)} {tr(" BPM ·")}{" "}
-              {formatBeatmapDuration(m.duration)}
+              {formatBeatmapNumber(m.stars, 2)}{" "}
+              {display ? " ★ · " : tr(" ★ base ·")} {formatBeatmapNumber(m.bpm)}{" "}
+              {tr(" BPM ·")} {formatBeatmapDuration(m.duration)}
             </span>
             <span className="text-link">{tr("Details")}</span>
           </summary>
           <dl>
             {fields.map((value, i) => (
               <div key={columns[i]}>
-                <dt>{tr(columns[i])}</dt>
+                <dt>
+                  {tr(display && columns[i] === "Base SR" ? "SR" : columns[i])}
+                </dt>
                 <dd>{value}</dd>
               </div>
             ))}
@@ -174,11 +182,13 @@ export function MappoolView({
   headingLevel = 2,
   onSelect,
   showCategoryLinks = true,
+  getDifficulty,
 }: {
   pool: Pool;
   headingLevel?: 2 | 4 | 5;
   onSelect?: (id: string) => void;
   showCategoryLinks?: boolean;
+  getDifficulty?: (entry: Pool["entries"][number]) => DifficultyDisplay;
 }) {
   const tr = useAppTranslations();
 
@@ -277,7 +287,9 @@ export function MappoolView({
                     <th scope="col">{tr("Beatmap / Difficulty")}</th>
                     {columns.map((label) => (
                       <th className="mappool-extra" scope="col" key={label}>
-                        {tr(label)}
+                        {tr(
+                          getDifficulty && label === "Base SR" ? "SR" : label,
+                        )}
                       </th>
                     ))}
                     <th scope="col" className="mappool-actions-cell">
@@ -292,6 +304,7 @@ export function MappoolView({
                       entry={entry}
                       fmMode={pool.fmMode}
                       onSelect={onSelect}
+                      display={getDifficulty?.(entry)}
                     />
                   ))}
                 </tbody>

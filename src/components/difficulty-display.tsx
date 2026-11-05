@@ -1,0 +1,175 @@
+"use client";
+import { useAppTranslations } from "@/i18n/shared";
+import type {
+  DifficultyChoice,
+  DifficultyDisplay,
+} from "@/lib/difficulty-display";
+import {
+  formatBeatmapDuration,
+  formatBeatmapNumber,
+} from "@/lib/mappool-model";
+import styles from "./difficulty-display.module.css";
+
+export function DifficultyControls({
+  choice,
+  onChange,
+  hasFM,
+}: {
+  choice: DifficultyChoice;
+  onChange: (choice: DifficultyChoice) => void;
+  hasFM: boolean;
+}) {
+  const tr = useAppTranslations();
+  return (
+    <div className={styles.controls}>
+      <div
+        className="event-pills"
+        role="group"
+        aria-label={tr("Difficulty values")}
+      >
+        <button
+          type="button"
+          className="secondary"
+          aria-pressed={!choice.adjusted}
+          data-difficulty-mode="base"
+          onClick={() => onChange({ ...choice, adjusted: false })}
+        >
+          {tr("Base values")}
+        </button>
+        <button
+          type="button"
+          className="secondary"
+          aria-pressed={choice.adjusted}
+          data-difficulty-mode="adjusted"
+          onClick={() => onChange({ ...choice, adjusted: true })}
+        >
+          {tr("Mod-adjusted values")}
+        </button>
+      </div>
+      {hasFM && (
+        <label className="field">
+          {tr("FM preview")}
+          <select
+            value={choice.fm}
+            onChange={(e) =>
+              onChange({
+                adjusted: true,
+                fm: e.target.value as DifficultyChoice["fm"],
+              })
+            }
+          >
+            <option value="">{tr("Not selected")}</option>
+            {["HD", "HR", "EZ"].map((mod) => (
+              <option key={mod} value={mod}>
+                {mod}
+              </option>
+            ))}
+          </select>
+        </label>
+      )}
+      {choice.adjusted && (
+        <p className="muted small">
+          {tr(
+            "Difficulty preview only. Follow the published tournament mod rules.",
+          )}
+        </p>
+      )}
+    </div>
+  );
+}
+export function DifficultyStatus({
+  display: d,
+}: {
+  display: DifficultyDisplay;
+}) {
+  const tr = useAppTranslations();
+  return (
+    <span className="map-difficulty-status muted small" role="status">
+      {d.status === "base"
+        ? tr("Base values")
+        : d.status === "recorded"
+          ? tr("Recorded historical values")
+          : d.status === "adjusted"
+            ? tr("Official Mod SR")
+            : d.status === "variable"
+              ? tr("Variable")
+              : tr("Not calculated")}
+      {d.configuration && d.status !== "base" && d.status !== "recorded"
+        ? ` · ${d.configuration} · ${d.rate}×`
+        : ""}
+    </span>
+  );
+}
+export function DifficultyReadout({
+  display: d,
+}: {
+  display: DifficultyDisplay;
+}) {
+  const tr = useAppTranslations();
+  const v = d.values;
+  return (
+    <>
+      <DifficultyStatus display={d} />
+      <dl className="map-detail-grid">
+        {[
+          [tr("SR"), `${formatBeatmapNumber(v.stars, 2)} ★`],
+          [tr("BPM"), formatBeatmapNumber(v.bpm)],
+          [tr("Length"), formatBeatmapDuration(v.duration)],
+          [
+            tr("AR / OD / CS / HP"),
+            [v.ar, v.od, v.cs, v.hp]
+              .map((n) => formatBeatmapNumber(n))
+              .join(" / "),
+          ],
+        ].map(([label, value]) => (
+          <div key={label}>
+            <dt>{label}</dt>
+            <dd>{value}</dd>
+          </div>
+        ))}
+      </dl>
+      {d.status === "adjusted" && (
+        <p className="muted small">
+          {tr(
+            "AR and OD include clock-rate timing; CS and HP are difficulty settings.",
+          )}
+        </p>
+      )}
+      {d.attributes && (
+        <dl className="map-detail-grid">
+          <div>
+            <dt>{tr("Max combo")}</dt>
+            <dd>{formatBeatmapNumber(d.attributes.maxCombo)}</dd>
+          </div>
+        </dl>
+      )}
+      {d.attributes && Object.keys(d.attributes.values).length > 0 && (
+        <details>
+          <summary>{tr("Official osu! API")}</summary>
+          <dl className="map-detail-grid">
+            {Object.entries(d.attributes.values).map(([label, value]) => (
+              <div key={label}>
+                <dt>{label.replaceAll("_", " ")}</dt>
+                <dd>{formatBeatmapNumber(value)}</dd>
+              </div>
+            ))}
+          </dl>
+        </details>
+      )}
+      {d.fetchedAt && (
+        <p className="muted small">
+          {tr("Official osu! API")}
+          {" · "}
+          {d.ruleset}
+          {" · "}
+          <time dateTime={d.fetchedAt}>
+            {new Date(d.fetchedAt).toISOString().replace("T", " ").slice(0, 19)}{" "}
+            UTC
+          </time>
+          {" · "}
+          {tr("Current calculation, not a historical difficulty snapshot.")}
+        </p>
+      )}
+    </>
+  );
+}

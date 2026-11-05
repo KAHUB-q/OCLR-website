@@ -84,6 +84,7 @@ export type BeatmapMetadata = {
   cs?: number | null;
   hp?: number | null;
   attributes?: BeatmapAttributes;
+  difficultySnapshot?: DifficultySnapshot;
 };
 export type BeatmapSnapshot = {
   beatmapId: number;
@@ -255,4 +256,23 @@ export type BeatmapAttributes = {
   maxCombo: number | null;
   values: Record<string, number>;
   fetchedAt: string;
+};
+
+export type DifficultyValues = {
+  stars: number | null;
+  bpm: number | null;
+  duration: number | null;
+  ar: number | null;
+  od: number | null;
+  cs: number | null;
+  hp: number | null;
+};
+/** Reviewed/current official base and complete mod combinations, never archive numbers. */
+export type DifficultySnapshot = {
+  beatmapId: number;
+  ruleset: NonNullable<BeatmapMetadata["mode"]>;
+  checksum: string | null;
+  fetchedAt: string;
+  base: DifficultyValues;
+  variants: Partial<Record<DifficultyConfiguration, BeatmapAttributes>>;
 };

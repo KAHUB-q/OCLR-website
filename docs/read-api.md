@@ -245,6 +245,13 @@ against the same exhausted counters and verifies HTTP 429, `RATE_LIMITED` and
 
 ## Generating and checking contracts
 
+Contract 1.21.0 adds optional `difficultySnapshot` data to public native mappool
+metadata and historical archive maps. It contains validated official base values,
+ruleset/checksum/fetch time and exact per-Mod attributes. These are saved numeric
+snapshots composed by the backend, with no provider request or tournament write
+on the read path. Older responses may omit them; clients must show unavailable
+adjusted values rather than estimate SR. See [difficulty preparation](mappools.md#public-difficulty-preview-851).
+
 Three files are generated from source and checked in:
 
 | Generated file                         | Generator                                |

@@ -25,6 +25,7 @@ import { getEdition, getPublicEdition } from "./content";
 import { remoteMode } from "./data-source";
 import { assertRemoteSubject, frontendResource } from "./frontend-resource";
 import { HttpError } from "./http";
+import { catalogDifficulty } from "./difficulty-catalog";
 import {
   categories,
   difficultyConfigurations,
@@ -38,6 +39,7 @@ import {
   fetchBeatmap,
   fetchBeatmaps,
   withBeatmapAttributes,
+  refreshDifficultyPreviews,
 } from "./osu-beatmaps";
 const confirmation = {
   confirmed: z.literal(true),
@@ -562,8 +564,9 @@ export async function mappoolCommand(
     for (const entry of refreshEntries)
       refreshedEntries.set(
         entry.id,
-        await withBeatmapAttributes(
+        await refreshDifficultyPreviews(
           batchMetadata.get(entry.beatmapId)!,
+          entry.category,
           entry.metadata.attributes?.configuration ?? null,
         ),
       );
@@ -626,12 +629,19 @@ export async function mappoolCommand(
         429,
         "Wait at least one minute between metadata refreshes.",
       );
-    const snapshot = await withBeatmapAttributes(
-      await fetchBeatmap(beatmapId),
-      c.action === "entry_save"
-        ? c.difficultyConfiguration
-        : (entry?.metadata.attributes?.configuration ?? null),
-    );
+    const snapshot =
+      c.action === "entry_refresh"
+        ? await refreshDifficultyPreviews(
+            await fetchBeatmap(beatmapId),
+            entry!.category,
+            entry?.metadata.attributes?.configuration ?? null,
+          )
+        : await withBeatmapAttributes(
+            await fetchBeatmap(beatmapId),
+            c.action === "entry_save"
+              ? c.difficultyConfiguration
+              : (entry?.metadata.attributes?.configuration ?? null),
+          );
     if (
       c.action === "entry_save" &&
       c.expectedMetadataFingerprint &&
@@ -1285,11 +1295,23 @@ export async function publicMappools(
   slug: string,
   poolId?: string,
 ): Promise<Awaited<ReturnType<typeof databasePublicMappools>>> {
-  if (remoteMode()) {
-    return frontendResource<Awaited<ReturnType<typeof databasePublicMappools>>>(
-      "publicMappools",
-      { slug, poolId },
-    );
-  }
-  return databasePublicMappools(slug, poolId);
+  const pools = remoteMode()
+    ? await frontendResource<
+        Awaited<ReturnType<typeof databasePublicMappools>>
+      >("publicMappools", { slug, poolId })
+    : await databasePublicMappools(slug, poolId);
+  return pools.map((pool) => ({
+    ...pool,
+    entries: pool.entries.map((entry) => {
+      const snapshot =
+        entry.metadata.difficultySnapshot ??
+        catalogDifficulty(entry.beatmapId, entry.metadata.checksum);
+      return snapshot
+        ? {
+            ...entry,
+            metadata: { ...entry.metadata, difficultySnapshot: snapshot },
+          }
+        : entry;
+    }),
+  }));
 }

@@ -136,4 +136,27 @@ describe("explicit official difficulty attributes", () => {
     expect(first.metadata.attributes?.stars).toBe(6.75);
     expect(api).toHaveBeenCalledTimes(3);
   });
+  it("prepares independent FM variants only during explicit refresh and preserves input on failure", async () => {
+    const { fetchBeatmap, refreshDifficultyPreviews, api } = await setup();
+    const original = await fetchBeatmap(123);
+    const result = await refreshDifficultyPreviews(original, "FM", null);
+    expect(Object.keys(result.metadata.difficultySnapshot!.variants)).toEqual([
+      "HD",
+      "HR",
+      "EZ",
+    ]);
+    expect(
+      api.mock.calls
+        .filter(([path]) => path.endsWith("/attributes"))
+        .map(([, body]) => body?.mods),
+    ).toEqual([["HD"], ["HR"], ["EZ"]]);
+    expect(original.metadata.difficultySnapshot).toBeUndefined();
+    const newer = { ...original, fingerprint: "different-map-version" };
+    api.mockRejectedValueOnce(new Error("synthetic provider failure"));
+    await expect(refreshDifficultyPreviews(newer, "FM", null)).rejects.toThrow(
+      "synthetic provider failure",
+    );
+    expect(newer.metadata.difficultySnapshot).toBeUndefined();
+    expect(result.metadata.difficultySnapshot?.variants.HR?.stars).toBe(6.75);
+  });
 });

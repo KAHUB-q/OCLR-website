@@ -196,6 +196,93 @@ describe.skipIf(!url)("edition mappool integrity and publication", () => {
       previewBeatmap(mapper, edition.slug, { beatmap: "123" }),
     ).rejects.toMatchObject({ status: 403 });
   });
+  it("saves complete FM preview variants through authorized refresh and serves them without provider calls", async () => {
+    const pool = await create();
+    let data = await mappoolCommand(mapper, edition.slug, {
+      ...confirm,
+      action: "pool_settings",
+      poolId: pool.id,
+      expectedVersion: 0,
+      name: pool.name,
+      fmMode: "force_mod",
+      fmRestrictions: "Synthetic HR-only competition policy",
+    });
+    data = await mappoolCommand(
+      mapper,
+      edition.slug,
+      add(pool.id, data.pools[0].version, 1, "FM", "85175"),
+    );
+    const entry = data.entries[0];
+    vi.mocked(fetchBeatmap).mockResolvedValue({
+      beatmapId: 85175,
+      metadata: { ...metadata, mode: "osu", ar: 9, od: 8, cs: 4, hp: 6 },
+      fetchedAt: "2026-01-01T00:00:00.000Z",
+      fingerprint: "851".repeat(21),
+    });
+    vi.mocked(osuApi)
+      .mockReset()
+      .mockResolvedValue({
+        attributes: { star_rating: 6.123, max_combo: 1000 },
+      });
+    data = await mappoolCommand(mapper, edition.slug, {
+      ...confirm,
+      action: "entry_refresh",
+      poolId: pool.id,
+      expectedVersion: data.pools[0].version,
+      entryId: entry.id,
+    });
+    const saved = data.entries[0].metadata;
+    expect(Object.keys(saved.difficultySnapshot!.variants).sort()).toEqual([
+      "EZ",
+      "HD",
+      "HR",
+    ]);
+    expect(saved).toMatchObject({
+      stars: 4.5,
+      bpm: 180,
+      difficultySnapshot: { beatmapId: 85175, base: { stars: 4.5, hp: 6 } },
+    });
+    expect(osuApi).toHaveBeenCalledTimes(3);
+    data = await mappoolCommand(mapper, edition.slug, {
+      ...confirm,
+      action: "pool_publish",
+      poolId: pool.id,
+      expectedVersion: data.pools[0].version,
+      published: true,
+    });
+    vi.mocked(osuApi).mockClear();
+    vi.mocked(fetchBeatmap).mockClear();
+    const events = await auditEvents();
+    expect(
+      (await publicMappools(edition.slug, pool.id))[0].entries[0].metadata,
+    ).toEqual(saved);
+    expect(osuApi).not.toHaveBeenCalled();
+    expect(fetchBeatmap).not.toHaveBeenCalled();
+    expect(await auditEvents()).toEqual(events);
+    // A later failed refresh keeps the whole prior snapshot, revision and audit.
+    vi.mocked(fetchBeatmap).mockResolvedValue({
+      beatmapId: 85175,
+      metadata: { ...metadata, mode: "osu" },
+      fetchedAt: "2026-01-01T00:00:00.000Z",
+      fingerprint: "new-851-fingerprint",
+    });
+    vi.mocked(osuApi).mockRejectedValue(
+      new HttpError(502, "Synthetic provider failure"),
+    );
+    await expect(
+      mappoolCommand(mapper, edition.slug, {
+        ...confirm,
+        action: "entry_refresh",
+        poolId: pool.id,
+        expectedVersion: data.pools[0].version,
+        entryId: entry.id,
+      }),
+    ).rejects.toMatchObject({ status: 502 });
+    const after = await mappoolWorkspace(mapper, edition.slug);
+    expect(after.entries[0].metadata).toEqual(saved);
+    expect(after.pools[0].version).toBe(data.pools[0].version);
+    expect(await auditEvents()).toEqual(events);
+  });
   it("verifies metadata on Save and refuses a changed preview or browser-supplied metadata", async () => {
     const pool = await create();
     await expect(

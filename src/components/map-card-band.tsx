@@ -40,6 +40,7 @@ export function MapCardBand({
   cs,
   ar,
   od,
+  hp,
   mode,
   headingLevel = 3,
   openLabel,
@@ -76,6 +77,7 @@ export function MapCardBand({
   cs?: number | null;
   ar?: number | null;
   od?: number | null;
+  hp?: number | null;
   mode?: keyof typeof beatmapModeNames;
   headingLevel?: 2 | 3 | 4 | 5;
   openLabel: string;
@@ -216,6 +218,11 @@ export function MapCardBand({
       <span>
         {tr("OD")} {formatBeatmapNumber(od, 1)}
       </span>
+      {hp !== undefined && (
+        <span>
+          {tr("HP")} {formatBeatmapNumber(hp, 1)}
+        </span>
+      )}
       {chips}
     </>
   );

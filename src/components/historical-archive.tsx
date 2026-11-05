@@ -7,6 +7,7 @@ import {
 import { supportsArchiveStatistics } from "@/lib/archive-statistics-model";
 import { getAppTranslations } from "@/i18n/server";
 import { archivePoolMetadata } from "@/lib/archive-map-metadata";
+import { catalogDifficulty } from "@/lib/difficulty-catalog";
 import { archiveArtworkLookup } from "@/lib/archive-artwork";
 import { archiveBracket } from "@/lib/archive-bracket";
 import { archiveEventMatches } from "@/lib/archive-event-matches";
@@ -774,7 +775,14 @@ export async function HistoricalArchiveView({
       pool && display ? (
         <ArchiveMappools
           key={pool.id}
-          pool={display.pool}
+          pool={{
+            ...display.pool,
+            maps: display.pool.maps.map((m) => ({
+              ...m,
+              difficultySnapshot:
+                m.difficultySnapshot ?? catalogDifficulty(m.beatmapId),
+            })),
+          }}
           artworkSetIds={{ ...artwork?.setIds, ...display.setIds }}
           missingBeatmapIds={[
             ...display.missingBeatmapIds,

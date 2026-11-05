@@ -66,6 +66,88 @@ See [historical metadata supplements](archive-map-metadata.md) for the #335 root
 cause, official snapshot provenance, field precedence and current/base-value
 disclosure. This read-only display enrichment does not rewrite archive imports.
 
+## Public difficulty preview (#851)
+
+Published native pools and historical pools share Base values / Mod-adjusted
+values controls. Cards, compact tables, sorting and map details use the same
+selection. HD, HR and DT slots default to their named Mod when no explicit
+calculation combination is saved; a saved complete combination takes precedence.
+NM stays at base values. Unknown TB/ACE configurations remain variable. FM offers
+**HD, HR or EZ, one at a time**, with no DT option. This display choice is
+independent of the pool's Free Mod / Force Mod policy and never changes allowed
+competition Mods, slots or saved pool settings. Missing calculations show Not
+calculated; changing selection cannot reuse another selection's result.
+
+SR is the literal result of the official
+[Beatmap Attributes API](https://osu.ppy.sh/docs/index.html#get-beatmap-attributes)
+for that BID, ruleset and complete standard Mod combination. There are no SR
+multipliers. BPM and length use the standard clock rate (DT 1.5× / HT 0.75×).
+For osu!standard, HR applies AR/OD/HP ×1.4 and CS ×1.3, capped at 10; EZ halves
+the settings. Speed changes convert AR through preempt timing and OD through the
+great hit window, retaining the official integer rounding. AR/OD are effective
+timing values; CS/HP are difficulty settings. Non-osu! rulesets show no derived
+AR/OD/CS/HP. Sources: [Hard Rock](https://github.com/ppy/osu/blob/master/osu.Game.Rulesets.Osu/Mods/OsuModHardRock.cs),
+[HP](https://github.com/ppy/osu/blob/master/osu.Game/Rulesets/Mods/ModHardRock.cs),
+[Easy](https://github.com/ppy/osu/blob/master/osu.Game/Rulesets/Mods/ModEasy.cs),
+[Easy OD](https://github.com/ppy/osu/blob/master/osu.Game.Rulesets.Osu/Mods/OsuModEasy.cs),
+[AR timing](https://github.com/ppy/osu/blob/master/osu.Game.Rulesets.Osu/Objects/OsuHitObject.cs),
+[OD timing](https://github.com/ppy/osu/blob/master/osu.Game.Rulesets.Osu/Scoring/OsuHitWindows.cs)
+(reviewed 2026-11-05). Custom Mod settings are not represented by the existing
+calculation configuration model and are not inferred.
+
+An explicit authorized staff metadata refresh prepares the slot's preview
+variants through the existing shared cache/rate limiter. FM prepares HD/HR/EZ
+regardless of its competition restrictions. All requested results must succeed
+before the existing versioned, audited pool transaction commits. A failure
+preserves prior metadata, revision and audit. Existing metadata JSONB accepts the
+optional `difficultySnapshot`; no migration is required. Completed-fixture locks
+and read-only Developer/remote restrictions still apply.
+
+Older native pools and historical pools can use an **operator-prepared public
+numeric catalog**, without changing locked pool or imported archive records.
+The checked-in `src/data/difficulty-previews.json` starts empty. Preparing live
+snapshots requires the operator's separately approved osu! application
+configuration; this implementation does not supply credentials or perform live
+backfill. On an approved preparation host, export `OSU_CLIENT_ID` and
+`OSU_CLIENT_SECRET` through its existing secret configuration, then run:
+
+```sh
+node --import tsx scripts/prepare-difficulty-previews.ts --archives --output /absolute/path/difficulty-previews.json
+node --import tsx scripts/prepare-difficulty-previews.ts --ids 75,123 --mods HD,HR,DT,EZ,HDHRDT --output /absolute/path/difficulty-previews.json
+```
+
+The first command gathers BIDs from the reviewed `docs/imports/s*-archive.json`
+files (including `s*-confirmed-archive.json`). The second prepares selected BIDs
+and complete combinations. Each successful BID is written atomically; a failed
+BID retains its previous complete snapshot and timestamp, with a nonzero exit
+status. Retry failed IDs explicitly. Only numeric public metadata is written;
+errors do not print provider responses or credentials. Commands perform no DB or
+tournament writes. The output directory must already exist. Use one preparation
+process per file and respect the official application's aggregate rate limit.
+
+Set `OCLR_DIFFICULTY_CATALOG_FILE` to the absolute output path on the serving
+backend (or omit it to use the reviewed checked-in catalog). Atomic file updates
+are recognized on subsequent reads. Missing, invalid or oversized files/entries
+produce unavailable values, with no provider fallback. Snapshots bind BID,
+ruleset, checksum when known, fetch time and exact Mod configuration. Native maps
+with a known different checksum cannot use the catalog entry.
+
+Historical source values may already include Mods. They are labelled Recorded
+historical values when no verified base snapshot exists, and are never used as
+inputs to another Mod conversion. With a snapshot, the base/adjusted control uses
+the current official base; original source values remain in the details. The
+source, ruleset and UTC fetch time identify the current calculation, which is not
+a reconstruction of the tournament year's difficulty algorithm.
+
+Saved-read contract **1.21.0** carries optional native metadata snapshots and
+historical map snapshots through the existing public resources. The backend
+composes the catalog into `publicEnrollment` / `publicMappools`; the remote
+frontend needs no provider credentials or DB. Older backends and missing variants
+remain readable and show unavailable/recorded values. Public pages, preview
+switches and saved-read API requests never contact osu!, backfill the catalog or
+write business data. Deploying the code alone does not populate live snapshots;
+prepare the catalog or refresh an editable pool before expecting adjusted SR.
+
 ## Private map selection workbench (#572)
 
 Open **Competition → Map selection workbench** at

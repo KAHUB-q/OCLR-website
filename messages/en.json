@@ -3875,6 +3875,16 @@
     "mc21ea9590b3f": "First-place map count",
     "m84b8d63e2636": "Second-place map count",
     "m58f9aee51fa8": "Third-place map count",
-    "m2bf61a3bc850": "times"
+    "m2bf61a3bc850": "times",
+    "m9152b85c45ce": "Recorded historical values",
+    "m9992bb343c99": "Difficulty values",
+    "mc056a01869f9": "Base values",
+    "mb86e490cc695": "Mod-adjusted values",
+    "m87a7858e4819": "FM preview",
+    "mdf12aeba9bb9": "Not selected",
+    "mb4b32c350c0b": "Difficulty preview only. Follow the published tournament mod rules.",
+    "mf84d00a44dab": "AR / OD / CS / HP",
+    "m7b3da353e8cb": "AR and OD include clock-rate timing; CS and HP are difficulty settings.",
+    "m87c588c29211": "Current calculation, not a historical difficulty snapshot."
   }
 }

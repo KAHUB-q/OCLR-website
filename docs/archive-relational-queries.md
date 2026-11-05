@@ -7,6 +7,39 @@ DT5/TB1 and every other season/pool are unaffected. The captured public inventor
 in `docs/imports/early-season-mappools.json` remains evidence of the old save.
 New Admin archive imports correct those two slots at the write boundary.
 
+## Operator shell and diagnostics
+
+On the managed Rocky host, systemd loads `/etc/oclr/runtime.env` for the service.
+An interactive root shell does not inherit that service configuration. The npm
+operator commands load ordinary Next.js environment files, and do not load the
+external systemd EnvironmentFile automatically. Open the application-user shell
+and export the existing configuration before running the commands below:
+
+```sh
+sudo -u oclr -H bash
+cd /opt/oclr/current
+set -a
+. /etc/oclr/runtime.env
+set +a
+export NODE_ENV=production
+npm run db:normalize-archives -- --dry-run
+```
+
+Keep that shell open for subsequent S2/backfill operations; after `exit`, repeat
+the environment setup before another command. Do not source the runtime file as
+root, print it, or paste connection URLs into arguments/chat. The setup above
+does not change the environment file, migrate a database, restart a service or
+apply data changes. Use the normal deployment workflow for missing migrations.
+
+Normalization errors include a safe diagnostic code, phase and validated season
+where available. `DATABASE_URL_MISSING` requires the shell setup above;
+`42P01`/`42703` indicates missing schema, `42501` indicates database privileges,
+and `28P01` indicates authentication. Network failures have an allowlisted code
+such as `ECONNREFUSED`. `DATA_VALIDATION` identifies saved-source validation;
+review that season privately. Error messages never include driver SQL, parameters,
+source values or connection strings. The process exits nonzero and does not
+continue to later seasons; earlier season transactions may already have committed.
+
 ## S2 operator correction
 
 Use the reviewed release and an explicitly configured operator database. This is

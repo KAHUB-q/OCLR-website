@@ -58,8 +58,7 @@ withdrawal/deletion, even between read-model backfills. Revision rows reject
 UPDATE/DELETE. A content hash deduplicates identical records without losing
 same-version corrections. This does not grant any new authority to publish.
 
-The migration It creates a version
-manifest plus typed relations for teams, people/participation, draft picks,
+The migration creates a version manifest plus typed relations for teams, people/participation, draft picks,
 fixtures/rounds, fixture MP links, pools/maps, standings/final placements,
 draft/published MP snapshots, games, individual source scores, review decisions
 and validated public score facts. UID, team, phase, slot, map, scores, accuracy,

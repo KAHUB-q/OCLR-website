@@ -48,6 +48,22 @@ pre/post-backfill read/analysis equality. No application rule was weakened to
 make a fixture pass. The failed combined run is not represented as a full pass;
 the complete suite was not repeated after the test-fixture-only adjustment.
 
+## PR #901 compatibility follow-up
+
+The PR adds database regressions for multi-MP fixture publication and changing
+the EZ multiplier. They compare the same tournament, private workspace, public
+statistics, player/history, competition and map-performance outputs against the
+JSONB reader. A partial MP release hides the whole fixture before and after
+backfill; explicit re-publication restores the same selected scores. A multiplier
+change invalidates old derived facts without changing raw MP JSONB, then a new
+generation matches the JSONB analysis exactly.
+
+The five directly affected files passed 33 tests (4.23 seconds); after making the
+two synthetic MP fingerprints distinct, all six relational-read integration tests
+passed again (1.92 seconds). `npm run check` passed for the expanded tests. The
+initial PR CI build passed; final commit-specific verify/build results are tracked
+on PR #901 and #899/#900, separately from local results above.
+
 ## Remaining operational evidence
 
 Actual production S2 JSONB correction and relational backfill remain to be run on

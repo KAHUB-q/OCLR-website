@@ -7,7 +7,7 @@ import {
   expect,
   vi,
 } from "vitest";
-import { sql } from "drizzle-orm";
+import { eq, sql } from "drizzle-orm";
 import { db, closeDb } from "../../src/db";
 import {
   archiveReadVersions,
@@ -238,5 +238,111 @@ describe.skipIf(!url)("versioned historical relational reads", () => {
     });
     expect(await db().select().from(archiveReadVersions)).toHaveLength(2);
     expect(await publicArchiveStatistics("s7")).toEqual(before);
+  });
+  it("withholds an entire multi-MP fixture until every source is released, then matches JSONB analysis", async () => {
+    const archive = structuredClone(savedArchive);
+    archive.matches[0].mpUrls.push(
+      "https://osu.ppy.sh/community/matches/999178",
+    );
+    const [state] = await db().select().from(editionState);
+    await db()
+      .update(editionState)
+      .set({ configuration: { ...state.configuration!, archive } });
+    for (const [mpId, gameId] of [
+      [999177, 1],
+      [999178, 2],
+    ]) {
+      const source = statisticsSource();
+      source.match.id = mpId;
+      source.fingerprint = (mpId === 999177 ? "a" : "b").repeat(64);
+      source.games = source.games.filter((g) => g.id === gameId);
+      const snapshot = {
+        archiveKey: statisticsArchiveKey(archive),
+        source,
+        poolId: "final",
+        included: [gameId],
+      };
+      await db()
+        .insert(historicalStatistics)
+        .values({
+          editionSlug: "s7",
+          mpId,
+          fixtureId: "one",
+          version: 3,
+          draft: snapshot,
+          published: snapshot,
+          publishedAt: new Date(0),
+        })
+        .onConflictDoUpdate({
+          target: [historicalStatistics.editionSlug, historicalStatistics.mpId],
+          set: { draft: snapshot, published: snapshot },
+        });
+    }
+    vi.stubEnv("OCLR_ARCHIVE_READ_MODEL", "jsonb");
+    const before = await outputs();
+    expect(before.statistics.mpCovered).toBe(2);
+    expect(before.statistics.plays).toHaveLength(8);
+    await backfillArchiveReads("s7", true);
+    vi.stubEnv("OCLR_ARCHIVE_READ_MODEL", "");
+    expect(await outputs()).toEqual(before);
+    // Simulate a legacy partial release; neither the old generation nor a new
+    // backfill may expose only one MP's scores as a complete fixture.
+    await db()
+      .update(historicalStatistics)
+      .set({ published: null, publishedAt: null, version: 4 })
+      .where(eq(historicalStatistics.mpId, 999178));
+    expect((await publicArchiveStatistics("s7")).plays).toEqual([]);
+    await backfillArchiveReads("s7", true);
+    expect((await publicArchiveStatistics("s7")).plays).toEqual([]);
+    await statisticsCommand(admin, "s7", {
+      action: "publish",
+      fixtureId: "one",
+      expectedVersions: { "999177": 3, "999178": 4 },
+      confirmed: true,
+    });
+    expect((await publicArchiveStatistics("s7")).plays).toEqual(
+      before.statistics.plays,
+    );
+    await backfillArchiveReads("s7", true);
+    expect((await publicArchiveStatistics("s7")).plays).toEqual(
+      before.statistics.plays,
+    );
+  });
+  it("invalidates EZ-adjusted facts without changing raw source and retains every analysis", async () => {
+    const [row] = await db().select().from(historicalStatistics);
+    const snapshot = structuredClone(row.draft);
+    snapshot.source.games[0].scores[0].mods = ["EZ"];
+    await db()
+      .update(historicalStatistics)
+      .set({ draft: snapshot, published: snapshot });
+    await backfillArchiveReads("s7", true);
+    const before = await publicArchiveStatistics("s7");
+    const sourceBefore = await db().select().from(historicalStatistics);
+    const [state] = await db().select().from(editionState);
+    await db()
+      .update(editionState)
+      .set({
+        configuration: { ...state.configuration!, ezScoreMultiplier: 1.2345 },
+      });
+    expect(
+      await relationalPublicPlays("s7", sourceBefore, db()),
+    ).toBeUndefined();
+    vi.stubEnv("OCLR_ARCHIVE_READ_MODEL", "jsonb");
+    const expected = await outputs();
+    const play = expected.statistics.plays.find(
+      (p) => p.gameId === 1 && p.osuId === 91001,
+    )!;
+    expect(play.score).not.toBe(
+      before.plays.find((p) => p.gameId === 1 && p.osuId === 91001)!.score,
+    );
+    expect(play.rawScore).toBe(
+      before.plays.find((p) => p.gameId === 1 && p.osuId === 91001)!.rawScore,
+    );
+    await backfillArchiveReads("s7", true);
+    vi.stubEnv("OCLR_ARCHIVE_READ_MODEL", "");
+    expect(await outputs()).toEqual(expected);
+    expect(await db().select().from(historicalStatistics)).toEqual(
+      sourceBefore,
+    );
   });
 });

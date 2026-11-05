@@ -77,6 +77,10 @@ describe("fixture-bound candidate scoring and explicit game review", () => {
     source.games[0].scores[0].team = null;
     expect(previewMatch(source, c, choices([1, 2])).canSubmit).toBe(false);
     source.games[0].scores[0].team = "blue";
+    c.round.scoringRules = {
+      ...syntheticScoringRules,
+      allowSubstitutions: true,
+    };
     const reassigned = choices([1, 2]);
     reassigned[0].substitutions = [
       {

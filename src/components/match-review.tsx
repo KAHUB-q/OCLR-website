@@ -227,6 +227,11 @@ function SourceReview({
                             {data.context.teams
                               .flatMap((t) => t.members)
                               .find((m) => m.osuId === p.osuId)?.username ??
+                              (data.context.fixture.openExhibition
+                                ? source.players?.find(
+                                    (player) => player.osuId === p.osuId,
+                                  )?.username
+                                : undefined) ??
                               tr("osu! ID {value0}", {
                                 value0: p.osuId ?? "unavailable",
                               })}

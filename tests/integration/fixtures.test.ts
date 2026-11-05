@@ -256,6 +256,9 @@ describe.skipIf(!url)(
         await expect(
           fixtureCommand(actor, "test-cup", body()),
         ).rejects.toMatchObject({ status: 403 });
+      expect(
+        (await fixtureForReview(referee, "test-cup", fixture.id)).fixture,
+      ).not.toHaveProperty("exhibitionSides");
       await closeDb();
       expect(
         (await fixtureForReview(referee, "test-cup", fixture.id)).fixture.id,

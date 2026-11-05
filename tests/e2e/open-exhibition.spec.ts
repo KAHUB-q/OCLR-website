@@ -90,6 +90,9 @@ test.describe("open exhibition editing and reviewed publication", () => {
         )
         .check();
     }
+    await expect(
+      page.getByText("Synthetic Open Player 9901001", { exact: true }).first(),
+    ).toBeVisible();
     await page
       .getByLabel(
         "I verified the configured scoring rules against the approved OCLR rules",

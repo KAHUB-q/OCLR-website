@@ -41,6 +41,15 @@ provisional MP scoring. Unit tests cover missing colors, invalid team mode and
 forbidden substitution overrides. The browser case covers the missing interaction:
 exhibition name inputs through reviewed public output with unregistered players.
 
+After incorporating main `bafad8b7` (#891), the affected result/exhibition/player
+statistics checks passed (64 tests), and read contracts were regenerated and
+verified. Formal review DTOs omit the new optional side field to preserve older
+remote responses. No existing backend response gains a new required field.
+The final fixture/exhibition recheck passed (19 tests), scoring recheck passed
+(13 tests), and lint/types, build and contract checks passed again. Final desktop
+and mobile journeys passed again (2 tests, 8.5s), including saved MP player names
+in the private review.
+
 ## Reviewable UI
 
 [Mobile editable side names](mobile-form.png) ·

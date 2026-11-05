@@ -588,7 +588,11 @@ async function databaseFixtureForReview(
         eq(tournamentStages.id, tournamentRounds.stageId),
       )
       .where(eq(tournamentRounds.id, fixture.roundId));
-    const sides = openExhibitionSides(fixture, round?.stage);
+    const { exhibitionSides, ...fixtureRecord } = fixture;
+    const sides = openExhibitionSides(
+      { ...fixtureRecord, exhibitionSides },
+      round?.stage,
+    );
     const official = sides
       ? exhibitionParticipants(sides).map((side) => ({
           ...side,
@@ -652,10 +656,12 @@ async function databaseFixtureForReview(
     return {
       exDeclarations: [...exPicks.values()],
       fixture: {
-        ...fixture,
+        ...fixtureRecord,
         homeTeamId: home.id,
         awayTeamId: away.id,
-        ...(sides ? { openExhibition: true as const } : {}),
+        ...(sides
+          ? { exhibitionSides: sides, openExhibition: true as const }
+          : {}),
       },
       round,
       teams: [home, away] as const,

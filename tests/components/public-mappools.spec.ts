@@ -44,7 +44,6 @@ for (const locale of ["en", "zh-Hans", "zh-Hant"]) {
       await expect(page.locator(".map-browse-card")).toHaveCount(0);
       await page.getByRole("searchbox").fill("");
       await mods.getByRole("tab", { name: "DT", exact: true }).click();
-      await expect(page.locator(".map-mod-rating")).toContainText("7.12");
       await mods.getByRole("tab").first().click();
       const opener = page.locator(".map-open-button").first();
       await opener.click();
@@ -99,9 +98,9 @@ for (const locale of ["en", "zh-Hans", "zh-Hant"]) {
       });
       await page.locator(".map-view-control button").nth(1).click();
       await expect(page.locator(".mappool-sheet")).toHaveCount(5);
-      await expect(
-        page.locator(".mappool-mod-attributes").first(),
-      ).toContainText("7.12");
+      await expect(page.locator(".mappool-base-sr").first()).toContainText(
+        "6.50",
+      );
       expect(writes).toEqual([]);
     });
   }
@@ -121,6 +120,61 @@ test("single pool and duplicate authored names retain context", async ({
   await expect(pools.getByRole("tab").nth(1)).toContainText("Final round");
   await pools.getByRole("tab").nth(1).click();
   await expect(page.locator("#map-entry-1-0")).toBeVisible();
+});
+
+// Saved UI fixtures exercise selection consistency; provider math, failures and
+// cache identity are covered in unit/integration tests without a locale matrix.
+test("difficulty choices stay consistent across native/archive cards, tables and details", async ({
+  page,
+}) => {
+  const writes: string[] = [];
+  page.on("request", (r) => {
+    if (!["GET", "HEAD"].includes(r.method())) writes.push(r.url());
+  });
+  for (const archive of [false, true]) {
+    await page.goto(
+      `/public-mappools?difficulty&${archive ? "archive" : "detail"}`,
+    );
+    await page.locator('[data-difficulty-mode="adjusted"]').click();
+    const dt = page.locator('.map-browse-card[data-category="DT"]');
+    await expect(dt.locator(".map-card-star")).toContainText("7.12");
+    await expect(dt.locator(".map-card-values")).toContainText("270");
+    const fm = page.locator('.map-browse-card[data-category="FM"]');
+    await expect(fm.locator(".map-card-star")).toContainText("—");
+    const selector = page.getByRole("combobox", { name: "FM preview" });
+    await expect(selector.locator("option")).toHaveText([
+      "Not selected",
+      "HD",
+      "HR",
+      "EZ",
+    ]);
+    await selector.selectOption("HR");
+    await expect(fm.locator(".map-card-star")).toContainText("6.8");
+    await fm.locator(".map-open-button").click();
+    const dialog = page.getByRole("dialog");
+    await expect(dialog).toContainText("6.80 ★");
+    await expect(dialog).toContainText("10 / 10 / 5.2 / 8.4");
+    await page.keyboard.press("Escape");
+    await page
+      .getByRole("button", { name: "Compact table", exact: true })
+      .click();
+    const row = page.locator(archive ? "#map-FM1" : "#map-entry-0-4");
+    await expect(row).toContainText("6.8");
+    await selector.selectOption("EZ");
+    await expect(row).toContainText("3.1");
+    await row.locator(".map-open-button").click();
+    await expect(dialog).toContainText("3.10 ★");
+    await expect(dialog).not.toContainText("6.80 ★");
+    await page.keyboard.press("Escape");
+    await page.locator('[data-difficulty-mode="base"]').click();
+    await expect(row).toContainText("5.7");
+    expect(
+      await page.evaluate(
+        () => document.documentElement.scrollWidth <= innerWidth,
+      ),
+    ).toBe(true);
+  }
+  expect(writes).toEqual([]);
 });
 
 test("pool detail and historical cards retain season appearance boundaries", async ({

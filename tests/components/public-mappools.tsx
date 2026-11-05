@@ -7,6 +7,12 @@ import { PageHeading } from "../../src/components/ui";
 import { syntheticPublicPools } from "../fixtures/public-mappools";
 import { legacyS5Mappool } from "../fixtures/legacy-s5-mappool";
 import { archivePoolMetadata } from "../../src/lib/archive-map-metadata";
+import { baseDifficulty } from "../../src/lib/difficulty-display";
+import {
+  difficultyMods,
+  type DifficultyConfiguration,
+  type DifficultySnapshot,
+} from "../../src/lib/mappool-model";
 import en from "../../messages/en.json";
 import hans from "../../messages/zh-Hans.json";
 import hant from "../../messages/zh-Hant.json";
@@ -26,18 +32,55 @@ const messages = locale === "en" ? en : locale === "zh-Hans" ? hans : hant;
 const legacy = params.has("legacy-s5")
   ? archivePoolMetadata(legacyS5Mappool, "s5")
   : null;
-const pools = params.has("single")
-  ? syntheticPublicPools
-      .slice(0, 1)
-      .map((pool) => ({ ...pool, roundName: pool.name }))
-  : params.has("duplicates")
-    ? syntheticPublicPools.map((pool, index) => ({
-        ...pool,
-        name: "Shared authored name",
-        roundName: index ? "Final round" : "Group round",
-        stage: index ? ("knockout" as const) : ("group" as const),
-      }))
-    : syntheticPublicPools;
+const difficultyPools = syntheticPublicPools.map((pool) => ({
+  ...pool,
+  entries: pool.entries.map((e) => ({
+    ...e,
+    metadata: {
+      ...e.metadata,
+      difficultySnapshot: {
+        beatmapId: e.beatmapId,
+        ruleset: "osu",
+        checksum: null,
+        fetchedAt: "2026-11-05T00:00:00.000Z",
+        base: baseDifficulty(e.metadata),
+        variants: Object.fromEntries(
+          (e.category === "FM"
+            ? ["HD", "HR", "EZ"]
+            : e.category === "DT"
+              ? ["DT"]
+              : []
+          ).map((configuration, i) => [
+            configuration,
+            {
+              configuration,
+              mods: difficultyMods[configuration as DifficultyConfiguration],
+              ruleset: "osu",
+              stars: e.category === "DT" ? 7.12 : [5.8, 6.8, 3.1][i],
+              maxCombo: 1000,
+              values: {},
+              fetchedAt: "2026-11-05T00:00:00.000Z",
+            },
+          ]),
+        ),
+      } as DifficultySnapshot,
+    },
+  })),
+}));
+const pools = params.has("difficulty")
+  ? difficultyPools
+  : params.has("single")
+    ? syntheticPublicPools
+        .slice(0, 1)
+        .map((pool) => ({ ...pool, roundName: pool.name }))
+    : params.has("duplicates")
+      ? syntheticPublicPools.map((pool, index) => ({
+          ...pool,
+          name: "Shared authored name",
+          roundName: index ? "Final round" : "Group round",
+          stage: index ? ("knockout" as const) : ("group" as const),
+        }))
+      : syntheticPublicPools;
 const translated = (english: string) =>
   english === "Mappools" ? (locale === "en" ? "Mappools" : "圖池") : english;
 
@@ -52,27 +95,49 @@ createRoot(document.getElementById("root")!).render(
         <div className="historical-archive">
           <ArchiveMappools
             pool={
-              legacy?.pool ?? {
-                id: "archive",
-                name: "Synthetic archive",
-                source: "Synthetic browser fixture",
-                maps: [
-                  {
-                    slot: "NM1",
-                    beatmapId: 880000,
-                    title:
-                      "Synthetic artist - Synthetic archive song [Expert] (Synthetic mapper)",
-                    mapper: "Synthetic mapper",
-                    stars: 6.5,
-                    bpm: 180,
-                    drainSeconds: 194,
-                    cs: 4,
-                    ar: 9.5,
-                    od: 8.5,
+              params.has("difficulty")
+                ? {
+                    id: "archive",
+                    name: "Synthetic archive",
                     source: "Synthetic browser fixture",
-                  },
-                ],
-              }
+                    maps: difficultyPools[0].entries
+                      .filter((e) => ["DT", "FM"].includes(e.category))
+                      .map((e) => ({
+                        slot: `${e.category}1`,
+                        beatmapId: e.beatmapId,
+                        title: e.metadata.title,
+                        mapper: e.metadata.mapper,
+                        stars: 8.8,
+                        bpm: 270,
+                        drainSeconds: 80,
+                        cs: 4,
+                        ar: 9,
+                        od: 8.5,
+                        source: "Synthetic browser fixture",
+                        difficultySnapshot: e.metadata.difficultySnapshot,
+                      })),
+                  }
+                : (legacy?.pool ?? {
+                    id: "archive",
+                    name: "Synthetic archive",
+                    source: "Synthetic browser fixture",
+                    maps: [
+                      {
+                        slot: "NM1",
+                        beatmapId: 880000,
+                        title:
+                          "Synthetic artist - Synthetic archive song [Expert] (Synthetic mapper)",
+                        mapper: "Synthetic mapper",
+                        stars: 6.5,
+                        bpm: 180,
+                        drainSeconds: 194,
+                        cs: 4,
+                        ar: 9.5,
+                        od: 8.5,
+                        source: "Synthetic browser fixture",
+                      },
+                    ],
+                  })
             }
             artworkSetIds={legacy?.setIds ?? {}}
             missingBeatmapIds={legacy?.missingBeatmapIds}

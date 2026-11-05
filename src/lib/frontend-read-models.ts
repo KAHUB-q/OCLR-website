@@ -13,8 +13,19 @@ import en from "../../messages/en.json" with { type: "json" };
 import hans from "../../messages/zh-Hans.json" with { type: "json" };
 import hant from "../../messages/zh-Hant.json" with { type: "json" };
 import { z } from "zod";
-async function databasePublicEnrollment(slug: string) {
-  return readTournament(slug, db(), true);
+import { archiveDifficultySnapshots } from "./difficulty-catalog";
+async function databasePublicEnrollment(
+  slug: string,
+): ReturnType<typeof readTournament> {
+  const record = await readTournament(slug, db(), true);
+  if (!record?.edition.archive) return record;
+  return {
+    ...record,
+    edition: {
+      ...record.edition,
+      archive: archiveDifficultySnapshots(record.edition.archive),
+    },
+  };
 }
 export async function publicEnrollment(
   slug: string,

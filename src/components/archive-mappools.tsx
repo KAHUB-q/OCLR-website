@@ -15,6 +15,15 @@ import {
 import { formatBeatmapDuration } from "@/lib/mappool-model";
 import { MapCardBand } from "./map-card-band";
 import { WorkspaceTabs } from "./workspace-tabs";
+import {
+  displayDifficulty,
+  type DifficultyChoice,
+} from "@/lib/difficulty-display";
+import {
+  DifficultyControls,
+  DifficultyReadout,
+  DifficultyStatus,
+} from "./difficulty-display";
 
 type MapEntry = ArchiveDisplayMap;
 function ArchiveMapDetails({
@@ -145,6 +154,29 @@ export function ArchiveMappools({
     [sort, setSort] = useState("slot"),
     [view, setView] = useState("cards"),
     [selected, setSelected] = useState<string | null>(null);
+  const [choice, setChoice] = useState<DifficultyChoice>({
+    adjusted: false,
+    fm: "",
+  });
+  const difficulty = (m: MapEntry) =>
+    displayDifficulty(
+      {
+        beatmapId: m.beatmapId,
+        category: m.slot.replace(/\d+$/, ""),
+        historical: true,
+        snapshot: m.difficultySnapshot,
+        base: {
+          stars: m.stars,
+          bpm: m.bpm,
+          duration: m.drainSeconds,
+          ar: m.ar,
+          od: m.od,
+          cs: m.cs,
+          hp: null,
+        },
+      },
+      choice,
+    );
   // Preserve source order and literal titles; archive stats are not live osu! metadata.
   const mods = [...new Set(pool.maps.map((m) => m.slot.replace(/\d+$/, "")))];
   const query = search.trim().toLocaleLowerCase();
@@ -162,7 +194,11 @@ export function ArchiveMappools({
   if (sort === "title")
     maps.sort((a, b) => (a.title ?? "").localeCompare(b.title ?? ""));
   if (sort === "stars")
-    maps.sort((a, b) => (b.stars ?? -Infinity) - (a.stars ?? -Infinity));
+    maps.sort(
+      (a, b) =>
+        (difficulty(b).values.stars ?? -Infinity) -
+        (difficulty(a).values.stars ?? -Infinity),
+    );
   const activeIndex = maps.findIndex((m) => m.slot === selected);
   const artwork = (m: MapEntry) => {
     const originalSetId = m.originalId
@@ -228,38 +264,44 @@ export function ArchiveMappools({
         )}
       </>
     );
-  const stats = (m: MapEntry) => (
-    <>
-      <dl className="archive-map-stats">
-        {[
-          [
-            tr("SR"),
-            m.stars,
-            m.stars === null ? null : `${number.format(m.stars)} ★`,
-          ],
-          [tr("BPM"), m.bpm, m.bpm === null ? null : number.format(m.bpm)],
-          [
-            tr("Length"),
-            m.drainSeconds,
-            m.drainSeconds === null
-              ? null
-              : formatBeatmapDuration(m.drainSeconds),
-          ],
-          [tr("CS"), m.cs, m.cs === null ? null : number.format(m.cs)],
-          [tr("AR"), m.ar, m.ar === null ? null : number.format(m.ar)],
-          [tr("OD"), m.od, m.od === null ? null : number.format(m.od)],
-        ].map(([label, raw, value]) => (
-          <div key={String(label)}>
-            <dt>{label}</dt>
-            <dd title={raw === null ? tr("Not recorded") : String(raw)}>
-              {value ?? <span aria-label={tr("Not recorded")}>—</span>}
-            </dd>
-          </div>
-        ))}
-      </dl>
-      {supplemented(m)}
-    </>
-  );
+  const stats = (original: MapEntry) => {
+    const d = difficulty(original),
+      m = { ...original, ...d.values, drainSeconds: d.values.duration };
+    return (
+      <>
+        <DifficultyStatus display={d} />
+        <dl className="archive-map-stats">
+          {[
+            [
+              tr("SR"),
+              m.stars,
+              m.stars === null ? null : `${number.format(m.stars)} ★`,
+            ],
+            [tr("BPM"), m.bpm, m.bpm === null ? null : number.format(m.bpm)],
+            [
+              tr("Length"),
+              m.drainSeconds,
+              m.drainSeconds === null
+                ? null
+                : formatBeatmapDuration(m.drainSeconds),
+            ],
+            [tr("CS"), m.cs, m.cs === null ? null : number.format(m.cs)],
+            [tr("AR"), m.ar, m.ar === null ? null : number.format(m.ar)],
+            [tr("OD"), m.od, m.od === null ? null : number.format(m.od)],
+            [tr("HP"), m.hp, m.hp === null ? null : number.format(m.hp)],
+          ].map(([label, raw, value]) => (
+            <div key={String(label)}>
+              <dt>{label}</dt>
+              <dd title={raw === null ? tr("Not recorded") : String(raw)}>
+                {value ?? <span aria-label={tr("Not recorded")}>—</span>}
+              </dd>
+            </div>
+          ))}
+        </dl>
+        {supplemented(original)}
+      </>
+    );
+  };
   return (
     <div className="archive-pools mappool-browse">
       <nav
@@ -286,6 +328,11 @@ export function ArchiveMappools({
           })}
         </p>
       </div>
+      <DifficultyControls
+        choice={choice}
+        onChange={setChoice}
+        hasFM={pool.maps.some((m) => /^FM\d*$/.test(m.slot))}
+      />
       <div className="map-browse-toolbar">
         <div
           className="event-pills map-view-control"
@@ -363,6 +410,8 @@ export function ArchiveMappools({
           >
             {maps.map((m) => {
               const { setId, originalSetId, beatmapMissing } = artwork(m);
+              const d = difficulty(m),
+                values = d.values;
               if (view === "cards") {
                 const parsed = parseArchiveTitle(m.title);
                 return (
@@ -383,12 +432,14 @@ export function ArchiveMappools({
                     originalSetId={originalSetId}
                     beatmapMissing={beatmapMissing}
                     preferOriginal={m.preferOriginal}
-                    stars={m.stars}
-                    bpm={m.bpm}
-                    durationSeconds={m.drainSeconds}
-                    cs={m.cs}
-                    ar={m.ar}
-                    od={m.od}
+                    stars={values.stars}
+                    bpm={values.bpm}
+                    durationSeconds={values.duration}
+                    cs={values.cs}
+                    ar={values.ar}
+                    od={values.od}
+                    hp={values.hp}
+                    chips={<DifficultyStatus display={d} />}
                     headingLevel={3}
                     openLabel={tr("View {value0}: {value1}", {
                       value0: m.slot,
@@ -467,7 +518,23 @@ export function ArchiveMappools({
           setId={activeArtwork.setId}
           originalSetId={activeArtwork.originalSetId}
           beatmapMissing={activeArtwork.beatmapMissing}
-          stats={stats(active)}
+          stats={
+            <>
+              <DifficultyReadout display={difficulty(active)} />
+              {active.difficultySnapshot && (
+                <details>
+                  <summary>{tr("Recorded historical values")}</summary>
+                  <p>
+                    {active.stars ?? "—"} ★ · {active.bpm ?? "—"} {tr("BPM")} ·{" "}
+                    {formatBeatmapDuration(active.drainSeconds)} · {tr("AR")}{" "}
+                    {active.ar ?? "—"} / {tr("OD")} {active.od ?? "—"} /{" "}
+                    {tr("CS")} {active.cs ?? "—"}
+                  </p>
+                </details>
+              )}
+              {supplemented(active)}
+            </>
+          }
           previous={maps[activeIndex - 1]}
           next={maps[activeIndex + 1]}
           onMove={setSelected}

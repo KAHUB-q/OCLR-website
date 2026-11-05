@@ -2,11 +2,13 @@ import { createHash } from "node:crypto";
 import { z } from "zod";
 import { osuApi } from "./osu-api";
 import { HttpError } from "./http";
+import { baseDifficulty, previewConfigurations } from "./difficulty-display";
 import {
   difficultyMods,
   type DifficultyConfiguration,
   type BeatmapAttributes,
   type BeatmapSnapshot,
+  type DifficultySnapshot,
 } from "./mappool-model";
 const positiveId = z.number().int().positive().max(Number.MAX_SAFE_INTEGER);
 const beatmap = z.object({
@@ -56,6 +58,51 @@ function remember(
   cache.delete(id);
   if (cache.size >= 200) cache.delete(cache.keys().next().value!);
   cache.set(id, value);
+}
+
+/** Explicit staff refresh/offline preparation only. Public saved reads never call this. */
+export async function prepareDifficultySnapshot(
+  snapshot: BeatmapSnapshot,
+  configurations: readonly DifficultyConfiguration[],
+): Promise<DifficultySnapshot> {
+  if (!snapshot.metadata.mode)
+    throw new HttpError(
+      502,
+      "osu! did not supply the map ruleset; adjusted attributes cannot be verified.",
+    );
+  const variants: DifficultySnapshot["variants"] = {};
+  // Pace through the shared official API transport; complete combinations are
+  // requested independently, never assembled from individual SR multipliers.
+  for (const configuration of new Set(configurations)) {
+    variants[configuration] = (
+      await withBeatmapAttributes(snapshot, configuration)
+    ).metadata.attributes!;
+  }
+  return {
+    beatmapId: snapshot.beatmapId,
+    ruleset: snapshot.metadata.mode,
+    checksum: snapshot.metadata.checksum ?? null,
+    fetchedAt: snapshot.fetchedAt,
+    base: baseDifficulty(snapshot.metadata),
+    variants,
+  };
+}
+
+export async function refreshDifficultyPreviews(
+  snapshot: BeatmapSnapshot,
+  category: string,
+  configuration: DifficultyConfiguration | null,
+): Promise<BeatmapSnapshot> {
+  const selected = await withBeatmapAttributes(snapshot, configuration);
+  if (!snapshot.metadata.mode) return selected;
+  const difficultySnapshot = await prepareDifficultySnapshot(
+    snapshot,
+    previewConfigurations(category, configuration),
+  );
+  return {
+    ...selected,
+    metadata: { ...selected.metadata, difficultySnapshot },
+  };
 }
 function normalizeBeatmap(value: unknown, id: number): BeatmapSnapshot {
   const parsed = beatmap.safeParse(value);

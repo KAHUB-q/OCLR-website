@@ -1,6 +1,7 @@
 import snapshot from "@/data/archive-beatmaps.json";
 import supplements from "@/data/archive-map-supplements.json";
 import type { HistoricalArchive } from "./historical-archive";
+import type { DifficultySnapshot } from "./mappool-model";
 
 type Pool = HistoricalArchive["pools"][number];
 type MapEntry = Pool["maps"][number];
@@ -17,6 +18,7 @@ const fields = [
 type Field = (typeof fields)[number];
 type Snapshot = (typeof snapshot.maps)[keyof typeof snapshot.maps];
 export type ArchiveDisplayMap = MapEntry & {
+  difficultySnapshot?: DifficultySnapshot;
   supplemented?: Field[];
   metadataSource?: string;
   metadataFetchedAt?: string;

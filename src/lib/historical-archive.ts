@@ -8,6 +8,7 @@ import {
   archiveTimeZone,
 } from "./archive-metadata";
 import { z } from "zod";
+import { difficultySnapshotSchema } from "./difficulty-snapshot";
 import {
   unresolvedArchivePlayer,
   archiveReplacement,
@@ -182,6 +183,7 @@ export const historicalArchiveSchema = z
                   .object({
                     slot: z.string().regex(/^(NM|HD|HR|DT|FM|TB|ACE)[1-9]\d?$/),
                     beatmapId: id.nullable(),
+                    difficultySnapshot: difficultySnapshotSchema.optional(),
                     originalId: id.optional(),
                     title: text.nullable(),
                     mapper: text.nullable(),

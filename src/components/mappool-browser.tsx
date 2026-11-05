@@ -10,7 +10,6 @@ import {
   fmPolicyName,
   slotLabel,
   formatBeatmapNumber as number,
-  formatBeatmapDuration as duration,
 } from "@/lib/mappool-model";
 import { BeatmapActions } from "./beatmap-actions";
 import { BeatmapCover } from "./beatmap-cover";
@@ -18,18 +17,19 @@ import { MapCardBand } from "./map-card-band";
 import { MappoolView } from "./mappool-view";
 import { WorkspaceTabs } from "./workspace-tabs";
 import styles from "./public-mappools.module.css";
+import {
+  baseDifficulty,
+  displayDifficulty,
+  type DifficultyChoice,
+  type DifficultyDisplay,
+} from "@/lib/difficulty-display";
+import {
+  DifficultyControls,
+  DifficultyReadout,
+  DifficultyStatus,
+} from "./difficulty-display";
 type Pool = Awaited<ReturnType<typeof publicMappools>>[number];
 type Entry = Pool["entries"][number];
-function modRating(entry: Entry) {
-  const m = entry.metadata;
-  return m.attributes
-    ? `${number(m.attributes.stars, 2)} ★ · ${m.attributes.configuration}`
-    : entry.category === "NM"
-      ? "No Mod uses base difficulty"
-      : entry.category === "TB"
-        ? "Variable mods"
-        : "Not calculated";
-}
 function MapDetails({
   entry,
   pool,
@@ -38,6 +38,7 @@ function MapDetails({
   next,
   onMove,
   onClose,
+  display,
 }: {
   entry: Entry;
   pool: Pool;
@@ -46,6 +47,7 @@ function MapDetails({
   next?: Entry;
   onMove: (id: string) => void;
   onClose: () => void;
+  display: DifficultyDisplay;
 }) {
   const tr = useAppTranslations();
 
@@ -96,30 +98,11 @@ function MapDetails({
             </p>
           </div>
         </div>
+        <DifficultyReadout display={display} />
         <dl className="map-detail-grid">
           {[
             ["Beatmap ID", entry.beatmapId],
             ["Beatmapset ID", m.setId],
-            ["Base difficulty", `${number(m.stars, 2)} ★`],
-            ["Official Mod SR", tr(modRating(entry))],
-            ["Base BPM", number(m.bpm)],
-            ["Base length", duration(m.duration)],
-            [
-              "AR / OD / CS / HP",
-              [m.ar, m.od, m.cs, m.hp].map((v) => number(v)).join(" / "),
-            ],
-            ...(m.attributes
-              ? [
-                  ["Ruleset", m.attributes.ruleset],
-                  ["Max combo", number(m.attributes.maxCombo)],
-                  ...Object.entries(m.attributes.values).map(
-                    ([label, value]) => [
-                      label.replaceAll("_", " "),
-                      number(value),
-                    ],
-                  ),
-                ]
-              : []),
           ].map(([label, value]) => (
             <div key={label}>
               <dt>{tr(String(label))}</dt>
@@ -189,6 +172,23 @@ export function MappoolBrowser({
   const [sort, setSort] = useState("slot");
   const [view, setView] = useState("cards");
   const [selected, setSelected] = useState<string | null>(null);
+  const [choice, setChoice] = useState<DifficultyChoice>({
+    adjusted: false,
+    fm: "",
+  });
+  const difficulty = (e: Entry, selection = choice) =>
+    displayDifficulty(
+      {
+        beatmapId: e.beatmapId,
+        category: e.category,
+        base: baseDifficulty(e.metadata),
+        ruleset: e.metadata.mode,
+        attributes: e.metadata.attributes,
+        snapshot: e.metadata.difficultySnapshot,
+        checksum: e.metadata.checksum,
+      },
+      selection,
+    );
   const ordered = categories.flatMap((c) =>
     pool.entries
       .filter((e) => e.category === c)
@@ -214,14 +214,21 @@ export function MappoolBrowser({
   if (sort === "title")
     entries.sort((a, b) => a.metadata.title.localeCompare(b.metadata.title));
   if (sort === "stars")
-    entries.sort((a, b) => b.metadata.stars - a.metadata.stars);
+    entries.sort(
+      (a, b) =>
+        (difficulty(b).values.stars ?? -Infinity) -
+        (difficulty(a).values.stars ?? -Infinity),
+    );
   const activeIndex = entries.findIndex((e) => e.id === selected);
   const active = entries[activeIndex];
+  const baseStars = pool.entries.map(
+    (e) => difficulty(e, { adjusted: false, fm: "" }).values.stars,
+  );
   const mean =
-    pool.entries.length &&
-    pool.entries.every((e) => Number.isFinite(e.metadata.stars))
-      ? pool.entries.reduce((sum, e) => sum + e.metadata.stars, 0) /
-        pool.entries.length
+    baseStars.length &&
+    baseStars.every((value) => value !== null && Number.isFinite(value))
+      ? baseStars.reduce<number>((sum, value) => sum + (value ?? 0), 0) /
+        baseStars.length
       : null;
   return (
     <div className={`mappool-browse ${styles.browse}`}>
@@ -236,6 +243,11 @@ export function MappoolBrowser({
           </span>
         )}
       </div>
+      <DifficultyControls
+        choice={choice}
+        onChange={setChoice}
+        hasFM={pool.entries.some((e) => e.category === "FM")}
+      />
       <div className={`map-browse-toolbar ${styles.toolbar}`}>
         <label className={`field map-search ${styles.search}`}>
           <span className="sr-only">
@@ -266,7 +278,7 @@ export function MappoolBrowser({
           >
             <option value="slot">{tr("Slot order")}</option>
             <option value="title">{tr("Song title")}</option>
-            <option value="stars">{tr("Base difficulty")}</option>
+            <option value="stars">{tr("SR")}</option>
           </select>
         </label>
         <div
@@ -341,6 +353,7 @@ export function MappoolBrowser({
             headingLevel={headingLevel}
             onSelect={setSelected}
             showCategoryLinks={false}
+            getDifficulty={difficulty}
           />
         ) : (
           <>
@@ -355,6 +368,8 @@ export function MappoolBrowser({
             <div className="map-card-grid">
               {entries.map((e) => {
                 const slot = slotLabel(e.category, e.position);
+                const d = difficulty(e),
+                  values = d.values;
                 return (
                   <MapCardBand
                     key={e.id}
@@ -367,12 +382,13 @@ export function MappoolBrowser({
                     mapper={e.metadata.mapper}
                     beatmapId={e.beatmapId}
                     setId={e.metadata.setId}
-                    stars={e.metadata.stars}
-                    bpm={e.metadata.bpm}
-                    durationSeconds={e.metadata.duration}
-                    cs={e.metadata.cs}
-                    ar={e.metadata.ar}
-                    od={e.metadata.od}
+                    stars={values.stars}
+                    bpm={values.bpm}
+                    durationSeconds={values.duration}
+                    cs={values.cs}
+                    ar={values.ar}
+                    od={values.od}
+                    hp={values.hp}
                     mode={e.metadata.mode}
                     headingLevel={headingLevel}
                     openLabel={tr("View {value0}: {value1}", {
@@ -380,13 +396,7 @@ export function MappoolBrowser({
                       value1: e.metadata.title,
                     })}
                     onOpen={() => setSelected(e.id)}
-                    chips={
-                      e.metadata.attributes ? (
-                        <span className="map-mod-rating">
-                          {tr(modRating(e))}
-                        </span>
-                      ) : undefined
-                    }
+                    chips={<DifficultyStatus display={d} />}
                     note={
                       e.category === "FM" && (
                         <p className="map-fm-policy muted small">
@@ -414,6 +424,7 @@ export function MappoolBrowser({
           next={entries[activeIndex + 1]}
           onMove={setSelected}
           onClose={() => setSelected(null)}
+          display={difficulty(active)}
         />
       )}
     </div>

@@ -22444,106 +22444,6 @@
       "publicArchiveStatistics": {
         "type": "object",
         "properties": {
-          "slug": { "type": "string" },
-          "archiveKey": { "type": "string" },
-          "ezScoreMultiplier": {
-            "anyOf": [
-              { "type": "null", "x-oclr-undefined": true },
-              { "type": "number" }
-            ]
-          },
-          "statisticsScorePolicy": {
-            "anyOf": [
-              { "type": "null", "x-oclr-undefined": true },
-              { "type": "string" }
-            ]
-          },
-          "matchDetails": {
-            "type": "array",
-            "items": {
-              "type": "object",
-              "properties": {
-                "fixtureId": { "type": "string" },
-                "details": { "$ref": "#/components/schemas/Read4a807cd35143" }
-              },
-              "required": ["fixtureId", "details"],
-              "additionalProperties": false
-            }
-          },
-          "players": {
-            "type": "array",
-            "items": {
-              "type": "object",
-              "properties": {
-                "osuId": { "type": "number" },
-                "username": { "type": "string" },
-                "teamId": {
-                  "anyOf": [{ "type": "null" }, { "type": "string" }]
-                },
-                "role": {
-                  "anyOf": [
-                    { "type": "string", "const": "captain" },
-                    { "type": "string", "const": "player" },
-                    { "type": "string", "const": "coach" },
-                    { "type": "string", "const": "free_agent" }
-                  ]
-                },
-                "tier": { "anyOf": [{ "type": "null" }, { "type": "number" }] }
-              },
-              "required": ["osuId", "username", "teamId", "role", "tier"],
-              "additionalProperties": false
-            }
-          },
-          "teams": {
-            "type": "array",
-            "items": {
-              "type": "object",
-              "properties": {
-                "id": { "type": "string" },
-                "name": { "type": "string" }
-              },
-              "required": ["id", "name"],
-              "additionalProperties": false
-            }
-          },
-          "stages": { "type": "array", "items": { "type": "string" } },
-          "fixtures": {
-            "type": "array",
-            "items": {
-              "type": "object",
-              "properties": {
-                "id": { "type": "string" },
-                "label": { "type": "string" },
-                "stage": { "type": "string" },
-                "covered": { "type": "boolean" },
-                "technicalAdjudication": { "type": "boolean" },
-                "score": {
-                  "anyOf": [
-                    { "type": "null" },
-                    {
-                      "type": "array",
-                      "prefixItems": [
-                        { "type": "number" },
-                        { "type": "number" }
-                      ],
-                      "items": false,
-                      "minItems": 2,
-                      "maxItems": 2
-                    }
-                  ]
-                }
-              },
-              "required": [
-                "id",
-                "label",
-                "stage",
-                "covered",
-                "technicalAdjudication",
-                "score"
-              ],
-              "additionalProperties": false
-            }
-          },
           "plays": {
             "type": "array",
             "items": {
@@ -22616,6 +22516,106 @@
                 "passed",
                 "mods",
                 "relative"
+              ],
+              "additionalProperties": false
+            }
+          },
+          "matchDetails": {
+            "type": "array",
+            "items": {
+              "type": "object",
+              "properties": {
+                "fixtureId": { "type": "string" },
+                "details": { "$ref": "#/components/schemas/Read4a807cd35143" }
+              },
+              "required": ["fixtureId", "details"],
+              "additionalProperties": false
+            }
+          },
+          "slug": { "type": "string" },
+          "archiveKey": { "type": "string" },
+          "ezScoreMultiplier": {
+            "anyOf": [
+              { "type": "null", "x-oclr-undefined": true },
+              { "type": "number" }
+            ]
+          },
+          "statisticsScorePolicy": {
+            "anyOf": [
+              { "type": "null", "x-oclr-undefined": true },
+              { "type": "string" }
+            ]
+          },
+          "players": {
+            "type": "array",
+            "items": {
+              "type": "object",
+              "properties": {
+                "osuId": { "type": "number" },
+                "username": { "type": "string" },
+                "teamId": {
+                  "anyOf": [{ "type": "null" }, { "type": "string" }]
+                },
+                "role": {
+                  "anyOf": [
+                    { "type": "string", "const": "captain" },
+                    { "type": "string", "const": "player" },
+                    { "type": "string", "const": "coach" },
+                    { "type": "string", "const": "free_agent" }
+                  ]
+                },
+                "tier": { "anyOf": [{ "type": "null" }, { "type": "number" }] }
+              },
+              "required": ["osuId", "username", "teamId", "role", "tier"],
+              "additionalProperties": false
+            }
+          },
+          "teams": {
+            "type": "array",
+            "items": {
+              "type": "object",
+              "properties": {
+                "id": { "type": "string" },
+                "name": { "type": "string" }
+              },
+              "required": ["id", "name"],
+              "additionalProperties": false
+            }
+          },
+          "stages": { "type": "array", "items": { "type": "string" } },
+          "fixtures": {
+            "type": "array",
+            "items": {
+              "type": "object",
+              "properties": {
+                "id": { "type": "string" },
+                "label": { "type": "string" },
+                "stage": { "type": "string" },
+                "covered": { "type": "boolean" },
+                "technicalAdjudication": { "type": "boolean" },
+                "score": {
+                  "anyOf": [
+                    { "type": "null" },
+                    {
+                      "type": "array",
+                      "prefixItems": [
+                        { "type": "number" },
+                        { "type": "number" }
+                      ],
+                      "items": false,
+                      "minItems": 2,
+                      "maxItems": 2
+                    }
+                  ]
+                }
+              },
+              "required": [
+                "id",
+                "label",
+                "stage",
+                "covered",
+                "technicalAdjudication",
+                "score"
               ],
               "additionalProperties": false
             }
@@ -22704,14 +22704,14 @@
           "mpCovered": { "type": "number" }
         },
         "required": [
+          "plays",
+          "matchDetails",
           "slug",
           "archiveKey",
-          "matchDetails",
           "players",
           "teams",
           "stages",
           "fixtures",
-          "plays",
           "publishedAt",
           "mpTotal",
           "mpCovered"

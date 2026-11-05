@@ -1,4 +1,4 @@
-# Historical JSONB correction and relational reads (#899, #900)
+# Historical JSONB correction and relational reads (#899, #900, #902)
 
 JSONB remains the authoritative saved evidence. Corrected current data and old
 evidence are different versions: S2 GS never had DT5 or TB1. They must be removed
@@ -73,6 +73,31 @@ team colors remain separate from reviewed player-team attribution. Original
 scores and EZ-adjusted scores remain separate; existing integer rounding,
 relative-score denominators, raw team winners and coverage rules are reused.
 
+Migration `0078_historical_source_manifests.sql` adds a small digest sidecar for
+each saved MP row. Its initial backfill does not update source rows or create
+additional historical revisions. An AFTER INSERT/UPDATE trigger updates the
+digest in the source transaction, including legacy edits that do not increase
+the source version. Source deletion removes only the sidecar; immutable JSONB
+history remains. The source table gains no columns and its JSONB is unchanged.
+
+Projector v2 stores a public summary with explicitly selected fields, source
+manifest hash, score-policy version and EZ multiplier. A matching public
+statistics read verifies archive/configuration identity and these small digests,
+then reads validated public plays without loading draft/published MP JSONB.
+Missing metadata, old generations, changed policy and any source edit use the
+existing JSONB validation path. Source and digest reads share the same database
+snapshot. Backfill locks source rows while building its generation so a concurrent
+legacy update cannot associate old facts with a newer digest.
+
+Local player-map analysis selects complete games associated with the player's
+roster teams or teams observed in counted appearances. All participants remain
+available for ranking, field averages, team-size classification and raw-score
+winners; games where the player sat out remain in the team-map denominator.
+Team/game indexes support this scope. Unrelated games can be omitted without
+changing the analysis. Detailed fixture
+reports load MP sources only for the requested fixture. Remote clients continue
+to use the same saved-read resources and response fields.
+
 The pure projector roundtrips the archive and each source snapshot before a
 version is saved. Object-key ordering is ignored only for JSONB content hashes;
 array order and missing-versus-null fields remain significant. Existing
@@ -98,6 +123,10 @@ generation in one transaction. Normal reruns are idempotent, including concurren
 backfills. Use `--apply --rebuild` to create a fresh generation for unchanged
 sources if repairing derived data; previous generations and original JSONB remain.
 An interruption never activates a partly inserted generation.
+
+After upgrading from projector v1, run the same preview/apply commands to build
+v2 generations. Existing v1 generations stay saved and fall back to JSONB until
+rebuilt. Applying migration 0078 alone does not activate the faster reader.
 
 Tournament reads reconstruct the same archive shape before the existing public
 sanitizer runs. The statistics workspace can read reconstructed private snapshots;
@@ -129,6 +158,9 @@ and public projections, the staff workspace, player/history/competition records,
 map performance and public match statistics. They exercise private appendices,
 concurrent idempotency, stale-source fallback and withdrawal. Package roundtrips
 cover all eight maintained S4–S10 import files, including both S6 packages.
+The [#902 verification record](verification/issue-902/README.md) also covers
+transactional digest maintenance, a 0077-to-0078 upgrade, scoped SQL and exact
+analysis equivalence against the forced-JSONB reader.
 
 Actual production correction/backfill, deployment and performance improvement are
 not established by these tests. Current JSONB must be inspected through the

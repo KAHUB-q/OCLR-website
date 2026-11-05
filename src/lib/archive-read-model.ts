@@ -1,3 +1,7 @@
+import {
+  releasedArchiveStatistics,
+  archiveStatisticsSummary,
+} from "./archive-statistics-projection";
 import { createHash } from "node:crypto";
 import type * as S from "@/db/schema";
 import {
@@ -6,12 +10,9 @@ import {
   recordedArchiveMatch,
   type HistoricalArchive,
 } from "./historical-archive";
-import { statisticsArchiveKey } from "./archive-statistics-key";
 import {
   archiveMpId,
-  fixtureStatisticsIssues,
   projectStatistics,
-  statisticsFixtures,
   supportsArchiveStatistics,
   type StatisticsPlay,
 } from "./archive-statistics-model";
@@ -21,7 +22,7 @@ import {
 } from "./statistics-snapshot";
 import { STATISTICS_SCORE_POLICY } from "./statistics-score";
 
-export const ARCHIVE_PROJECTOR_VERSION = 1;
+export const ARCHIVE_PROJECTOR_VERSION = 2;
 export type StatisticsRow = typeof S.historicalStatistics.$inferSelect;
 export type ArchiveState = typeof S.editionState.$inferSelect;
 type Row<T> = Omit<T, "generationId">;
@@ -358,25 +359,16 @@ export function buildArchiveReadData(
     }
   // Use exactly the existing anonymous eligibility checks and score policy. Draft
   // decisions and source-only appendices never establish public plays.
-  if (supportsArchiveStatistics(archive.editionSlug)) {
-    const publicArchive = publicHistoricalArchive(archive),
-      key = statisticsArchiveKey(publicArchive);
-    for (const fixture of statisticsFixtures(publicArchive)) {
-      const sources = rows.filter(
-        (r) =>
-          r.fixtureId === fixture.id &&
-          fixture.mpUrls.some((u) => archiveMpId(u) === r.mpId),
-      );
-      if (
-        !sources.length ||
-        sources.some((r) => !r.published || r.published.archiveKey !== key) ||
-        fixtureStatisticsIssues(
-          publicArchive,
-          fixture.id,
-          sources.map((r) => r.published!),
-        ).length
-      )
-        continue;
+  const publicArchive = supportsArchiveStatistics(archive.editionSlug)
+    ? publicHistoricalArchive(archive)
+    : null;
+  const release = publicArchive
+    ? releasedArchiveStatistics(publicArchive, rows)
+    : null;
+  if (publicArchive && release) {
+    const { fixtures, published } = release;
+    for (const fixture of fixtures) {
+      const sources = published.filter((row) => row.fixtureId === fixture.id);
       for (const row of sources)
         for (const play of projectStatistics(
           publicArchive,
@@ -415,6 +407,14 @@ export function buildArchiveReadData(
   }
   return {
     header,
+    publicStatistics:
+      publicArchive && release
+        ? archiveStatisticsSummary(
+            publicArchive,
+            release,
+            state.configuration?.ezScoreMultiplier ?? 1,
+          )
+        : null,
     data,
     archiveHash: archiveContentHash(archive),
     sourceHash: archiveSourceHash(state, rows),

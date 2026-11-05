@@ -2,7 +2,7 @@ import { and, eq } from "drizzle-orm";
 import { db } from "@/db";
 import { fixtures, tournamentRounds, tournamentStages } from "@/db/schema";
 import { approvedRatingGames } from "./approved-rating-games";
-import { publicArchiveStatistics } from "./archive-statistics";
+import { publicArchivePlayerPlays } from "./archive-statistics";
 import { remoteMode } from "./data-source";
 import { HttpError } from "./http";
 import { slotCategory, type MappoolCategory } from "./mappool-model";
@@ -317,9 +317,10 @@ export async function playerMapPerformance(
       ...(groups.get(player.editionSlug) ?? []),
       player,
     ]);
-  const editions = await Promise.all(
-    [...groups].map(([slug, people]) => editionPerformance(slug, people)),
-  );
+  // Saved-read resources share a connection; nested transaction savepoints must be serial.
+  const editions: PlayerMapEdition[] = [];
+  for (const [slug, people] of groups)
+    editions.push(await editionPerformance(slug, people));
   return summarizeMapPerformance(editions);
 }
 
@@ -354,10 +355,15 @@ async function editionPerformance(
     ...new Set(roster.flatMap((p) => (p.team ? [p.team.id] : []))),
   ];
   try {
-    const statistics = await publicArchiveStatistics(slug);
+    const plays = await publicArchivePlayerPlays(
+      slug,
+      osuId,
+      rosterTeams,
+      minimumCountedScore,
+    );
     return {
       ...base,
-      ...mapPerformance(statistics.plays, osuId, rosterTeams),
+      ...mapPerformance(plays, osuId, rosterTeams),
     };
   } catch (error) {
     // Archived seasons without a published statistics projection fall back to

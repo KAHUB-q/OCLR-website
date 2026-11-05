@@ -16,9 +16,127 @@ import { assertTestDatabase } from "../database";
 import { closeDb } from "../../src/db";
 import { importLegacyEditions } from "../../scripts/import-editions";
 import { edition } from "../fixtures/edition";
+import { archiveQueryFixture } from "../fixtures/archive-query";
 import bootstrap from "../../drizzle/legacy-editions.json" with { type: "json" };
 import s10Archive from "../../docs/imports/s10-archive.json" with { type: "json" };
 const base = process.env.TEST_DATABASE_URL;
+
+describe.skipIf(!base)("historical source manifests upgrade (#902)", () => {
+  it("preserves JSONB and prior generations, with transactional digests and retained deletion history", async () =>
+    isolated(async (pool) => {
+      const folder = mkdtempSync(join(tmpdir(), "oclr-source-manifests-test-"));
+      try {
+        cpSync("drizzle", folder, { recursive: true });
+        const file = join(folder, "meta/_journal.json");
+        const journal = JSON.parse(readFileSync(file, "utf8"));
+        journal.entries = journal.entries.filter(
+          (entry: { idx: number }) => entry.idx < 78,
+        );
+        writeFileSync(file, JSON.stringify(journal));
+        await migrate(drizzle(pool), { migrationsFolder: folder });
+        const fixture = archiveQueryFixture(2);
+        const { slug: _slug, ...configuration } = {
+          ...edition,
+          slug: "s7",
+          archive: fixture.archive,
+        };
+        void _slug;
+        await pool.query(
+          "INSERT INTO edition_state (slug,configuration) VALUES ('s7',$1)",
+          [configuration],
+        );
+        const row = fixture.rows[0];
+        await pool.query(
+          "INSERT INTO historical_statistics (edition_slug,mp_id,fixture_id,version,draft,published,published_at) VALUES ('s7',$1,$2,$3,$4,$5,$6)",
+          [
+            row.mpId,
+            row.fixtureId,
+            row.version,
+            row.draft,
+            row.published,
+            row.publishedAt,
+          ],
+        );
+        await pool.query(
+          "INSERT INTO archive_read_versions (edition_slug,configuration_version,archive_hash,source_hash,projector_version,header) VALUES ('s7',1,$1,$1,1,'{}')",
+          ["a".repeat(64)],
+        );
+        const sources = (
+          await pool.query("SELECT * FROM historical_statistics")
+        ).rows;
+        const history = (
+          await pool.query("SELECT * FROM historical_statistics_revisions")
+        ).rows;
+        const heads = (await pool.query("SELECT * FROM archive_read_versions"))
+          .rows;
+        await migrate(drizzle(pool), { migrationsFolder: "./drizzle" });
+        await migrate(drizzle(pool), { migrationsFolder: "./drizzle" });
+        expect(
+          (await pool.query("SELECT * FROM historical_statistics")).rows,
+        ).toEqual(sources);
+        expect(
+          (await pool.query("SELECT * FROM historical_statistics_revisions"))
+            .rows,
+        ).toEqual(history);
+        expect(
+          (await pool.query("SELECT * FROM archive_read_versions")).rows,
+        ).toEqual(
+          heads.map((head) => ({
+            ...head,
+            statistics_manifest_hash: null,
+            statistics_score_policy: null,
+            ez_score_multiplier: null,
+            public_statistics: null,
+          })),
+        );
+        const digest = (
+          await pool.query("SELECT * FROM historical_statistics_sources")
+        ).rows;
+        expect(digest).toHaveLength(1);
+        expect(digest[0].source_hash).toMatch(/^[a-f0-9]{64}$/);
+        const client = await pool.connect();
+        try {
+          await client.query("BEGIN");
+          await client.query("UPDATE historical_statistics SET published=NULL");
+          expect(
+            (await client.query("SELECT * FROM historical_statistics_sources"))
+              .rows,
+          ).not.toEqual(digest);
+        } finally {
+          await client.query("ROLLBACK");
+          client.release();
+        }
+        expect(
+          (await pool.query("SELECT * FROM historical_statistics_sources"))
+            .rows,
+        ).toEqual(digest);
+        expect(
+          (await pool.query("SELECT * FROM historical_statistics_revisions"))
+            .rows,
+        ).toEqual(history);
+        await pool.query("UPDATE historical_statistics SET published=NULL");
+        expect(
+          (await pool.query("SELECT version FROM historical_statistics"))
+            .rows[0].version,
+        ).toBe(row.version);
+        const retained = (
+          await pool.query("SELECT * FROM historical_statistics_revisions")
+        ).rows;
+        expect(retained).toHaveLength(2);
+        await pool.query("DELETE FROM historical_statistics");
+        expect(
+          (await pool.query("SELECT * FROM historical_statistics_sources"))
+            .rows,
+        ).toEqual([]);
+        expect(
+          (await pool.query("SELECT * FROM historical_statistics_revisions"))
+            .rows,
+        ).toEqual(retained);
+      } finally {
+        rmSync(folder, { recursive: true, force: true });
+      }
+    }));
+});
 
 describe.skipIf(!base)("S10 stored pool-name correction (#261)", () => {
   const correction = readFileSync("drizzle/0036_s10_pool_names.sql", "utf8");

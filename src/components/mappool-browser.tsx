@@ -243,11 +243,6 @@ export function MappoolBrowser({
           </span>
         )}
       </div>
-      <DifficultyControls
-        choice={choice}
-        onChange={setChoice}
-        hasFM={pool.entries.some((e) => e.category === "FM")}
-      />
       <div className={`map-browse-toolbar ${styles.toolbar}`}>
         <label className={`field map-search ${styles.search}`}>
           <span className="sr-only">
@@ -324,22 +319,29 @@ export function MappoolBrowser({
           ))}
         </div>
       </div>
-      <div className={styles.modTabs}>
-        <WorkspaceTabs
-          id={tabId}
-          label={tr("{value0}: mod filter", { value0: pool.name })}
-          appearance="line"
-          value={category}
-          onChange={(value) => {
-            setCategory(value);
-            setSelected(null);
-          }}
-          items={[
-            { value: "", label: tr("All mods") },
-            ...categories
-              .filter((c) => pool.entries.some((e) => e.category === c))
-              .map((c) => ({ value: c, label: c, literal: true })),
-          ]}
+      <div className="map-browse-settings">
+        <div className={styles.modTabs}>
+          <WorkspaceTabs
+            id={tabId}
+            label={tr("{value0}: mod filter", { value0: pool.name })}
+            appearance="line"
+            value={category}
+            onChange={(value) => {
+              setCategory(value);
+              setSelected(null);
+            }}
+            items={[
+              { value: "", label: tr("All mods") },
+              ...categories
+                .filter((c) => pool.entries.some((e) => e.category === c))
+                .map((c) => ({ value: c, label: c, literal: true })),
+            ]}
+          />
+        </div>
+        <DifficultyControls
+          choice={choice}
+          onChange={setChoice}
+          hasFM={pool.entries.some((e) => e.category === "FM")}
         />
       </div>
       <div

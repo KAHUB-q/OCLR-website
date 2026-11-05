@@ -196,7 +196,9 @@ test.describe("anonymous inline mappool browser", () => {
     await filters.getByRole("tab", { name: "HD", exact: true }).click();
     await expect(page.locator(`#pool-${supplement}-maps-HD`)).toBeVisible();
     await expect(page.locator(`#pool-${supplement}-maps-NM`)).toHaveCount(0);
-    const toggle = page.getByRole("switch", { name: "Mod-adjusted values" });
+    const toggle = page.getByRole("switch", {
+      name: "Enable modded difficulty",
+    });
     await toggle.check();
     const hd = page.locator(`#pool-${supplement}-maps-HD`);
     await expect(hd).toContainText("Not calculated");

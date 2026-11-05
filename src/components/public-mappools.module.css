@@ -163,7 +163,7 @@
 }
 
 .browse .modTabs {
-  margin-bottom: 1rem;
+  margin-bottom: 0;
 }
 
 @media (prefers-reduced-motion: reduce) {

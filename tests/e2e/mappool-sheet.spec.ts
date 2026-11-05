@@ -162,7 +162,9 @@ test.describe("published mappool mainsheet", () => {
     await expect(hdRow.locator(".mappool-base-sr").first()).toContainText(
       "4.13",
     );
-    const toggle = page.getByRole("switch", { name: "Mod-adjusted values" });
+    const toggle = page.getByRole("switch", {
+      name: "Enable modded difficulty",
+    });
     await toggle.check();
     await expect(hdRow.locator(".mappool-base-sr").first()).toContainText(
       "4.25",

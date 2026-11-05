@@ -20,6 +20,7 @@ export type DifficultyDisplay = {
   fetchedAt?: string;
   ruleset?: BeatmapMetadata["mode"];
   attributes?: BeatmapAttributes;
+  fallback?: "base" | "recorded";
 };
 export const emptyDifficulty: DifficultyValues = {
   stars: null,
@@ -61,17 +62,18 @@ export function difficultyRate(configuration: DifficultyConfiguration) {
 /** Standard-settings osu! timing, following ppy/osu's ModHardRock/ModEasy,
  * OsuHitObject.PREEMPT_RANGE and OsuHitWindows (including stable rounding).
  * SR always comes from the official attributes response, never this transform. */
-export function effectiveDifficulty(
+function effectiveParameters(
   base: DifficultyValues,
-  attributes: BeatmapAttributes,
+  configuration: DifficultyConfiguration,
+  ruleset: BeatmapMetadata["mode"],
 ): DifficultyValues {
-  const result = { ...base, stars: attributes.stars };
-  const rate = difficultyRate(attributes.configuration);
+  const result: DifficultyValues = { ...base, stars: null };
+  const rate = difficultyRate(configuration);
   result.bpm = base.bpm === null ? null : base.bpm * rate;
   result.duration = base.duration === null ? null : base.duration / rate;
-  if (attributes.ruleset !== "osu")
+  if (ruleset !== "osu")
     return { ...result, ar: null, od: null, cs: null, hp: null };
-  const mods = difficultyMods[attributes.configuration];
+  const mods = difficultyMods[configuration];
   const hr = mods.includes("HR"),
     ez = mods.includes("EZ");
   const adjust = (value: number | null, cs = false) =>
@@ -103,6 +105,15 @@ export function effectiveDifficulty(
       result.od = (79.5 - (Math.floor(80 - 6 * od) - 0.5) / rate) / 6;
   }
   return result;
+}
+export function effectiveDifficulty(
+  base: DifficultyValues,
+  attributes: BeatmapAttributes,
+): DifficultyValues {
+  return {
+    ...effectiveParameters(base, attributes.configuration, attributes.ruleset),
+    stars: attributes.stars,
+  };
 }
 function matches(
   a: BeatmapAttributes | undefined,
@@ -148,11 +159,12 @@ export function displayDifficulty(
   const base = snapshot ? baseDifficulty(snapshot.base) : input.base;
   const ruleset = snapshot?.ruleset ?? input.ruleset;
   const common = { rate: 1, ruleset, fetchedAt: snapshot?.fetchedAt };
+  const fallback = input.historical && !snapshot ? "recorded" : "base";
   if (!choice.adjusted || input.category === "NM")
     return {
       ...common,
       values: base,
-      status: input.historical && !snapshot ? "recorded" : "base",
+      status: fallback,
       configuration: "NM",
     };
   const configuration =
@@ -167,18 +179,32 @@ export function displayDifficulty(
   if (!configuration)
     return {
       ...common,
-      values: emptyDifficulty,
+      values: base,
       status: "variable",
       configuration: null,
+      fallback,
     };
   const candidate = snapshot?.variants[configuration] ?? input.attributes;
   const attributes = matches(candidate, configuration, ruleset)
     ? candidate
     : undefined;
-  if (!attributes || (input.historical && !snapshot))
+  // Historical measurements can already include Mods. Keep them visibly
+  // recorded until a verified base exists; never feed them into a conversion.
+  if (input.historical && !snapshot)
     return {
       ...common,
-      values: emptyDifficulty,
+      values: base,
+      status: "missing",
+      fallback: "recorded",
+      configuration,
+      rate: difficultyRate(configuration),
+    };
+  // Official SR and standard parameter conversions are independent: a missing
+  // attributes response must not erase BPM, length or known difficulty settings.
+  if (!attributes)
+    return {
+      ...common,
+      values: effectiveParameters(base, configuration, ruleset),
       status: "missing",
       configuration,
       rate: difficultyRate(configuration),

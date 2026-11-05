@@ -152,13 +152,15 @@ function SourceReview({
         )}
         {preview.games.map((g, i) => {
           const decision = decisions[g.game.id];
-          const unknown = g.players.filter(
-            (p) =>
-              p.osuId &&
-              !data.context.teams.some((t) =>
-                t.members.some((m) => m.osuId === p.osuId),
-              ),
-          );
+          const unknown = data.context.fixture.openExhibition
+            ? []
+            : g.players.filter(
+                (p) =>
+                  p.osuId &&
+                  !data.context.teams.some((t) =>
+                    t.members.some((m) => m.osuId === p.osuId),
+                  ),
+              );
           return (
             <details className="panel" key={g.game.id} open={undefined}>
               <summary>
@@ -225,6 +227,11 @@ function SourceReview({
                             {data.context.teams
                               .flatMap((t) => t.members)
                               .find((m) => m.osuId === p.osuId)?.username ??
+                              (data.context.fixture.openExhibition
+                                ? source.players?.find(
+                                    (player) => player.osuId === p.osuId,
+                                  )?.username
+                                : undefined) ??
                               tr("osu! ID {value0}", {
                                 value0: p.osuId ?? "unavailable",
                               })}
@@ -581,14 +588,23 @@ export function MatchReviewPanel({
           )}
         </section>
         <section className="panel stack">
-          <h2>{tr("Official teams and scoring rules")}</h2>
+          <h2>
+            {context.fixture.openExhibition
+              ? tr("Exhibition sides and scoring rules")
+              : tr("Official teams and scoring rules")}
+          </h2>
           {context.teams.map((t) => (
             <div key={t.id}>
               <h3>{t.name}</h3>
               <p>
                 {t.members
                   .map((m) => `${m.username} (${m.osuId})`)
-                  .join(" · ") || tr("No published roster")}
+                  .join(" · ") ||
+                  (context.fixture.openExhibition
+                    ? tr(
+                        "Open participation; sides follow each game’s recorded red and blue colors.",
+                      )
+                    : tr("No published roster"))}
               </p>
             </div>
           ))}

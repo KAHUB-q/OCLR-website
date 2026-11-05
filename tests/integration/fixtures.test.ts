@@ -256,6 +256,9 @@ describe.skipIf(!url)(
         await expect(
           fixtureCommand(actor, "test-cup", body()),
         ).rejects.toMatchObject({ status: 403 });
+      expect(
+        (await fixtureForReview(referee, "test-cup", fixture.id)).fixture,
+      ).not.toHaveProperty("exhibitionSides");
       await closeDb();
       expect(
         (await fixtureForReview(referee, "test-cup", fixture.id)).fixture.id,
@@ -402,7 +405,11 @@ describe.skipIf(!url)(
       void _names;
       void _result;
       const stored = (await db().select().from(fixtures))[0];
-      expect(stored).toEqual({ ...unchanged, assignmentRevision: 1 });
+      expect(stored).toEqual({
+        ...unchanged,
+        exhibitionSides: unchanged.exhibitionSides ?? null,
+        assignmentRevision: 1,
+      });
       expect(await db().select().from(matchResults)).toEqual(resultBefore);
       const auditCount = (await db().select().from(resultAuditEvents)).length;
       const assignmentsBeforeRetry = await db().select().from(fixtureReferees);

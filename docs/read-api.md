@@ -254,6 +254,16 @@ against the same exhausted counters and verifies HTTP 429, `RATE_LIMITED` and
 
 ## Generating and checking contracts
 
+Contract 1.23.0 adds optional fixture-local `exhibitionSides` to staff fixtures,
+`openExhibition` to trusted review/referee contexts, and an optional `exhibition`
+marker on public side descriptors. Referee captains may be null for open sides.
+Saved match sources may include minimal public MP `players` (osu! ID and name),
+and reviewed score attribution may use `provider` evidence/confidence. These are
+read projections of saved, permission-filtered data, with no provider work or
+write grants on read. Side IDs are fixture-local, not official team-directory IDs;
+clients must render their labels without team-directory links. Formal fixtures
+retain roster attribution and existing authorization/publication rules.
+
 Contract 1.22.0 adds optional `difficultySnapshot` data to public native mappool
 metadata and historical archive maps. It contains validated official base values,
 ruleset/checksum/fetch time and exact per-Mod attributes. These are saved numeric

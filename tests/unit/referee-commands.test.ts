@@ -78,6 +78,19 @@ const input: RefereeCommandInput = {
 const command = (value: RefereeCommandInput, kind: string) =>
   refereeCommands(value).find((c) => c.id === kind)?.text;
 describe("referee command generation", () => {
+  it("does not fabricate invites for open exhibition sides with no captain or roster", () => {
+    const commands = refereeCommands({
+      ...input,
+      teams: input.teams.map((team) => ({
+        ...team,
+        captainId: null,
+        captainUsername: null,
+        members: [],
+      })),
+    });
+    expect(commands.filter((c) => c.kind === "invite")).toEqual([]);
+    expect(commands.some((c) => c.kind === "make")).toBe(true);
+  });
   it("invites all twelve roster players by saved username, not only captains or starters", () => {
     const teams = input.teams.map((team, index) => ({
       ...team,

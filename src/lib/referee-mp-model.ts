@@ -126,7 +126,8 @@ export function planMpResults(
         !preview?.winnerTeamId ||
         preview.problems.length ||
         preview.warnings.length ||
-        preview.confidence !== "roster" ||
+        (preview.confidence !== "roster" &&
+          !(w.fixture.openExhibition && preview.confidence === "provider")) ||
         game.scores.some((s) => s.passed !== true)
       )
         reason = "rules";

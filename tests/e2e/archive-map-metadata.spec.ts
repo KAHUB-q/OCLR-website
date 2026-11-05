@@ -53,7 +53,7 @@ test.describe("archive map missing metadata", () => {
     await expect(row).toContainText("current osu! base metadata (no mods)");
     await row.getByRole("button", { name: "Explanation", exact: true }).focus();
     await expect(
-      row.getByRole("link", { name: "Source", exact: true }),
+      row.getByRole("link", { name: "Open on osu! · NM1", exact: true }),
     ).toHaveAttribute("href", "https://osu.ppy.sh/beatmaps/2076750");
     const opener = row.getByRole("button", { name: /View / });
     await opener.focus();

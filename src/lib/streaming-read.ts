@@ -126,7 +126,7 @@ export async function nextStreamingRead(
       if (
         projectReferee({
           ...session.basis,
-          orders: {
+          orders: session.exhibitionOrder ?? {
             firstBanTeamId: session.firstBanTeamId,
             firstPickTeamId: session.firstPickTeamId,
           },

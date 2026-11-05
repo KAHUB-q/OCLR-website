@@ -66,6 +66,7 @@ test.describe("published mappool mainsheet", () => {
             beatmapId: 820000 + c * 10 + position,
             metadata: {
               setId: category === "NM" && position === 1 ? 43 : 42,
+              mode: "osu" as const,
               artist: "Provider Artist",
               title: `Synthetic ${slotLabel(category, position)}`,
               difficulty: "Expert",
@@ -153,17 +154,22 @@ test.describe("published mappool mainsheet", () => {
     await expect(nmRow.locator(".mappool-mod-attributes")).toHaveCount(0);
     await expect(
       nmRow.locator(".mappool-mobile-details summary"),
-    ).toContainText("6.01 ★ base");
+    ).toContainText(/6\.01\s+★/);
+    await expect(nmRow.locator(".map-difficulty-status").first()).toHaveText(
+      "Base values",
+    );
     const hdRow = sheet.locator(`#pool-${poolId}-maps-HD tbody tr`).first();
     await expect(hdRow.locator(".mappool-base-sr").first()).toContainText(
       "4.13",
     );
-    await expect(
-      hdRow.locator(".mappool-mod-attributes").first(),
-    ).toContainText("4.25");
-    await expect(
-      hdRow.locator(".mappool-mod-attributes small").first(),
-    ).toHaveText("HD");
+    const toggle = page.getByRole("switch", { name: "Mod-adjusted values" });
+    await toggle.check();
+    await expect(hdRow.locator(".mappool-base-sr").first()).toContainText(
+      "4.25",
+    );
+    await expect(hdRow.locator(".map-difficulty-status").first()).toHaveText(
+      "Official Mod SR · HD · 1×",
+    );
     await expect(
       sheet.locator(`#pool-${poolId}-maps-HD tbody tr`).nth(1),
     ).toContainText("Not calculated");
@@ -219,12 +225,9 @@ test.describe("published mappool mainsheet", () => {
       await page.keyboard.press("Enter");
       await expect(details).toHaveAttribute("open", "");
       await expect(details).toContainText("6.75");
-      await expect(details).toContainText("180.25");
-      await expect(details).toContainText("2:03");
-      await expect(details.getByText("DT", { exact: true })).toBeVisible();
-      await details.locator(".mappool-mod-attributes summary").click();
-      await expect(details.getByText("1000", { exact: true })).toBeVisible();
-      await details.locator(".mappool-mod-attributes summary").click();
+      await expect(details).toContainText("270.38");
+      await expect(details).toContainText("1:22");
+      await expect(details).toContainText("Official Mod SR · DT · 1.5×");
       await details.locator("summary").first().click();
     } else {
       await expect(
@@ -240,15 +243,15 @@ test.describe("published mappool mainsheet", () => {
           .locator(".mappool-extra .mappool-parameters dd")
           .first(),
       ).toHaveText("—");
-      const attributes = sheet
-        .locator(
-          `#pool-${poolId}-maps-DT .mappool-extra .mappool-mod-attributes`,
-        )
-        .first();
-      await attributes.locator("summary").click();
-      await expect(attributes.getByText("1000", { exact: true })).toBeVisible();
-      await attributes.locator("summary").click();
     }
+    await sheet
+      .getByRole("button", { name: "View DT1: Synthetic DT1", exact: true })
+      .click();
+    await expect(page.getByRole("dialog")).toContainText("6.75 ★");
+    await expect(
+      page.getByRole("dialog").getByText("1000", { exact: true }),
+    ).toBeVisible();
+    await page.keyboard.press("Escape");
     for (const width of [320, 390, 760, 1024, 1440]) {
       await page.setViewportSize({ width, height: 900 });
       expect(

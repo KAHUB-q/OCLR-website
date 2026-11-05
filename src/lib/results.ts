@@ -480,6 +480,11 @@ export async function importFixtureMatch(
           "Fixture or report changed. Refresh before importing.",
         );
       const selected = c.completion;
+      if (fixture.exhibitionSides)
+        throw new HttpError(
+          409,
+          "Open exhibitions already have red and blue sides. Import the match without completing official teams.",
+        );
       if (
         selected.homeTeamId === selected.awayTeamId ||
         (fixture.homeTeamId && fixture.homeTeamId !== selected.homeTeamId) ||

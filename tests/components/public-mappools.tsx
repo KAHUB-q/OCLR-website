@@ -44,7 +44,8 @@ const legacy = earlyPool
   : params.has("legacy-s5")
     ? archivePoolMetadata(legacyS5Mappool, "s5")
     : null;
-const difficultyPools = syntheticPublicPools.map((pool) => ({
+type Pool = (typeof syntheticPublicPools)[number];
+const difficultyPools: Pool[] = syntheticPublicPools.map((pool) => ({
   ...pool,
   entries: pool.entries.map((e) => ({
     ...e,
@@ -79,6 +80,15 @@ const difficultyPools = syntheticPublicPools.map((pool) => ({
     },
   })),
 }));
+if (params.has("missing-variants") || params.has("no-snapshot"))
+  for (const pool of difficultyPools)
+    for (const entry of pool.entries) {
+      if (params.has("no-snapshot")) delete entry.metadata.difficultySnapshot;
+      if (!params.has("missing-variants")) continue;
+      delete entry.metadata.attributes;
+      if (entry.metadata.difficultySnapshot)
+        entry.metadata.difficultySnapshot.variants = {};
+    }
 const pools = params.has("difficulty")
   ? difficultyPools
   : params.has("single")

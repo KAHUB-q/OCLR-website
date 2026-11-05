@@ -1,7 +1,8 @@
 import { describe, it, expect } from "vitest";
 import { randomUUID } from "node:crypto";
 import {
-  cpSync,
+  copyFileSync,
+  mkdirSync,
   mkdtempSync,
   readFileSync,
   writeFileSync,
@@ -37,12 +38,19 @@ describe.skipIf(!base)(
           `CREATE DATABASE ${name} TEMPLATE template0 ENCODING 'UTF8'`,
         );
         pool = new Pool({ connectionString: url.toString() });
-        cpSync("drizzle", folder, { recursive: true });
+        mkdirSync(join(folder, "meta"));
         const file = join(folder, "meta/_journal.json"),
-          journal = JSON.parse(readFileSync(file, "utf8"));
+          journal = JSON.parse(
+            readFileSync("drizzle/meta/_journal.json", "utf8"),
+          );
         journal.entries = journal.entries.filter(
           (e: { idx: number }) => e.idx < 77,
         );
+        for (const entry of journal.entries)
+          copyFileSync(
+            `drizzle/${entry.tag}.sql`,
+            join(folder, `${entry.tag}.sql`),
+          );
         writeFileSync(file, JSON.stringify(journal));
         await migrate(drizzle(pool), { migrationsFolder: folder });
         await pool.query(

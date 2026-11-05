@@ -1,3 +1,4 @@
+import { relationalArchive } from "./archive-read";
 import { correctS2PoolArchive } from "./archive-pool-correction-model";
 import { db } from "@/db";
 import {
@@ -88,6 +89,9 @@ export async function readTournament(
       ),
     );
   const saved = row ? storedEdition(row) : undefined;
+  if (row && saved?.edition.archive)
+    saved.edition.archive =
+      (await relationalArchive(row, reader ?? db())) ?? saved.edition.archive;
   return saved && publicOnly && saved.edition.archive
     ? {
         ...saved,
@@ -112,18 +116,25 @@ export async function readTournaments(publicOnly = false) {
       ),
     )
     .orderBy(desc(editionState.configurationUpdatedAt), editionState.slug);
-  return rows.map((row) => {
+  const result: NonNullable<ReturnType<typeof storedEdition>>[] = [];
+  for (const row of rows) {
     const saved = storedEdition(row)!;
-    return publicOnly && saved.edition.archive
-      ? {
-          ...saved,
-          edition: {
-            ...saved.edition,
-            archive: publicHistoricalArchive(saved.edition.archive),
-          },
-        }
-      : saved;
-  });
+    if (saved.edition.archive)
+      saved.edition.archive =
+        (await relationalArchive(row, db())) ?? saved.edition.archive;
+    result.push(
+      publicOnly && saved.edition.archive
+        ? {
+            ...saved,
+            edition: {
+              ...saved.edition,
+              archive: publicHistoricalArchive(saved.edition.archive),
+            },
+          }
+        : saved,
+    );
+  }
+  return result;
 }
 
 const shape = editionSchema.shape;

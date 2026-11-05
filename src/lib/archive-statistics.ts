@@ -1,3 +1,4 @@
+import { relationalStatistics, relationalPublicPlays } from "./archive-read";
 import { statisticsArchiveKey } from "./archive-statistics-key";
 import { archiveEvidenceUrl } from "./archive-metadata";
 import {
@@ -105,12 +106,15 @@ async function archiveFor(
 function where(slug: string) {
   return eq(historicalStatistics.editionSlug, slug);
 }
-async function stored(slug: string, reader: Reader = db()) {
+async function stored(slug: string, reader: Reader = db(), relational = false) {
   const rows = await reader
     .select()
     .from(historicalStatistics)
     .where(where(slug));
-  return rows.map((r) => ({
+  const values = relational
+    ? await relationalStatistics(slug, rows, reader)
+    : rows;
+  return values.map((r) => ({
     ...r,
     draft: parseStatisticsSnapshot(r.draft),
     published: r.published ? parseStatisticsSnapshot(r.published) : null,
@@ -277,7 +281,7 @@ async function databaseStatisticsWorkspace(
   await assertReadCapability(actor, "record_results", slug);
   const archive = await archiveFor(slug);
   const key = statisticsArchiveKey(archive);
-  const rows = (await stored(slug)).filter((r) =>
+  const rows = (await stored(slug, db(), true)).filter((r) =>
     statisticsFixtures(archive).some(
       (f) =>
         f.id === r.fixtureId && f.mpUrls.some((u) => archiveMpId(u) === r.mpId),
@@ -694,14 +698,16 @@ async function databasePublicArchiveStatistics(
           return [];
         return sources;
       });
-      const plays = published.flatMap((r) =>
-        projectStatistics(
-          archive,
-          r.fixtureId,
-          r.published!,
-          ezScoreMultiplier,
-        ),
-      );
+      const plays =
+        (await relationalPublicPlays(slug, rows, tx, { fixtureId })) ??
+        published.flatMap((r) =>
+          projectStatistics(
+            archive,
+            r.fixtureId,
+            r.published!,
+            ezScoreMultiplier,
+          ),
+        );
       return {
         slug,
         archiveKey: key,

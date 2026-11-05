@@ -91,18 +91,15 @@ export function archiveOperatorDiagnostic(
     const value = queue.shift();
     if (!value || typeof value !== "object" || seen.has(value)) continue;
     seen.add(value);
-    if (value instanceof ZodError) {
-      code = "DATA_VALIDATION";
-      break;
-    }
     // A nested AggregateError/cause is common for pg and Drizzle connection errors.
     try {
-      if (
-        "code" in value &&
-        typeof value.code === "string" &&
-        Object.hasOwn(messages, value.code)
-      ) {
-        code = value.code as DiagnosticCode;
+      if (value instanceof ZodError) {
+        code = "DATA_VALIDATION";
+        break;
+      }
+      const candidate = "code" in value ? value.code : undefined;
+      if (typeof candidate === "string" && Object.hasOwn(messages, candidate)) {
+        code = candidate as DiagnosticCode;
         break;
       }
       if ("cause" in value) queue.push(value.cause);
@@ -112,12 +109,16 @@ export function archiveOperatorDiagnostic(
       /* Do not invoke or print untrusted error accessors further. */
     }
   }
-  const message =
-    code === "OPERATION_FAILED" &&
-    error instanceof HttpError &&
-    safeMessages.has(error.message)
-      ? error.message
-      : messages[code];
+  let approvedMessage: string | undefined;
+  if (code === "OPERATION_FAILED") {
+    try {
+      const candidate = error instanceof HttpError ? error.message : undefined;
+      if (typeof candidate === "string" && safeMessages.has(candidate))
+        approvedMessage = candidate;
+    } catch {
+      /* Hostile accessors/proxies must remain a generic diagnostic. */
+    }
+  }
   const slug =
     context.slug && /^[a-z0-9][a-z0-9-]{0,79}$/.test(context.slug)
       ? context.slug
@@ -127,6 +128,6 @@ export function archiveOperatorDiagnostic(
     code,
     phase: context.phase,
     ...(slug ? { slug } : {}),
-    message,
+    message: approvedMessage ?? messages[code],
   };
 }

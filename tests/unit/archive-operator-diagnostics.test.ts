@@ -82,6 +82,41 @@ describe("safe historical operator diagnostics", () => {
       ).message,
     ).toBe("Historical relations are stale; run the reviewed apply first.");
   });
+  it("reads a changing driver code once before applying the allowlist", () => {
+    let reads = 0;
+    const error = Object.defineProperty({}, "code", {
+      get: () => (reads++ === 0 ? "42P01" : secret),
+    });
+    const diagnostic = archiveOperatorDiagnostic(error, context);
+    expect(diagnostic.code).toBe("42P01");
+    expect(reads).toBe(1);
+    expect(JSON.stringify(diagnostic)).not.toContain(secret);
+  });
+  it("returns the checked HttpError message without reading its accessor again", () => {
+    let reads = 0;
+    const approved =
+      "Historical relations are stale; run the reviewed apply first.";
+    const error = Object.defineProperty(
+      new HttpError(409, "ignored"),
+      "message",
+      { get: () => (reads++ === 0 ? approved : secret) },
+    );
+    expect(archiveOperatorDiagnostic(error, context).message).toBe(approved);
+    expect(reads).toBe(1);
+  });
+  it("does not expose exceptions thrown by error proxies", () => {
+    const error = new Proxy(
+      {},
+      {
+        getPrototypeOf() {
+          throw new Error(secret);
+        },
+      },
+    );
+    const diagnostic = archiveOperatorDiagnostic(error, context);
+    expect(diagnostic.code).toBe("OPERATION_FAILED");
+    expect(JSON.stringify(diagnostic)).not.toContain(secret);
+  });
   it("identifies schema validation without logging source values or issue paths", () => {
     const result = z
       .object({ private_answer: z.number() })

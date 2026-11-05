@@ -89,6 +89,13 @@ for (const locale of ["en", "zh-Hans", "zh-Hant"]) {
         ),
       ).toBe(20);
       await expect(card.locator(".map-card-mode")).toBeVisible();
+      const toggle = page.getByRole("switch");
+      await toggle.check();
+      await page.getByRole("button", { name: "HR", exact: true }).click();
+      await expect(toggle).toBeChecked();
+      await expect(
+        page.getByRole("button", { name: "HR", exact: true }),
+      ).toHaveAttribute("aria-pressed", "true");
       expect(
         await page.evaluate(() => document.documentElement.scrollWidth),
       ).toBeLessThanOrEqual(page.viewportSize()!.width);
@@ -96,6 +103,7 @@ for (const locale of ["en", "zh-Hans", "zh-Hant"]) {
         path: info.outputPath(`public-pool-${locale}-${theme}.png`),
         fullPage: true,
       });
+      await toggle.uncheck();
       await page.locator(".map-view-control button").nth(1).click();
       await expect(page.locator(".mappool-sheet")).toHaveCount(5);
       await expect(page.locator(".mappool-base-sr").first()).toContainText(
@@ -135,20 +143,27 @@ test("difficulty choices stay consistent across native/archive cards, tables and
     await page.goto(
       `/public-mappools?difficulty&${archive ? "archive" : "detail"}`,
     );
-    await page.locator('[data-difficulty-mode="adjusted"]').click();
+    const toggle = page.getByRole("switch", { name: "Mod-adjusted values" });
+    await toggle.focus();
+    await page.keyboard.press("Space");
+    await expect(toggle).toBeChecked();
     const dt = page.locator('.map-browse-card[data-category="DT"]');
     await expect(dt.locator(".map-card-star")).toContainText("7.12");
     await expect(dt.locator(".map-card-values")).toContainText("270");
     const fm = page.locator('.map-browse-card[data-category="FM"]');
-    await expect(fm.locator(".map-card-star")).toContainText("—");
-    const selector = page.getByRole("combobox", { name: "FM preview" });
-    await expect(selector.locator("option")).toHaveText([
-      "Not selected",
-      "HD",
-      "HR",
-      "EZ",
-    ]);
-    await selector.selectOption("HR");
+    await expect(fm.locator(".map-card-star")).toContainText("5.7");
+    const selector = page.getByRole("group", { name: "FM preview" });
+    await expect(selector.getByRole("button")).toHaveText(["HD", "HR", "EZ"]);
+    await expect(
+      page.getByRole("combobox", { name: "FM preview" }),
+    ).toHaveCount(0);
+    await expect(
+      page.getByText("Difficulty preview only.", { exact: false }),
+    ).toHaveCount(0);
+    await selector.getByRole("button", { name: "HR", exact: true }).click();
+    await expect(
+      selector.getByRole("button", { name: "HR", exact: true }),
+    ).toHaveAttribute("aria-pressed", "true");
     await expect(fm.locator(".map-card-star")).toContainText("6.8");
     await fm.locator(".map-open-button").click();
     const dialog = page.getByRole("dialog");
@@ -160,13 +175,13 @@ test("difficulty choices stay consistent across native/archive cards, tables and
       .click();
     const row = page.locator(archive ? "#map-FM1" : "#map-entry-0-4");
     await expect(row).toContainText("6.8");
-    await selector.selectOption("EZ");
+    await selector.getByRole("button", { name: "EZ", exact: true }).click();
     await expect(row).toContainText("3.1");
     await row.locator(".map-open-button").click();
     await expect(dialog).toContainText("3.10 ★");
     await expect(dialog).not.toContainText("6.80 ★");
     await page.keyboard.press("Escape");
-    await page.locator('[data-difficulty-mode="base"]').click();
+    await toggle.uncheck();
     await expect(row).toContainText("5.7");
     expect(
       await page.evaluate(
@@ -175,6 +190,48 @@ test("difficulty choices stay consistent across native/archive cards, tables and
     ).toBe(true);
   }
   expect(writes).toEqual([]);
+});
+
+test("missing official snapshots do not erase known native or recorded historical values", async ({
+  page,
+}) => {
+  for (const archive of [false, true]) {
+    await page.goto(
+      `/public-mappools?difficulty&missing-variants&no-snapshot&${archive ? "archive" : "detail"}`,
+    );
+    const toggle = page.getByRole("switch", { name: "Mod-adjusted values" });
+    await toggle.check();
+    const dt = page.locator('.map-browse-card[data-category="DT"]');
+    await expect(dt.locator(".map-card-values")).toContainText("270");
+    await expect(dt.locator(".map-card-star")).toContainText(
+      archive ? "8.8" : "—",
+    );
+    await expect(dt).toContainText(
+      archive ? "Recorded historical values" : "Not calculated",
+    );
+    await dt.locator(".map-open-button").click();
+    const dialog = page.getByRole("dialog");
+    await expect(dialog).toContainText(archive ? "1:20" : "2:09");
+    await page.keyboard.press("Escape");
+    const selector = page.getByRole("group", { name: "FM preview" });
+    for (const mod of ["HR", "EZ", "HD"]) {
+      await selector.getByRole("button", { name: mod, exact: true }).click();
+      const fm = page.locator('.map-browse-card[data-category="FM"]');
+      await expect(fm.locator(".map-card-values")).toContainText(
+        archive ? "270" : "180",
+      );
+      await expect(fm.locator(".map-card-star")).toContainText(
+        archive ? "8.8" : "—",
+      );
+    }
+    await page
+      .getByRole("button", { name: "Compact table", exact: true })
+      .click();
+    const row = page.locator(archive ? "#map-DT1" : "#map-entry-0-3");
+    await expect(row).toContainText("270");
+    await toggle.uncheck();
+    await expect(row).toContainText(archive ? "270" : "180");
+  }
 });
 
 test("pool detail and historical cards retain season appearance boundaries", async ({

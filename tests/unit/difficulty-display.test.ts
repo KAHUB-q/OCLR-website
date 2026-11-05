@@ -130,13 +130,38 @@ describe("official difficulty display", () => {
       ),
     ).toMatchObject({ status: "base", values: base });
   });
-  it("does not show another selection's cached SR or treat missing results as base values", () => {
+  it("keeps convertible parameters when official SR is missing, without reusing another selection's SR", () => {
     const input = { category: "DT", base, ruleset: "osu" as const };
     const missing = displayDifficulty(input, { adjusted: true, fm: "" });
     expect(missing).toMatchObject({
       status: "missing",
       configuration: "DT",
-      values: { stars: null, bpm: null },
+      values: { stars: null, bpm: 270, duration: 80, cs: 4, hp: 6 },
+    });
+    expect(missing.values.ar).toBeCloseTo(10.333333);
+    expect(missing.values.od).toBeCloseTo(10.083333);
+    for (const [category, cs, ar, hp] of [
+      ["HD", 4, 9, 6],
+      ["HR", 5.2, 10, 8.4],
+    ] as const) {
+      const result = displayDifficulty(
+        { ...input, category },
+        { adjusted: true, fm: "" },
+      );
+      expect(result.values.stars).toBeNull();
+      expect(result.values.bpm).toBe(180);
+      expect(result.values.cs).toBeCloseTo(cs);
+      expect(result.values.ar).toBeCloseTo(ar);
+      expect(result.values.hp).toBeCloseTo(hp);
+    }
+    const fm = displayDifficulty(
+      { beatmapId: 75, category: "FM", base, snapshot },
+      { adjusted: true, fm: "" },
+    );
+    expect(fm).toMatchObject({
+      status: "variable",
+      values: base,
+      fallback: "base",
     });
     expect(
       displayDifficulty(
@@ -170,7 +195,20 @@ describe("official difficulty display", () => {
     ).toMatchObject({ status: "recorded", values: recorded });
     expect(
       displayDifficulty(original, { adjusted: true, fm: "" }),
-    ).toMatchObject({ status: "missing", values: { bpm: null } });
+    ).toMatchObject({
+      status: "missing",
+      values: recorded,
+      fallback: "recorded",
+    });
+    const partial = displayDifficulty(
+      { ...original, snapshot }, // Verified base, but no DT SR in this snapshot.
+      { adjusted: true, fm: "" },
+    );
+    expect(partial).toMatchObject({
+      status: "missing",
+      values: { stars: null, bpm: 270, duration: 80 },
+    });
+    expect(partial.fallback).toBeUndefined();
     const verified = { ...snapshot, variants: { DT: attributes("DT", 6.75) } };
     expect(
       displayDifficulty(
@@ -182,6 +220,19 @@ describe("official difficulty display", () => {
       values: { stars: 6.75, bpm: 270, duration: 80 },
     });
     expect(original.base).toEqual(recorded);
+  });
+  it("keeps original historical values for every selection without a verified base", () => {
+    const recorded = { ...base, stars: 8.8, bpm: 270, duration: 80 };
+    for (const category of ["HD", "HR", "DT", "FM", "TB"]) {
+      for (const fm of ["", "HD", "HR", "EZ"] as const) {
+        expect(
+          displayDifficulty(
+            { category, base: recorded, historical: true },
+            { adjusted: true, fm },
+          ),
+        ).toMatchObject({ values: recorded, fallback: "recorded" });
+      }
+    }
   });
   it("validates reviewed snapshots against BID, ruleset, complete mods and timestamps", () => {
     expect(difficultySnapshotSchema.safeParse(snapshot).success).toBe(true);

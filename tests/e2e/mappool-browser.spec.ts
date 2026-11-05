@@ -56,6 +56,7 @@ test.describe("anonymous inline mappool browser", () => {
             beatmapId: 830001 + i,
             metadata: {
               setId: 42 + i,
+              mode: "osu" as const,
               artist: "Synthetic Artist",
               title: `${name} map ${i + 1}`,
               difficulty: "Expert",
@@ -195,6 +196,20 @@ test.describe("anonymous inline mappool browser", () => {
     await filters.getByRole("tab", { name: "HD", exact: true }).click();
     await expect(page.locator(`#pool-${supplement}-maps-HD`)).toBeVisible();
     await expect(page.locator(`#pool-${supplement}-maps-NM`)).toHaveCount(0);
+    const toggle = page.getByRole("switch", { name: "Mod-adjusted values" });
+    await toggle.check();
+    const hd = page.locator(`#pool-${supplement}-maps-HD`);
+    await expect(hd).toContainText("Not calculated");
+    await hd
+      .getByRole("button", {
+        name: "View HD1: Supplement pool map 2",
+        exact: true,
+      })
+      .click();
+    await expect(page.getByRole("dialog")).toContainText("180");
+    await expect(page.getByRole("dialog")).toContainText("9 / 8 / 4 / 6");
+    await page.keyboard.press("Escape");
+    await toggle.uncheck();
     await filters.getByRole("tab", { name: "All mods", exact: true }).click();
     await expect(page.locator(`#pool-${supplement}-maps-NM`)).toBeVisible();
     expect(navigations).toBe(0);

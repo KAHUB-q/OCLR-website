@@ -68,15 +68,19 @@ disclosure. This read-only display enrichment does not rewrite archive imports.
 
 ## Public difficulty preview (#851)
 
-Published native pools and historical pools share Base values / Mod-adjusted
-values controls. Cards, compact tables, sorting and map details use the same
-selection. HD, HR and DT slots default to their named Mod when no explicit
-calculation combination is saved; a saved complete combination takes precedence.
+Published native pools and historical pools share a Mod-adjusted values toggle
+(off shows base values). FM uses single-selection HD / HR / EZ buttons; clicking
+the selected button clears it. Selecting a Mod enables the toggle, and toggling
+off preserves the FM selection for comparison. Cards, compact tables, sorting and
+map details use the same selection. HD, HR and DT slots default to their named Mod
+when no explicit calculation combination is saved; a saved complete combination takes precedence.
 NM stays at base values. Unknown TB/ACE configurations remain variable. FM offers
 **HD, HR or EZ, one at a time**, with no DT option. This display choice is
 independent of the pool's Free Mod / Force Mod policy and never changes allowed
-competition Mods, slots or saved pool settings. Missing calculations show Not
-calculated; changing selection cannot reuse another selection's result.
+competition Mods, slots or saved pool settings. Missing official SR shows Not
+calculated; known base parameters still convert independently. Changing selection
+cannot reuse another selection's SR. Unselected FM and unknown TB retain visibly
+labelled base/recorded values with Variable status instead of blanking the map.
 
 SR is the literal result of the official
 [Beatmap Attributes API](https://osu.ppy.sh/docs/index.html#get-beatmap-attributes)
@@ -128,15 +132,16 @@ process per file and respect the official application's aggregate rate limit.
 Set `OCLR_DIFFICULTY_CATALOG_FILE` to the absolute output path on the serving
 backend (or omit it to use the reviewed checked-in catalog). Atomic file updates
 are recognized on subsequent reads. Missing, invalid or oversized files/entries
-produce unavailable values, with no provider fallback. Snapshots bind BID,
+leave Mod SR unavailable, with no provider fallback. Snapshots bind BID,
 ruleset, checksum when known, fetch time and exact Mod configuration. Native maps
 with a known different checksum cannot use the catalog entry.
 
-Historical source values may already include Mods. They are labelled Recorded
-historical values when no verified base snapshot exists, and are never used as
-inputs to another Mod conversion. With a snapshot, the base/adjusted control uses
-the current official base; original source values remain in the details. The
-source, ruleset and UTC fetch time identify the current calculation, which is not
+Historical source values may already include Mods. They stay visible and labelled
+Recorded historical values when no verified base snapshot exists, including while
+the toggle is enabled, and are never used as inputs to another Mod conversion.
+The missing/variable Mod result is labelled separately. With a snapshot, the
+base/adjusted control uses the current official base; original source values remain
+in the details. The source, ruleset and UTC fetch time identify the current calculation, which is not
 a reconstruction of the tournament year's difficulty algorithm.
 
 Saved-read contract **1.22.0** carries optional native metadata snapshots and

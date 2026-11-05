@@ -9,7 +9,7 @@ import {
 import { and, desc, eq, inArray, sql } from "drizzle-orm";
 import { z } from "zod";
 import type { User } from "./auth/sessions";
-import { assertBusinessWrite } from "./auth/staff";
+import { assertUserWriteChannel } from "./auth/staff";
 import { remoteMode } from "./data-source";
 import { frontendResource } from "./frontend-resource";
 import { HttpError } from "./http";
@@ -90,9 +90,9 @@ export async function postPlayerMessage(
   const parsed = inputSchema.safeParse(input);
   if (!parsed.success || !Number.isSafeInteger(playerId) || playerId <= 0)
     throw new HttpError(400, "Enter a message of 1 to 1000 characters.");
-  await assertBusinessWrite(actor, edition);
+  assertUserWriteChannel();
   return db().transaction(async (tx) => {
-    await assertBusinessWrite(actor, edition, tx);
+    assertUserWriteChannel();
     // Serialize one author's writes across targets; duplicate retries do not count toward the limit.
     await tx.execute(
       sql`SELECT pg_advisory_xact_lock(hashtextextended(${`player-message:${actor.osuId}`}, 0))`,
@@ -216,9 +216,9 @@ export async function changePlayerMessage(
     playerId <= 0
   )
     throw new HttpError(400, "Check the message and try again.");
-  await assertBusinessWrite(actor, edition);
+  assertUserWriteChannel();
   return db().transaction(async (tx) => {
-    await assertBusinessWrite(actor, edition, tx);
+    assertUserWriteChannel();
     await tx.execute(
       sql`SELECT pg_advisory_xact_lock(hashtextextended(${`player-message:${actor.osuId}`}, 0))`,
     );

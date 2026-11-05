@@ -24,7 +24,7 @@ import {
   users,
 } from "@/db/schema";
 import type { User } from "./auth/sessions";
-import { assertBusinessWrite, permits, staffAccess } from "./auth/staff";
+import { assertUserWriteChannel, permits, staffAccess } from "./auth/staff";
 import { remoteMode } from "./data-source";
 import { inReadChannel } from "./read-channel";
 import { HttpError } from "./http";
@@ -465,7 +465,7 @@ export async function scheduleCommand(
   input: unknown,
 ) {
   localOnly();
-  await assertBusinessWrite(actor, slug);
+  assertUserWriteChannel();
   const parsed = command.safeParse(input);
   if (!parsed.success)
     throw new HttpError(
@@ -482,7 +482,7 @@ export async function scheduleCommand(
       .from(editionState)
       .where(eq(editionState.slug, slug))
       .for("update");
-    await assertBusinessWrite(actor, slug, tx);
+    assertUserWriteChannel();
     const c = await context(tx, actor, slug);
     const f = c.matches.find((m) => m.fixture.id === cmd.fixtureId)?.fixture;
     if (

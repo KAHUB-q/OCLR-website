@@ -926,7 +926,7 @@ describe.skipIf(!url)("private player workspace #671", () => {
       vi.stubEnv("ADMIN_OSU_IDS", String(admin.osuId));
     }
   });
-  it("keeps locked, completed and Developer-only player accounts read-only", async () => {
+  it("allows Developer personal practice and availability while keeping locked/completed editions read-only", async () => {
     const cmd = await practice();
     await db().insert(staffRoles).values({
       userId: p.osuId,
@@ -934,17 +934,24 @@ describe.skipIf(!url)("private player workspace #671", () => {
       editionSlug: null,
       grantedBy: admin.osuId,
     });
-    expect((await playerPracticeWorkspace(p, slug)).readOnly).toBe(true);
-    await expect(playerPracticeCommand(p, slug, cmd)).rejects.toMatchObject({
-      status: 403,
+    expect((await playerPracticeWorkspace(p, slug)).readOnly).toBe(false);
+    expect((await playerTimetableWorkspace(p, slug)).canEdit).toBe(true);
+    await playerPracticeCommand(p, slug, cmd);
+    await playerTimetableCommand(p, slug, timetable());
+    expect((await db().select().from(playerPracticeRecords))[0]).toMatchObject({
+      userId: p.osuId,
+      score: 900000,
     });
+    expect(
+      (await db().select().from(playerSeasonAvailability))[0],
+    ).toMatchObject({ userId: p.osuId, version: 1 });
     await db()
       .update(editionState)
       .set({ lockedAt: new Date() })
       .where(eq(editionState.slug, slug));
-    expect((await playerTimetableWorkspace(a, slug)).canEdit).toBe(false);
+    expect((await playerTimetableWorkspace(p, slug)).canEdit).toBe(false);
     await expect(
-      playerTimetableCommand(a, slug, timetable()),
+      playerTimetableCommand(p, slug, timetable({ expectedVersion: 1 })),
     ).rejects.toMatchObject({ status: 409 });
     await db()
       .update(editionState)
@@ -953,9 +960,9 @@ describe.skipIf(!url)("private player workspace #671", () => {
         configuration: { ...edition, status: "completed" },
       })
       .where(eq(editionState.slug, slug));
-    expect((await playerPracticeWorkspace(a, slug)).readOnly).toBe(true);
+    expect((await playerPracticeWorkspace(p, slug)).readOnly).toBe(true);
     await expect(
-      playerPracticeCommand(a, slug, await practice(a)),
+      playerPracticeCommand(p, slug, await practice(p, { expectedVersion: 1 })),
     ).rejects.toMatchObject({ status: 409 });
   });
 });

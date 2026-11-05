@@ -11,7 +11,7 @@ import { and, eq, isNull, sql } from "drizzle-orm";
 import { z } from "zod";
 import { privacyReady } from "./auth/config";
 import type { User } from "./auth/sessions";
-import { assertBusinessWrite } from "./auth/staff";
+import { assertUserWriteChannel } from "./auth/staff";
 import { remoteMode } from "./data-source";
 import { enrollmentState, type Edition } from "./editions";
 import { verifyEligibility } from "./eligibility";
@@ -164,7 +164,7 @@ export async function submitRegistration(
   slug: string,
   input: unknown,
 ) {
-  await assertBusinessWrite(user, slug);
+  assertUserWriteChannel();
   if (!privacyReady())
     throw new HttpError(503, "Registration is awaiting privacy configuration.");
   // Provider I/O precedes row locks. Recheck revision/freshness inside the transaction.
@@ -178,7 +178,7 @@ export async function submitRegistration(
     current.revision,
   );
   return db().transaction(async (tx) => {
-    await assertBusinessWrite(user, slug, tx);
+    assertUserWriteChannel();
     const [state] = await tx
       .select()
       .from(editionState)
@@ -333,6 +333,7 @@ export async function withdrawRegistration(
     !z.uuid().safeParse(id).success
   )
     throw new HttpError(400, "Confirm withdrawal before continuing.");
+  assertUserWriteChannel();
   return db().transaction(async (tx) => {
     const [own] = await tx
       .select()
@@ -341,7 +342,7 @@ export async function withdrawRegistration(
         and(eq(registrations.id, id), eq(registrations.userId, user.osuId)),
       );
     if (!own) throw new HttpError(404, "Application not found.");
-    await assertBusinessWrite(user, own.editionSlug, tx);
+    assertUserWriteChannel();
     const [state] = await tx
       .select()
       .from(editionState)

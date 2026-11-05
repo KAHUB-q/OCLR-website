@@ -9,7 +9,7 @@ credential, production migration or deployment is part of this implementation.
 
 Every authenticated browser-session user can place pixels, including users with
 only the global Developer role (#895). Canvas participation does not grant
-tournament business writes or canvas moderation. Developer Bearer access,
+staff management writes or canvas moderation. Developer Bearer access,
 delegated read channels and the remote frontend remain read-only; the game API
 continues to require a same-origin browser session.
 

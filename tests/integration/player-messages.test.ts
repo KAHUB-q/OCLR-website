@@ -25,6 +25,7 @@ import {
   publicPlayerIntroductions,
   publicPlayerMessages,
 } from "../../src/lib/player-messages";
+import { withReadChannel } from "../../src/lib/read-channel";
 const url = process.env.TEST_DATABASE_URL;
 const actor = { osuId: 320001, username: "Signed Author" };
 const target = 320002;
@@ -105,20 +106,80 @@ describe.skipIf(!url)(
         (await publicPlayerIntroductions(cup.slug, [target], "intro")).size,
       ).toBe(0);
     });
-    it("preserves the merged Developer read-only restriction", async () => {
+    it("lets a Developer post and manage only their own public messages", async () => {
       await db().insert(staffRoles).values({
         userId: actor.osuId,
         role: "developer",
-        editionSlug: null,
         grantedBy: actor.osuId,
       });
+      const input = { requestId: randomUUID(), text: "Developer comment" };
+      const saved = await postPlayerMessage(actor, cup.slug, target, input);
+      expect(await postPlayerMessage(actor, cup.slug, target, input)).toEqual(
+        saved,
+      );
       await expect(
-        postPlayerMessage(actor, cup.slug, target, {
+        postPlayerMessage(actor, cup.slug, target + 1, {
           requestId: randomUUID(),
-          text: "blocked",
+          text: "Private target",
         }),
-      ).rejects.toMatchObject({ status: 403 });
+      ).rejects.toMatchObject({ status: 404 });
+      await expect(
+        changePlayerMessage(
+          { osuId: target, username: "Other" },
+          cup.slug,
+          target,
+          saved.id,
+          "delete",
+          {
+            version: saved.version,
+          },
+        ),
+      ).rejects.toMatchObject({ status: 404 });
+      await changePlayerMessage(actor, cup.slug, target, saved.id, "edit", {
+        version: saved.version,
+        text: "Edited by Developer",
+      });
+      const [edited] = await publicPlayerMessages(cup.slug, target);
+      expect(edited).toMatchObject({
+        authorId: actor.osuId,
+        text: "Edited by Developer",
+      });
+      await changePlayerMessage(actor, cup.slug, target, saved.id, "delete", {
+        version: edited.version,
+      });
       expect(await publicPlayerMessages(cup.slug, target)).toEqual([]);
+    });
+    it("rejects message writes through delegated and remote read channels", async () => {
+      const input = { requestId: randomUUID(), text: "Read-only comment" };
+      const saved = await postPlayerMessage(actor, cup.slug, target, input);
+      const writes = [
+        () =>
+          postPlayerMessage(actor, cup.slug, target, {
+            ...input,
+            requestId: randomUUID(),
+          }),
+        () =>
+          changePlayerMessage(actor, cup.slug, target, saved.id, "edit", {
+            version: saved.version,
+            text: "Changed",
+          }),
+        () =>
+          changePlayerMessage(actor, cup.slug, target, saved.id, "delete", {
+            version: saved.version,
+          }),
+      ];
+      for (const write of writes)
+        await expect(withReadChannel(write)).rejects.toMatchObject({
+          status: 403,
+        });
+      vi.stubEnv("OCLR_DATA_SOURCE", "remote");
+      try {
+        for (const write of writes)
+          await expect(write()).rejects.toMatchObject({ status: 403 });
+      } finally {
+        vi.stubEnv("OCLR_DATA_SOURCE", "database");
+      }
+      expect(await publicPlayerMessages(cup.slug, target)).toEqual([saved]);
     });
     it("signs from the authenticated author, safely stores literal text and deduplicates concurrent retries", async () => {
       const input = {

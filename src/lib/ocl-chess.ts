@@ -2,20 +2,14 @@ import { randomUUID } from "node:crypto";
 import { db } from "@/db";
 import { chessBoards, chessPlayers, chessEvents } from "@/db/schema";
 import { eq, sql } from "drizzle-orm";
-import { assertCapability, hasCapability } from "./auth/staff";
+import {
+  assertCapability,
+  assertUserWriteChannel,
+  hasCapability,
+} from "./auth/staff";
 import type { User } from "./auth/sessions";
 import { HttpError } from "./http";
 import { chessAdminCommand, pixelCommand } from "./ocl-chess-model";
-import { remoteMode } from "./data-source";
-import { inReadChannel } from "./read-channel";
-
-function assertCanvasWriteChannel() {
-  // Canvas participation is available to every browser-session user, including
-  // Developers. Delegated reads and the remote frontend still cannot write.
-  if (remoteMode() || inReadChannel())
-    throw new HttpError(403, "Developer access is read-only.");
-}
-
 export async function readChess(user: User | null) {
   const [board] = await db()
     .select()
@@ -37,7 +31,7 @@ export async function readChess(user: User | null) {
   };
 }
 export async function writeChess(user: User, input: unknown, admin = false) {
-  assertCanvasWriteChannel();
+  assertUserWriteChannel();
   const parsed = admin
     ? chessAdminCommand.safeParse(input)
     : pixelCommand.safeParse(input);
@@ -52,7 +46,7 @@ export async function writeChess(user: User, input: unknown, admin = false) {
       .where(eq(chessBoards.id, 1))
       .for("update");
     if (!board) throw new HttpError(503, "The canvas is unavailable.");
-    assertCanvasWriteChannel();
+    assertUserWriteChannel();
     let pixels = board.pixels,
       enabled = board.enabled;
     if ("action" in command) {
@@ -113,14 +107,12 @@ export async function writeChess(user: User, input: unknown, admin = false) {
       .update(chessBoards)
       .set({ pixels, enabled, revision: board.revision + 1 })
       .where(eq(chessBoards.id, 1));
-    await tx
-      .insert(chessEvents)
-      .values({
-        requestId: "requestId" in command ? command.requestId : randomUUID(),
-        actorId: user.osuId,
-        command,
-        revision: board.revision + 1,
-      });
+    await tx.insert(chessEvents).values({
+      requestId: "requestId" in command ? command.requestId : randomUUID(),
+      actorId: user.osuId,
+      command,
+      revision: board.revision + 1,
+    });
   });
   return readChess(user);
 }

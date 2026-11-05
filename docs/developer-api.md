@@ -13,6 +13,19 @@ contracts. The core-page remote frontend adapter is implemented in #270; see
 Complete page coverage remains in #271 and consolidated verification in #272.
 **Only the documented core pages currently support development without a local database.**
 
+## Website participation and staff permissions (#904)
+
+Developer adds staff read access. With a normal same-origin osu! browser session,
+Developers retain ordinary user participation: public player messages, their own
+registration/withdrawal, eligible personal practice and availability, appointed
+captain scheduling/draft actions, and OCL Chess. Each operation still checks its
+existing owner, edition, team, appointment, publication and business rules.
+
+Developer alone grants no staff mutations, moderation, provider refresh or
+sensitive exports. Other explicit roles keep their existing scoped authority.
+The delegated Bearer API and remote frontend remain read-only regardless of the
+user's cumulative roles. See the [site permission audit](developer-permissions.md).
+
 ## Credential policy
 
 - A 256-bit opaque token has the distinct `oclr_dev_` prefix. Only its SHA-256 hash

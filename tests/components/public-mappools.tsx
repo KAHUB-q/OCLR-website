@@ -33,6 +33,7 @@ document.documentElement.dataset.appearance =
 const messages = locale === "en" ? en : locale === "zh-Hans" ? hans : hant;
 const earlySeason = (params.get("early-season") ??
   "s1") as keyof typeof earlyInventory.seasons;
+// Fixture preparation represents the corrected persisted archive, not a display filter.
 const earlyPools = params.has("early-season")
   ? earlySeason === "s2"
     ? correctS2PoolArchive({

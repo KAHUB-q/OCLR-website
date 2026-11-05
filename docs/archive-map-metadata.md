@@ -195,10 +195,10 @@ so extra disclosure elements cannot become grid columns and squeeze song titles
 into unreadable widths on mobile. Existing MainSheet styles are reused.
 
 | Season | Pools | Valid slots | Missing titles before → after | Missing length / CS / AR / OD, each, before → after |
-| --- | --- | --- | --- | --- |
-| S1 | 3 | 59 | 0 → 0 | 59 → 0 |
-| S2 | 5 | 68 | 25 → 1 | 68 → 1 |
-| S3 | 3 | 63 | 5 → 0 | 63 → 0 |
+| ------ | ----- | ----------- | ----------------------------- | --------------------------------------------------- |
+| S1     | 3     | 59          | 0 → 0                         | 59 → 0                                              |
+| S2     | 5     | 68          | 25 → 1                        | 68 → 1                                              |
+| S3     | 3     | 63          | 5 → 0                         | 63 → 0                                              |
 
 Thus 29 of the 30 reported empty titles are recovered, and 189 of 190 valid
 slots have all eight metadata fields plus a difficulty name. Existing non-null
@@ -225,20 +225,26 @@ tracked in #852; this change does not fabricate replacement images.
 
 ### Source preservation and regeneration
 
-The organizer confirmed S2 **GS** had neither DT5 nor TB1. The shared
-`archiveMappoolMaps` projection removes exactly those two slots from the pool,
-filters, totals, stage navigation and `archiveCounts` (also used by import review
-and public summaries). S2 **Final** DT5 804387 and TB1 1962336 remain and receive
-missing titles normally. Other editions/pools are unaffected.
+The organizer confirmed S2 **GS** had neither DT5 nor TB1. The earlier
+projection-only correction is superseded by #899: these entries must be removed
+from the **current saved JSONB** using the [version-checked correction](archive-relational-queries.md#s2-operator-correction).
+There is no season-specific display filter. Counts, navigation and map views read
+the saved maps directly. S2 **Final** DT5 804387 and TB1 1962336 remain and receive
+missing titles normally; other seasons and pools are unchanged.
 
-S1–S3 have no maintained standalone import builder in this checkout. Keeping the
-correction in the shared projection means an old save, a re-opened/serialized
-archive, a regenerated import or a remote saved-data read follows the same rule.
-Raw evidence and saved-data map records remain intact, including the two phantom
-source rows; no schema normalization or destructive reimport rewrites them.
-This deliberately preserves `statisticsArchiveKey`, reviewed results and
-published statistical snapshots. Deploying the reviewed code is sufficient for
-existing saved archives. No production data write or migration is required.
+S1–S3 have no maintained standalone import builder in this checkout. New Admin
+archive imports correct the two slots at the write boundary. The original
+captured inventory and prior edition revisions remain evidence of the earlier
+save. Changing the current archive changes `statisticsArchiveKey`; the controlled
+correction proves selected-score and fixture-review equivalence, preserves
+recorded picks/bans and publication timestamps, and transactionally rebinds only
+validated current statistics. Incompatible evidence aborts the operation.
+
+Deploying the renderer alone does **not** correct an old database. An operator
+must preview and apply the saved-data correction at the actual edition revision.
+Migration 0077 separately adds immutable MP JSONB history and the derived
+relational read layer described in the linked guide. No production mutation or
+deployment is claimed by this implementation.
 
 Unit coverage walks every pool/slot, checks preserved values and exact-BID
 coverage, reopens serialized raw records, verifies scoped removals/counts and

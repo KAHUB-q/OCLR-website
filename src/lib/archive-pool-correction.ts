@@ -7,7 +7,11 @@ import {
   editionEvents,
   historicalStatistics,
 } from "@/db/schema";
-import { historicalArchiveSchema } from "./historical-archive";
+import { archivePoolFixtures } from "./archive-mappool-statistics";
+import {
+  historicalArchiveSchema,
+  publicHistoricalArchive,
+} from "./historical-archive";
 import { correctS2PoolArchive } from "./archive-pool-correction-model";
 import { statisticsArchiveKey } from "./archive-statistics-key";
 import {
@@ -121,6 +125,24 @@ export async function correctS2PoolData(
             "Published S2 fixture would become invalid; review required.",
           );
       }
+      const released = rows
+        .filter((row) => row.published?.archiveKey === oldKey)
+        .map((row) => ({
+          fixtureId: row.fixtureId,
+          snapshot: parseStatisticsSnapshot(row.published),
+        }));
+      const coverage = (archive: typeof before) =>
+        archivePoolFixtures(publicHistoricalArchive(archive), released).map(
+          ({ maps: _maps, ...fixture }) => {
+            void _maps;
+            return fixture;
+          },
+        );
+      if (!isDeepStrictEqual(coverage(before), coverage(after)))
+        throw new HttpError(
+          409,
+          "S2 pool correction would change recorded picks or bans; review required.",
+        );
       const changed = updates.filter(
         (u) => u.draft !== u.row.draft || u.published !== u.row.published,
       );

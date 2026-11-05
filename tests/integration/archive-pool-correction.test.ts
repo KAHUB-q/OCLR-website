@@ -196,4 +196,17 @@ describe.skipIf(!url)("S2 stored pool correction", () => {
     expect((await readTournament("s2"))!.revision).toBe(1);
     expect(await db().select().from(editionEvents)).toHaveLength(1);
   });
+  it("requires review when a recorded ban contradicts the removed slots", async () => {
+    const saved = (await readTournament("s2"))!;
+    const changed = structuredClone(saved.edition.archive!);
+    changed.matches[0].poolId = "gs";
+    changed.matches[0].bansA = "DT5";
+    await db()
+      .update(editionState)
+      .set({ configuration: { ...saved.edition, archive: changed } });
+    await expect(
+      correctS2PoolData({ apply: true, expectedRevision: 0 }),
+    ).rejects.toMatchObject({ status: 409 });
+    expect((await readTournament("s2"))!.edition.archive).toEqual(changed);
+  });
 });

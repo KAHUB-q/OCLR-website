@@ -70,7 +70,7 @@ test.describe("private replay workflow", () => {
     context,
     browser,
     isMobile,
-  }, info) => {
+  }) => {
     const { poolId, entryId, cookie, url } = await prepare(context, isMobile);
     await context.addCookies([cookie]);
     await page.goto("/admin/tournaments/test-cup/mappools");
@@ -127,10 +127,6 @@ test.describe("private replay workflow", () => {
       ).status(),
     ).toBe(403);
     await page.evaluate(() => window.scrollTo(0, 0));
-    await page.screenshot({
-      path: info.outputPath("replay-tester-uploaded.png"),
-      fullPage: true,
-    });
     await page
       .getByRole("button", { name: "Delete replay", exact: true })
       .click();
@@ -265,11 +261,11 @@ test.describe("private replay workflow", () => {
     await expect(page.locator(".replay-content [role=alert]")).toBeVisible();
     await expect(page.locator(".replay-item")).toHaveCount(1);
   });
-  test("supports every locale, appearance and theme with long filenames, errors and keyboard access", async ({
+  test("supports long filenames, errors and keyboard access", async ({
     page,
     context,
     isMobile,
-  }, info) => {
+  }) => {
     const { entryId, cookie, url } = await prepare(context, isMobile);
     await context.addCookies([cookie]);
     expect(
@@ -290,67 +286,59 @@ test.describe("private replay workflow", () => {
       ).ok(),
     ).toBe(true);
     await page.setViewportSize({ width: isMobile ? 390 : 1440, height: 1000 });
-    for (const appearance of ["default", "cute-pastel", "swiss-minimal"])
-      for (const theme of ["light", "dark"])
-        for (const locale of ["en", "zh-Hans", "zh-Hant"]) {
-          await context.addCookies([
-            {
-              name: "oclr-appearance",
-              value: appearance,
-              url: "http://127.0.0.1:3100",
-            },
-            { name: "oclr-theme", value: theme, url: "http://127.0.0.1:3100" },
-            {
-              name: "oclr-locale",
-              value: locale,
-              url: "http://127.0.0.1:3100",
-            },
-          ]);
-          await page.goto("/admin/tournaments/test-cup/mappools");
-          await expect(page.locator("html")).toHaveAttribute(
-            "data-theme",
-            theme,
-          );
-          await expect(page.locator("html")).toHaveAttribute(
-            "data-appearance",
-            appearance,
-          );
-          const trigger = page.locator(".mappool-replays > button");
-          await trigger.focus();
-          await page.keyboard.press("Enter");
-          await expect(page.locator(".replay-item")).toHaveCount(1);
-          await page.locator('input[type="file"]').setInputFiles({
-            name: "wrong.osr",
-            mimeType: "text/plain",
-            buffer: Buffer.from("fake file"),
-          });
-          await page.locator('.replay-content button[type="submit"]').click();
-          await expect(
-            page.locator('.replay-content [role="alert"]'),
-          ).toBeVisible();
-          expect(
-            await page.evaluate(() => document.documentElement.scrollWidth),
-          ).toBeLessThanOrEqual(isMobile ? 390 : 1440);
-          expect(
-            (
-              await new AxeBuilder({ page })
-                .include(".mappool-workbench")
-                .withTags(["wcag2a", "wcag2aa"])
-                .analyze()
-            ).violations,
-          ).toEqual([]);
-          await page.locator(".replay-item button").click();
-          await expect(page.locator(".replay-delete-dialog")).toBeVisible();
-          await page.keyboard.press("Escape");
-          await expect(page.locator(".replay-toolbar button")).toBeFocused();
-          if (locale === "zh-Hans") {
-            await page.evaluate(() => window.scrollTo(0, 0));
-            await page.screenshot({
-              path: info.outputPath(`replay-${appearance}-${theme}.png`),
-              fullPage: true,
-            });
-          }
-        }
+
+    const appearance = "default";
+
+    const theme = "light";
+
+    const locale = "en";
+
+    await context.addCookies([
+      {
+        name: "oclr-appearance",
+        value: appearance,
+        url: "http://127.0.0.1:3100",
+      },
+      { name: "oclr-theme", value: theme, url: "http://127.0.0.1:3100" },
+      {
+        name: "oclr-locale",
+        value: locale,
+        url: "http://127.0.0.1:3100",
+      },
+    ]);
+    await page.goto("/admin/tournaments/test-cup/mappools");
+    await expect(page.locator("html")).toHaveAttribute("data-theme", theme);
+    await expect(page.locator("html")).toHaveAttribute(
+      "data-appearance",
+      appearance,
+    );
+    const trigger = page.locator(".mappool-replays > button");
+    await trigger.focus();
+    await page.keyboard.press("Enter");
+    await expect(page.locator(".replay-item")).toHaveCount(1);
+    await page.locator('input[type="file"]').setInputFiles({
+      name: "wrong.osr",
+      mimeType: "text/plain",
+      buffer: Buffer.from("fake file"),
+    });
+    await page.locator('.replay-content button[type="submit"]').click();
+    await expect(page.locator('.replay-content [role="alert"]')).toBeVisible();
+    expect(
+      await page.evaluate(() => document.documentElement.scrollWidth),
+    ).toBeLessThanOrEqual(isMobile ? 390 : 1440);
+    expect(
+      (
+        await new AxeBuilder({ page })
+          .include(".mappool-workbench")
+          .withTags(["wcag2a", "wcag2aa"])
+          .analyze()
+      ).violations,
+    ).toEqual([]);
+    await page.locator(".replay-item button").click();
+    await expect(page.locator(".replay-delete-dialog")).toBeVisible();
+    await page.keyboard.press("Escape");
+    await expect(page.locator(".replay-toolbar button")).toBeFocused();
+
     expect(
       await db()
         .select()

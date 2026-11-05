@@ -40,7 +40,7 @@ test.describe("focused workflow improvements", () => {
     page,
     context,
     isMobile,
-  }, info) => {
+  }) => {
     const admin = isMobile ? 70001 : 60001;
     await seedSession(admin);
     process.env.ADMIN_OSU_IDS = String(admin);
@@ -95,16 +95,13 @@ test.describe("focused workflow improvements", () => {
         await expect(page).toHaveURL(/\/tournaments\/test-cup$/);
         await expect(page.locator(".header-tournaments")).toHaveCount(0);
         await expect(page.locator("main")).not.toContainText("PRIVATE_EDITION");
-        await page.screenshot({
-          path: info.outputPath(`tournaments-index-${locale}-${theme}.png`),
-        });
       }
   });
   test("captain publication loads saved settings and saves independent switches", async ({
     page,
     context,
     isMobile,
-  }, info) => {
+  }) => {
     process.env.DATABASE_URL = process.env.TEST_DATABASE_URL;
     const base = isMobile ? 120001 : 110001;
     process.env.ADMIN_OSU_IDS = String(base);
@@ -153,12 +150,6 @@ test.describe("focused workflow improvements", () => {
       for (const theme of ["light", "dark"]) {
         await preferences(context, locale, theme);
         await page.reload();
-        await page.screenshot({
-          path: info.outputPath(
-            `captain-visible-controls-${locale}-${theme}.png`,
-          ),
-          fullPage: true,
-        });
         expect(
           (
             await new AxeBuilder({ page })
@@ -172,7 +163,7 @@ test.describe("focused workflow improvements", () => {
     page,
     context,
     isMobile,
-  }, info) => {
+  }) => {
     process.env.DATABASE_URL = process.env.TEST_DATABASE_URL;
     const base = isMobile ? 120001 : 110001;
     process.env.ADMIN_OSU_IDS = String(base);
@@ -277,10 +268,6 @@ test.describe("focused workflow improvements", () => {
           }),
         });
         await card.locator("button").first().click();
-        await page.screenshot({
-          path: info.outputPath(`team-image-editor-${locale}-${theme}.png`),
-          fullPage: true,
-        });
         expect(
           (
             await new AxeBuilder({ page })
@@ -318,7 +305,7 @@ test.describe("focused workflow improvements", () => {
     page,
     context,
     isMobile,
-  }, info) => {
+  }) => {
     process.env.DATABASE_URL = process.env.TEST_DATABASE_URL;
     const base = isMobile ? 120001 : 110001;
     process.env.ADMIN_OSU_IDS = String(base);
@@ -394,16 +381,12 @@ test.describe("focused workflow improvements", () => {
     await expect(
       page.getByRole("button", { name: "Resume draft", exact: true }),
     ).toBeVisible();
-    await page.screenshot({
-      path: info.outputPath("private-short-pool-draft.png"),
-      fullPage: true,
-    });
   });
   test("registration shows verified limits and enforces pass/fail/unavailable on the server", async ({
     page,
     context,
     isMobile,
-  }, info) => {
+  }) => {
     const base = isMobile ? 967100 : 967000;
     for (let i = 0; i < 3; i++) {
       const id = base + i,
@@ -452,10 +435,6 @@ test.describe("focused workflow improvements", () => {
         for (const locale of ["en", "zh-Hans", "zh-Hant"]) {
           await preferences(context, locale);
           await page.reload();
-          await page.screenshot({
-            path: info.outputPath(`automatic-eligibility-${locale}.png`),
-            fullPage: true,
-          });
         }
         await preferences(context, "en");
         await page.reload();

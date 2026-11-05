@@ -1,6 +1,6 @@
 import { test, expect } from "@playwright/test";
-import { appearances } from "../../src/lib/preferences";
-for (const appearance of appearances) {
+
+for (const appearance of ["default", "retro-arcade"]) {
   test(`Chinese UI labels and dates remain readable at 320px: ${appearance}`, async ({
     page,
   }) => {

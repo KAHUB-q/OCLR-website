@@ -21,7 +21,7 @@ test.describe("current edition coaches", () => {
     context,
     browser,
     isMobile,
-  }, info) => {
+  }) => {
     process.env.DATABASE_URL = process.env.TEST_DATABASE_URL;
     await db().execute(
       sql`TRUNCATE edition_state, users, user_profile_cache CASCADE`,
@@ -140,7 +140,7 @@ test.describe("current edition coaches", () => {
             },
             { name: "oclr-theme", value: theme, url: "http://127.0.0.1:3100" },
           ]);
-          for (const [name, path] of [
+          for (const [, path] of [
             ["admin", adminPath],
             ["public", publicPath],
           ]) {
@@ -153,10 +153,6 @@ test.describe("current edition coaches", () => {
             expect(
               (await new AxeBuilder({ page }).analyze()).violations,
             ).toEqual([]);
-            await page.screenshot({
-              path: info.outputPath(`${appearance}-${theme}-${name}.png`),
-              fullPage: true,
-            });
           }
         }
       await page.goto(adminPath);

@@ -47,7 +47,7 @@ test.describe("unused draft deletion", () => {
       page,
       context,
       isMobile,
-    }, info) => {
+    }) => {
       const slug = `delete-${text.locale.toLowerCase()}-${isMobile ? "mobile" : "desktop"}-test-${randomUUID().slice(0, 8)}`;
       await context.addCookies([
         await seedSession(isMobile ? 70001 : 60001),
@@ -141,11 +141,6 @@ test.describe("unused draft deletion", () => {
               .analyze()
           ).violations,
         ).toEqual([]);
-        await page.screenshot({
-          path: info.outputPath(`delete-${text.locale}-${theme}.png`),
-          fullPage: true,
-          animations: "disabled",
-        });
       }
       await dialog
         .getByRole("button", { name: text.confirm, exact: true })
@@ -272,7 +267,9 @@ test.describe("unused draft deletion", () => {
       await dialog
         .getByRole("button", { name: "Confirm", exact: true })
         .click();
-      await expect(page.getByRole("status")).toContainText("settings changed");
+      await expect(
+        page.getByRole("status").filter({ hasText: "settings changed" }),
+      ).toBeVisible();
       expect(
         (
           await context.request.post(endpoint, {

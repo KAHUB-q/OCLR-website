@@ -21,7 +21,7 @@ test.describe("archive presentation fixes", () => {
     page,
     context,
     isMobile,
-  }, info) => {
+  }) => {
     await seedEditions(
       archives.map((archive, i) => ({
         ...edition,
@@ -103,9 +103,6 @@ test.describe("archive presentation fixes", () => {
             );
             await toc.locator("a").nth(1).click();
             await expect(page.locator(`#${ids[1]}`)).toBeInViewport();
-            await page.screenshot({
-              path: info.outputPath(`s8-rules-${locale}-${theme}.png`),
-            });
           } else {
             await toc.locator("a").last().click();
             await expect(page.locator(`#${ids.at(-1)}`)).toBeInViewport();
@@ -158,10 +155,6 @@ test.describe("archive presentation fixes", () => {
               "3",
               "4",
             ]);
-            await page.screenshot({
-              path: info.outputPath(`s8-standings-${locale}-${theme}.png`),
-              fullPage: true,
-            });
           }
         }
       }

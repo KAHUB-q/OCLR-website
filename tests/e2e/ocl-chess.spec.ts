@@ -46,9 +46,6 @@ test.describe("OCL Chess saved canvas", () => {
       const screen = page.viewportSize()!;
       expect(drawing!.width).toBeGreaterThan(screen.width * 0.9);
       expect(drawing!.height).toBeGreaterThan(screen.height * 0.5);
-      await page.screenshot({
-        path: `/tmp/oclr-fullscreen-real-${test.info().project.name}.png`,
-      });
       await page.getByLabel("X", { exact: true }).fill("12");
       await page.getByLabel("Y", { exact: true }).fill("10");
       await page.getByRole("button", { name: "Confirm pixel" }).click();

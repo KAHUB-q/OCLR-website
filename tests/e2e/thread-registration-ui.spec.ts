@@ -13,7 +13,7 @@ test.describe("registration wrapping and deferred overview", () => {
     page,
     context,
     isMobile,
-  }, info) => {
+  }) => {
     const base = isMobile ? 323010 : 323000;
     const cookie = await seedSession(base);
     const slug = `thread-ui-${base}-test`;
@@ -112,11 +112,6 @@ test.describe("registration wrapping and deferred overview", () => {
               () => document.documentElement.scrollWidth <= innerWidth,
             ),
           ).toBe(true);
-          if (locale === "zh-Hant" && appearance === "default")
-            await page.screenshot({
-              path: info.outputPath(`registration-${theme}.png`),
-              fullPage: true,
-            });
           await page.goto("/admin");
           const card = page.locator(".admin-task").filter({
             has: page.locator('a[href="/admin/registrations?status=deferred"]'),
@@ -133,11 +128,6 @@ test.describe("registration wrapping and deferred overview", () => {
               () => document.documentElement.scrollWidth <= innerWidth,
             ),
           ).toBe(true);
-          if (locale === "zh-Hant" && appearance === "default")
-            await page.screenshot({
-              path: info.outputPath(`admin-${theme}.png`),
-              fullPage: true,
-            });
         }
     await db().delete(staffRoles).where(eq(staffRoles.userId, base));
   });

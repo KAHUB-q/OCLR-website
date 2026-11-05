@@ -477,10 +477,6 @@ test.describe("requested referee acceptance", () => {
           () => document.documentElement.scrollWidth <= innerWidth,
         ),
       ).toBe(true);
-      await page.screenshot({
-        path: info.outputPath("synthetic-referee-controls.png"),
-        animations: "disabled",
-      });
       const games: ReturnType<typeof apiGame>[] = [],
         excluded = new Set<number>();
       const home = w.teams[0].id,

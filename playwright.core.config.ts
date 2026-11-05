@@ -3,7 +3,7 @@ import base from "./playwright.config";
 
 // Day-to-day contract: public access, registration, scoped roles, draft/results,
 // read-only API credentials and desktop IRC authorization/relay.
-// Visual/theme/archive matrices belong to full CI.
+// Full adds distinct workflows; shared palette/copy matrices are retired (#869).
 export const coreSpecs = [
   "health.spec.ts",
   "public.spec.ts",

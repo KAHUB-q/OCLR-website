@@ -5,32 +5,41 @@ reports real failures, but passing CI is not required for merging. The organizer
 requested this default on 2026-10-31 (#608), superseding the 2026-10-27
 per-commit core browser policy. Nightly CI still runs core E2E.
 
-| Lane          | Push/PR and manual checks                                              | Explicit manual full CI                                                         |
-| ------------- | ---------------------------------------------------------------------- | ------------------------------------------------------------------------------- |
-| verify        | Locked npm install, lint/types, all unit/integration, production audit | Same                                                                            |
-| build         | Production build; no browser artifact upload                           | Production build, packaged/shared with browser jobs                             |
-| e2e           | Skipped (nightly/manual core: 2 Chromium desktop/mobile shards)        | Every functional spec except header-overlap, 8 isolated shards                  |
-| header-e2e    | Skipped                                                                | Full language/appearance/light/dark/width and Firefox matrix, 4 isolated shards |
-| remote-e2e    | Skipped (nightly/manual core: remote permission smoke)                 | Remote smoke plus all appearances                                               |
-| remote-matrix | Skipped                                                                | Full-site saved-read page/GET matrix                                            |
+| Lane          | Push/PR and manual checks                                              | Explicit manual full CI                                                                       |
+| ------------- | ---------------------------------------------------------------------- | --------------------------------------------------------------------------------------------- |
+| verify        | Locked npm install, lint/types, all unit/integration, production audit | Same                                                                                          |
+| build         | Production build; no browser artifact upload                           | Production build, packaged/shared with browser jobs                                           |
+| e2e           | Skipped (nightly/manual core: 2 Chromium desktop/mobile shards)        | Every functional spec except header-overlap, 8 isolated shards                                |
+| header-e2e    | Skipped                                                                | Real-session workspace navigation on Chromium desktop/mobile and Firefox, one isolated runner |
+| remote-e2e    | Skipped (nightly/manual core: remote permission smoke)                 | Remote permission smoke plus an inherited season                                              |
+| remote-matrix | Skipped                                                                | Full-site saved-read page/GET matrix                                                          |
 
 The functional core allowlist is defined in
 [playwright.core.config.ts](../playwright.core.config.ts): health, public,
 registration, roles, draft, results, read-api and developer-api. It covers basic
 navigation, anonymous/privacy boundaries, registration ownership, scoped roles,
 authoritative draft picks, reviewed result publication, read-only credentials and
-revocation. Theme/branding/appearance matrices, archive permutations, extensive
-accessibility/layout sweeps and secondary administration screens belong to full
-regression. Unit/integration checks still cover business rules across the app. Remote core
-checks sample the default appearance; only full coverage iterates every
-appearance (OCLR_REMOTE_E2E_FULL=true on the remote lane). Connection isolation,
+revocation. Full adds distinct historical and secondary administration workflows
+and necessary browser regressions. Unit/integration checks cover business rules
+across the app. Remote core checks exercise a default and an inherited season
+without repeating the business journey for every appearance. Connection isolation,
 read-only enforcement, revocation and expiry assertions run in both modes.
 
-All full regression specs remain available. The new
-[playwright.functional.config.ts](../playwright.functional.config.ts) retains the
-previous broad functional inventory; core is deliberately a smaller allowlist.
-New browser specs join full automatically and enter core only by an explicit
-allowlist decision. Full coverage is not claimed by a successful core run.
+Full regression retains distinct business workflows in
+[playwright.functional.config.ts](../playwright.functional.config.ts); core is a
+smaller explicit allowlist. #869 removes repeated style/copy matrices from full
+as well as duplicate journeys. New E2E cases need an independent business outcome
+and a reason for browser/server verification. A successful core run does not
+establish full regression acceptance.
+
+Presentation is sampled in DB-free component tests, and translations/ICU are
+checked centrally. Shared style or wording changes do not automatically add an
+E2E, and full/nightly is not a holding area for duplicates. Keep focused browser
+regressions for real interaction, focus, loading and rendering faults. Record
+removed cases and their surviving coverage, together with comparable before/after
+counts and timings; see [test design](development.md#choosing-and-maintaining-tests-869)
+and the [cleanup record](verification/issue-869/README.md). The checks/core/full
+event policy below remains independent of this reduction in test content.
 
 ## Events and scope
 
@@ -70,16 +79,17 @@ run destructive fixtures concurrently against one database.
 Browser jobs use the official Playwright Noble image pinned to the locked
 package version and manifest digest, with preinstalled browsers and dependencies.
 Browser commands use HOME=/root to match the container user's home ownership.
-Core and remote lanes preflight Chromium only; full functional/header coverage
-preflights all three engines. The preflight checks both executables and actual
+Functional and remote lanes preflight Chromium; header coverage also requires
+Firefox. The preflight checks both executables and actual
 launch. Version mismatch or launch errors fail early.
 
 Playwright stores test-results/ci-timings.json and a job summary with elapsed
 execution and per-spec/project durations. Result artifacts are uploaded on success
 and failure without recompressing PNG/ZIP evidence. Timings contain paths,
-durations and status counts, without test titles or result bodies. Responsive
-measurements remain checked; ordinary functional CI omits the helper's six
-full-page evidence screenshots. Explicit screenshots and failure traces remain.
+durations and status counts, without test titles or result bodies. Each business
+workflow checks its current project viewport. Shared responsive boundaries are
+sampled once in component tests, rather than resizing and capturing six full-page
+screenshots after every workflow. Failure screenshots and traces remain.
 Retries and timeouts are unchanged.
 
 Anonymous cookie checks allow only known automatic preferences: valid oclr-locale

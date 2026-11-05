@@ -15,7 +15,7 @@ import {
 import { seedEditions } from "../fixtures/editions";
 import { edition } from "../fixtures/edition";
 import { seedSession } from "./session";
-import { captureResponsiveLayout } from "./responsive";
+import { expectWorkflowFits } from "./responsive";
 test.describe("streaming workspace through real HTTP sessions", () => {
   test.skip(!process.env.TEST_DATABASE_URL, "Requires isolated PostgreSQL");
   test.setTimeout(240000);
@@ -26,7 +26,7 @@ test.describe("streaming workspace through real HTTP sessions", () => {
     browser,
     isMobile,
     baseURL,
-  }, info) => {
+  }) => {
     const origin = baseURL!;
     const adminId = isMobile ? 70001 : 60001;
     const streamerId = isMobile ? 187102 : 187002;
@@ -309,7 +309,7 @@ test.describe("streaming workspace through real HTTP sessions", () => {
           exact: true,
         }),
       ).toBeVisible();
-      await captureResponsiveLayout(managerPage, info, "streaming-manager");
+      await expectWorkflowFits(managerPage);
       await page.reload();
       await expect(
         card.getByRole("group", {
@@ -376,13 +376,8 @@ test.describe("streaming workspace through real HTTP sessions", () => {
                 })),
               )
               .toEqual([]);
-            if (locale === "en")
-              await page.screenshot({
-                path: info.outputPath(`streaming-${appearance}-${theme}.png`),
-                fullPage: true,
-              });
           }
-      await captureResponsiveLayout(page, info, "streaming-tasks");
+      await expectWorkflowFits(page);
       const grant = (
         await (await manager.request.get("/api/admin/staff")).json()
       ).grants.find(
@@ -430,7 +425,7 @@ test.describe("streaming workspace through real HTTP sessions", () => {
     browser,
     isMobile,
     baseURL,
-  }, info) => {
+  }) => {
     const origin = baseURL!;
     const adminId = isMobile ? 667101 : 667001;
     const firstId = isMobile ? 667102 : 667002;
@@ -714,11 +709,7 @@ test.describe("streaming workspace through real HTTP sessions", () => {
             .analyze()
         ).violations,
       ).toEqual([]);
-      await captureResponsiveLayout(admin, info, "commentary-tasks");
-      await admin.screenshot({
-        path: info.outputPath("commentary-zh-Hant-dark.png"),
-        fullPage: true,
-      });
+      await expectWorkflowFits(admin);
       await db()
         .update(staffRoles)
         .set({ revokedAt: new Date() })

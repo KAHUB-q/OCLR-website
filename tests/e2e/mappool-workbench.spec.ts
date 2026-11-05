@@ -785,9 +785,6 @@ test.describe("private Pooler/Tester selection workbench", () => {
             .analyze()
         ).violations,
       ).toEqual([]);
-      await promotionPanel.screenshot({
-        path: `/tmp/oclr-promotion-${isMobile ? "mobile" : "desktop"}.png`,
-      });
 
       await poolerRow
         .getByRole("button", { name: "Add beatmap", exact: true })
@@ -846,7 +843,9 @@ test.describe("private Pooler/Tester selection workbench", () => {
           })
         ).status(),
       ).toBe(403);
-      for (const theme of ["light", "dark"]) {
+      {
+        const theme = "light";
+
         await pooler.addCookies([
           { name: "oclr-locale", value: "zh-Hant", url: origin },
           { name: "oclr-theme", value: theme, url: origin },
@@ -897,10 +896,6 @@ test.describe("private Pooler/Tester selection workbench", () => {
               window.scrollY + card.getBoundingClientRect().top - 112,
             );
           });
-        await previewCard.screenshot({
-          style: "header { visibility: hidden !important; }",
-          path: `/tmp/oclr-workbench-card-${isMobile ? "mobile" : "desktop"}-${theme}.png`,
-        });
         await previewCard.getByRole("button", { name: /^指定輪次:/ }).click();
         const previewPicker = previewCard.getByRole("dialog");
         await expect(previewPicker).toBeVisible();
@@ -917,9 +912,6 @@ test.describe("private Pooler/Tester selection workbench", () => {
         expect(optionsBox!.y + optionsBox!.height).toBeLessThanOrEqual(
           saveBox!.y,
         );
-        await previewPicker.screenshot({
-          path: `/tmp/oclr-rounds-dropdown-${isMobile ? "mobile" : "desktop"}-${theme}.png`,
-        });
         await previewPicker
           .getByRole("button", { name: "取消", exact: true })
           .click();
@@ -941,9 +933,6 @@ test.describe("private Pooler/Tester selection workbench", () => {
         expect(historyBox!.x + historyBox!.width).toBeLessThanOrEqual(
           poolerPage.viewportSize()!.width,
         );
-        await historyPreview.screenshot({
-          path: `/tmp/oclr-map-history-${isMobile ? "mobile" : "desktop"}-${theme}.png`,
-        });
         await historyPreview
           .getByRole("button", { name: "關閉", exact: true })
           .click();
@@ -960,15 +949,14 @@ test.describe("private Pooler/Tester selection workbench", () => {
         await expect(
           promotionPreview.getByLabel("譜面連結或 ID"),
         ).toBeVisible();
-        await promotionPreview.screenshot({
-          path: `/tmp/oclr-promotion-${isMobile ? "mobile" : "desktop"}-${theme}.png`,
-        });
         await promotionPreview
           .getByRole("button", { name: "關閉", exact: true })
           .click();
       }
       await poolerPage.close();
-      for (const theme of ["light", "dark"]) {
+      {
+        const theme = "light";
+
         await context.addCookies([
           { name: "oclr-theme", value: theme, url: origin },
         ]);
@@ -987,15 +975,10 @@ test.describe("private Pooler/Tester selection workbench", () => {
             .violations,
         ).toEqual([]);
         await page.evaluate(() => window.scrollTo(0, 0));
-        await page.screenshot({
-          path: `/tmp/oclr-572-${isMobile ? "mobile" : "desktop"}-${theme}.png`,
-          fullPage: true,
-        });
       }
-      for (const [locale, heading] of [
-        ["zh-Hans", "选图工作台"],
-        ["zh-Hant", "選圖工作臺"],
-      ]) {
+      {
+        const [locale, heading] = ["zh-Hans", "选图工作台"];
+
         await context.addCookies([
           { name: "oclr-locale", value: locale, url: origin },
         ]);

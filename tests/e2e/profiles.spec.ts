@@ -21,7 +21,7 @@ test.describe("published osu! profiles", () => {
     context,
     browser,
     isMobile,
-  }, info) => {
+  }) => {
     const base = isMobile ? 261101 : 261001;
     const fixture = await seedPublicDirectory(base);
     await db().delete(userProfileCache).where(eq(userProfileCache.osuId, base));
@@ -117,11 +117,6 @@ test.describe("published osu! profiles", () => {
         ),
       ).toBe(true);
     }
-    await page.screenshot({
-      path: info.outputPath("profile.png"),
-      fullPage: true,
-      animations: "disabled",
-    });
     await expect(
       page.getByRole("link", { name: "← Tournament players", exact: true }),
     ).toHaveAttribute("href", "/tournaments/test-cup/players");

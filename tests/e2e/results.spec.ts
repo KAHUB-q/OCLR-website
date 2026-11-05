@@ -16,7 +16,7 @@ test.describe("private referee review and Admin publication", () => {
     context,
     browser,
     isMobile,
-  }, info) => {
+  }) => {
     const adminId = isMobile ? 70001 : 60001;
     const refereeId = isMobile ? 302002 : 301002;
     const adminCookie = await seedSession(adminId);
@@ -252,11 +252,6 @@ test.describe("private referee review and Admin publication", () => {
           () => document.documentElement.scrollWidth <= innerWidth,
         ),
       ).toBe(true);
-      await page.screenshot({
-        path: info.outputPath("referee-review.png"),
-        fullPage: true,
-        animations: "disabled",
-      });
       const publicPage = await guest.newPage();
       await publicPage.goto("/news");
       await publicPage

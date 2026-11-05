@@ -1,7 +1,7 @@
 import { englishStorage } from "../fixtures/preferences";
 import { selectTimeZone } from "./time-zone";
 import { openTournamentTool } from "./navigation";
-import { captureResponsiveLayout } from "./responsive";
+import { expectWorkflowFits } from "./responsive";
 import { assertTestDatabase } from "../database";
 import { randomUUID } from "node:crypto";
 import { test, expect } from "@playwright/test";
@@ -25,7 +25,7 @@ test.describe("staff fixtures and referee assignments over HTTP", () => {
     context,
     browser,
     isMobile,
-  }, info) => {
+  }) => {
     const url = process.env.TEST_DATABASE_URL!;
     assertTestDatabase(url);
     process.env.DATABASE_URL = url;
@@ -133,7 +133,7 @@ test.describe("staff fixtures and referee assignments over HTTP", () => {
       await expect(
         page.getByRole("combobox", { name: "Associated mappool", exact: true }),
       ).toBeVisible();
-      await captureResponsiveLayout(page, info, "minimal-fixture");
+      await expectWorkflowFits(page);
       await expect(
         page.getByText("Match options", { exact: true }),
       ).toBeVisible();
@@ -405,9 +405,6 @@ test.describe("staff fixtures and referee assignments over HTTP", () => {
           () => document.documentElement.scrollWidth <= innerWidth,
         ),
       ).toBe(true);
-      await page
-        .locator("#competition")
-        .screenshot({ path: info.outputPath("competition-settings.png") });
       await page.goto("/admin/tournaments/test-cup/matches?view=configuration");
       await expect(page).toHaveURL(/rounds#competition$/);
       await page.goto("/admin/tournaments/test-cup/matches");
@@ -419,12 +416,7 @@ test.describe("staff fixtures and referee assignments over HTTP", () => {
       ).toHaveCount(0);
       await page.getByRole("tab", { name: "Schedule", exact: true }).click();
       await page.evaluate(() => window.scrollTo(0, 0));
-      await captureResponsiveLayout(page, info, "fixtures");
-      await page.screenshot({
-        path: info.outputPath("fixtures.png"),
-        fullPage: true,
-        animations: "disabled",
-      });
+      await expectWorkflowFits(page);
       await page
         .getByRole("button", { name: "Manage fixture", exact: true })
         .click();
@@ -538,10 +530,6 @@ test.describe("staff fixtures and referee assignments over HTTP", () => {
             .analyze()
         ).violations,
       ).toEqual([]);
-      await page.screenshot({
-        path: info.outputPath("fixture-bracket.png"),
-        fullPage: true,
-      });
       const refPage = await referee.newPage();
       await refPage.goto("/admin/tournaments/test-cup/matches");
       await expect(
@@ -583,7 +571,7 @@ test.describe("staff fixtures and referee assignments over HTTP", () => {
     context,
     browser,
     isMobile,
-  }, info) => {
+  }) => {
     assertTestDatabase(process.env.TEST_DATABASE_URL);
     process.env.DATABASE_URL = process.env.TEST_DATABASE_URL;
     await db().execute(sql`TRUNCATE edition_state, users CASCADE`);
@@ -814,10 +802,6 @@ test.describe("staff fixtures and referee assignments over HTTP", () => {
         if (document.activeElement instanceof HTMLElement)
           document.activeElement.blur();
         window.scrollTo(0, 0);
-      });
-      await page.screenshot({
-        path: info.outputPath("planned-fixture.png"),
-        fullPage: true,
       });
       expect(
         (

@@ -15,7 +15,7 @@ test.describe("legacy historical evidence", () => {
     page,
     context,
     isMobile,
-  }, info) => {
+  }) => {
     const slug = `legacy-${isMobile ? "mobile" : "desktop"}-${Date.now()}`;
     const archive = historicalArchiveSchema.parse({
       ...JSON.parse(readFileSync("docs/imports/s7-archive.json", "utf8")),
@@ -180,9 +180,6 @@ test.describe("legacy historical evidence", () => {
           await page
             .locator(".event-matches tr[data-forfeit]")
             .scrollIntoViewIfNeeded();
-        await page.screenshot({
-          path: info.outputPath(`${theme}-${section}.png`),
-        });
       }
     }
   });

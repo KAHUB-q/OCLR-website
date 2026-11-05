@@ -235,7 +235,7 @@ test.describe("staff assignment interface (#357)", () => {
     page,
     context,
     isMobile,
-  }, info) => {
+  }) => {
     test.setTimeout(300000);
     const admin = isMobile ? 70001 : 60001;
     const target = isMobile ? 893576 : 893575;
@@ -340,16 +340,6 @@ test.describe("staff assignment interface (#357)", () => {
                   .analyze()
               ).violations,
             ).toEqual([]);
-          }
-          if (
-            locale === "zh-Hant" &&
-            theme === "dark" &&
-            appearance === "cute-pastel"
-          ) {
-            await page.screenshot({
-              path: info.outputPath("staff-zh-Hant-pastel-dark.png"),
-              fullPage: true,
-            });
           }
         }
       }

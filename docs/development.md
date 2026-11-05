@@ -71,6 +71,40 @@ The main sources are:
 
 Client interactions call the corresponding `/api/...` route, which reuses the same services and server-side permission checks. Initial page rendering can query these services directly without making a browser API request. The homepage combines database events with authored announcement JSON; it does not scrape the live website. In database mode, a missing `DATABASE_URL` produces an empty tournament list, while a configured but unreachable/unmigrated database can fail queries. Explicit remote mode instead uses the adapter and connection states described below; it never falls back to local database reads. `/api/health` returns HTTP 200 only when a database query succeeds; it does not verify schema migrations or demo content.
 
+## Choosing and maintaining tests (#869)
+
+Find the test that already owns the behavior before adding a case. Test a new
+observable outcome or a specific regression, rather than another description of
+the implementation. An E2E addition should explain the core business scenario,
+the gap in existing coverage and why a real browser/server journey is needed.
+
+| Behavior                                                                          | Owning test layer                                               |
+| --------------------------------------------------------------------------------- | --------------------------------------------------------------- |
+| Calculations, parsers, validation, translation keys and ICU parameters            | Unit tests, including the central i18n catalog checks           |
+| Edition/subject permissions, publication, transactions, conflicts and idempotency | Integration tests against an isolated test database             |
+| Client drafts, lost/out-of-order responses, focus, keyboard and dialog state      | DB-free component tests with controlled HTTP                    |
+| A real registration, draft, result review/publication or credential workflow      | A representative E2E journey through the actual app             |
+| A rendering/browser defect                                                        | A focused component/browser regression at the affected boundary |
+
+Merge or delete repeated style and wording tests. CSS or label changes do not
+automatically need another E2E. Check a shared component once at representative
+boundaries; do not replay its entire business workflow for every locale,
+appearance, brightness and width. Catalog completeness is checked centrally.
+Keep distinct interaction, accessibility, asynchronous loading and layout
+regressions; do not transplant the old cross product into component tests.
+
+Prepare unrelated prerequisites with existing isolated fixtures. Wait for a
+response, visible state or committed result instead of sleeping. Use each
+browser project's viewport for the journey and failure screenshots/traces for
+diagnosis, rather than repeated viewport tours and successful full-page captures.
+
+Core and full both follow these rules. Full means distinct business behavior
+plus necessary browser differences. Decreasing CI frequency, moving duplicates
+to full/nightly, adding skips or lengthening timeouts does not simplify the
+tests. Scope changes should list removed/merged cases, their surviving coverage
+and comparable counts/timings. See [CI scope](ci.md) and the
+[#869 cleanup record](verification/issue-869/README.md).
+
 ## Checks and hosting
 
 Developer API authentication and local cross-origin reads are documented in

@@ -12,7 +12,7 @@ test.describe("player identity, introduction and signed messages", () => {
     page,
     context,
     isMobile,
-  }, info) => {
+  }) => {
     process.env.DATABASE_URL = process.env.TEST_DATABASE_URL;
     const base = isMobile ? 321010 : 321000;
     const slug = `player-message-${base}-test`;
@@ -328,12 +328,6 @@ test.describe("player identity, introduction and signed messages", () => {
           await page.evaluate(() => {
             (document.activeElement as HTMLElement | null)?.blur();
             window.scrollTo(0, 0);
-          });
-          await page.screenshot({
-            path: info.outputPath(
-              `player-${locale}-${appearance}-${theme}.png`,
-            ),
-            fullPage: true,
           });
         }
   });

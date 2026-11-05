@@ -34,7 +34,7 @@ test.describe("PR 191 public data regressions", () => {
   test("renders truthful registration and unpublished staff across themes and appearances", async ({
     page,
     context,
-  }, info) => {
+  }) => {
     for (const appearance of ["default", "cute-pastel", "swiss-minimal"])
       for (const theme of ["light", "dark"]) {
         await context.addCookies([
@@ -67,11 +67,6 @@ test.describe("PR 191 public data regressions", () => {
               .analyze()
           ).violations,
         ).toEqual([]);
-        if (appearance === "default" && theme === "light")
-          await page.screenshot({
-            path: info.outputPath("home-registration.png"),
-            fullPage: true,
-          });
         await page.goto("/about");
         await expect(
           page.getByText(/Public staff profiles have not been announced/),
@@ -129,7 +124,7 @@ test.describe("PR 191 public data regressions", () => {
   test("marks cancelled fixtures and withholds unconfigured standings", async ({
     page,
     isMobile,
-  }, info) => {
+  }) => {
     const adminId = isMobile ? 70001 : 60001,
       refereeId = isMobile ? 695002 : 694002;
     await seedSession(adminId);
@@ -168,14 +163,10 @@ test.describe("PR 191 public data regressions", () => {
           .analyze()
       ).violations,
     ).toEqual([]);
-    await page.screenshot({
-      path: info.outputPath("cancelled-schedule.png"),
-      fullPage: true,
-    });
   });
   test("keeps cross-round beatmaps separate in statistics, filters and both placement views", async ({
     page,
-  }, info) => {
+  }) => {
     const archive = structuredClone(statisticsArchive);
     archive.matches[0].score = [1, 0];
     archive.pools[0].maps = [archive.pools[0].maps[0]];
@@ -292,9 +283,5 @@ test.describe("PR 191 public data regressions", () => {
           .analyze()
       ).violations,
     ).toEqual([]);
-    await page.screenshot({
-      path: info.outputPath("map-statistics.png"),
-      fullPage: true,
-    });
   });
 });

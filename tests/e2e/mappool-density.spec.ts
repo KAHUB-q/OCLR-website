@@ -4,7 +4,7 @@ import { eq, sql } from "drizzle-orm";
 import { db, closeDb } from "../../src/db";
 import { mappools, mappoolEntries } from "../../src/db/schema";
 import { seedSession } from "./session";
-import { captureResponsiveLayout } from "./responsive";
+import { expectWorkflowFits } from "./responsive";
 
 test.describe("dense Admin mappool workspace", () => {
   test.skip(!process.env.TEST_DATABASE_URL, "Requires isolated PostgreSQL");
@@ -14,7 +14,7 @@ test.describe("dense Admin mappool workspace", () => {
     page,
     context,
     isMobile,
-  }, info) => {
+  }) => {
     const actor = isMobile ? 70001 : 60001;
     await seedSession(actor);
     await db().execute(sql`TRUNCATE edition_state, users CASCADE`);
@@ -99,7 +99,7 @@ test.describe("dense Admin mappool workspace", () => {
     await expect(
       page.locator(".mappool-order > li:visible").first(),
     ).toContainText("6.25 ★ base");
-    await captureResponsiveLayout(page, info, "dense-admin-mappool");
+    await expectWorkflowFits(page);
     await page.getByRole("tab", { name: "HR (0)", exact: true }).click();
     await expect(
       page.getByText("No HR slots configured.", { exact: true }),
@@ -152,9 +152,5 @@ test.describe("dense Admin mappool workspace", () => {
     await expect(
       page.getByRole("switch", { name: "Publish pool", exact: true }),
     ).toHaveCount(0);
-    await page.screenshot({
-      path: info.outputPath("locked-admin-mappool.png"),
-      fullPage: true,
-    });
   });
 });

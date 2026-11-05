@@ -1,5 +1,5 @@
 import { englishStorage } from "../fixtures/preferences";
-import { captureResponsiveLayout } from "./responsive";
+import { expectWorkflowFits } from "./responsive";
 import { test, expect, type Page } from "@playwright/test";
 import AxeBuilder from "@axe-core/playwright";
 import { seedSession } from "./session";
@@ -14,7 +14,7 @@ test.describe("tournament-centered administration", () => {
     context,
     browser,
     isMobile,
-  }, info) => {
+  }) => {
     const adminId = isMobile ? 70001 : 60001;
     const mapperId = isMobile ? 350102 : 350002;
     const refereeId = mapperId + 1;
@@ -50,10 +50,6 @@ test.describe("tournament-centered administration", () => {
     await expect(
       global.getByRole("link", { name: "Player dashboard", exact: true }),
     ).toHaveCount(0);
-    await page.screenshot({
-      path: info.outputPath("administration-overview.png"),
-      fullPage: true,
-    });
     await global
       .getByRole("link", { name: "Tournaments", exact: true })
       .click();
@@ -75,7 +71,7 @@ test.describe("tournament-centered administration", () => {
       .getByRole("navigation", { name: "Breadcrumb", exact: true })
       .getByRole("link", { name: "Tournaments", exact: true });
     await expect(back).toHaveAttribute("href", "/admin/tournaments");
-    await captureResponsiveLayout(page, info, "tournament-selector");
+    await expectWorkflowFits(page);
     await back.focus();
     await page.keyboard.press("Enter");
     await expect(page).toHaveURL(/\/admin\/tournaments$/);
@@ -166,10 +162,6 @@ test.describe("tournament-centered administration", () => {
         () => document.documentElement.scrollWidth <= innerWidth,
       ),
     ).toBe(true);
-    await page.screenshot({
-      path: info.outputPath("selected-tournament-navigation.png"),
-      fullPage: true,
-    });
     const mapper = await browser.newContext({
       storageState: englishStorage,
       baseURL: "http://127.0.0.1:3100",

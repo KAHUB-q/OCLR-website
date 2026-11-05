@@ -7,7 +7,7 @@ import { editionState } from "../../src/db/schema";
 import { edition } from "../fixtures/edition";
 import { seedEditions } from "../fixtures/editions";
 import { assertTestDatabase } from "../database";
-import { captureResponsiveLayout } from "./responsive";
+import { expectWorkflowFits } from "./responsive";
 
 test.describe("concise public tournament surfaces", () => {
   test.skip(!process.env.TEST_DATABASE_URL, "Requires isolated PostgreSQL");
@@ -21,7 +21,7 @@ test.describe("concise public tournament surfaces", () => {
   test("keeps empty directory and footer compact while privacy remains discoverable", async ({
     page,
     context,
-  }, info) => {
+  }) => {
     await page.goto("/players");
     await expect(page).toHaveURL(/\/tournaments$/);
     await page.goto("/players?edition=test-cup");
@@ -35,7 +35,7 @@ test.describe("concise public tournament surfaces", () => {
     await expect(page.locator(".event-player-row")).toHaveCount(0);
     await page.getByLabel("Search players", { exact: true }).fill("");
     await page.getByRole("button", { name: "Search", exact: true }).click();
-    await captureResponsiveLayout(page, info, "compact-empty-players");
+    await expectWorkflowFits(page);
     await expect(page.locator("footer")).not.toContainText("Emik");
     for (const [name, href] of [
       ["OCLR Dev Team.", "https://github.com/OCLR-dev"],
@@ -78,7 +78,7 @@ test.describe("concise public tournament surfaces", () => {
   });
   test("renders one featured identity, honest entry actions and only meaningful summaries without changing stored content", async ({
     page,
-  }, info) => {
+  }) => {
     const bootstrap =
       "osu! Chinese League Rookie — Season 11. Tournament information is awaiting organizer approval.";
     const featured = {
@@ -198,8 +198,7 @@ test.describe("concise public tournament surfaces", () => {
         await expect(page.locator(".home-registration-label")).toContainText(
           "The next edition has not been announced yet.",
         );
-      if (item.name === "open")
-        await captureResponsiveLayout(page, info, "compact-s11-home");
+      if (item.name === "open") await expectWorkflowFits(page);
       const [after] = await db()
         .select()
         .from(editionState)
@@ -213,7 +212,7 @@ test.describe("concise public tournament surfaces", () => {
     await expect(page.locator(".edition-card")).not.toContainText(
       "awaiting organizer approval",
     );
-    await captureResponsiveLayout(page, info, "compact-tournaments");
+    await expectWorkflowFits(page);
     await db()
       .update(editionState)
       .set({
@@ -235,7 +234,7 @@ test.describe("concise public tournament surfaces", () => {
     );
     await page.goto("/news");
     await expect(page.locator(".page-heading p")).toHaveCount(0);
-    await captureResponsiveLayout(page, info, "compact-news");
+    await expectWorkflowFits(page);
     expect(
       (
         await new AxeBuilder({ page })

@@ -57,10 +57,6 @@ test.describe("Admin backup boundary and confirmation", () => {
         () => document.documentElement.scrollWidth <= window.innerWidth,
       ),
     ).toBe(true);
-    await page.screenshot({
-      path: test.info().outputPath("backup-controls.png"),
-      fullPage: true,
-    });
   });
   test("direct requests reject ordinary users", async ({
     context,

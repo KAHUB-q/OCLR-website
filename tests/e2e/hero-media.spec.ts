@@ -1,5 +1,5 @@
 import { test, expect } from "@playwright/test";
-import AxeBuilder from "@axe-core/playwright";
+
 import { resolve } from "node:path";
 import { sql } from "drizzle-orm";
 import { db, closeDb } from "../../src/db";
@@ -29,40 +29,6 @@ test.describe("season information banner media", () => {
     await seedBrowserEditions();
   });
   test.afterAll(closeDb);
-  test("information banner stays within the document in every locale and theme", async ({
-    page,
-    context,
-    isMobile,
-  }) => {
-    test.setTimeout(120000);
-    for (const locale of ["en", "zh-Hans", "zh-Hant"])
-      for (const theme of ["light", "dark"]) {
-        await context.addCookies([
-          { name: "oclr-locale", value: locale, url: "http://127.0.0.1:3100" },
-          { name: "oclr-theme", value: theme, url: "http://127.0.0.1:3100" },
-        ]);
-        for (const width of isMobile ? [320, 390] : [768, 1440, 1920]) {
-          await page.setViewportSize({ width, height: 900 });
-          await page.goto("/tournaments/test-cup");
-          await expect(page.locator(".information-banner img")).toBeVisible();
-          await expect(page.locator("#information-title")).toHaveText(
-            hero.name,
-          );
-          expect(
-            await page.evaluate(
-              () => document.documentElement.scrollWidth <= innerWidth,
-            ),
-          ).toBe(true);
-        }
-      }
-    expect(
-      (
-        await new AxeBuilder({ page })
-          .withTags(["wcag2a", "wcag2aa", "wcag21aa"])
-          .analyze()
-      ).violations,
-    ).toEqual([]);
-  });
   test("loads the authored banner and retains a readable title if it fails", async ({
     page,
     context,

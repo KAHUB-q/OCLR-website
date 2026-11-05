@@ -47,7 +47,7 @@ test.describe("versioned registration question builder and answers", () => {
   test.afterAll(closeDb);
   test("creates, reorders and persists text and stable single-choice options", async ({
     page,
-  }, info) => {
+  }) => {
     await page.goto(
       "/admin/tournaments/test-cup/settings?section=registration",
     );
@@ -192,10 +192,6 @@ test.describe("versioned registration question builder and answers", () => {
     });
     expect(saved.edition.registration.questions[1].id).toBe(original[0].id);
     await questions.nth(0).scrollIntoViewIfNeeded();
-    await page.screenshot({
-      path: info.outputPath("saved-question-builder.png"),
-      fullPage: true,
-    });
     expect(
       (await new AxeBuilder({ page }).include("main").analyze()).violations,
     ).toEqual([]);
@@ -373,7 +369,7 @@ test.describe("versioned registration question builder and answers", () => {
     page,
     context,
     isMobile,
-  }, info) => {
+  }) => {
     test.setTimeout(120000);
     await configureQuestions(false);
     await context.addCookies([playerCookie]);
@@ -416,9 +412,6 @@ test.describe("versioned registration question builder and answers", () => {
           expect(
             await page.evaluate(() => document.documentElement.scrollWidth),
           ).toBeLessThanOrEqual(width);
-          await page.locator("main").screenshot({
-            path: info.outputPath(`applicant-${width}-${locale}-${theme}.png`),
-          });
           expect(
             (await new AxeBuilder({ page }).include("main").analyze())
               .violations,
@@ -433,9 +426,6 @@ test.describe("versioned registration question builder and answers", () => {
           expect(
             await page.evaluate(() => document.documentElement.scrollWidth),
           ).toBeLessThanOrEqual(width);
-          await page.locator("main").screenshot({
-            path: info.outputPath(`builder-${width}-${locale}-${theme}.png`),
-          });
           expect(
             (await new AxeBuilder({ page }).include("main").analyze())
               .violations,

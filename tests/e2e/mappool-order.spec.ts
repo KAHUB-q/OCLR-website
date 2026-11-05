@@ -75,11 +75,6 @@ test.describe("quick paste and mappool ordering", () => {
       if (document.activeElement instanceof HTMLElement)
         document.activeElement.blur();
     });
-    await page.screenshot({
-      path: test.info().outputPath("quick-paste-preview.png"),
-      fullPage: true,
-      animations: "disabled",
-    });
     await page
       .getByRole("button", { name: "Import verified batch", exact: true })
       .click();
@@ -174,7 +169,7 @@ test.describe("quick paste and mappool ordering", () => {
     context,
     isMobile,
     browser,
-  }, info) => {
+  }) => {
     let data = await (await page.request.get(api)).json();
     const pool = data.pools[0];
     const metadata = {
@@ -273,12 +268,6 @@ test.describe("quick paste and mappool ordering", () => {
       await pointerMove(x, box.y + Math.min(80, box.height / 3));
       await expect(target).toHaveClass(/drop-before/);
       expect(writes).toBe(0);
-      await page.screenshot({
-        path: info.outputPath("map-drop-preview.png"),
-        // Full-page capture resizes the mobile viewport and cancels a real touch gesture.
-        fullPage: false,
-        animations: "disabled",
-      });
       if (touch)
         await touch.send("Input.dispatchTouchEvent", {
           type: "touchEnd",
@@ -388,11 +377,6 @@ test.describe("quick paste and mappool ordering", () => {
     }
     await page.setViewportSize({ width: isMobile ? 390 : 1440, height: 900 });
     await page.evaluate(() => window.scrollTo(0, 0));
-    await page.screenshot({
-      path: info.outputPath("map-order-controls.png"),
-      fullPage: true,
-      animations: "disabled",
-    });
     const guest = await browser.newContext({
       storageState: englishStorage,
       baseURL: "http://127.0.0.1:3100",

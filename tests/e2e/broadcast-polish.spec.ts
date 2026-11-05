@@ -98,7 +98,7 @@ test.describe("OBS identity and one-time transitions", () => {
     page,
     context,
     isMobile,
-  }, info) => {
+  }) => {
     test.skip(
       isMobile,
       "Dedicated 720p–1080p broadcast canvas; mobile covered by broadcast.spec.ts",
@@ -128,12 +128,6 @@ test.describe("OBS identity and one-time transitions", () => {
           await expect(page.locator("[data-featured] img")).toBeVisible();
           await expect(page.locator("[data-broadcast] footer")).toHaveCount(0);
           await fits(page);
-          await page.screenshot({
-            path: info.outputPath(
-              `after-${width}-${locale}-${transparent ? "transparent" : "opaque"}.png`,
-            ),
-            omitBackground: transparent,
-          });
         }
       }
     }
@@ -176,7 +170,6 @@ test.describe("OBS identity and one-time transitions", () => {
       await expect(page.locator("[data-rosters]")).toContainText(
         "Synthetic long team 3",
       );
-      await page.screenshot({ path: info.outputPath(`crowded-${width}.png`) });
       expect(
         (
           await new AxeBuilder({ page })
@@ -194,7 +187,7 @@ test.describe("OBS identity and one-time transitions", () => {
   test("new picks and turns animate once; reload, repeat, reconnect, corrections, sessions and reduced motion do not reveal old picks", async ({
     page,
     isMobile,
-  }, info) => {
+  }) => {
     test.skip(isMobile);
     test.setTimeout(120000);
     const initial = await seed(page);
@@ -263,10 +256,6 @@ test.describe("OBS identity and one-time transitions", () => {
         "oclr-history",
       ]),
     );
-    await page.screenshot({
-      path: info.outputPath("pick-transition.png"),
-      animations: "allow",
-    });
     await page.waitForTimeout(1000);
     const count = (await animated()).length;
     await page.waitForTimeout(2300);
@@ -310,6 +299,5 @@ test.describe("OBS identity and one-time transitions", () => {
       expect.arrayContaining(["oclr-turn", "oclr-status"]),
     );
     expect((await animated()).filter((x) => x === "oclr-pick")).toHaveLength(0);
-    await page.screenshot({ path: info.outputPath("paused.png") });
   });
 });

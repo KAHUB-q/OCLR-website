@@ -69,7 +69,7 @@ test.describe("public and operational follow-ups", () => {
     page,
     context,
     isMobile,
-  }, info) => {
+  }) => {
     const admin = isMobile ? 70001 : 60001,
       base = isMobile ? 993100 : 993000;
     const cookie = await seedSession(admin);
@@ -125,84 +125,71 @@ test.describe("public and operational follow-ups", () => {
       "/tournaments/test-cup/results",
       "/tournaments/test-cup/bracket",
     ];
-    for (const locale of locales)
-      for (const theme of ["light", "dark"]) {
-        await preferences(context, locale, theme);
-        await page.setViewportSize({
-          width: isMobile ? 390 : 1440,
-          height: 900,
-        });
-        let height: number | null = null;
-        for (const [index, route] of routes.entries()) {
-          expect((await page.goto(route))?.status()).toBe(200);
-          await expect(page.locator(".public-site")).toHaveCSS(
-            "color-scheme",
-            theme,
-          );
-          await expect(page.locator(".public-site")).toHaveCSS(
-            "background-color",
-            theme === "light" ? "rgb(244, 241, 247)" : "rgb(9, 12, 23)",
-          );
-          const current = (await page.locator(".site-header").boundingBox())!
-            .height;
-          if (height !== null) expect(current).toBeCloseTo(height, 1);
-          height = current;
-          await noOverflow(page);
-          await page.screenshot({
-            path: info.outputPath(`journey-${locale}-${theme}-${index}.png`),
-            fullPage: true,
-          });
-          if ([0, 3, 10].includes(index)) await accessible(page);
-          if (index === 3) {
-            const heading = await page.locator("main h1").boundingBox();
-            expect(heading!.height).toBeLessThan(160);
-            if (!isMobile)
-              expect(
-                (await page.locator(".rules-handbook").boundingBox())!.y,
-              ).toBeLessThan(750);
-            const nav = page.locator(".tournament-navigation nav");
-            if (isMobile) await page.locator(".tournament-menu").click();
-            await expect(nav.locator('[aria-current="page"]')).toHaveCount(1);
-            const inactive = nav.locator("a:not([aria-current])").first();
-            await inactive.hover();
-            await inactive.focus();
+    for (const locale of locales) {
+      const theme = "light";
+
+      await preferences(context, locale, theme);
+      await page.setViewportSize({
+        width: isMobile ? 390 : 1440,
+        height: 900,
+      });
+      let height: number | null = null;
+      for (const [index, route] of routes.entries()) {
+        expect((await page.goto(route))?.status()).toBe(200);
+        await expect(page.locator(".public-site")).toHaveCSS(
+          "color-scheme",
+          theme,
+        );
+        await expect(page.locator(".public-site")).toHaveCSS(
+          "background-color",
+          "rgb(244, 241, 247)",
+        );
+        const current = (await page.locator(".site-header").boundingBox())!
+          .height;
+        if (height !== null) expect(current).toBeCloseTo(height, 1);
+        height = current;
+        await noOverflow(page);
+        if ([0, 3, 10].includes(index)) await accessible(page);
+        if (index === 3) {
+          const heading = await page.locator("main h1").boundingBox();
+          expect(heading!.height).toBeLessThan(160);
+          if (!isMobile)
             expect(
-              await inactive.evaluate(
-                (el) => getComputedStyle(el, "::before").content,
-              ),
-            ).not.toBe('""');
-            if (isMobile) await page.keyboard.press("Escape");
-          }
-        }
-        for (const section of [
-          "schedule",
-          "mappools",
-          "teams",
-          "rules",
-          "results",
-          "bracket",
-        ]) {
-          await page.goto(`/tournaments/polish-empty-test/${section}`);
+              (await page.locator(".rules-handbook").boundingBox())!.y,
+            ).toBeLessThan(750);
+          const nav = page.locator(".tournament-navigation nav");
+          if (isMobile) await page.locator(".tournament-menu").click();
+          await expect(nav.locator('[aria-current="page"]')).toHaveCount(1);
+          const inactive = nav.locator("a:not([aria-current])").first();
+          await inactive.hover();
+          await inactive.focus();
           expect(
-            (await page.locator("main h1").boundingBox())!.height,
-          ).toBeLessThan(160);
-          await noOverflow(page);
-          await page.screenshot({
-            path: info.outputPath(`empty-${locale}-${theme}-${section}.png`),
-            fullPage: true,
-          });
+            await inactive.evaluate(
+              (el) => getComputedStyle(el, "::before").content,
+            ),
+          ).not.toBe('""');
+          if (isMobile) await page.keyboard.press("Escape");
         }
-        await toggleTheme(page);
-        await expect(page.locator("html")).toHaveAttribute(
-          "data-theme",
-          theme === "light" ? "dark" : "light",
-        );
-        await page.reload();
-        await expect(page.locator("html")).toHaveAttribute(
-          "data-theme",
-          theme === "light" ? "dark" : "light",
-        );
       }
+      for (const section of [
+        "schedule",
+        "mappools",
+        "teams",
+        "rules",
+        "results",
+        "bracket",
+      ]) {
+        await page.goto(`/tournaments/polish-empty-test/${section}`);
+        expect(
+          (await page.locator("main h1").boundingBox())!.height,
+        ).toBeLessThan(160);
+        await noOverflow(page);
+      }
+      await toggleTheme(page);
+      await expect(page.locator("html")).toHaveAttribute("data-theme", "dark");
+      await page.reload();
+      await expect(page.locator("html")).toHaveAttribute("data-theme", "dark");
+    }
     await context.addCookies([cookie]);
     await page.goto("/admin");
     await expect(page.locator(".private-site")).toBeVisible();
@@ -216,7 +203,7 @@ test.describe("public and operational follow-ups", () => {
     page,
     context,
     isMobile,
-  }, info) => {
+  }) => {
     await seedSession(isMobile ? 70001 : 60001);
     const seed = await seedPublicDirectory(isMobile ? 994100 : 994000);
     await seedEditions([
@@ -234,70 +221,59 @@ test.describe("public and operational follow-ups", () => {
     );
     expect(redirect.status()).toBe(308);
     expect(redirect.headers().location).toBe("/tournaments/test-cup/players");
-    for (const locale of locales)
-      for (const theme of ["light", "dark"]) {
-        await preferences(context, locale, theme);
-        await page.goto("/tournaments/test-cup/participants");
-        await expect(page).toHaveURL(/\/test-cup\/players$/);
-        await expect(
-          page.locator('.tournament-navigation a[href$="/participants"]'),
-        ).toHaveCount(0);
-        await expect(page.locator('a[href$="/teams"]')).not.toHaveCount(0);
-        await expect(
-          page.locator(".edition-players .event-player-row"),
-        ).toHaveCount(3);
-        const captain = "Captain";
-        await expect(
-          page
-            .locator(".edition-players .event-player-identity .muted")
-            .filter({ hasText: new RegExp(`^${captain}`) }),
-        ).toHaveCount(1);
-        expect(await page.locator("main").innerText()).not.toMatch(
-          /PRIVATE_CONTACT|INTERNAL_REASON|Private Applicant/,
-        );
-        for (const width of isMobile ? [320, 390] : [768, 1024, 1440]) {
-          await page.setViewportSize({ width, height: 900 });
-          await noOverflow(page);
-          await page.screenshot({
-            path: info.outputPath(`players-${locale}-${theme}-${width}.png`),
-            fullPage: true,
-          });
-        }
-        await page.goto("/tournaments/test-cup/teams");
-        await expect(
-          page.locator(".public-team-card .public-player-identity"),
-        ).toHaveCount(0);
-        await expect(page.locator(".public-team-card")).toHaveCount(1);
-        await page.screenshot({
-          path: info.outputPath(`teams-${locale}-${theme}.png`),
-          fullPage: true,
-        });
-        await page.goto(`/tournaments/test-cup/teams/${seed.teamId}`);
-        await expect(page.locator(".public-roster-grid > li")).toHaveCount(2);
-        await expect(
-          page.locator(".public-roster-grid .badge").filter({
-            hasText:
-              locale === "en"
-                ? "Captain"
-                : locale === "zh-Hans"
-                  ? "队长"
-                  : "隊長",
-          }),
-        ).toHaveCount(1);
-        await page.goto("/tournaments/empty-followup-test/teams");
-        await expect(page.locator(".page-heading")).toBeVisible();
-        expect(
-          (await page.locator("main h1").boundingBox())!.height,
-        ).toBeLessThan(160);
-        expect(
-          (await page.locator(".empty-state").boundingBox())!.height,
-        ).toBeLessThan(230);
-        await page.screenshot({
-          path: info.outputPath(`empty-teams-${locale}-${theme}.png`),
-          fullPage: true,
-        });
-        await accessible(page);
+    for (const locale of locales) {
+      const theme = "light";
+
+      await preferences(context, locale, theme);
+      await page.goto("/tournaments/test-cup/participants");
+      await expect(page).toHaveURL(/\/test-cup\/players$/);
+      await expect(
+        page.locator('.tournament-navigation a[href$="/participants"]'),
+      ).toHaveCount(0);
+      await expect(page.locator('a[href$="/teams"]')).not.toHaveCount(0);
+      await expect(
+        page.locator(".edition-players .event-player-row"),
+      ).toHaveCount(3);
+      const captain = "Captain";
+      await expect(
+        page
+          .locator(".edition-players .event-player-identity .muted")
+          .filter({ hasText: new RegExp(`^${captain}`) }),
+      ).toHaveCount(1);
+      expect(await page.locator("main").innerText()).not.toMatch(
+        /PRIVATE_CONTACT|INTERNAL_REASON|Private Applicant/,
+      );
+      for (const width of isMobile ? [320, 390] : [768, 1024, 1440]) {
+        await page.setViewportSize({ width, height: 900 });
+        await noOverflow(page);
       }
+      await page.goto("/tournaments/test-cup/teams");
+      await expect(
+        page.locator(".public-team-card .public-player-identity"),
+      ).toHaveCount(0);
+      await expect(page.locator(".public-team-card")).toHaveCount(1);
+      await page.goto(`/tournaments/test-cup/teams/${seed.teamId}`);
+      await expect(page.locator(".public-roster-grid > li")).toHaveCount(2);
+      await expect(
+        page.locator(".public-roster-grid .badge").filter({
+          hasText:
+            locale === "en"
+              ? "Captain"
+              : locale === "zh-Hans"
+                ? "队长"
+                : "隊長",
+        }),
+      ).toHaveCount(1);
+      await page.goto("/tournaments/empty-followup-test/teams");
+      await expect(page.locator(".page-heading")).toBeVisible();
+      expect(
+        (await page.locator("main h1").boundingBox())!.height,
+      ).toBeLessThan(160);
+      expect(
+        (await page.locator(".empty-state").boundingBox())!.height,
+      ).toBeLessThan(230);
+      await accessible(page);
+    }
     await db()
       .update(teams)
       .set({ rosterPublished: false, finalizedAt: null })
@@ -326,7 +302,7 @@ test.describe("public and operational follow-ups", () => {
     context,
     browser,
     isMobile,
-  }, info) => {
+  }) => {
     const cookie = await seedSession(isMobile ? 70001 : 60001);
     const seed = await seedPublicDirectory(isMobile ? 995100 : 995000);
     const badges = [
@@ -411,83 +387,73 @@ test.describe("public and operational follow-ups", () => {
         })
       ).status(),
     ).toBe(403);
-    for (const appearance of ["default", "cute-pastel", "swiss-minimal"])
-      for (const theme of ["light", "dark"])
-        for (const locale of locales) {
-          await preferences(context, locale, theme);
-          await context.addCookies([
-            {
-              name: "oclr-appearance",
-              value: appearance,
-              url: "http://127.0.0.1:3100",
-            },
-          ]);
-          await page.goto(
-            `/admin/tournaments/test-cup/registrations/${registration.id}`,
-          );
-          await section.locator(".actions button").click();
-          await expect(section.locator(".bws-value").first()).toBeVisible();
-          await page.setViewportSize({
-            width: isMobile ? 320 : 1440,
-            height: 900,
-          });
-          await noOverflow(page);
-          await page.screenshot({
-            path: info.outputPath(
-              `staff-bws-${locale}-${appearance}-${theme}.png`,
-            ),
-            fullPage: true,
-          });
-          await accessible(page);
-        }
+
+    const appearance = "default";
+
+    const theme = "light";
+    for (const locale of locales) {
+      await preferences(context, locale, theme);
+      await context.addCookies([
+        {
+          name: "oclr-appearance",
+          value: appearance,
+          url: "http://127.0.0.1:3100",
+        },
+      ]);
+      await page.goto(
+        `/admin/tournaments/test-cup/registrations/${registration.id}`,
+      );
+      await section.locator(".actions button").click();
+      await expect(section.locator(".bws-value").first()).toBeVisible();
+      await page.setViewportSize({
+        width: isMobile ? 320 : 1440,
+        height: 900,
+      });
+      await noOverflow(page);
+      await accessible(page);
+    }
+
     const guest = await browser.newContext({
       baseURL: "http://127.0.0.1:3100",
       viewport: { width: isMobile ? 320 : 1440, height: 900 },
     });
     try {
       const publicPage = await guest.newPage();
-      for (const appearance of ["default", "cute-pastel", "swiss-minimal"])
-        for (const theme of ["light", "dark"])
-          for (const locale of locales) {
-            await preferences(guest, locale, theme);
-            await guest.addCookies([
-              {
-                name: "oclr-appearance",
-                value: appearance,
-                url: "http://127.0.0.1:3100",
-              },
-            ]);
-            await publicPage.goto(
-              `/players/${seed.captainId}?edition=test-cup`,
-            );
-            await expect(
-              publicPage.locator(".bws-value").first(),
-            ).toBeVisible();
-            expect(await publicPage.locator("main").innerText()).not.toContain(
-              "PRIVATE_BWS_REVIEW_EVIDENCE",
-            );
-            const data = await (
-              await guest.request.get(
-                `/api/players/${seed.captainId}?edition=test-cup`,
-              )
-            ).json();
-            expect(data.bws).toMatchObject({
-              badgeCount: 1,
-              value: 10000 ** 0.9937,
-              rawPp: 1234.567,
-              adjustedPp: 1234.567 ** 1.0063,
-            });
-            expect(JSON.stringify(data)).not.toMatch(
-              /PRIVATE_BWS_REVIEW_EVIDENCE|classifications|reviewedBy/,
-            );
-            await noOverflow(publicPage);
-            await publicPage.screenshot({
-              path: info.outputPath(
-                `public-bws-${locale}-${appearance}-${theme}.png`,
-              ),
-              fullPage: true,
-            });
-          }
+
+      const appearance = "default";
+
+      const theme = "light";
+      for (const locale of locales) {
+        await preferences(guest, locale, theme);
+        await guest.addCookies([
+          {
+            name: "oclr-appearance",
+            value: appearance,
+            url: "http://127.0.0.1:3100",
+          },
+        ]);
+        await publicPage.goto(`/players/${seed.captainId}?edition=test-cup`);
+        await expect(publicPage.locator(".bws-value").first()).toBeVisible();
+        expect(await publicPage.locator("main").innerText()).not.toContain(
+          "PRIVATE_BWS_REVIEW_EVIDENCE",
+        );
+        const data = await (
+          await guest.request.get(
+            `/api/players/${seed.captainId}?edition=test-cup`,
+          )
+        ).json();
+        expect(data.bws).toMatchObject({
+          badgeCount: 1,
+          value: 10000 ** 0.9937,
+          rawPp: 1234.567,
+          adjustedPp: 1234.567 ** 1.0063,
+        });
+        expect(JSON.stringify(data)).not.toMatch(
+          /PRIVATE_BWS_REVIEW_EVIDENCE|classifications|reviewedBy/,
+        );
+        await noOverflow(publicPage);
+      }
+
       await preferences(guest, "en");
       await publicPage.goto(`/players/${seed.memberId}?edition=test-cup`);
       // The card lists pp, BW-rank, then country rank.
@@ -502,7 +468,7 @@ test.describe("public and operational follow-ups", () => {
     page,
     context,
     isMobile,
-  }, info) => {
+  }) => {
     const admin = isMobile ? 70001 : 60001,
       cookie = await seedSession(admin);
     process.env.ADMIN_OSU_IDS = String(admin);
@@ -553,10 +519,6 @@ test.describe("public and operational follow-ups", () => {
       await expect(confirmation).toContainText("Synthetic deletion round");
       await page.setViewportSize({ width: isMobile ? 320 : 1440, height: 900 });
       await noOverflow(page);
-      await page.screenshot({
-        path: info.outputPath(`delete-fixture-${locale}.png`),
-        fullPage: true,
-      });
       await confirmation.locator(".actions button").last().click();
       await expect(manage).toBeVisible();
       await manage.locator(".fixture-delete-section > button").click();
@@ -579,7 +541,7 @@ test.describe("public and operational follow-ups", () => {
     page,
     context,
     isMobile,
-  }, info) => {
+  }) => {
     const admin = isMobile ? 70001 : 60001,
       cookie = await seedSession(admin);
     process.env.ADMIN_OSU_IDS = String(admin);
@@ -636,16 +598,10 @@ test.describe("public and operational follow-ups", () => {
         await page.setViewportSize({ width, height: 900 });
         await noOverflow(page);
         await page.evaluate(() => window.scrollTo(0, 0));
-        await page.screenshot({
-          path: info.outputPath(`mappool-header-${locale}-${width}.png`),
-        });
         const actions = page.locator(".mappool-entry-action-row").first();
         for (const button of await actions.locator(":scope > button").all())
           expect((await button.boundingBox())!.height).toBeCloseTo(44, 1);
         await actions.locator("button").first().focus();
-        await page.screenshot({
-          path: info.outputPath(`mappool-actions-${locale}-${width}.png`),
-        });
       }
       await page
         .locator(".mappool-entry-action-row")
@@ -665,9 +621,6 @@ test.describe("public and operational follow-ups", () => {
         .first()
         .click();
       await expect(page.locator(".mappool-inline-editor")).toHaveCount(1);
-      await page.screenshot({
-        path: info.outputPath(`mappool-inline-${locale}.png`),
-      });
       await page.locator(".mappool-inline-heading button:visible").click();
       await expect(page.locator(".mappool-inline-editor")).toHaveCount(0);
       await accessible(page);

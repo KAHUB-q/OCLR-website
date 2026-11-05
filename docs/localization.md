@@ -90,6 +90,10 @@ request; the visual appearance changes only after its stylesheet loads. Failed
 loads retain the previous appearance and restore the previous preference. Route-inherited choices load before applying their
 selector; visitor and edition authorization rules use the existing resolver.
 
+Homepage Header branding colors and the dark login-button treatment apply only
+to `default` (#880). Other appearances inherit their own Header and control
+tokens on the homepage as on other routes.
+
 The shared shell hides the S9 fan-art footer attribution by default (#853).
 Only the active `glacier-blue` stylesheet reveals it, so other appearances and
 navigation away from S9 keep it hidden without loading S9 CSS.

@@ -307,7 +307,9 @@ html[data-appearance="swiss-minimal"]
   align-items: center;
   gap: 0.75rem;
 }
-.themed-site:has(.home-redesign) .site-header {
+/* Homepage branding belongs to the default appearance; other headers inherit
+ * their appearance tokens instead of receiving these element-local values. */
+html[data-appearance="default"] .themed-site:has(.home-redesign) .site-header {
   --site-header: #f0e9fa;
   --site-surface: #faf7ff;
   --site-raised: #f5effb;
@@ -329,7 +331,9 @@ html[data-appearance="swiss-minimal"]
   color: var(--site-foreground);
   color-scheme: light;
 }
-html[data-theme="dark"] .themed-site:has(.home-redesign) .site-header {
+html[data-appearance="default"][data-theme="dark"]
+  .themed-site:has(.home-redesign)
+  .site-header {
   --site-header: #111329;
   --site-surface: #15142c;
   --site-raised: #1c1937;
@@ -351,7 +355,7 @@ html[data-theme="dark"] .themed-site:has(.home-redesign) .site-header {
    * no banner artwork here, so appearance header styles layer the same in both themes. */
   color-scheme: dark;
 }
-html[data-theme="dark"]
+html[data-appearance="default"][data-theme="dark"]
   .themed-site:has(.home-redesign)
   .site-header
   .nav-login {
@@ -360,7 +364,7 @@ html[data-theme="dark"]
   border-radius: 0.65rem;
   color: var(--site-on-primary);
 }
-html[data-theme="dark"]
+html[data-appearance="default"][data-theme="dark"]
   .themed-site:has(.home-redesign)
   .site-header
   .nav-login:hover {

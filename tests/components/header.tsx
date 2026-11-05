@@ -125,6 +125,11 @@ function Harness() {
       <button type="button" data-route-change onClick={() => setPath("/news")}>
         Synthetic route change
       </button>
+      {params.has("home") && (
+        <button type="button" data-route-home onClick={() => setPath("/")}>
+          Return home
+        </button>
+      )}
     </div>
   );
   return (
@@ -152,7 +157,14 @@ function Harness() {
                 systemTheme={theme}
                 appearance={appearance}
               />
-              <main id="main">
+              <main
+                id="main"
+                className={
+                  params.has("home") && path === "/"
+                    ? "home-redesign"
+                    : undefined
+                }
+              >
                 {params.has("tournament") ? (
                   <TournamentShell
                     slug="synthetic"

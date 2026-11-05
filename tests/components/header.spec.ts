@@ -1,5 +1,99 @@
 import { expect, test } from "@playwright/test";
-import { expectPreferenceMenuFits } from "../e2e/header-preferences";
+import {
+  closeHeaderPreferences,
+  expectPreferenceMenuFits,
+  openHeaderPreferences,
+} from "../e2e/header-preferences";
+
+// Existing menu tests miss the homepage's direct token declarations. A browser
+// is needed to resolve inherited CSS variables with :has() across route changes.
+test("homepage header keeps appearance colors when switching and returning", async ({
+  page,
+}, info) => {
+  const header = page.locator(".site-header");
+  const paint = () =>
+    header.evaluate((node) => {
+      const style = getComputedStyle(node);
+      const login = getComputedStyle(node.querySelector(".nav-login")!);
+      return [
+        style.backgroundColor,
+        style.color,
+        style.borderBottomColor,
+        login.backgroundColor,
+        login.color,
+        login.borderColor,
+        login.borderRadius,
+      ];
+    });
+  const inherits = async () => {
+    await expect
+      .poll(() =>
+        header.evaluate((node) => {
+          const style = getComputedStyle(node);
+          const shell = getComputedStyle(node.closest(".themed-site")!);
+          return [
+            "--site-header",
+            "--site-foreground",
+            "--site-accent",
+            "--site-border",
+            "--site-primary",
+            "--site-on-primary",
+          ].every(
+            (key) =>
+              style.getPropertyValue(key) === shell.getPropertyValue(key),
+          );
+        }),
+      )
+      .toBe(true);
+  };
+  const choose = async (appearance: string) => {
+    await openHeaderPreferences(page);
+    await page.locator(".appearance-trigger").click();
+    await expectPreferenceMenuFits(
+      page,
+      page.locator('.appearance-control [role="menu"]'),
+    );
+    await page.locator(`[data-appearance-option="${appearance}"]`).click();
+    await expect(page.locator("html")).toHaveAttribute(
+      "data-appearance",
+      appearance,
+    );
+    await closeHeaderPreferences(page);
+  };
+  for (const [appearance, theme] of [
+    ["cute-pastel", "light"],
+    ["swiss-minimal", "dark"],
+  ]) {
+    await page.goto(
+      `/header?home=1&locale=en&appearance=${appearance}&theme=${theme}`,
+    );
+    await header.screenshot({ path: info.outputPath(`${appearance}.png`) });
+    await inherits();
+    const homePaint = await paint();
+    await page.locator("[data-route-change]").click();
+    await expect(page.locator(".home-redesign")).toHaveCount(0);
+    await expect.poll(paint).toEqual(homePaint);
+    await page.locator("[data-route-home]").click();
+    await expect(page.locator(".home-redesign")).toHaveCount(1);
+    await expect.poll(paint).toEqual(homePaint);
+    await choose("default");
+    await expect(header).toHaveCSS(
+      "background-color",
+      theme === "light" ? "rgb(240, 233, 250)" : "rgb(17, 19, 41)",
+    );
+    await choose(appearance);
+    await expect.poll(paint).toEqual(homePaint);
+    await openHeaderPreferences(page);
+    await page.locator(".theme-control").click();
+    await page
+      .locator(`[data-theme-option="${theme === "light" ? "dark" : "light"}"]`)
+      .click();
+    await inherits();
+    await closeHeaderPreferences(page);
+    await page.reload();
+    await inherits();
+  }
+});
 
 // Independent presentation risks, without multiplying language, theme, role
 // and width over every appearance. Server-side session routing stays in E2E.

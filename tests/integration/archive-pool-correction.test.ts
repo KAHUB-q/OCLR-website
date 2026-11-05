@@ -184,4 +184,16 @@ describe.skipIf(!url)("S2 stored pool correction", () => {
     vi.unstubAllEnvs();
     vi.stubEnv("DATABASE_URL", url!);
   });
+  it("serializes concurrent corrections and records only one revision/audit", async () => {
+    const results = await Promise.allSettled([
+      correctS2PoolData({ apply: true, expectedRevision: 0 }),
+      correctS2PoolData({ apply: true, expectedRevision: 0 }),
+    ]);
+    expect(results.filter((r) => r.status === "fulfilled")).toHaveLength(1);
+    expect(results.find((r) => r.status === "rejected")).toMatchObject({
+      reason: { status: 409 },
+    });
+    expect((await readTournament("s2"))!.revision).toBe(1);
+    expect(await db().select().from(editionEvents)).toHaveLength(1);
+  });
 });

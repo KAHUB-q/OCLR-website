@@ -23,7 +23,7 @@ export async function correctS2PoolData(
   options: { apply?: boolean; expectedRevision?: number } = {},
 ) {
   if (options.apply && !Number.isSafeInteger(options.expectedRevision))
-    throw new Error("Applying requires --expected-revision=N.");
+    throw new HttpError(400, "Applying requires --expected-revision=N.");
   return db().transaction(
     async (tx) => {
       const query = tx
@@ -136,13 +136,11 @@ export async function correctS2PoolData(
           configuration: state.configuration,
         })
         .onConflictDoNothing();
-      await tx
-        .insert(editionRevisions)
-        .values({
-          editionSlug: "s2",
-          version: state.configurationVersion + 1,
-          configuration,
-        });
+      await tx.insert(editionRevisions).values({
+        editionSlug: "s2",
+        version: state.configurationVersion + 1,
+        configuration,
+      });
       await tx
         .update(editionState)
         .set({
@@ -166,29 +164,27 @@ export async function correctS2PoolData(
               eq(historicalStatistics.mpId, u.row.mpId),
             ),
           );
-      await tx
-        .insert(editionEvents)
-        .values({
-          editionSlug: "s2",
-          kind: "archive_pool_correction",
-          detail: {
-            correction: "s2-gs-dt5-tb1",
-            fromRevision: state.configurationVersion,
-            toRevision: state.configurationVersion + 1,
-            removed,
-            oldKey,
-            newKey,
-            statistics: changed.map((u) => ({
-              mpId: u.row.mpId,
-              fromVersion: u.row.version,
-              toVersion: u.row.version + 1,
-            })),
-          },
-        });
+      await tx.insert(editionEvents).values({
+        editionSlug: "s2",
+        kind: "archive_pool_correction",
+        detail: {
+          correction: "s2-gs-dt5-tb1",
+          fromRevision: state.configurationVersion,
+          toRevision: state.configurationVersion + 1,
+          removed,
+          oldKey,
+          newKey,
+          statistics: changed.map((u) => ({
+            mpId: u.row.mpId,
+            fromVersion: u.row.version,
+            toVersion: u.row.version + 1,
+          })),
+        },
+      });
       return { ...report, applied: true };
     },
     {
-      isolationLevel: "repeatable read",
+      isolationLevel: options.apply ? "read committed" : "repeatable read",
       ...(options.apply ? {} : { accessMode: "read only" as const }),
     },
   );

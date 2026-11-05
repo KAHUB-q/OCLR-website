@@ -1,3 +1,4 @@
+import { HttpError } from "../src/lib/http";
 import env from "@next/env";
 import { closeDb } from "../src/db";
 import { correctS2PoolData } from "../src/lib/archive-pool-correction";
@@ -14,7 +15,10 @@ try {
     ) ||
     (args.includes("--apply") && args.includes("--dry-run"))
   )
-    throw new Error("Use [--dry-run] or --apply --expected-revision=N.");
+    throw new HttpError(
+      400,
+      "Use [--dry-run] or --apply --expected-revision=N.",
+    );
   const revision = args
     .find((a) => a.startsWith("--expected-revision="))
     ?.split("=")[1];
@@ -28,7 +32,9 @@ try {
   );
 } catch (error) {
   console.error(
-    error instanceof Error ? error.message : "S2 correction failed.",
+    error instanceof HttpError
+      ? error.message
+      : "S2 correction failed; check the configured database and reviewed operation.",
   );
   process.exitCode = 1;
 } finally {

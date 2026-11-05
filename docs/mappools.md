@@ -139,7 +139,7 @@ the current official base; original source values remain in the details. The
 source, ruleset and UTC fetch time identify the current calculation, which is not
 a reconstruction of the tournament year's difficulty algorithm.
 
-Saved-read contract **1.21.0** carries optional native metadata snapshots and
+Saved-read contract **1.22.0** carries optional native metadata snapshots and
 historical map snapshots through the existing public resources. The backend
 composes the catalog into `publicEnrollment` / `publicMappools`; the remote
 frontend needs no provider credentials or DB. Older backends and missing variants

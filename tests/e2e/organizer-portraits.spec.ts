@@ -11,7 +11,7 @@ test.describe("complete organizer portraits", () => {
     page,
     context,
     isMobile,
-  }, info) => {
+  }) => {
     process.env.DATABASE_URL = process.env.TEST_DATABASE_URL;
     await seedEditions([edition], false);
     for (let i = 0; i < 4; i++) {
@@ -92,12 +92,6 @@ test.describe("complete organizer portraits", () => {
               () => document.documentElement.scrollWidth <= innerWidth,
             ),
           ).toBe(true);
-          await page.screenshot({
-            path: info.outputPath(
-              `organizers-${appearance}-${theme}-${width}.png`,
-            ),
-            fullPage: true,
-          });
         }
   });
 });

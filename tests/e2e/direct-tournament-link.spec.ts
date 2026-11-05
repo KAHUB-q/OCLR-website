@@ -10,7 +10,7 @@ test("header tournaments is one direct link with no chooser fetch", async ({
   page,
   context,
   isMobile,
-}, info) => {
+}) => {
   test.setTimeout(90000);
   assertTestDatabase(process.env.TEST_DATABASE_URL);
   process.env.DATABASE_URL = process.env.TEST_DATABASE_URL;
@@ -65,9 +65,6 @@ test("header tournaments is one direct link with no chooser fetch", async ({
         expect(
           await page.evaluate(() => document.documentElement.scrollWidth),
         ).toBeLessThanOrEqual(width);
-        await page.screenshot({
-          path: info.outputPath(`${width}-${locale}-${theme}.png`),
-        });
       }
       expect(
         (await new AxeBuilder({ page }).include(".site-header").analyze())

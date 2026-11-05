@@ -32,7 +32,7 @@ test.describe("published OBS browser-source rehearsal", () => {
     browser,
     context,
     isMobile,
-  }, testInfo) => {
+  }) => {
     const slug = isMobile ? "draft-mobile-test" : "draft-desktop-test";
     const fixture = await prepareDraft(slug, isMobile ? 120001 : 110001, 4);
     const origin = "http://127.0.0.1:3100";
@@ -217,11 +217,6 @@ test.describe("published OBS browser-source rehearsal", () => {
       expect(
         await page.evaluate(() => document.documentElement.scrollHeight),
       ).toBe(1080);
-    await page.screenshot({
-      path: testInfo.outputPath("overlay-opaque.png"),
-      fullPage: true,
-      animations: "disabled",
-    });
     const before = (await state()).session;
     await page.goto(`${overlay}?background=transparent`);
     expect(
@@ -234,12 +229,6 @@ test.describe("published OBS browser-source rehearsal", () => {
         () => getComputedStyle(document.documentElement).backgroundColor,
       ),
     ).toBe("rgba(0, 0, 0, 0)");
-    await page.screenshot({
-      path: testInfo.outputPath("overlay-transparent.png"),
-      fullPage: true,
-      animations: "disabled",
-      omitBackground: true,
-    });
     await page.reload();
     expect(await selection.evaluate((el) => el.getAnimations().length)).toBe(0);
     const body = await page.content();

@@ -106,7 +106,7 @@ test.describe("Dashboard UID participation history", () => {
     page,
     context,
     isMobile,
-  }, info) => {
+  }) => {
     test.setTimeout(240000);
     const locales = ["en", "zh-Hans", "zh-Hant"];
     for (const [i, appearance] of appearances.entries()) {
@@ -137,13 +137,6 @@ test.describe("Dashboard UID participation history", () => {
           .withTags(["wcag2a", "wcag2aa", "wcag21aa"])
           .analyze();
         expect(scan.violations).toEqual([]);
-        if (appearance === "default")
-          await page.screenshot({
-            path: info.outputPath(
-              `history-${isMobile ? "mobile" : "desktop"}-${theme}.png`,
-            ),
-            fullPage: true,
-          });
       }
     }
     for (const locale of ["zh-Hans", "zh-Hant"]) {
@@ -160,12 +153,6 @@ test.describe("Dashboard UID participation history", () => {
       await expect(page.locator("#history-heading")).toHaveText(
         locale === "zh-Hans" ? "我的历史参赛记录" : "我的歷史參賽記錄",
       );
-      await page.screenshot({
-        path: info.outputPath(
-          `history-${isMobile ? "mobile" : "desktop"}-${locale}.png`,
-        ),
-        fullPage: true,
-      });
     }
     await page.setViewportSize({ width: 320, height: 844 });
     await page.reload();

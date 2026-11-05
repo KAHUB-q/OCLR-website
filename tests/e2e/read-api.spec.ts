@@ -39,7 +39,7 @@ test.describe("versioned read API and existing SSR", () => {
     page,
     context,
     isMobile,
-  }, info) => {
+  }) => {
     test.setTimeout(120000);
     assertTestDatabase(process.env.TEST_DATABASE_URL);
     process.env.DATABASE_URL = process.env.TEST_DATABASE_URL;
@@ -206,12 +206,6 @@ test.describe("versioned read API and existing SSR", () => {
       await page.evaluate(() =>
         window.scrollTo({ top: 0, behavior: "instant" }),
       );
-      await page.screenshot({
-        path: info.outputPath(
-          `${isMobile ? "mobile" : "desktop"}-shared-players-light.png`,
-        ),
-        fullPage: false,
-      });
       await context.addCookies([
         { name: "oclr-theme", value: "dark", url: backend },
       ]);
@@ -229,12 +223,6 @@ test.describe("versioned read API and existing SSR", () => {
       await page.evaluate(() =>
         window.scrollTo({ top: 0, behavior: "instant" }),
       );
-      await page.screenshot({
-        path: info.outputPath(
-          `${isMobile ? "mobile" : "desktop"}-shared-tournament-dark.png`,
-        ),
-        fullPage: false,
-      });
       await page.goto("/developer");
       await expect(
         page.getByRole("link", { name: "View API specification", exact: true }),

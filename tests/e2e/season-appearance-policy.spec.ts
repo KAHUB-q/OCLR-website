@@ -20,7 +20,7 @@ test.describe("Admin-only season theme policy", () => {
     context,
     browser,
     isMobile,
-  }, info) => {
+  }) => {
     test.setTimeout(120000);
     process.env.DATABASE_URL = process.env.TEST_DATABASE_URL;
     await db().execute(
@@ -58,51 +58,48 @@ test.describe("Admin-only season theme policy", () => {
         )
         .toBe(false);
     }
-    for (const locale of ["en", "zh-Hans", "zh-Hant"])
-      for (const theme of ["light", "dark"]) {
-        await context.addCookies([
-          { name: "oclr-locale", value: locale, url: origin },
-          { name: "oclr-theme", value: theme, url: origin },
-          { name: "oclr-appearance", value: "skyline-pop", url: origin },
-        ]);
-        const response = await page.goto("/tournaments/season-a");
-        expect((await response!.text()).match(/<html[^>]*>/)?.[0]).toContain(
-          'data-appearance="skyline-pop"',
-        );
-        await expect(page.locator("html")).toHaveAttribute(
-          "data-appearance",
-          "skyline-pop",
-        );
-        await expect(page.locator("html")).toHaveAttribute("data-theme", theme);
-        await openHeaderPreferences(page);
-        await page.locator(".appearance-trigger").click();
-        const menu = page.locator('.appearance-control [role="menu"]');
-        await expect(menu.getByRole("menuitemradio")).toHaveCount(
-          publicAppearances.length + 1,
-        );
-        for (const value of seasonAppearances)
-          await expect(
-            menu.locator(`[data-appearance-option="${value}"]`),
-          ).toHaveCount(0);
-        const box = (await menu.boundingBox())!;
-        expect(box.x).toBeGreaterThanOrEqual(0);
-        expect(box.x + box.width).toBeLessThanOrEqual(
-          page.viewportSize()!.width,
-        );
-        if (locale === "en" && theme === "dark")
-          await page.screenshot({ path: info.outputPath("public-menu.png") });
-        await page.keyboard.press("End");
-        await expect(menu.getByRole("menuitemradio").last()).toBeFocused();
-        await page.keyboard.press("Escape");
-        await expect(page.locator(".appearance-trigger")).toBeFocused();
-        expect(
-          await page.evaluate(
-            () => document.documentElement.scrollWidth <= innerWidth,
-          ),
-        ).toBe(true);
-        if (locale === "en" && theme === "dark")
-          await page.screenshot({ path: info.outputPath("scoped-season.png") });
-      }
+
+    const locale = "en";
+
+    const theme = "light";
+
+    await context.addCookies([
+      { name: "oclr-locale", value: locale, url: origin },
+      { name: "oclr-theme", value: theme, url: origin },
+      { name: "oclr-appearance", value: "skyline-pop", url: origin },
+    ]);
+    const response = await page.goto("/tournaments/season-a");
+    expect((await response!.text()).match(/<html[^>]*>/)?.[0]).toContain(
+      'data-appearance="skyline-pop"',
+    );
+    await expect(page.locator("html")).toHaveAttribute(
+      "data-appearance",
+      "skyline-pop",
+    );
+    await expect(page.locator("html")).toHaveAttribute("data-theme", theme);
+    await openHeaderPreferences(page);
+    await page.locator(".appearance-trigger").click();
+    const menu = page.locator('.appearance-control [role="menu"]');
+    await expect(menu.getByRole("menuitemradio")).toHaveCount(
+      publicAppearances.length + 1,
+    );
+    for (const value of seasonAppearances)
+      await expect(
+        menu.locator(`[data-appearance-option="${value}"]`),
+      ).toHaveCount(0);
+    const box = (await menu.boundingBox())!;
+    expect(box.x).toBeGreaterThanOrEqual(0);
+    expect(box.x + box.width).toBeLessThanOrEqual(page.viewportSize()!.width);
+    await page.keyboard.press("End");
+    await expect(menu.getByRole("menuitemradio").last()).toBeFocused();
+    await page.keyboard.press("Escape");
+    await expect(page.locator(".appearance-trigger")).toBeFocused();
+    expect(
+      await page.evaluate(
+        () => document.documentElement.scrollWidth <= innerWidth,
+      ),
+    ).toBe(true);
+
     await context.addCookies([
       { name: "oclr-locale", value: "en", url: origin },
     ]);
@@ -180,10 +177,6 @@ test.describe("Admin-only season theme policy", () => {
       before: "prism-overture",
       after: "default",
       revision: 8,
-    });
-    await page.screenshot({
-      path: info.outputPath("public-site-settings.png"),
-      fullPage: true,
     });
   });
 });

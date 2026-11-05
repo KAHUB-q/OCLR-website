@@ -44,7 +44,7 @@ test.describe("published match details", () => {
   test("historical technical result, multi-MP scores and rating across locales, themes and appearances", async ({
     page,
     context,
-  }, info) => {
+  }) => {
     test.setTimeout(300000);
     const archive = structuredClone(statisticsArchive);
     archive.editionSlug = "s10";
@@ -170,13 +170,6 @@ test.describe("published match details", () => {
               `${locale}/${appearance}/${theme}`,
             )
             .toEqual([]);
-          if (locale === "en" || appearance === "default")
-            await page.screenshot({
-              path: info.outputPath(
-                `match-details-${locale}-${appearance}-${theme}.png`,
-              ),
-              fullPage: true,
-            });
         }
     await page.locator("#game-1 .table-scroll").first().focus();
     await expect(page.locator("#game-1 .table-scroll").first()).toBeFocused();
@@ -195,15 +188,11 @@ test.describe("published match details", () => {
     await expect(
       page.getByText("Match details unavailable.", { exact: true }),
     ).toBeVisible();
-    await page.screenshot({
-      path: info.outputPath("match-details-unavailable.png"),
-      fullPage: true,
-    });
   });
   test("ordinary result exposes saved player data with the same published rating", async ({
     page,
     context,
-  }, info) => {
+  }) => {
     await seedEditions();
     await db()
       .insert(users)
@@ -270,11 +259,6 @@ test.describe("published match details", () => {
               `${locale}/${appearance}/${theme}`,
             )
             .toEqual([]);
-          if (locale === "en" && appearance === "default" && theme === "light")
-            await page.screenshot({
-              path: info.outputPath("ordinary-match-details.png"),
-              fullPage: true,
-            });
         }
   });
 });

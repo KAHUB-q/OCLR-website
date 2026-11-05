@@ -52,7 +52,7 @@ test.describe("historical season import handoff", () => {
       page,
       context,
       isMobile,
-    }, info) => {
+    }) => {
       const slug = `${sample.key}-${isMobile ? "mobile" : "desktop"}-${Date.now()}`;
       const archive = historicalArchiveSchema.parse({
         ...JSON.parse(
@@ -178,9 +178,6 @@ test.describe("historical season import handoff", () => {
           ]);
           await page.reload();
           await expect(thumbnail).toBeVisible();
-          await card.screenshot({
-            path: info.outputPath(`${sample.key}-thumbnail-${theme}.png`),
-          });
         }
       }
       await page.goto(`/tournaments/${slug}`);
@@ -194,10 +191,6 @@ test.describe("historical season import handoff", () => {
         sample.images,
       );
       await page.locator("#rules").scrollIntoViewIfNeeded();
-      await page.screenshot({
-        path: info.outputPath(`${sample.key}-overview-rules.png`),
-        fullPage: false,
-      });
       for (const appearance of ["default", "cute-pastel", "swiss-minimal"])
         for (const theme of ["light", "dark"]) {
           await context.addCookies([
@@ -256,10 +249,6 @@ test.describe("historical season import handoff", () => {
             expect(
               await page.evaluate(() => document.documentElement.scrollWidth),
             ).toBeLessThanOrEqual(isMobile ? 390 : 1440);
-            await page.screenshot({
-              path: info.outputPath(`${appearance}-${theme}-${path}.png`),
-              fullPage: false,
-            });
           }
         }
       for (const image of await page.locator(".rules-illustration img").all()) {
@@ -270,10 +259,6 @@ test.describe("historical season import handoff", () => {
           )
           .toBeGreaterThan(0);
       }
-      await page.screenshot({
-        path: info.outputPath(`${sample.key}-rule-diagram.png`),
-        fullPage: false,
-      });
       for (const pool of archive.pools) {
         await page.goto(`/tournaments/${slug}/mappools/${pool.id}`);
         await expect(page.locator(".archive-map-item")).toHaveCount(
@@ -340,10 +325,6 @@ test.describe("historical season import handoff", () => {
         expect((await new AxeBuilder({ page }).analyze()).violations).toEqual(
           [],
         );
-        await page.screenshot({
-          path: info.outputPath("s8-derived-standings-bracket.png"),
-          fullPage: false,
-        });
       }
       for (const match of archive.matches.filter((m) => m.score === null))
         expect(

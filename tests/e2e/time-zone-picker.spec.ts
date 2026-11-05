@@ -5,7 +5,7 @@ import { closeDb } from "../../src/db";
 import { edition } from "../fixtures/edition";
 import { seedEditions } from "../fixtures/editions";
 import { seedSession } from "./session";
-import { captureResponsiveLayout } from "./responsive";
+import { expectWorkflowFits } from "./responsive";
 import { selectTimeZone } from "./time-zone";
 test.describe("shared city and IANA time zone selection", () => {
   test.skip(!process.env.TEST_DATABASE_URL, "Requires isolated PostgreSQL");
@@ -14,7 +14,7 @@ test.describe("shared city and IANA time zone selection", () => {
     page,
     context,
     isMobile,
-  }, info) => {
+  }) => {
     await context.addCookies([await seedSession(isMobile ? 70001 : 60001)]);
     const slug = `picker-${isMobile ? "mobile" : "desktop"}-${randomUUID().slice(0, 8)}`;
     await seedEditions([{ ...edition, slug, timeZone: "US/Eastern" }]);
@@ -67,7 +67,7 @@ test.describe("shared city and IANA time zone selection", () => {
     await search.fill("hong kong");
     await expect(options).toHaveCount(1);
     await expect(options).toHaveText("Hong Kong — Asia/Hong_Kong");
-    await captureResponsiveLayout(page, info, "time-zone-search");
+    await expectWorkflowFits(page);
     expect(
       (
         await new AxeBuilder({ page })

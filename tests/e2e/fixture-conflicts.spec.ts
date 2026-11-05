@@ -74,7 +74,7 @@ test.describe("fixture editor snapshot recovery", () => {
     page,
     context,
     browser,
-  }, info) => {
+  }) => {
     const other = await browser.newContext({ storageState: englishStorage });
     await other.addCookies([await seedSession(70001)]);
     try {
@@ -134,10 +134,6 @@ test.describe("fixture editor snapshot recovery", () => {
         expect(
           await editor(page).evaluate((el) => el.scrollWidth <= el.clientWidth),
         ).toBe(true);
-        await page.screenshot({
-          path: info.outputPath(`fixture-conflict-${colorScheme}.png`),
-          fullPage: true,
-        });
       }
       await button(page, "Load latest fixture version").click();
       await expect(

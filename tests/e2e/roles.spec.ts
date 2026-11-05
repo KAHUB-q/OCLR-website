@@ -1,5 +1,5 @@
 import { englishStorage } from "../fixtures/preferences";
-import { captureResponsiveLayout } from "./responsive";
+import { expectWorkflowFits } from "./responsive";
 import { test, expect } from "@playwright/test";
 import AxeBuilder from "@axe-core/playwright";
 import { seedSession } from "./session";
@@ -16,7 +16,7 @@ test.describe("scoped staff roles through real HTTP sessions", () => {
     context,
     browser,
     isMobile,
-  }, info) => {
+  }) => {
     const adminId = isMobile ? 70001 : 60001;
     const operatorId = isMobile ? 180101 : 180001;
     const cookie = await seedSession(operatorId);
@@ -75,7 +75,7 @@ test.describe("scoped staff roles through real HTTP sessions", () => {
         await scoped.close();
       }
       await page.goto("/admin/staff");
-      await captureResponsiveLayout(page, info, "minimal-staff");
+      await expectWorkflowFits(page);
       const assignment = page.locator("article").filter({
         has: page.getByRole("heading", {
           name: `Synthetic Player ${operatorId} · ${operatorId}`,
@@ -192,11 +192,6 @@ test.describe("scoped staff roles through real HTTP sessions", () => {
           () => document.documentElement.scrollWidth <= innerWidth,
         ),
       ).toBe(true);
-      await page.screenshot({
-        path: info.outputPath("staff-roles.png"),
-        fullPage: true,
-        animations: "disabled",
-      });
       const revoked = page.waitForResponse(
         (response) =>
           response.url().endsWith("/api/admin/staff") &&

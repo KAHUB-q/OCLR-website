@@ -17,7 +17,7 @@ test.describe("count-first group assignment", () => {
     page,
     context,
     isMobile,
-  }, info) => {
+  }) => {
     assertTestDatabase(process.env.TEST_DATABASE_URL);
     process.env.DATABASE_URL = process.env.TEST_DATABASE_URL;
     await db().execute(sql`TRUNCATE edition_state, users CASCADE`);
@@ -106,17 +106,12 @@ test.describe("count-first group assignment", () => {
           () => document.documentElement.scrollWidth <= innerWidth,
         ),
       ).toBe(true);
-      await page.screenshot({
-        path: info.outputPath(`groups-${theme}.png`),
-        fullPage: true,
-      });
     }
     for (const locale of ["zh-Hans", "zh-Hant"]) {
       await context.addCookies([
         { name: "oclr-locale", value: locale, url: origin },
       ]);
       await page.reload();
-      await board.screenshot({ path: info.outputPath(`groups-${locale}.png`) });
       await expect(board).not.toContainText("Choose the number of groups");
     }
     await context.addCookies([

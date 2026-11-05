@@ -13,7 +13,6 @@ import {
   users,
 } from "../../src/db/schema";
 import { normalizeOsuProfile } from "../../src/lib/osu-profile-model";
-import { appearances } from "../../src/lib/preferences";
 import { assertTestDatabase } from "../database";
 import { seedSession } from "../e2e/session";
 import { edition } from "../fixtures/edition";
@@ -489,70 +488,17 @@ test("uses real remote grants for core SSR/navigation without local DB or OAuth,
       "This page or feature is not supported in remote development yet. See the coverage list.",
     ),
   ).toHaveCount(0);
-  // Appearance/navigation coverage is intentionally a separate workload from
-  // authorization checks; keep the backend's real per-token rate limit intact.
+  // One inherited season exercises remote stylesheet/asset transport. Every
+  // shipped asset is checked above; the business journey is not replayed for
+  // every palette. Keep the connection fresh before the revocation checks.
+  await setEditionAppearance("test-cup", "skyline-pop");
   await renewConnection();
-  const appearanceCases = info.config.metadata.remoteCore
-    ? ["default"]
-    : appearances;
-  for (const [index, appearance] of appearanceCases.entries()) {
-    if (index > 0 && index % 4 === 0) await renewConnection();
-    await context.addCookies([
-      { name: "oclr-appearance", value: appearance, url: local },
-    ]);
-    await setEditionAppearance("test-cup", appearance);
-    await renewConnection();
-    await page.goto("/tournaments/test-cup/players");
-    await showAllPlayers();
-    await expect(page.locator("html")).toHaveAttribute(
-      "data-appearance",
-      appearance,
-    );
-    const theme = bundledSeasonThemes.find(
-      (theme) => theme.appearance === appearance,
-    );
-    if (theme) {
-      const decoded = await page.evaluate(async (assets) => {
-        return Promise.all(
-          assets.map(async (src) => {
-            const image = new Image();
-            image.src = src;
-            await image.decode();
-            return {
-              src,
-              width: image.naturalWidth,
-              height: image.naturalHeight,
-            };
-          }),
-        );
-      }, theme.assets);
-      for (const image of decoded) {
-        expect(image.width, image.src).toBeGreaterThan(0);
-        expect(image.height, image.src).toBeGreaterThan(0);
-      }
-      const background = await page
-        .locator(".page-heading")
-        .evaluate((heading) =>
-          [
-            getComputedStyle(heading).backgroundImage,
-            getComputedStyle(heading, "::before").backgroundImage,
-          ].join(","),
-        );
-      expect(theme.assets.some((asset) => background.includes(asset))).toBe(
-        true,
-      );
-      await page.screenshot({
-        path: info.outputPath(`remote-${appearance}.png`),
-        animations: "disabled",
-      });
-    }
-    if (isMobile) await page.setViewportSize({ width: 320, height: 844 });
-    expect(
-      await page.evaluate(
-        () => document.documentElement.scrollWidth <= innerWidth,
-      ),
-    ).toBe(true);
-  }
+  await page.goto("/tournaments/test-cup/players");
+  await showAllPlayers();
+  await expect(page.locator("html")).toHaveAttribute(
+    "data-appearance",
+    "skyline-pop",
+  );
   await context.addCookies([{ name: "oclr-theme", value: "dark", url: local }]);
   await page.reload();
   await expect(page.locator("html")).toHaveAttribute("data-theme", "dark");

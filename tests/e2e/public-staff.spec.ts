@@ -24,7 +24,7 @@ test.describe("approved public About roster", () => {
       browser,
       context,
       isMobile,
-    }, info) => {
+    }) => {
       assertTestDatabase(process.env.TEST_DATABASE_URL);
       process.env.DATABASE_URL = process.env.TEST_DATABASE_URL;
       await db().execute(sql`TRUNCATE edition_state, users CASCADE`);
@@ -214,10 +214,6 @@ test.describe("approved public About roster", () => {
           expect(
             await page.evaluate(() => document.documentElement.scrollWidth),
           ).toBeLessThanOrEqual(page.viewportSize()!.width);
-          await page.screenshot({
-            path: info.outputPath(`public-staff-${role}-${theme}.png`),
-            fullPage: true,
-          });
         }
         await row
           .getByRole("button", { name: "Hide from About", exact: true })

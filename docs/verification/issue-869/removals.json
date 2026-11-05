@@ -1,0 +1,233 @@
+{
+  "groups": {
+    "shared-workspace-presentation": {
+      "remainingCoverage": [
+        "tests/e2e/public.spec.ts",
+        "tests/e2e/roles.spec.ts",
+        "tests/e2e/mappools.spec.ts",
+        "tests/e2e/fixtures.spec.ts",
+        "tests/components/tournament-settings.spec.ts",
+        "tests/components/public-mappools.spec.ts",
+        "tests/components/mappool-actions.spec.ts",
+        "tests/components/staff-role-form.spec.ts",
+        "tests/unit/public-news.test.ts",
+        "tests/unit/i18n.test.ts"
+      ],
+      "decision": "Retire duplicate cosmetic/copy sweeps; keep distinct business/interaction coverage at the listed owners."
+    },
+    "cross-appearance-presentation": {
+      "remainingCoverage": [
+        "tests/e2e/site-appearance-settings.spec.ts",
+        "tests/e2e/tournament-appearance.spec.ts",
+        "tests/e2e/theme-preference.spec.ts",
+        "tests/e2e/roles.spec.ts",
+        "tests/components/appearance-css.spec.ts",
+        "tests/components/appearance-navigation.spec.ts"
+      ],
+      "decision": "Retire duplicate cosmetic/copy sweeps; keep distinct business/interaction coverage at the listed owners."
+    },
+    "season-presentation": {
+      "remainingCoverage": [
+        "tests/e2e/tournament-appearance.spec.ts",
+        "tests/e2e/season-appearance-policy.spec.ts",
+        "tests/e2e/appearance-css.spec.ts",
+        "tests/unit/season-artwork.test.ts",
+        "tests/unit/season-accent.test.ts",
+        "tests/components/document-theme.spec.ts"
+      ],
+      "decision": "Retire duplicate cosmetic/copy sweeps; keep distinct business/interaction coverage at the listed owners."
+    },
+    "shared-layout": {
+      "remainingCoverage": [
+        "tests/components/content-layout.spec.ts",
+        "tests/components/header.spec.ts"
+      ],
+      "decision": "Retire duplicate cosmetic/copy sweeps; keep distinct business/interaction coverage at the listed owners."
+    },
+    "shared-header": {
+      "remainingCoverage": [
+        "tests/e2e/header-overlap.spec.ts",
+        "tests/components/header.spec.ts",
+        "tests/components/header-scroll.spec.ts",
+        "tests/components/staff-navigation.spec.ts",
+        "tests/components/player-sidebar.spec.ts"
+      ],
+      "decision": "Retire duplicate cosmetic/copy sweeps; keep distinct business/interaction coverage at the listed owners."
+    },
+    "historical-presentation": {
+      "remainingCoverage": [
+        "tests/e2e/historical-archive.spec.ts",
+        "tests/e2e/archive-map-metadata.spec.ts",
+        "tests/unit/historical-rulebooks.test.ts",
+        "tests/unit/archive-event-matches.test.ts",
+        "tests/unit/tournament-branding.test.ts"
+      ],
+      "decision": "Retire duplicate cosmetic/copy sweeps; keep distinct business/interaction coverage at the listed owners."
+    },
+    "catalog-and-shared-schedule": {
+      "remainingCoverage": [
+        "tests/unit/i18n.test.ts",
+        "tests/e2e/schedule.spec.ts",
+        "tests/e2e/s4-archive-schedule.spec.ts"
+      ],
+      "decision": "Retire duplicate cosmetic/copy sweeps; keep distinct business/interaction coverage at the listed owners."
+    },
+    "obsolete-homepage": {
+      "remainingCoverage": [
+        "tests/e2e/public.spec.ts",
+        "tests/e2e/home-artwork.spec.ts",
+        "tests/e2e/roles.spec.ts"
+      ],
+      "decision": "Retire the superseded pre-layered-homepage contract; publication/anonymous access stay covered by core workflows."
+    },
+    "retired-header-matrix": {
+      "remainingCoverage": [
+        "tests/e2e/header-overlap.spec.ts",
+        "tests/components/header.spec.ts"
+      ],
+      "decision": "Retire duplicate cosmetic/copy sweeps; keep distinct business/interaction coverage at the listed owners."
+    }
+  },
+  "removed": [
+    {
+      "path": "tests/e2e/admin-polish.spec.ts",
+      "group": "shared-workspace-presentation"
+    },
+    {
+      "path": "tests/e2e/appearance-language.spec.ts",
+      "group": "cross-appearance-presentation"
+    },
+    {
+      "path": "tests/e2e/azure-appearance.spec.ts",
+      "group": "season-presentation"
+    },
+    {
+      "path": "tests/e2e/chromatic-appearance.spec.ts",
+      "group": "season-presentation"
+    },
+    {
+      "path": "tests/e2e/content-layout.spec.ts",
+      "group": "shared-layout"
+    },
+    {
+      "path": "tests/e2e/dashboard-appearance.spec.ts",
+      "group": "cross-appearance-presentation"
+    },
+    {
+      "path": "tests/e2e/design-review.spec.ts",
+      "group": "shared-workspace-presentation"
+    },
+    {
+      "path": "tests/e2e/frost-appearance.spec.ts",
+      "group": "season-presentation"
+    },
+    {
+      "path": "tests/e2e/frutiger-appearance.spec.ts",
+      "group": "cross-appearance-presentation"
+    },
+    {
+      "path": "tests/e2e/glacier-appearance.spec.ts",
+      "group": "season-presentation"
+    },
+    {
+      "path": "tests/e2e/graphite-appearance.spec.ts",
+      "group": "season-presentation"
+    },
+    {
+      "path": "tests/e2e/header-actions.spec.ts",
+      "group": "shared-header"
+    },
+    {
+      "path": "tests/e2e/header-branding.spec.ts",
+      "group": "shared-header"
+    },
+    {
+      "path": "tests/e2e/issue-128-136-ui.spec.ts",
+      "group": "shared-workspace-presentation"
+    },
+    {
+      "path": "tests/e2e/issue-183.spec.ts",
+      "group": "shared-workspace-presentation"
+    },
+    {
+      "path": "tests/e2e/issue-241.spec.ts",
+      "group": "historical-presentation"
+    },
+    {
+      "path": "tests/e2e/issue-242.spec.ts",
+      "group": "historical-presentation"
+    },
+    {
+      "path": "tests/e2e/issue-243.spec.ts",
+      "group": "historical-presentation"
+    },
+    {
+      "path": "tests/e2e/issue-244.spec.ts",
+      "group": "historical-presentation"
+    },
+    {
+      "path": "tests/e2e/issue-batch-visual.spec.ts",
+      "group": "shared-workspace-presentation"
+    },
+    {
+      "path": "tests/e2e/mainsheet-light.spec.ts",
+      "group": "shared-workspace-presentation"
+    },
+    {
+      "path": "tests/e2e/operations-polish.spec.ts",
+      "group": "shared-workspace-presentation"
+    },
+    {
+      "path": "tests/e2e/orbital-appearance.spec.ts",
+      "group": "season-presentation"
+    },
+    {
+      "path": "tests/e2e/pastel-appearance.spec.ts",
+      "group": "cross-appearance-presentation"
+    },
+    {
+      "path": "tests/e2e/prism-appearance.spec.ts",
+      "group": "season-presentation"
+    },
+    {
+      "path": "tests/e2e/public-polish.spec.ts",
+      "group": "shared-workspace-presentation"
+    },
+    {
+      "path": "tests/e2e/s7-artwork.spec.ts",
+      "group": "historical-presentation"
+    },
+    {
+      "path": "tests/e2e/sakura-appearance.spec.ts",
+      "group": "season-presentation"
+    },
+    {
+      "path": "tests/e2e/schedule-i18n.spec.ts",
+      "group": "catalog-and-shared-schedule"
+    },
+    {
+      "path": "tests/e2e/season-11.spec.ts",
+      "group": "obsolete-homepage"
+    },
+    {
+      "path": "tests/e2e/skyline-appearance.spec.ts",
+      "group": "season-presentation"
+    },
+    {
+      "path": "tests/e2e/thumbnail-edge.spec.ts",
+      "group": "historical-presentation"
+    },
+    {
+      "path": "tests/e2e/verdant-appearance.spec.ts",
+      "group": "season-presentation"
+    },
+    {
+      "path": "tests/fixtures/header-matrix.ts",
+      "group": "retired-header-matrix"
+    },
+    {
+      "path": "tests/unit/header-matrix.test.ts",
+      "group": "retired-header-matrix"
+    }
+  ]
+}

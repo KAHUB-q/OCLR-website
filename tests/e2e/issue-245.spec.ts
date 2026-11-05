@@ -8,7 +8,7 @@ test.afterAll(closeDb);
 test("all players appear without pagination while offscreen messages wait", async ({
   page,
   isMobile,
-}, info) => {
+}) => {
   const base = isMobile ? 926000 : 925000;
   const slug = `complete-${base}-test`;
   await seedEditions([{ ...edition, slug }]);
@@ -53,7 +53,6 @@ test("all players appear without pagination while offscreen messages wait", asyn
   await expect(page.locator(".edition-players")).not.toContainText(
     String(base + 60),
   );
-  await page.screenshot({ path: info.outputPath("complete-directory.png") });
   await page.goto(`/tournaments/${slug}/players?q=${base + 59}`);
   await expect(rows).toHaveCount(1);
 });

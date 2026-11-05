@@ -7,7 +7,7 @@ import { editionState } from "../../src/db/schema";
 import { seedEditions } from "../fixtures/editions";
 import { edition } from "../fixtures/edition";
 import { assertTestDatabase } from "../database";
-import { captureResponsiveLayout } from "./responsive";
+import { expectWorkflowFits } from "./responsive";
 import { projectPublicNews } from "../../src/lib/public-news-model";
 test.describe("derived public content", () => {
   test.skip(!process.env.TEST_DATABASE_URL, "Requires isolated PostgreSQL");
@@ -15,7 +15,7 @@ test.describe("derived public content", () => {
   test("Home and News reflect confirmed dates without publishing private plans or asserting completion", async ({
     page,
     context,
-  }, info) => {
+  }) => {
     assertTestDatabase(process.env.TEST_DATABASE_URL);
     process.env.DATABASE_URL = process.env.TEST_DATABASE_URL;
     await db().execute(sql`TRUNCATE edition_state, users CASCADE`);
@@ -69,12 +69,12 @@ test.describe("derived public content", () => {
       await expect(page.locator("main")).not.toContainText(
         "PRIVATE_EDITION_NEWS",
       );
-      await captureResponsiveLayout(page, info, "home-entry-links");
+      await expectWorkflowFits(page);
       await page.goto("/news");
       await expect(page.locator(".news-list")).not.toContainText(/[→↗]/);
       await expect(page.locator(".news-list")).toContainText("(UTC+8)");
       await expect(page.locator(".news-list")).not.toContainText("Asia/Taipei");
-      await captureResponsiveLayout(page, info, "news-headlines-list");
+      await expectWorkflowFits(page);
       await page
         .getByRole("link", {
           name: "Scheduled: Captain draft — Synthetic Season 12",
@@ -135,10 +135,6 @@ test.describe("derived public content", () => {
             .analyze()
         ).violations,
       ).toEqual([]);
-      await page.screenshot({
-        path: info.outputPath("automatic-news.png"),
-        fullPage: true,
-      });
       await db()
         .update(editionState)
         .set({ configuration: { ...published, published: false } })

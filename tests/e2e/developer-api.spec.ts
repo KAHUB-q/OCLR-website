@@ -54,7 +54,7 @@ test.describe("Developer API local browser access", () => {
     page,
     context,
     isMobile,
-  }, info) => {
+  }) => {
     test.setTimeout(180000);
     const id = isMobile ? 2682002 : 2682001;
     const cookie = await seedSession(id);
@@ -156,18 +156,6 @@ test.describe("Developer API local browser access", () => {
                 () => document.documentElement.scrollWidth <= window.innerWidth,
               ),
             ).toBe(true);
-            if (
-              locale === "en" &&
-              ((appearance === "default" && theme === "light") ||
-                (appearance === "swiss-minimal" && theme === "dark"))
-            ) {
-              await page.screenshot({
-                path: info.outputPath(
-                  `${isMobile ? "mobile" : "desktop"}-${appearance}-${theme}.png`,
-                ),
-                fullPage: true,
-              });
-            }
           }
         }
       }

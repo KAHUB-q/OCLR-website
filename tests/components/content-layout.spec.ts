@@ -1,10 +1,11 @@
 import { test, expect } from "@playwright/test";
-import { appearances } from "../../src/lib/preferences";
-for (const appearance of appearances) {
+
+for (const appearance of ["default", "glassmorphism"]) {
   test(`header and content align at every width: ${appearance}`, async ({
     page,
+    isMobile,
   }) => {
-    for (const width of [1440, 1024, 390, 320]) {
+    for (const width of [isMobile ? 320 : 1440]) {
       await page.setViewportSize({ width, height: 900 });
       for (const tournament of [false, true]) {
         await page.goto(

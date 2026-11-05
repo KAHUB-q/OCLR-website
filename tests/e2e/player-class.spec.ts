@@ -22,7 +22,7 @@ test.describe("scoped player evaluation", () => {
     page,
     context,
     isMobile,
-  }, info) => {
+  }) => {
     test.setTimeout(120_000);
     const admin = isMobile ? 70001 : 60001;
     await seedSession(admin);
@@ -64,13 +64,6 @@ test.describe("scoped player evaluation", () => {
             ),
           ).toBe(true);
           if (locale === "en") {
-            await page
-              .getByRole("region", { name: "YumuRating", exact: true })
-              .screenshot({
-                path: info.outputPath(
-                  `player-class-${theme}-${appearance}.png`,
-                ),
-              });
             const results = await new AxeBuilder({ page })
               .include("table")
               .analyze();

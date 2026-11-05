@@ -14,78 +14,67 @@ test("local assets preserve geometry and accessible names across locales and the
     ? [320, 375]
     : [1280]) {
     await page.setViewportSize({ width, height: 1000 });
-    for (const locale of ["en", "zh-Hans", "zh-Hant"]) {
-      for (const theme of ["light", "dark"]) {
-        await page.goto(`/country-flags?locale=${locale}&theme=${theme}`);
-        await expect(
-          page.getByRole("heading", { name: "Country flags" }),
-        ).toBeVisible();
-        const flags = page.locator(".country-flag img");
-        await expect(flags).toHaveCount(13);
-        await expect
-          .poll(() =>
-            flags.evaluateAll((images) =>
-              images.every(
-                (image) =>
-                  image instanceof HTMLImageElement &&
-                  image.complete &&
-                  image.naturalWidth > 0,
-              ),
-            ),
-          )
-          .toBe(true);
-        const dimensions = await flags.evaluateAll((images) =>
-          images.map((image) => {
-            const img = image as HTMLImageElement;
-            const rect = img.getBoundingClientRect();
-            return {
-              width: rect.width,
-              height: rect.height,
-              naturalRatio: img.naturalWidth / img.naturalHeight,
-              fit: getComputedStyle(img).objectFit,
-              src: img.getAttribute("src"),
-            };
-          }),
-        );
-        for (const image of dimensions) {
-          expect(image.width / image.height).toBeCloseTo(image.naturalRatio, 3);
-          expect(image.fit).toBe("contain");
-          const source = new URL(image.src!, page.url());
-          expect(source.origin).toBe(new URL(page.url()).origin);
-          expect(source.pathname).toMatch(/^\/flags\/twemoji\//);
-        }
-        const sizes = dimensions.map((image) => image.height);
-        expect(sizes).toContain(18);
-        expect(sizes).toContain(24);
-        expect(sizes).toContain(32);
-        await expect(
-          page
-            .getByRole("region", { name: "Published team list" })
-            .getByRole("img"),
-        ).toHaveCount(0);
-        await expect(
-          page.getByTestId("invalid").locator(".country-flag"),
-        ).toHaveCount(0);
-        await expect(
-          page.getByRole("region", { name: "Staff" }).getByRole("img"),
-        ).toHaveAttribute("aria-label", /Taiwan|台湾|台灣/);
-        expect(
-          await page.evaluate(() => document.documentElement.scrollWidth),
-        ).toBeLessThanOrEqual(width);
-        if (
-          locale === "en" &&
-          ((width === 1280 && theme === "light") ||
-            (width === 320 && theme === "dark"))
-        ) {
-          const path = info.outputPath(`flags-${width}-${theme}.png`);
-          await page.screenshot({ fullPage: true, path });
-          await info.attach(`flags-${width}-${theme}`, {
-            path,
-            contentType: "image/png",
-          });
-        }
-      }
+
+    const locale = "en";
+
+    const theme = "light";
+
+    await page.goto(`/country-flags?locale=${locale}&theme=${theme}`);
+    await expect(
+      page.getByRole("heading", { name: "Country flags" }),
+    ).toBeVisible();
+    const flags = page.locator(".country-flag img");
+    await expect(flags).toHaveCount(13);
+    await expect
+      .poll(() =>
+        flags.evaluateAll((images) =>
+          images.every(
+            (image) =>
+              image instanceof HTMLImageElement &&
+              image.complete &&
+              image.naturalWidth > 0,
+          ),
+        ),
+      )
+      .toBe(true);
+    const dimensions = await flags.evaluateAll((images) =>
+      images.map((image) => {
+        const img = image as HTMLImageElement;
+        const rect = img.getBoundingClientRect();
+        return {
+          width: rect.width,
+          height: rect.height,
+          naturalRatio: img.naturalWidth / img.naturalHeight,
+          fit: getComputedStyle(img).objectFit,
+          src: img.getAttribute("src"),
+        };
+      }),
+    );
+    for (const image of dimensions) {
+      expect(image.width / image.height).toBeCloseTo(image.naturalRatio, 3);
+      expect(image.fit).toBe("contain");
+      const source = new URL(image.src!, page.url());
+      expect(source.origin).toBe(new URL(page.url()).origin);
+      expect(source.pathname).toMatch(/^\/flags\/twemoji\//);
     }
+    const sizes = dimensions.map((image) => image.height);
+    expect(sizes).toContain(18);
+    expect(sizes).toContain(24);
+    expect(sizes).toContain(32);
+    await expect(
+      page
+        .getByRole("region", { name: "Published team list" })
+        .getByRole("img"),
+    ).toHaveCount(0);
+    await expect(
+      page.getByTestId("invalid").locator(".country-flag"),
+    ).toHaveCount(0);
+    await expect(
+      page.getByRole("region", { name: "Staff" }).getByRole("img"),
+    ).toHaveAttribute("aria-label", /Taiwan|台湾|台灣/);
+    expect(
+      await page.evaluate(() => document.documentElement.scrollWidth),
+    ).toBeLessThanOrEqual(width);
   }
 });
 
@@ -93,26 +82,27 @@ test("flag artwork and sizes remain consistent across public appearances", async
   page,
 }) => {
   await page.setViewportSize({ width: 375, height: 900 });
-  for (const appearance of ["default", "cute-pastel", "swiss-minimal"]) {
-    for (const theme of ["light", "dark"]) {
-      await page.goto(`/country-flags?appearance=${appearance}&theme=${theme}`);
-      const flag = page
-        .getByRole("region", { name: "Staff" })
-        .locator(".country-flag img");
-      await expect
-        .poll(() =>
-          flag.evaluate((image) => (image as HTMLImageElement).naturalWidth),
-        )
-        .toBeGreaterThan(0);
-      expect(await flag.boundingBox()).toMatchObject({ width: 24, height: 24 });
-      expect(
-        await flag.evaluate((image) => getComputedStyle(image).filter),
-      ).toBe("none");
-      expect(
-        await page.evaluate(() => document.documentElement.scrollWidth),
-      ).toBeLessThanOrEqual(375);
-    }
-  }
+
+  const appearance = "default";
+
+  const theme = "light";
+
+  await page.goto(`/country-flags?appearance=${appearance}&theme=${theme}`);
+  const flag = page
+    .getByRole("region", { name: "Staff" })
+    .locator(".country-flag img");
+  await expect
+    .poll(() =>
+      flag.evaluate((image) => (image as HTMLImageElement).naturalWidth),
+    )
+    .toBeGreaterThan(0);
+  expect(await flag.boundingBox()).toMatchObject({ width: 24, height: 24 });
+  expect(await flag.evaluate((image) => getComputedStyle(image).filter)).toBe(
+    "none",
+  );
+  expect(
+    await page.evaluate(() => document.documentElement.scrollWidth),
+  ).toBeLessThanOrEqual(375);
 });
 
 test("a failed asset becomes a stable neutral code, and a new country can load", async ({

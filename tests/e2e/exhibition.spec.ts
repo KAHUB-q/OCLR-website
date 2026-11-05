@@ -23,7 +23,7 @@ test.describe("exhibition round and historical pool selection", () => {
     page,
     context,
     isMobile,
-  }, info) => {
+  }) => {
     test.setTimeout(120000);
     await context.addCookies([await seedSession(isMobile ? 70001 : 60001)]);
     await seedEditions(
@@ -178,10 +178,6 @@ test.describe("exhibition round and historical pool selection", () => {
                 .analyze()
             ).violations,
           ).toEqual([]);
-        await page.screenshot({
-          path: info.outputPath(`${locale}-${theme}.png`),
-          fullPage: true,
-        });
       }
   });
 });

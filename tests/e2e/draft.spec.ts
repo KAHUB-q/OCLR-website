@@ -1,6 +1,6 @@
 import { englishStorage } from "../fixtures/preferences";
 import { assertTestDatabase } from "../database";
-import { captureResponsiveLayout } from "./responsive";
+import { expectWorkflowFits } from "./responsive";
 import { writeFileSync } from "node:fs";
 import { bracketFixture } from "../fixtures/bracket";
 import {
@@ -72,7 +72,7 @@ test.describe("isolated multi-captain rehearsal", () => {
   test("captain-direct and staff-on-behalf picks publish atomically and survive reconnect", async ({
     browser,
     isMobile,
-  }, testInfo) => {
+  }) => {
     const slug = isMobile ? "draft-mobile-test" : "draft-desktop-test";
     const base = isMobile ? 120001 : 110001;
     const fixture = await prepareDraft(slug, base);
@@ -258,12 +258,7 @@ test.describe("isolated multi-captain rehearsal", () => {
       if (document.activeElement instanceof HTMLElement)
         document.activeElement.blur();
     });
-    await captureResponsiveLayout(a.page, testInfo, "captain-pending-pick");
-    await a.page.screenshot({
-      path: testInfo.outputPath("captain-pending-pick.png"),
-      fullPage: true,
-      animations: "disabled",
-    });
+    await expectWorkflowFits(a.page);
     // Let the committed snapshot arrive before its HTTP receipt, so the old
     // selection component has unmounted when it reports success to the room.
     await a.page.route(
@@ -445,11 +440,6 @@ test.describe("isolated multi-captain rehearsal", () => {
       ),
     ).toBe(true);
     await bracketPage.evaluate(() => window.scrollTo(0, 0));
-    await bracketPage.screenshot({
-      path: testInfo.outputPath("bracket.png"),
-      fullPage: true,
-      animations: "disabled",
-    });
     await bracketPage.goto(`/tournaments/${slug}/participants`);
     await expect(bracketPage).toHaveURL(
       new RegExp(`/tournaments/${slug}/players$`),
@@ -474,7 +464,7 @@ test.describe("isolated multi-captain rehearsal", () => {
     ).toBeVisible();
     await bracketPage.close();
     await staff.page.goto(`/admin/tournaments/${slug}/draft`);
-    for (const [page, name] of [
+    for (const [page] of [
       [a.page, "captain"],
       [staff.page, "draft-control"],
       [spectator.page, "draft-public"],
@@ -495,11 +485,6 @@ test.describe("isolated multi-captain rehearsal", () => {
         window.scrollTo(0, 0);
         if (document.activeElement instanceof HTMLElement)
           document.activeElement.blur();
-      });
-      await page.screenshot({
-        path: testInfo.outputPath(`${name}.png`),
-        fullPage: true,
-        animations: "disabled",
       });
     }
     await spectator.page.goto(`/tournaments/${slug}/draft?presenter=1`);

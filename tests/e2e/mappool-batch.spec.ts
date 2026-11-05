@@ -126,10 +126,6 @@ test.describe("bulk mappool operations", () => {
       page.getByText("DT · 6.75 ★ official adjusted", { exact: false }).first(),
     ).toBeVisible();
     await page.evaluate(() => window.scrollTo(0, 0));
-    await page.screenshot({
-      path: test.info().outputPath("bulk-mappool-editor.png"),
-      fullPage: true,
-    });
     data = await (await page.request.get(api)).json();
     data = await change({
       action: "pool_publish",

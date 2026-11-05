@@ -17,7 +17,7 @@ test.describe("Developer private read workspace", () => {
     context,
     browser,
     isMobile,
-  }, info) => {
+  }) => {
     test.setTimeout(180000);
     if (isMobile) await page.setViewportSize({ width: 320, height: 844 });
     const adminId = isMobile ? 70001 : 60001;
@@ -227,11 +227,6 @@ test.describe("Developer private read workspace", () => {
               ),
               `${appearance}/${theme}/${locale}`,
             ).toBe(true);
-            if (locale === "en")
-              await page.screenshot({
-                path: info.outputPath(`developer-${appearance}-${theme}.png`),
-                fullPage: true,
-              });
           }
         }
       }

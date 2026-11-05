@@ -20,7 +20,7 @@ test.describe("assisted registration from the edition workspace", () => {
     context,
     browser,
     isMobile,
-  }, info) => {
+  }) => {
     process.env.DATABASE_URL = process.env.TEST_DATABASE_URL;
     await db().execute(
       sql`TRUNCATE edition_state, users, user_profile_cache CASCADE`,
@@ -115,10 +115,6 @@ test.describe("assisted registration from the edition workspace", () => {
               () => document.documentElement.scrollWidth <= innerWidth,
             ),
           ).toBe(true);
-          await page.screenshot({
-            path: info.outputPath(`manual-accepted-${locale}-${width}.png`),
-            fullPage: true,
-          });
         }
         await page.keyboard.press("Escape");
       }
@@ -153,10 +149,6 @@ test.describe("assisted registration from the edition workspace", () => {
       await expect(dialog).toContainText(`Synthetic Assisted ${base + 1}`);
       await page.keyboard.press("Escape");
       dialog = await preview(base);
-      await page.screenshot({
-        path: info.outputPath("manual-pending-preview.png"),
-        fullPage: true,
-      });
       await dialog
         .getByRole("button", { name: "Add registrant", exact: true })
         .click();
@@ -182,10 +174,6 @@ test.describe("assisted registration from the edition workspace", () => {
         dialog.getByRole("button", { name: "Add registrant", exact: true }),
       ).toBeDisabled();
       await dialog.getByRole("checkbox").check();
-      await page.screenshot({
-        path: info.outputPath("manual-accepted-confirmation.png"),
-        fullPage: true,
-      });
       expect(
         (
           await new AxeBuilder({ page })
@@ -246,10 +234,6 @@ test.describe("assisted registration from the edition workspace", () => {
       await dialog
         .getByLabel("Enrollment exception explanation")
         .fill("Synthetic approved late assistance");
-      await page.screenshot({
-        path: info.outputPath("manual-late-exception.png"),
-        fullPage: true,
-      });
       await dialog
         .getByRole("button", { name: "Add registrant", exact: true })
         .click();

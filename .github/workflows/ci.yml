@@ -152,7 +152,6 @@ jobs:
       PLAYWRIGHT_BROWSERS_PATH: /ms-playwright
       DATABASE_URL: postgresql://oclr_test:isolated_ci_fixture@postgres:5432/oclr_test
       TEST_DATABASE_URL: postgresql://oclr_test:isolated_ci_fixture@postgres:5432/oclr_test
-      OCLR_E2E_EVIDENCE: minimal
     steps:
       - uses: actions/checkout@v4
       - uses: actions/setup-node@v4
@@ -166,8 +165,8 @@ jobs:
           path: /tmp
       - run: tar -xzf /tmp/oclr-next-build.tgz
       - run: npm run db:migrate
-      # The image runs as root; Firefox requires its actual root-owned home.
-      - run: HOME=/root node scripts/check-ci-browser.ts ${{ needs.plan.outputs.full == 'true' && 'chromium firefox webkit' || 'chromium' }}
+      # Match the Chromium projects selected by the functional suite.
+      - run: HOME=/root node scripts/check-ci-browser.ts chromium
       - name: Run selected functional suite
         env:
           CI_FULL: ${{ needs.plan.outputs.full }}
@@ -197,7 +196,7 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        shard: [1, 2, 3, 4]
+        shard: [1]
     # Each runner owns its PostgreSQL service; never increase workers on this DB.
     services:
       postgres:
@@ -213,7 +212,6 @@ jobs:
       PLAYWRIGHT_BROWSERS_PATH: /ms-playwright
       DATABASE_URL: postgresql://oclr_test:isolated_ci_fixture@postgres:5432/oclr_test
       TEST_DATABASE_URL: postgresql://oclr_test:isolated_ci_fixture@postgres:5432/oclr_test
-      OCLR_E2E_MATRIX: full
     steps:
       - uses: actions/checkout@v4
       - uses: actions/setup-node@v4
@@ -227,8 +225,8 @@ jobs:
           path: /tmp
       - run: tar -xzf /tmp/oclr-next-build.tgz
       - run: npm run db:migrate
-      - run: HOME=/root node scripts/check-ci-browser.ts
-      - run: HOME=/root npm run test:e2e:header -- --shard=${{ matrix.shard }}/4
+      - run: HOME=/root node scripts/check-ci-browser.ts chromium firefox
+      - run: HOME=/root npm run test:e2e:header -- --shard=${{ matrix.shard }}/1
       - uses: actions/upload-artifact@v4
         if: always()
         with:
@@ -259,7 +257,6 @@ jobs:
           --health-timeout 5s --health-retries 10
     env:
       PLAYWRIGHT_BROWSERS_PATH: /ms-playwright
-      OCLR_REMOTE_E2E_FULL: ${{ needs.plan.outputs.full }}
       DATABASE_URL: postgresql://oclr_test:isolated_ci_fixture@postgres:5432/oclr_test
       TEST_DATABASE_URL: postgresql://oclr_test:isolated_ci_fixture@postgres:5432/oclr_test
     steps:

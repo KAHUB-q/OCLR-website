@@ -12,7 +12,7 @@ test.describe("S4 recorded phase classification", () => {
     page,
     context,
     isMobile,
-  }, info) => {
+  }) => {
     test.setTimeout(120000);
     const slugs = ["synthetic-s4-private", "synthetic-s4-public"];
     await seedEditions(
@@ -93,10 +93,6 @@ test.describe("S4 recorded phase classification", () => {
             () => document.documentElement.scrollWidth <= innerWidth,
           ),
         ).toBe(true);
-        await page.screenshot({
-          path: info.outputPath(`s4-${index}-${locale}-${theme}-groups.png`),
-          fullPage: true,
-        });
         await competition
           .locator(":scope > .event-tabs")
           .getByRole("button", { name: knockoutTitle, exact: true })

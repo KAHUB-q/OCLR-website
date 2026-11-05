@@ -16,7 +16,7 @@ test.describe("historical statistics review and public exploration", () => {
     page,
     context,
     isMobile,
-  }, info) => {
+  }) => {
     const seasons = ["s1", "s2", "s3", "s4", "s5", "s6"];
     const rows = seasons.map((slug) => ({
       ...edition,
@@ -107,10 +107,6 @@ test.describe("historical statistics review and public exploration", () => {
             await expect
               .poll(() => page.evaluate(() => window.scrollY))
               .toBe(0);
-            await page.screenshot({
-              path: info.outputPath(`s1-empty-${theme}.png`),
-              fullPage: true,
-            });
           }
         }
       }
@@ -135,7 +131,7 @@ test.describe("historical statistics review and public exploration", () => {
     page,
     context,
     isMobile,
-  }, info) => {
+  }) => {
     const seasons = [
       "s7",
       "s1",
@@ -249,10 +245,6 @@ test.describe("historical statistics review and public exploration", () => {
       }),
     ).toBeChecked();
     expect((await new AxeBuilder({ page }).analyze()).violations).toEqual([]);
-    await page.screenshot({
-      path: info.outputPath("zero-score-review.png"),
-      fullPage: true,
-    });
     await page
       .getByRole("button", { name: "Select eligible games", exact: true })
       .click();
@@ -381,13 +373,6 @@ test.describe("historical statistics review and public exploration", () => {
           expect((await new AxeBuilder({ page }).analyze()).violations).toEqual(
             [],
           );
-          if (slug === "s7" || slug === "s2")
-            await page.screenshot({
-              path: info.outputPath(
-                slug + "-" + appearance + "-" + theme + ".png",
-              ),
-              fullPage: true,
-            });
         }
     }
     await page.goto("/tournaments/s2/statistics");
@@ -450,7 +435,7 @@ test.describe("historical statistics review and public exploration", () => {
     page,
     context,
     isMobile,
-  }, info) => {
+  }) => {
     await seedEditions([
       {
         ...edition,
@@ -586,10 +571,6 @@ test.describe("historical statistics review and public exploration", () => {
     expect(
       await page.evaluate(() => document.documentElement.scrollWidth),
     ).toBeLessThanOrEqual(isMobile ? 390 : 1280);
-    await page.screenshot({
-      path: info.outputPath("adjudicated-statistics.png"),
-      fullPage: true,
-    });
   });
   test("reviews a rostered bench occupant only beyond four retained teammates", async ({
     page,

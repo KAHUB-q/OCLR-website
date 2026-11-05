@@ -14,7 +14,7 @@ test.describe("public tournament teams navigation", () => {
     page,
     context,
     isMobile,
-  }, info) => {
+  }) => {
     process.env.DATABASE_URL = process.env.TEST_DATABASE_URL;
     const suffix = `${isMobile ? "mobile" : "desktop"}-test-${Date.now()}`;
     const current = `teams-current-${suffix}`;
@@ -110,12 +110,6 @@ test.describe("public tournament teams navigation", () => {
           expect(
             await page.evaluate(() => document.documentElement.scrollWidth),
           ).toBeLessThanOrEqual(page.viewportSize()!.width);
-          await page.screenshot({
-            path: info.outputPath(
-              `${slug === current ? "current" : "historical"}-${appearance}-${theme}.png`,
-            ),
-            fullPage: true,
-          });
           // The mobile menu now floats over the page; dismiss it before
           // choosing a team card underneath it.
           if (await menu.isVisible()) {

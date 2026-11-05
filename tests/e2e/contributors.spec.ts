@@ -179,7 +179,7 @@ test.describe("compact contributor management (#359)", () => {
     page,
     context,
     isMobile,
-  }, info) => {
+  }) => {
     test.setTimeout(300000);
     const actor = {
       osuId: isMobile ? 70001 : 60001,
@@ -258,12 +258,6 @@ test.describe("compact contributor management (#359)", () => {
               targets: true,
               avatar: 40,
             });
-            if (appearance === "default" && locale === "en") {
-              await page.screenshot({
-                path: info.outputPath(`contributors-${theme}-${width}.png`),
-                fullPage: true,
-              });
-            }
           }
           expect(
             (

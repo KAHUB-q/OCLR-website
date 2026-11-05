@@ -43,7 +43,7 @@ test.describe("safe staff registration removal", () => {
     context,
     browser,
     isMobile,
-  }, info) => {
+  }) => {
     test.setTimeout(90000);
     await context.addCookies([await seedSession(60001)]);
     const anonymous = await browser.newContext({
@@ -174,10 +174,6 @@ test.describe("safe staff registration removal", () => {
             () => document.documentElement.scrollWidth <= innerWidth,
           ),
         ).toBe(true);
-        await page.screenshot({
-          path: info.outputPath(`confirm-${locale}.png`),
-          fullPage: true,
-        });
         await dialog
           .getByRole("button", { name: tr("Cancel"), exact: true })
           .click();
@@ -319,7 +315,7 @@ test.describe("safe staff registration removal", () => {
   test("blocks captains and live pool/picked players with actionable recovery links; enforces scoped roles", async ({
     page,
     context,
-  }, info) => {
+  }) => {
     await context.addCookies([await seedSession(60001)]);
     const slug = "protected-removal-test";
     const f = await prepareDraft(slug, 60001);
@@ -350,10 +346,6 @@ test.describe("safe staff registration removal", () => {
             .where(eq(registrations.id, r.id))
         )[0].status,
       ).toBe("accepted");
-      await page.screenshot({
-        path: info.outputPath(`blocked-${userId}.png`),
-        fullPage: true,
-      });
     }
     const session = (await staffDraft(f.staff, slug)).session!;
     await pickPlayer(f.staff, slug, {

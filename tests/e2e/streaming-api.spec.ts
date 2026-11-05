@@ -76,10 +76,6 @@ test.describe("streaming API credentials", () => {
         window.scrollTo(0, 0);
       });
       await page.waitForFunction(() => window.scrollY === 0);
-      await page.screenshot({
-        path: `/private/tmp/oclr540-${isMobile ? "mobile" : "desktop"}-${theme}.png`,
-        fullPage: true,
-      });
     }
     expect(
       (

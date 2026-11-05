@@ -36,7 +36,7 @@ test("shared navigation works at desktop and mobile widths", async ({
 });
 test("landing page exposes the official identity and working tournament entry", async ({
   page,
-}, testInfo) => {
+}) => {
   await page.goto("/");
   // Core smoke checks the accessible identity and navigation contract. Detailed
   // decorative/responsive image checks remain in the full artwork regression.
@@ -47,12 +47,6 @@ test("landing page exposes the official identity and working tournament entry", 
     "href",
     /\/tournaments/,
   );
-  await page.goto("/");
-  await page.screenshot({
-    path: testInfo.outputPath("home.png"),
-    fullPage: true,
-    animations: "disabled",
-  });
   await page.locator(".home-information-link").click();
   await expect(page).toHaveURL(/\/tournaments(?:\/[a-z0-9-]+)?$/);
 });
@@ -90,7 +84,7 @@ test("news is approved content only and about uses the official identity", async
 test("Privacy and About share one explicit osu! contact without publishing the admin allowlist", async ({
   page,
   context,
-}, info) => {
+}) => {
   test.skip(
     !process.env.TEST_DATABASE_URL,
     "Requires synthetic contact configuration",
@@ -128,11 +122,6 @@ test("Privacy and About share one explicit osu! contact without publishing the a
       (cookie) => !isAutomaticPreferenceCookie(cookie),
     ),
   ).toEqual([]);
-  await page.screenshot({
-    path: info.outputPath("privacy-osu-contact.png"),
-    fullPage: true,
-    animations: "disabled",
-  });
   await page.goto("/about");
   await expect(
     page.getByRole("link", {

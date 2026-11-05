@@ -22,7 +22,7 @@ test.describe("weekly awards review", () => {
     context,
     browser,
     isMobile,
-  }, info) => {
+  }) => {
     const adminId = isMobile ? 70001 : 60001;
     await context.addCookies(
       [await seedSession(adminId), await seedSession(60101)].slice(0, 1),
@@ -104,10 +104,6 @@ test.describe("weekly awards review", () => {
       expect(JSON.stringify(payload)).not.toMatch(
         /answers|statusReason|identities|fingerprint/,
       );
-      await publicPage.screenshot({
-        path: info.outputPath("published-awards.png"),
-        fullPage: true,
-      });
       await db()
         .update(fixtures)
         .set({ scheduledAt: new Date("2026-10-09T12:00:00Z") })

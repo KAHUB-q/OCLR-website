@@ -15,7 +15,7 @@ import {
 test("pool denominators, ban-only maps, sorting and team filters", async ({
   page,
   context,
-}, info) => {
+}) => {
   test.skip(!process.env.TEST_DATABASE_URL, "Requires isolated PostgreSQL");
   const archive = structuredClone(statisticsArchive);
   archive.pools[0].maps.push({
@@ -139,16 +139,8 @@ test("pool denominators, ban-only maps, sorting and team filters", async ({
       window.scrollTo({ top: 0, left: 0, behavior: "instant" });
     });
     await expect.poll(() => page.evaluate(() => window.scrollY)).toBe(0);
-    await page.screenshot({
-      path: info.outputPath(`mappool-${theme}.png`),
-      fullPage: true,
-    });
     await page.locator(".event-table-scroll").evaluate((element) => {
       element.scrollLeft = element.scrollWidth;
-    });
-    await page.screenshot({
-      path: info.outputPath(`mappool-coverage-${theme}.png`),
-      fullPage: true,
     });
   }
 });

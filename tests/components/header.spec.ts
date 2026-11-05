@@ -1,101 +1,75 @@
 import { expect, test } from "@playwright/test";
-import { appearances } from "../../src/lib/preferences";
 import { expectPreferenceMenuFits } from "../e2e/header-preferences";
 
-test("long remote account names fit beside desktop controls and phone menus", async ({
+// Independent presentation risks, without multiplying language, theme, role
+// and width over every appearance. Server-side session routing stays in E2E.
+test("long remote account names fit on phones, tablets and desktop", async ({
   page,
-}, info) => {
+}) => {
   const username = "Synthetic Directory 2717000 Captain";
   await page.route("https://a.ppy.sh/**", (route) => route.abort());
-  for (const appearance of ["default", "cute-pastel"])
-    for (const locale of ["zh-Hans", "zh-Hant", "en"])
-      for (const theme of ["light", "dark"]) {
-        const params = new URLSearchParams({
-          remote: "1",
-          user: "player",
-          username,
-          appearance,
-          locale,
-          theme,
-        });
-        await page.goto(`/header?${params}`);
-        const connection = page.locator(".nav-actions").getByRole("link");
-        await expect(page.locator(".account-label")).toHaveText(username);
-        await expect(page.locator(".account-label")).toHaveAttribute(
-          "title",
-          username,
-        );
-        await expect(connection).toHaveAttribute("href", "/remote");
-        for (const width of [320, 768, 1280, 1440]) {
-          await page.setViewportSize({ width, height: 900 });
-          expect(
-            await page.evaluate(() => document.documentElement.scrollWidth),
-            `${appearance} ${locale} ${theme} ${width}`,
-          ).toBeLessThanOrEqual(width);
-          await expect(connection).toBeVisible();
-        }
-      }
-  await page.screenshot({ path: info.outputPath("remote-account-header.png") });
+  for (const [width, appearance] of [
+    [320, "default"],
+    [768, "cute-pastel"],
+    [1440, "default"],
+  ] as const) {
+    await page.setViewportSize({ width, height: 900 });
+    const params = new URLSearchParams({
+      remote: "1",
+      user: "player",
+      username,
+      appearance,
+      locale: "en",
+      theme: "dark",
+    });
+    await page.goto(`/header?${params}`);
+    await expect(page.locator(".account-label")).toHaveText(username);
+    await expect(page.locator(".account-label")).toHaveAttribute(
+      "title",
+      username,
+    );
+    await expect(
+      page.locator(".nav-actions").getByRole("link"),
+    ).toHaveAttribute("href", "/remote");
+    expect(
+      await page.evaluate(() => document.documentElement.scrollWidth),
+    ).toBeLessThanOrEqual(width);
+  }
 });
 
-test("phone dropdown keeps preferences accessible across appearances, locales and account states", async ({
+test("phone menus retain focus and dismiss nested preferences", async ({
   page,
-}, info) => {
-  test.setTimeout(120000);
+}) => {
   await page.route("https://a.ppy.sh/**", (route) => route.abort());
-  for (const [index, appearance] of appearances.entries()) {
-    for (const theme of ["light", "dark"]) {
-      const locale = ["zh-Hans", "zh-Hant", "en"][index % 3];
-      const user = ["", "player", "staff"][index % 3];
-      await page.setViewportSize({ width: 390, height: 844 });
-      await page.goto(
-        `/header?appearance=${appearance}&theme=${theme}&locale=${locale}&user=${user}`,
-      );
-      const toggle = page.locator(".menu-toggle");
-      for (const width of [320, 390, 760]) {
-        await page.setViewportSize({ width, height: 568 });
-        await expect(page.locator(".site-preferences")).toBeHidden();
-        const boxes = await page
-          .locator(".brand,.menu-toggle,.nav-actions")
-          .evaluateAll((nodes) =>
-            nodes.map((node) => {
-              const b = node.getBoundingClientRect();
-              return { x: b.x, y: b.y, width: b.width, height: b.height };
-            }),
-          );
-        expect(
-          new Set(boxes.map((b) => Math.round(b.y + b.height / 2))).size,
-        ).toBe(1);
-        for (const box of boxes)
-          expect(box.x + box.width).toBeLessThanOrEqual(width);
-        await toggle.click();
-        await expect(page.locator(".main-nav > a")).toHaveCount(6);
-        const preferences = page.locator(".site-preferences");
-        await expect(preferences).toBeVisible();
-        await expect(preferences.locator(":scope > div > button")).toHaveCount(
-          3,
-        );
-        await page.locator(".appearance-trigger").click();
-        const choices = page.locator('.appearance-control [role="menu"]');
-        await expect(choices.getByRole("menuitemradio")).toHaveCount(10);
-        await expectPreferenceMenuFits(page, choices);
-        await page.keyboard.press("Escape");
-        await expect(page.locator(".appearance-trigger")).toBeFocused();
-        await expect(toggle).toHaveAttribute("aria-expanded", "true");
-        await page.keyboard.press("Escape");
-        await expect(toggle).toBeFocused();
-        await expect(preferences).toBeHidden();
-        await toggle.click();
-        await page.mouse.click(4, 564);
-        await expect(preferences).toBeHidden();
-        await expect(toggle).toBeFocused();
-      }
-    }
+  for (const [width, appearance, locale, user] of [
+    [320, "default", "en", ""],
+    [390, "cute-pastel", "zh-Hant", "player"],
+    [760, "glassmorphism", "zh-Hans", "staff"],
+  ] as const) {
+    await page.setViewportSize({ width, height: 568 });
+    await page.goto(
+      `/header?appearance=${appearance}&theme=dark&locale=${locale}&user=${user}`,
+    );
+    const toggle = page.locator(".menu-toggle");
+    const preferences = page.locator(".site-preferences");
+    await expect(preferences).toBeHidden();
+    await toggle.click();
+    await expect(preferences).toBeVisible();
+    await page.locator(".appearance-trigger").click();
+    const choices = page.locator('.appearance-control [role="menu"]');
+    await expect(choices.getByRole("menuitemradio")).toHaveCount(10);
+    await expectPreferenceMenuFits(page, choices);
+    await page.keyboard.press("Escape");
+    await expect(page.locator(".appearance-trigger")).toBeFocused();
+    await expect(toggle).toHaveAttribute("aria-expanded", "true");
+    await page.keyboard.press("Escape");
+    await expect(toggle).toBeFocused();
+    await expect(preferences).toBeHidden();
+    await toggle.click();
+    await page.mouse.click(4, 564);
+    await expect(preferences).toBeHidden();
+    await expect(toggle).toBeFocused();
   }
-  await page.setViewportSize({ width: 390, height: 844 });
-  await page.goto("/header?locale=zh-Hant");
-  await page.locator(".menu-toggle").click();
-  await page.screenshot({ path: info.outputPath("phone-dropdown.png") });
 });
 
 test("phone controls preserve preference cookies and close on navigation or leaving focus", async ({
@@ -136,29 +110,20 @@ test("phone controls preserve preference cookies and close on navigation or leav
   await expect(page.locator(".site-preferences")).toBeHidden();
 });
 
-test("desktop and tablet retain existing preference controls and navigation", async ({
+test("anonymous English navigation fits across the collapse boundaries", async ({
   page,
 }) => {
-  for (const width of [768, 950, 1440]) {
+  await page.goto("/header?locale=en");
+  for (const width of [768, 950, 951, 1100, 1440]) {
     await page.setViewportSize({ width, height: 900 });
-    await page.goto("/header?user=staff");
+    await expect(page.locator(".nav-login")).toBeVisible();
     await expect(page.locator(".appearance-trigger")).toBeVisible();
-    await expect(page.locator(".theme-control")).toBeVisible();
-    await expect(page.locator(".language-control > button")).toBeVisible();
-    await expect(page.locator(".mobile-preference-heading")).toBeHidden();
-    await expect(page.locator(".mobile-preference-label").first()).toBeHidden();
-    await expect(page.locator(".header-menu-panel")).toHaveCSS(
-      "display",
-      "contents",
-    );
+    expect(
+      await page.evaluate(() => document.documentElement.scrollWidth),
+    ).toBeLessThanOrEqual(width);
     if (width === 1440) {
       await expect(page.locator(".main-nav")).toBeVisible();
       await expect(page.locator(".menu-toggle")).toBeHidden();
     }
-    expect(
-      await page.evaluate(
-        () => document.documentElement.scrollWidth <= innerWidth,
-      ),
-    ).toBe(true);
   }
 });

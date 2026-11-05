@@ -8,7 +8,7 @@ import { seedEditions } from "../fixtures/editions";
 import { edition } from "../fixtures/edition";
 import { historicalArchive } from "../fixtures/historical-archive";
 import { historicalSourceDetails } from "../fixtures/historical-source-details";
-import { captureResponsiveLayout } from "./responsive";
+import { expectWorkflowFits } from "./responsive";
 
 test.describe("historical archive browser workflow", () => {
   test.skip(!process.env.TEST_DATABASE_URL, "Requires isolated PostgreSQL");
@@ -18,7 +18,7 @@ test.describe("historical archive browser workflow", () => {
     page,
     context,
     isMobile,
-  }, info) => {
+  }) => {
     const slug = `substitute-test-${isMobile ? "mobile" : "desktop"}-${Date.now()}`;
     await seedEditions([
       {
@@ -75,10 +75,6 @@ test.describe("historical archive browser workflow", () => {
       expect(
         await page.evaluate(() => document.documentElement.scrollWidth),
       ).toBeLessThanOrEqual(page.viewportSize()!.width);
-      await page.screenshot({
-        path: info.outputPath(`substitute-${theme}.png`),
-        fullPage: true,
-      });
     }
     await form
       .getByLabel("Historical username", { exact: true })
@@ -127,7 +123,7 @@ test.describe("historical archive browser workflow", () => {
     page,
     context,
     isMobile,
-  }, info) => {
+  }) => {
     const slug = `identity-test-${isMobile ? "mobile" : "desktop"}-${Date.now()}`;
     const archive = historicalSourceDetails(slug);
     await seedEditions([
@@ -183,10 +179,6 @@ test.describe("historical archive browser workflow", () => {
         })
         .blur();
       await page.evaluate(() => window.scrollTo(0, 0));
-      await page.screenshot({
-        path: info.outputPath(`identity-${theme}.png`),
-        fullPage: true,
-      });
     }
     await page
       .getByRole("button", { name: "Resolve archive identity", exact: true })
@@ -305,7 +297,7 @@ test.describe("historical archive browser workflow", () => {
       context,
       isMobile,
       baseURL,
-    }, info) => {
+    }) => {
       const slug = `s${season}-content-${isMobile ? "mobile" : "desktop"}-test`;
       const sections = JSON.parse(
         readFileSync(`docs/imports/s${season}-rules.json`, "utf8"),
@@ -405,22 +397,14 @@ test.describe("historical archive browser workflow", () => {
         const pdf = await page.request.get(`/archive/s${season}/rules.pdf`);
         expect(pdf.ok()).toBe(true);
         expect((await pdf.body()).subarray(0, 4).toString()).toBe("%PDF");
-        await captureResponsiveLayout(
-          page,
-          info,
-          `s${season}-content-${theme}`,
-        );
-        await page.screenshot({
-          path: info.outputPath(`s${season}-content-${theme}.png`),
-          fullPage: true,
-        });
+        await expectWorkflowFits(page);
       }
     });
   test("shows S6 source artwork in the directory and its configured rule sections", async ({
     page,
     context,
     isMobile,
-  }, info) => {
+  }) => {
     const slug = `s6-rules-${isMobile ? "mobile" : "desktop"}-test-${Date.now()}`;
     const archive = historicalArchiveSchema.parse({
       ...JSON.parse(
@@ -503,10 +487,6 @@ test.describe("historical archive browser workflow", () => {
     await expect(card).toContainText(summary);
     await card.scrollIntoViewIfNeeded();
     await expect(card.locator("img")).toHaveJSProperty("naturalWidth", 1920);
-    await card.screenshot({
-      path: info.outputPath("s6-directory-card.png"),
-      animations: "disabled",
-    });
     await card.getByRole("link", { name: /^View tournament: / }).click();
     await expect(page.locator(".rules-article > section")).toHaveCount(4);
     for (const section of rules.sections)
@@ -514,7 +494,7 @@ test.describe("historical archive browser workflow", () => {
     await expect(page.locator(".rules-article")).toContainText(
       "【已废止的原提案；原规则文档中已划除】",
     );
-    await captureResponsiveLayout(page, info, "s6-configured-rules");
+    await expectWorkflowFits(page);
     await expect(
       page.getByRole("heading", { name: "Review source records" }),
     ).toHaveCount(0);
@@ -537,11 +517,7 @@ test.describe("historical archive browser workflow", () => {
     await page
       .getByRole("heading", { name: "Match information", exact: true })
       .scrollIntoViewIfNeeded();
-    await page.screenshot({
-      path: info.outputPath("s6-public-schedule-viewport.png"),
-      animations: "disabled",
-    });
-    await captureResponsiveLayout(page, info, "s6-public-schedule");
+    await expectWorkflowFits(page);
     await page.goto(`/tournaments/${slug}/results`);
     await expect(page).toHaveURL(new RegExp(`/schedule\\?status=recorded$`));
     await expect(page.locator(".event-matches tbody tr")).toHaveCount(33);
@@ -582,7 +558,7 @@ test.describe("historical archive browser workflow", () => {
     page,
     context,
     isMobile,
-  }, info) => {
+  }) => {
     const slug = `s6-${isMobile ? "mobile" : "desktop"}-test-${Date.now()}`;
     const archive = historicalArchiveSchema.parse({
       ...JSON.parse(readFileSync("docs/imports/s6-archive.json", "utf8")),
@@ -648,7 +624,7 @@ test.describe("historical archive browser workflow", () => {
     await expect(page.locator("[data-archive-appendix]")).toContainText(
       "實際可能為 2:6，待確認",
     );
-    await captureResponsiveLayout(page, info, "s6-pending-results");
+    await expectWorkflowFits(page);
     await page.goto(`/admin/tournaments/${slug}/archive/preview?section=teams`);
     await expect(page.getByText("Fushimi Rio", { exact: true })).toBeVisible();
     await expect(page.getByText("VICE", { exact: true })).toHaveCount(12);
@@ -786,17 +762,13 @@ test.describe("historical archive browser workflow", () => {
       ).status(),
     ).not.toBe(200);
     await guest.close();
-    await captureResponsiveLayout(
-      page,
-      test.info(),
-      `source-archive-${isMobile ? "mobile" : "desktop"}`,
-    );
+    await expectWorkflowFits(page);
   });
   test("reviews private import, explicitly publishes, and keeps every detail in its edition", async ({
     page,
     context,
     isMobile,
-  }, info) => {
+  }) => {
     const slug = `history-${isMobile ? "mobile" : "desktop"}-test-${Date.now()}`;
     const archive = { ...historicalArchive, editionSlug: slug };
     await context.addCookies([await seedSession(isMobile ? 70001 : 60001)]);
@@ -1039,7 +1011,7 @@ test.describe("historical archive browser workflow", () => {
       "Historical Host",
     );
     await page.goto(`/tournaments/${slug}`);
-    await captureResponsiveLayout(page, info, "archive-overview");
+    await expectWorkflowFits(page);
     await page.goto(`/tournaments/${slug}/teams/alpha`);
     await expect(page.locator(".historical-archive")).not.toContainText(
       archive.teams[0].source,
@@ -1082,7 +1054,7 @@ test.describe("historical archive browser workflow", () => {
     await expect(
       page.locator(".archive-player-card img").first(),
     ).toHaveAttribute("src", /a\.ppy\.sh\/91001/);
-    await captureResponsiveLayout(page, info, "archive-players");
+    await expectWorkflowFits(page);
     await page.goto(`/tournaments/${slug}/results`);
     await expect(page).toHaveURL(new RegExp(`/schedule\\?status=recorded$`));
     await expect(
@@ -1106,13 +1078,13 @@ test.describe("historical archive browser workflow", () => {
     ).toHaveCount(0);
     await page.getByLabel("Rounds", { exact: true }).selectOption("Final");
     await expect(page.locator(".event-matches tbody tr")).toHaveCount(1);
-    await captureResponsiveLayout(page, info, "archive-matches");
+    await expectWorkflowFits(page);
     await page.goto(`/tournaments/${slug}/draft`);
     await expect(
       page.getByRole("heading", { name: "Round 1", exact: true }),
     ).toBeVisible();
     await expect(page.locator(".archive-draft-picks li")).toHaveCount(1);
-    await captureResponsiveLayout(page, info, "archive-draft");
+    await expectWorkflowFits(page);
     await page.goto(`/tournaments/${slug}/bracket`);
     await page.getByRole("button", { name: "Knockout", exact: true }).click();
     await expect(page.locator(".bracket-round")).toHaveCount(1);
@@ -1122,7 +1094,7 @@ test.describe("historical archive browser workflow", () => {
     await expect(
       page.locator('.bracket-frame [data-match-id="alternative"]'),
     ).toHaveCount(0);
-    await captureResponsiveLayout(page, info, "archive-bracket");
+    await expectWorkflowFits(page);
     await page.goto(`/tournaments/${slug}/mappools/final`);
     await expect(page.locator(".map-card-values").first()).toContainText(
       "2:03",
@@ -1149,7 +1121,7 @@ test.describe("historical archive browser workflow", () => {
     ).toHaveCount(6);
     await page.keyboard.press("Escape");
     await page.getByRole("tab", { name: "All mods", exact: true }).click();
-    await captureResponsiveLayout(page, info, "archive-pool");
+    await expectWorkflowFits(page);
     for (const path of ["bracket", "draft", "rules", "results/awards"]) {
       expect(
         (
@@ -1208,7 +1180,7 @@ test.describe("historical archive browser workflow", () => {
     page,
     context,
     isMobile,
-  }, info) => {
+  }) => {
     const slug = `s9-design-${isMobile ? "mobile" : "desktop"}-${Date.now()}`;
     const archive = historicalArchiveSchema.parse({
       ...JSON.parse(readFileSync("docs/imports/s9-archive.json", "utf8")),
@@ -1256,9 +1228,6 @@ test.describe("historical archive browser workflow", () => {
           .toBe(1920);
         const bounds = await thumbnail.boundingBox();
         expect(bounds!.width / bounds!.height).toBeCloseTo(16 / 9, 2);
-        await card.screenshot({
-          path: info.outputPath(`s9-thumbnail-${appearance}-${theme}.png`),
-        });
         for (const path of [
           "schedule",
           "players",
@@ -1431,12 +1400,6 @@ test.describe("historical archive browser workflow", () => {
                 expect(Math.abs(first!.y - second!.y)).toBeLessThan(1);
                 expect(second!.x).toBeGreaterThan(first!.x);
               }
-              await page.screenshot({
-                path: info.outputPath(
-                  `${appearance}-${theme}-group-${label}.png`,
-                ),
-                fullPage: false,
-              });
             }
             await page
               .getByRole("button", { name: "Knockout", exact: true })
@@ -1448,10 +1411,6 @@ test.describe("historical archive browser workflow", () => {
           expect(
             await page.evaluate(() => document.documentElement.scrollWidth),
           ).toBeLessThanOrEqual(isMobile ? 390 : 1440);
-          await page.screenshot({
-            path: info.outputPath(`${appearance}-${theme}-${path}.png`),
-            fullPage: false,
-          });
         }
       }
     await page.goto(`/tournaments/${slug}`);
@@ -1463,10 +1422,6 @@ test.describe("historical archive browser workflow", () => {
       "没有总决赛reset！",
     );
     await expect(page.locator("#rules .rules-illustration img")).toHaveCount(2);
-    await page.screenshot({
-      path: info.outputPath("historical-overview-rules.png"),
-      fullPage: true,
-    });
     await page.goto(`/tournaments/${slug}/rules`);
     if (isMobile) await page.locator(".rules-mobile-contents summary").click();
     const contents = page.locator(

@@ -84,7 +84,7 @@ test.describe("reviewed draft order setup", () => {
       page,
       context,
       isMobile,
-    }, info) => {
+    }) => {
       process.env.DATABASE_URL = process.env.TEST_DATABASE_URL;
       process.env.ADMIN_OSU_IDS = "110001,120001";
       await db().execute(sql`TRUNCATE edition_state, users CASCADE`);
@@ -192,11 +192,6 @@ test.describe("reviewed draft order setup", () => {
         ),
       ).toBe(true);
       await page.evaluate(() => window.scrollTo(0, 0));
-      await page.screenshot({
-        path: info.outputPath(`draft-order-${mode}.png`),
-        fullPage: true,
-        animations: "disabled",
-      });
       await page
         .getByRole("button", { name: "Start draft", exact: true })
         .click();

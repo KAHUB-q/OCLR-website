@@ -6,7 +6,7 @@ import { eq, sql } from "drizzle-orm";
 import { db, closeDb } from "../../src/db";
 import { editionState, staffRoles } from "../../src/db/schema";
 import { seedSession } from "./session";
-import { captureResponsiveLayout } from "./responsive";
+import { expectWorkflowFits } from "./responsive";
 test.describe("browser-managed authoritative tournament editions", () => {
   test.skip(!process.env.TEST_DATABASE_URL, "Requires isolated PostgreSQL");
   test.setTimeout(90000);
@@ -15,7 +15,7 @@ test.describe("browser-managed authoritative tournament editions", () => {
     page,
     context,
     isMobile,
-  }, info) => {
+  }) => {
     const adminId = isMobile ? 70001 : 60001;
     const name = `Synthetic quick ${isMobile ? "mobile" : "desktop"}`;
     const slug = name.toLowerCase().replaceAll(" ", "-");
@@ -32,7 +32,7 @@ test.describe("browser-managed authoritative tournament editions", () => {
       page.getByLabel("Permanent slug", { exact: true }),
     ).toBeHidden();
     await expect(page.locator("main input:visible")).toHaveCount(1);
-    await captureResponsiveLayout(page, info, "minimal-create");
+    await expectWorkflowFits(page);
     await page
       .getByRole("button", { name: "Create private draft", exact: true })
       .click();
@@ -56,7 +56,7 @@ test.describe("browser-managed authoritative tournament editions", () => {
     await expect(
       page.getByRole("combobox", { name: "Square logo", exact: true }),
     ).toBeVisible();
-    await captureResponsiveLayout(page, info, "minimal-general");
+    await expectWorkflowFits(page);
     await page.getByRole("tab", { name: "Publication", exact: true }).click();
     await page
       .getByRole("button", { name: "Publish tournament", exact: true })
@@ -125,7 +125,7 @@ test.describe("browser-managed authoritative tournament editions", () => {
     context,
     browser,
     isMobile,
-  }, info) => {
+  }) => {
     const adminId = isMobile ? 70001 : 60001;
     const playerId = isMobile ? 340101 : 340001;
     const slug = isMobile ? "managed-mobile-test" : "managed-desktop-test";
@@ -552,11 +552,6 @@ test.describe("browser-managed authoritative tournament editions", () => {
           () => document.documentElement.scrollWidth <= innerWidth,
         ),
       ).toBe(true);
-      await page.screenshot({
-        path: info.outputPath("tournament-workspace.png"),
-        fullPage: true,
-        animations: "disabled",
-      });
       await tab("Publication");
       await page
         .getByRole("button", { name: "Unpublish tournament", exact: true })

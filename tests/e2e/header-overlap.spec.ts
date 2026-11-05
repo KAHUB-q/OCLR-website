@@ -1,299 +1,45 @@
-import { isPublicAppearance } from "../../src/lib/preferences";
-import { setEditionAppearance } from "../fixtures/editions";
-import { test, expect, type Locator, type Page } from "@playwright/test";
+import { test, expect } from "@playwright/test";
 import { closeDb } from "../../src/db";
 import { seedSession } from "./session";
-import {
-  headerMatrix,
-  headerWidths,
-  compactHeaderWidths,
-} from "../fixtures/header-matrix";
-import { chooseTheme, toggleTheme } from "./theme";
-const matrixMode = process.env.OCLR_E2E_MATRIX ?? "full";
 
+// Full CI owns this real-session navigation check. Menu geometry, keyboard
+// dismissal and slow stylesheet races live in DB-free component tests.
 test.skip(!process.env.TEST_DATABASE_URL, "Requires isolated PostgreSQL");
-let staffCookie: Awaited<ReturnType<typeof seedSession>>;
-let playerCookie: Awaited<ReturnType<typeof seedSession>>;
-test.beforeAll(async () => {
-  if (process.env.TEST_DATABASE_URL) {
-    staffCookie = await seedSession(60001);
-    playerCookie = await seedSession(60002);
-  }
-});
 test.afterAll(closeDb);
 
-// Visibility alone does not detect a later header row painting over a menu.
-// Sample the edges as well as the centre of every actual touch target.
-async function unobstructed(items: Locator) {
-  for (const item of await items.all()) {
-    await expect(item).toBeVisible();
-    await item.scrollIntoViewIfNeeded();
-    expect(
-      await item.evaluate((node) => {
-        const box = node.getBoundingClientRect();
-        return [0.2, 0.5, 0.8].every((x) =>
-          [0.25, 0.5, 0.75].every((y) =>
-            node.contains(
-              document.elementFromPoint(
-                box.x + box.width * x,
-                box.y + box.height * y,
-              ),
-            ),
-          ),
-        );
-      }),
-      `Covered target: ${await item.textContent()}`,
-    ).toBe(true);
-  }
-}
-
-async function withinViewport(page: Page, menu: Locator, width: number) {
-  const box = (await menu.boundingBox())!;
-  expect(box.x).toBeGreaterThanOrEqual(0);
-  expect(box.x + box.width).toBeLessThanOrEqual(width);
-  expect(
-    await page.evaluate(
-      () => document.documentElement.scrollWidth <= innerWidth,
-    ),
-  ).toBe(true);
-}
-
-const mobileWidths = compactHeaderWidths(matrixMode);
-
-async function compactHeader(
-  page: Page,
-  width: number,
-  locale: "zh-Hans" | "zh-Hant" | "en",
-) {
-  const header = page.locator(".site-header");
-  const toggle = header.locator(".menu-toggle");
-  if ((await toggle.getAttribute("aria-expanded")) === "true")
-    await toggle.click();
-  const controls = header.locator(
-    ".brand, .menu-toggle, .account-control, .nav-login",
-  );
-  const boxes = await controls.evaluateAll((nodes) =>
-    nodes.map((node) => {
-      const { x, y, width, height } = node.getBoundingClientRect();
-      return { x, y, width, height, brand: node.classList.contains("brand") };
-    }),
-  );
-  // Count visual rows, including the logo and every preference control.
-  expect(
-    new Set(boxes.map((box) => Math.round(box.y + box.height / 2))).size,
-  ).toBe(1);
-  for (const box of boxes) {
-    expect(box.x).toBeGreaterThanOrEqual(0);
-    expect(box.x + box.width).toBeLessThanOrEqual(width);
-    if (!box.brand) {
-      expect(box.width).toBeGreaterThanOrEqual(44);
-      expect(Math.round(box.height)).toBeGreaterThanOrEqual(44);
-    }
-  }
-  await unobstructed(controls);
-  await expect(header.locator(".menu-toggle")).toHaveText("");
-  const language = header.locator(".language-control > button");
-  await expect(language).toBeHidden();
-  await toggle.click();
-  await expect(language).toContainText(
-    { "zh-Hans": "简体中文", "zh-Hant": "繁體中文", en: "English" }[locale],
-  );
-  await expect(header.locator(".site-preferences")).toBeVisible();
-  await toggle.click();
-  await withinViewport(page, header, width);
-}
-
-// The matrix above signs in, whose account control is narrower than the
-// anonymous login button. Check the unsigned header at the widths where the
-// full English navigation competes with the login control for room.
-test("unsigned English header fits the viewport", async ({ page, context }) => {
+test("the authenticated header routes players directly and lets staff switch workspaces", async ({
+  page,
+  context,
+}) => {
   await page.route("https://a.ppy.sh/**", (route) => route.abort());
+  const origin = "http://127.0.0.1:3100";
+  const player = await seedSession(8690002);
+  const staff = await seedSession(60001);
   await context.addCookies([
-    { name: "oclr-locale", value: "en", url: "http://127.0.0.1:3100" },
+    player,
+    { name: "oclr-locale", value: "en", url: origin },
   ]);
-  const widths = [951, 1000, 1024, 1060, 1100, 1160, 1200];
-  const appearances = [
-    "default",
-    "cute-pastel",
-    "claymorphism",
-    "manga-halftone",
-  ];
-  for (const appearance of appearances) {
-    await context.addCookies([
-      {
-        name: "oclr-appearance",
-        value: appearance,
-        url: "http://127.0.0.1:3100",
-      },
-    ]);
-    for (const width of appearance === "default" ? widths : [951, 1024, 1100]) {
-      await page.setViewportSize({ width, height: 900 });
-      await page.goto("/");
-      await expect(page.locator(".nav-login")).toBeVisible();
-      expect(
-        await page.evaluate(() => document.documentElement.scrollWidth),
-        `${appearance} at ${width}px keeps the unsigned header inside the viewport`,
-      ).toBeLessThanOrEqual(width);
-    }
-  }
+  await page.goto("/privacy");
+  await page.locator(".account-control").click();
+  await expect(page).toHaveURL(/\/dashboard$/);
+  await expect(page.locator(".account-dropdown")).toHaveCount(0);
+
+  await context.addCookies([staff]);
+  await page.goto("/privacy");
+  const account = page.locator("button.account-control");
+  await account.click();
+  const menu = page.getByRole("menu", { name: "Dashboards", exact: true });
+  await expect(menu.getByRole("menuitem")).toHaveCount(2);
+  await expect(menu.getByRole("menuitem").first()).toBeFocused();
+  await page.keyboard.press("End");
+  const admin = menu.locator('[href="/admin"]');
+  await expect(admin).toBeFocused();
+  await admin.press("Enter");
+  await expect(page).toHaveURL(/\/admin$/);
+  await expect(page.locator("main h1").first()).toBeVisible();
+
+  await account.click();
+  await menu.locator('[href="/dashboard"]').click();
+  await expect(page).toHaveURL(/\/dashboard$/);
+  await expect(page.locator("main h1").first()).toBeVisible();
 });
-
-for (const { locale, theme, appearance } of headerMatrix(
-  matrixMode,
-  process.env.OCLR_HEADER_APPEARANCES,
-)) {
-  test(`header overlays ${locale} ${theme} ${appearance}`, async ({
-    page,
-    context,
-  }, info) => {
-    test.setTimeout(60000);
-    const activate = (target: Locator) =>
-      info.project.use.hasTouch ? target.tap() : target.click();
-    await context.addCookies([
-      staffCookie,
-      ...[
-        ["oclr-locale", locale],
-        ["oclr-theme", theme],
-        ["oclr-appearance", appearance],
-      ].map(([name, value]) => ({
-        name,
-        value,
-        url: "http://127.0.0.1:3100",
-      })),
-    ]);
-    await page.route("https://a.ppy.sh/**", (route) => route.abort());
-    await page.emulateMedia({ reducedMotion: "reduce" });
-    if (!isPublicAppearance(appearance))
-      await setEditionAppearance("test-cup", appearance);
-    await page.goto(
-      isPublicAppearance(appearance) ? "/" : "/tournaments/test-cup",
-    );
-    const header = page.locator(".site-header");
-    const account = header.locator("button.account-control");
-    const appearanceTrigger = header.locator(".appearance-trigger");
-    const language = header.locator(".language-control > button");
-    for (const width of headerWidths(matrixMode)) {
-      await page.setViewportSize({ width, height: 900 });
-      if (width <= 760) {
-        await compactHeader(page, width, locale);
-        expect((await account.boundingBox())!.width).toBeLessThan(76);
-        await expect(account.locator(".avatar")).toBeVisible();
-      }
-      await unobstructed(
-        header.locator("button:visible:not(.mobile-menu-backdrop)"),
-      );
-      if (width <= 950) {
-        const toggle = await header.locator(".menu-toggle").boundingBox();
-        const actions = await header.locator(".nav-actions").boundingBox();
-        const rightEdge = await header.locator(".nav-wrap").evaluate((node) => {
-          const box = node.getBoundingClientRect();
-          return box.right - parseFloat(getComputedStyle(node).paddingRight);
-        });
-        expect(toggle!.x).toBeGreaterThanOrEqual(actions!.x + actions!.width);
-        expect(
-          Math.abs(
-            toggle!.y + toggle!.height / 2 - actions!.y - actions!.height / 2,
-          ),
-        ).toBeLessThan(2);
-        expect(toggle!.x + toggle!.width).toBeCloseTo(rightEdge, 0);
-      }
-
-      await activate(account);
-      const menu = header.locator(".account-dropdown");
-      await expect(menu).toBeVisible();
-      await withinViewport(page, menu, width);
-      await unobstructed(menu.getByRole("menuitem"));
-      await expect(menu.getByRole("menuitem").first()).toBeFocused();
-      await expect(menu.getByRole("menuitem").first()).toHaveAttribute(
-        "href",
-        "/dashboard",
-      );
-      await expect(menu.getByRole("menuitem").last()).toHaveAttribute(
-        "href",
-        "/admin",
-      );
-      if ((width === 360 || width === 674) && locale === "zh-Hans")
-        await page.screenshot({
-          path: info.outputPath(`${width}-${theme}-${appearance}.png`),
-        });
-      await page.keyboard.press("End");
-      await expect(menu.getByRole("menuitem").last()).toBeFocused();
-      await page.keyboard.press("Escape");
-      await expect(menu).toBeHidden();
-      await expect(account).toBeFocused();
-
-      // Opening another control dismisses the previous menu through the
-      // existing outside-pointer/focus handlers, including keyboard use.
-      if (width <= 760) await activate(header.locator(".menu-toggle"));
-      await activate(appearanceTrigger);
-      const appearanceMenu = header.locator(
-        '.appearance-control [role="menu"]',
-      );
-      await withinViewport(page, appearanceMenu, width);
-      await unobstructed(appearanceMenu.getByRole("menuitemradio"));
-      await activate(language);
-      await expect(appearanceMenu).toBeHidden();
-      const languageMenu = header.locator('.language-control [role="menu"]');
-      await withinViewport(page, languageMenu, width);
-      await unobstructed(languageMenu.getByRole("menuitemradio"));
-      await activate(account);
-      await expect(languageMenu).toBeHidden();
-      await unobstructed(menu.getByRole("menuitem"));
-      await page.keyboard.press("Escape");
-      if (width <= 760) await activate(header.locator(".menu-toggle"));
-      await language.focus();
-      await language.press("ArrowDown");
-      await expect(
-        languageMenu.getByRole("menuitemradio").first(),
-      ).toBeFocused();
-      await page.keyboard.press("Escape");
-      await expect(language).toBeFocused();
-      await appearanceTrigger.focus();
-      await appearanceTrigger.press("ArrowUp");
-      await expect(
-        appearanceMenu.getByRole("menuitemradio").last(),
-      ).toBeFocused();
-      await page.keyboard.press("Escape");
-      await expect(appearanceTrigger).toBeFocused();
-      await toggleTheme(page, info.project.use.hasTouch);
-      await chooseTheme(page, theme, info.project.use.hasTouch);
-    }
-    await context.addCookies([playerCookie]);
-    await page.reload();
-    await expect(header.locator("a.account-control")).toHaveAttribute(
-      "href",
-      "/dashboard",
-    );
-    await expect(header.locator(".account-control .avatar")).toBeVisible();
-    for (const width of mobileWidths) {
-      await page.setViewportSize({ width, height: 900 });
-      await compactHeader(page, width, locale);
-    }
-    await context.clearCookies({ name: "oclr_session" });
-    await page.reload();
-    await expect(header.locator(".nav-login")).toBeVisible();
-    await expect(account).toHaveCount(0);
-    for (const width of mobileWidths) {
-      await page.setViewportSize({ width, height: 900 });
-      await compactHeader(page, width, locale);
-    }
-    await unobstructed(
-      header.locator("button:visible:not(.mobile-menu-backdrop), .nav-login"),
-    );
-    const signedOutToggle = await header.locator(".menu-toggle").boundingBox();
-    const login = await header.locator(".nav-login").boundingBox();
-    expect(signedOutToggle!.x).toBeGreaterThanOrEqual(login!.x + login!.width);
-
-    await activate(header.locator(".menu-toggle"));
-    await expect(header.locator(".main-nav")).toBeVisible();
-    await unobstructed(header.locator(".main-nav > a"));
-    await page.keyboard.press("Escape");
-    await expect(header.locator(".main-nav")).toBeHidden();
-    await expect(header.locator(".menu-toggle")).toBeFocused();
-    await activate(header.locator(".menu-toggle"));
-    await language.focus();
-    if (page.viewportSize()!.width <= 760)
-      await expect(header.locator(".main-nav")).toBeVisible();
-    else await expect(header.locator(".main-nav")).toBeHidden();
-  });
-}

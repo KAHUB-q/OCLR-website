@@ -11,7 +11,7 @@ test.describe("content-fitting account menu", () => {
     page,
     context,
     isMobile,
-  }, info) => {
+  }) => {
     test.setTimeout(120000);
     await seedEditions(
       prepared.map((item) => ({
@@ -78,12 +78,6 @@ test.describe("content-fitting account menu", () => {
                   ),
                 ).toBe(true);
               }
-              await page.screenshot({
-                path: info.outputPath(
-                  `${locale}-${theme}-${path === "/" ? "home" : "tournament"}-${width}-open.png`,
-                ),
-                animations: "disabled",
-              });
               await page.keyboard.press("Escape");
               await expect(trigger).toBeFocused();
             }

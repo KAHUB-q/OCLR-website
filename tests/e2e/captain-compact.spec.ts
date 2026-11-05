@@ -20,7 +20,7 @@ test.describe("compact Captain live state", () => {
     page,
     context,
     isMobile,
-  }, info) => {
+  }) => {
     test.setTimeout(120000);
     await db().execute(sql`TRUNCATE edition_state, users CASCADE`);
     const slug = "captain-compact-test";
@@ -215,11 +215,6 @@ test.describe("compact Captain live state", () => {
           if (document.activeElement instanceof HTMLElement)
             document.activeElement.blur();
           window.scrollTo({ top: 0, behavior: "instant" });
-        });
-        await page.screenshot({
-          path: info.outputPath(`${count}-teams-${locale}-${theme}.png`),
-          fullPage: true,
-          animations: "disabled",
         });
       }
     }

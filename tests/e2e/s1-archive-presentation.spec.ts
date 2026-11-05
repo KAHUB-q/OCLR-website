@@ -13,7 +13,7 @@ test.describe("S1 group and final standings presentation", () => {
     page,
     context,
     isMobile,
-  }, info) => {
+  }) => {
     test.setTimeout(180000);
     const slugs = ["synthetic-s1-private", "synthetic-s1-public"];
     await seedEditions(
@@ -115,11 +115,6 @@ test.describe("S1 group and final standings presentation", () => {
           [],
         );
         await finalHeading.scrollIntoViewIfNeeded();
-        await page.screenshot({
-          path: info.outputPath(
-            `s1-${index === 0 ? "private" : "public"}-${locale}-${theme}.png`,
-          ),
-        });
       }
     }
     await context.clearCookies();

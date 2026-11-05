@@ -2,7 +2,6 @@ import snapshot from "@/data/archive-beatmaps.json";
 import supplements from "@/data/archive-map-supplements.json";
 import type { HistoricalArchive } from "./historical-archive";
 import type { DifficultySnapshot } from "./mappool-model";
-import { archiveMappoolMaps } from "./archive-mappool-slots";
 
 type Pool = HistoricalArchive["pools"][number];
 type MapEntry = Pool["maps"][number];
@@ -114,7 +113,7 @@ export function archivePoolMetadata(
 } {
   const setIds: Record<number, number> = {};
   const enabled = ["s1", "s2", "s3", "s4", "s5", "s6"].includes(editionSlug);
-  const maps = archiveMappoolMaps(pool, editionSlug);
+  const maps = pool.maps;
   return {
     setIds,
     missingBeatmapIds: enabled

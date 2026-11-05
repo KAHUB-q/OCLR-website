@@ -1,3 +1,4 @@
+import { correctS2PoolArchive } from "./archive-pool-correction-model";
 import { db } from "@/db";
 import {
   draftSessions,
@@ -639,7 +640,7 @@ export async function tournamentCommand(
             "This tournament already has live competition data. Use a separate historical edition.",
           );
       }
-      next = { ...e, archive: c.archive };
+      next = { ...e, archive: correctS2PoolArchive(c.archive) };
     }
     if (c.action === "enrollment") {
       if (!c.paused) {

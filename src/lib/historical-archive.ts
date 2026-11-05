@@ -8,6 +8,7 @@ import {
   archiveTimeZone,
 } from "./archive-metadata";
 import { z } from "zod";
+import { archiveMappoolMaps } from "./archive-mappool-slots";
 import { difficultySnapshotSchema } from "./difficulty-snapshot";
 import {
   unresolvedArchivePlayer,
@@ -751,6 +752,9 @@ export function archiveCounts(a: HistoricalArchive) {
     results: a.matches.filter(recordedArchiveMatch).length,
     incomplete: a.matches.filter((m) => !recordedArchiveMatch(m)).length,
     pools: a.pools.length,
-    maps: a.pools.reduce((n, p) => n + p.maps.length, 0),
+    maps: a.pools.reduce(
+      (n, p) => n + archiveMappoolMaps(p, a.editionSlug).length,
+      0,
+    ),
   };
 }

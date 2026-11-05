@@ -5,8 +5,14 @@ import {
   missingArchiveText,
   parseArchiveTitle,
 } from "../../src/lib/archive-map-metadata";
-import { historicalArchiveSchema } from "../../src/lib/historical-archive";
+import {
+  archiveCounts,
+  historicalArchiveSchema,
+} from "../../src/lib/historical-archive";
 import snapshot from "../../src/data/archive-beatmaps.json";
+import early from "../../docs/imports/early-season-mappools.json";
+import { archiveMappoolMaps } from "../../src/lib/archive-mappool-slots";
+import { statisticsArchiveKey } from "../../src/lib/archive-statistics";
 
 function archive(season: string) {
   return historicalArchiveSchema.parse(
@@ -175,7 +181,7 @@ describe("historical map metadata supplementation", () => {
     expect(map?.originalId).toBe(4000824);
   });
   it("recognizes spreadsheet errors without treating literal titles as errors", () => {
-    for (const value of [null, "#N/A", " N/A ", "#REF!", "#VALUE!"])
+    for (const value of [null, "", "  ", "#N/A", " N/A ", "#REF!", "#VALUE!"])
       expect(missingArchiveText(value)).toBe(true);
     for (const value of ["N/A - Song [Hard]", "Error", "0"])
       expect(missingArchiveText(value)).toBe(false);
@@ -208,7 +214,7 @@ describe("historical map metadata supplementation", () => {
     };
     const map = archivePoolMetadata(pool, "s4").pool.maps[0];
     expect(map).toMatchObject(pool.maps[0]);
-    expect(map.supplemented).toBeUndefined();
+    expect(map.supplemented).toEqual(["artist", "difficulty"]);
   });
   it("does not substitute a different map or silently enrich other editions", () => {
     const pool = archive("s4").pools[0];
@@ -268,5 +274,110 @@ describe("historical map metadata supplementation", () => {
         expect(map[key]).toBeGreaterThanOrEqual(0);
       }
     }
+  });
+  it("covers all S1–S3 pools, preserving source values and recording exact unavailable BIDs", () => {
+    const fields = [
+      "title",
+      "mapper",
+      "stars",
+      "bpm",
+      "drainSeconds",
+      "cs",
+      "ar",
+      "od",
+    ] as const;
+    let slots = 0;
+    let missingTitles = 0;
+    for (const [season, pools] of Object.entries(early.seasons)) {
+      for (const pool of pools) {
+        const before = structuredClone(pool);
+        const {
+          pool: display,
+          setIds,
+          missingBeatmapIds,
+        } = archivePoolMetadata(pool, season);
+        slots += display.maps.length;
+        expect(pool).toEqual(before);
+        expect(
+          archivePoolMetadata(JSON.parse(JSON.stringify(pool)), season),
+        ).toEqual(archivePoolMetadata(pool, season));
+        for (const map of display.maps) {
+          const original = pool.maps.find((m) => m.slot === map.slot)!;
+          const unavailable = (snapshot.unavailable as number[]).includes(
+            map.beatmapId!,
+          );
+          for (const field of fields) {
+            const value = original[field];
+            const missing =
+              typeof value === "string"
+                ? missingArchiveText(value)
+                : value === null;
+            if (!missing) expect(map[field]).toBe(value);
+            else if (!unavailable)
+              expect(
+                map[field],
+                `${season}/${pool.id}/${map.slot}/${field}`,
+              ).not.toBeNull();
+          }
+          if (original.title === null) {
+            missingTitles++;
+            if (!unavailable) expect(map.supplemented).toContain("title");
+          }
+          if (unavailable) expect(missingBeatmapIds).toContain(map.beatmapId);
+          else {
+            expect(setIds[map.beatmapId!]).toBeGreaterThan(0);
+            expect(
+              map.difficulty ?? parseArchiveTitle(map.title)?.difficulty,
+            ).toBeTruthy();
+            expect(map.metadataSource).toBe(
+              `https://osu.ppy.sh/beatmaps/${map.beatmapId}`,
+            );
+          }
+        }
+      }
+    }
+    expect(slots).toBe(190);
+    expect(missingTitles).toBe(30);
+  });
+  it("fills blank early-season titles and separate difficulty names without replacing authored names", () => {
+    const pool = early.seasons.s1[0];
+    const map = archivePoolMetadata(pool, "s1").pool.maps[0];
+    expect(map.title).toBe(pool.maps[0].title);
+    expect(map.difficulty).toBeTruthy();
+    expect(map.supplemented).toContain("difficulty");
+    for (const title of [null, "", " ", "#N/A", "#REF!"]) {
+      const result = archivePoolMetadata(
+        { ...pool, maps: [{ ...pool.maps[0], title }] },
+        "s1",
+      ).pool.maps[0];
+      expect(result.title).toContain("Yoru Naku Usagi wa Yume o Miru");
+      expect(result.supplemented).toContain("title");
+    }
+  });
+  it("removes only the two S2 GS phantom slots from every count without changing statistical identity", () => {
+    const pools = early.seasons.s2;
+    const gs = pools.find((pool) => pool.id === "gs")!;
+    const final = pools.find((pool) => pool.id === "final")!;
+    expect(archiveMappoolMaps(gs, "s2")).toHaveLength(18);
+    const gsSlots = archivePoolMetadata(gs, "s2").pool.maps.map((m) => m.slot);
+    expect(gsSlots).not.toContain("DT5");
+    expect(gsSlots).not.toContain("TB1");
+    const finalMaps = archivePoolMetadata(final, "s2").pool.maps;
+    expect(finalMaps.find((m) => m.slot === "DT5")).toMatchObject({
+      beatmapId: 804387,
+      title: expect.any(String),
+    });
+    expect(finalMaps.find((m) => m.slot === "TB1")).toMatchObject({
+      beatmapId: 1962336,
+      title: expect.any(String),
+    });
+    expect(archiveMappoolMaps(gs, "s1")).toEqual(gs.maps);
+    expect(archiveMappoolMaps({ ...gs, id: "other" }, "s2")).toEqual(gs.maps);
+    const raw = { ...archive("s4"), editionSlug: "s2", pools };
+    const key = statisticsArchiveKey(raw);
+    expect(archiveCounts(raw).maps).toBe(68);
+    raw.pools.forEach((pool) => archivePoolMetadata(pool, "s2"));
+    expect(statisticsArchiveKey(raw)).toBe(key);
+    expect(gs.maps).toHaveLength(20);
   });
 });

@@ -2,6 +2,7 @@ import snapshot from "@/data/archive-beatmaps.json";
 import supplements from "@/data/archive-map-supplements.json";
 import type { HistoricalArchive } from "./historical-archive";
 import type { DifficultySnapshot } from "./mappool-model";
+import { archiveMappoolMaps } from "./archive-mappool-slots";
 
 type Pool = HistoricalArchive["pools"][number];
 type MapEntry = Pool["maps"][number];
@@ -16,10 +17,16 @@ const fields = [
   "od",
 ] as const;
 type Field = (typeof fields)[number];
-type Snapshot = (typeof snapshot.maps)[keyof typeof snapshot.maps];
+type DisplayField = Field | "artist" | "difficulty";
+type Snapshot = (typeof snapshot.maps)[keyof typeof snapshot.maps] & {
+  artist?: string;
+  difficulty?: string;
+};
 export type ArchiveDisplayMap = MapEntry & {
   difficultySnapshot?: DifficultySnapshot;
-  supplemented?: Field[];
+  artist?: string | null;
+  difficulty?: string | null;
+  supplemented?: DisplayField[];
   metadataSource?: string;
   metadataFetchedAt?: string;
   archivalSource?: string;
@@ -34,6 +41,7 @@ export type ArchiveDisplayPool = Omit<Pool, "maps"> & {
 export function missingArchiveText(value: string | null) {
   return (
     value === null ||
+    value.trim() === "" ||
     /^(?:#N\/A|N\/A|#REF!|#VALUE!|#ERROR!|#NAME\?|#DIV\/0!)$/i.test(
       value.trim(),
     )
@@ -105,11 +113,12 @@ export function archivePoolMetadata(
   missingBeatmapIds: number[];
 } {
   const setIds: Record<number, number> = {};
-  const enabled = ["s4", "s5", "s6"].includes(editionSlug);
+  const enabled = ["s1", "s2", "s3", "s4", "s5", "s6"].includes(editionSlug);
+  const maps = archiveMappoolMaps(pool, editionSlug);
   return {
     setIds,
     missingBeatmapIds: enabled
-      ? pool.maps.flatMap((map) =>
+      ? maps.flatMap((map) =>
           map.beatmapId && snapshot.unavailable.includes(map.beatmapId)
             ? [map.beatmapId]
             : [],
@@ -117,7 +126,7 @@ export function archivePoolMetadata(
       : [],
     pool: {
       ...pool,
-      maps: pool.maps.map((map): ArchiveDisplayMap => {
+      maps: maps.map((map): ArchiveDisplayMap => {
         const result: ArchiveDisplayMap = { ...map };
         // Existing saved/remote archives predate the import-package supplement.
         // Apply only the confirmed edition/pool/slot/BID, without mutating it.
@@ -160,6 +169,18 @@ export function archivePoolMetadata(
           (result.supplemented ??= []).push(field);
         }
         if (metadata) {
+          // Early archives often store a plain song title. Preserve it while
+          // exposing artist/difficulty separately in every view and search.
+          const authored = parseArchiveTitle(result.title);
+          const official = parseArchiveTitle(metadata.title);
+          for (const field of ["artist", "difficulty"] as const) {
+            if (result[field] || authored?.[field]) continue;
+            const value = metadata[field] ?? official?.[field];
+            if (value) {
+              result[field] = value;
+              (result.supplemented ??= []).push(field);
+            }
+          }
           setIds[metadata.beatmapId] = metadata.setId;
           result.metadataSource = metadata.source;
           result.metadataFetchedAt = metadata.fetchedAt;

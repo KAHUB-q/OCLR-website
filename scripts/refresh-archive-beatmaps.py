@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""Capture public official base metadata for S4–S6. No credentials or DB writes.
+"""Capture public official base metadata for S1–S6. No credentials or DB writes.
 
 Only whitelisted metadata is retained, never the full page/user content. Existing
 historical source packages remain unchanged. Failures remain explicit in output.
@@ -26,6 +26,7 @@ def extract(html, bid):
         raise ValueError('Unexpected beatmap identity or ruleset')
     return dict(beatmapId=bid, setId=data['id'],
                 title=f"{data['artist']} - {data['title']} [{beatmap['version']}]",
+                artist=data['artist'], difficulty=beatmap['version'],
                 mapper=', '.join(o['username'] for o in beatmap.get('owners', []) if o.get('username')) or data['creator'],
                 stars=beatmap['difficulty_rating'], bpm=beatmap['bpm'],
                 drainSeconds=beatmap['hit_length'], cs=beatmap['cs'],
@@ -39,6 +40,9 @@ def expected_ids():
     ids = {m['beatmapId'] for name in ['s4', 's5', 's6-confirmed']
            for p in json.loads((ROOT / f'docs/imports/{name}-archive.json').read_text())['pools']
            for m in p['maps'] if m['beatmapId']}
+    early = json.loads((ROOT / 'docs/imports/early-season-mappools.json').read_text())
+    ids.update(m['beatmapId'] for pools in early['seasons'].values()
+               for pool in pools for m in pool['maps'] if m['beatmapId'])
     supplements = json.loads((ROOT / 'src/data/archive-map-supplements.json').read_text())
     ids.update(entry['originalId'] for rows in supplements.values() for entry in rows)
     return sorted(ids)

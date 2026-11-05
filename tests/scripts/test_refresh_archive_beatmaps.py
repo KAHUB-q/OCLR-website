@@ -14,6 +14,9 @@ class CaptureTests(unittest.TestCase):
         self.assertIn(2933979, ids)
         self.assertIn(2720295, ids)
         self.assertIn(2567502, ids)
+        self.assertIn(1532662, ids)  # S1
+        self.assertIn(1009329, ids)  # S2, keep even if unavailable
+        self.assertIn(2140353, ids)  # S3
         self.assertEqual(ids, sorted(set(ids)))
     def payload(self, **changes):
         beatmap = dict(id=42, beatmapset_id=7, mode='osu', version='Hard',
@@ -29,6 +32,8 @@ class CaptureTests(unittest.TestCase):
         self.assertEqual(row['drainSeconds'], 90)
         self.assertEqual(row['mapper'], 'Guest mapper')
         self.assertEqual(row['title'], 'Artist - Song [Hard]')
+        self.assertEqual(row['artist'], 'Artist')
+        self.assertEqual(row['difficulty'], 'Hard')
         self.assertNotIn('owners', row)
         self.assertNotIn('total_length', row)
 

@@ -86,6 +86,12 @@ function ArchiveMapDetails({
           <BeatmapCover setId={setId} fallbackSetId={originalSetId} />
           <div>
             <h2 id={title}>{map.title ?? tr("Not recorded")}</h2>
+            {map.artist && <p className="muted">{map.artist}</p>}
+            {map.difficulty && (
+              <p className="muted">
+                {tr("Difficulty")}: {map.difficulty}
+              </p>
+            )}
             {map.mapper && !map.title?.includes(map.mapper) && (
               <p className="muted">
                 {tr("Mapper")}: {map.mapper}
@@ -184,7 +190,15 @@ export function ArchiveMappools({
     (m) =>
       (mod === "all" || m.slot.replace(/\d+$/, "") === mod) &&
       (!query ||
-        [m.slot, m.title, m.mapper, m.beatmapId, m.originalId]
+        [
+          m.slot,
+          m.title,
+          m.artist,
+          m.difficulty,
+          m.mapper,
+          m.beatmapId,
+          m.originalId,
+        ]
           .filter((v) => v !== null)
           .join(" ")
           .toLocaleLowerCase()
@@ -218,6 +232,8 @@ export function ArchiveMappools({
   const activeArtwork = active ? artwork(active) : null;
   const fieldLabels = {
     title: tr("Song title"),
+    artist: tr("Artist"),
+    difficulty: tr("Difficulty"),
     mapper: tr("Mapper"),
     stars: tr("SR"),
     bpm: tr("BPM"),
@@ -268,38 +284,34 @@ export function ArchiveMappools({
     const d = difficulty(original),
       m = { ...original, ...d.values, drainSeconds: d.values.duration };
     return (
-      <>
-        <DifficultyStatus display={d} />
-        <dl className="archive-map-stats">
-          {[
-            [
-              tr("SR"),
-              m.stars,
-              m.stars === null ? null : `${number.format(m.stars)} ★`,
-            ],
-            [tr("BPM"), m.bpm, m.bpm === null ? null : number.format(m.bpm)],
-            [
-              tr("Length"),
-              m.drainSeconds,
-              m.drainSeconds === null
-                ? null
-                : formatBeatmapDuration(m.drainSeconds),
-            ],
-            [tr("CS"), m.cs, m.cs === null ? null : number.format(m.cs)],
-            [tr("AR"), m.ar, m.ar === null ? null : number.format(m.ar)],
-            [tr("OD"), m.od, m.od === null ? null : number.format(m.od)],
-            [tr("HP"), m.hp, m.hp === null ? null : number.format(m.hp)],
-          ].map(([label, raw, value]) => (
-            <div key={String(label)}>
-              <dt>{label}</dt>
-              <dd title={raw === null ? tr("Not recorded") : String(raw)}>
-                {value ?? <span aria-label={tr("Not recorded")}>—</span>}
-              </dd>
-            </div>
-          ))}
-        </dl>
-        {supplemented(original)}
-      </>
+      <dl className="archive-map-stats">
+        {[
+          [
+            tr("SR"),
+            m.stars,
+            m.stars === null ? null : `${number.format(m.stars)} ★`,
+          ],
+          [tr("BPM"), m.bpm, m.bpm === null ? null : number.format(m.bpm)],
+          [
+            tr("Length"),
+            m.drainSeconds,
+            m.drainSeconds === null
+              ? null
+              : formatBeatmapDuration(m.drainSeconds),
+          ],
+          [tr("CS"), m.cs, m.cs === null ? null : number.format(m.cs)],
+          [tr("AR"), m.ar, m.ar === null ? null : number.format(m.ar)],
+          [tr("OD"), m.od, m.od === null ? null : number.format(m.od)],
+          [tr("HP"), m.hp, m.hp === null ? null : number.format(m.hp)],
+        ].map(([label, raw, value]) => (
+          <div key={String(label)}>
+            <dt>{label}</dt>
+            <dd title={raw === null ? tr("Not recorded") : String(raw)}>
+              {value ?? <span aria-label={tr("Not recorded")}>—</span>}
+            </dd>
+          </div>
+        ))}
+      </dl>
     );
   };
   return (
@@ -423,8 +435,8 @@ export function ArchiveMappools({
                     dataCategory={m.slot.replace(/\d+$/, "")}
                     slot={m.slot}
                     title={parsed?.title ?? m.title ?? tr("Not recorded")}
-                    artist={parsed?.artist}
-                    difficulty={parsed?.difficulty}
+                    artist={parsed?.artist ?? m.artist}
+                    difficulty={parsed?.difficulty ?? m.difficulty}
                     mapper={parsed?.mapper ?? m.mapper}
                     beatmapId={m.beatmapId}
                     setId={setId}
@@ -480,6 +492,12 @@ export function ArchiveMappools({
                           {m.title ?? tr("Not recorded")}
                         </button>
                       </h3>
+                      {m.artist && <p className="muted small">{m.artist}</p>}
+                      {m.difficulty && (
+                        <p className="muted small">
+                          {tr("Difficulty")}: {m.difficulty}
+                        </p>
+                      )}
                       <p className="muted small">
                         {tr("Mapper")}: {m.mapper ?? tr("Not recorded")}
                         {m.beatmapId ? (
@@ -491,6 +509,8 @@ export function ArchiveMappools({
                           <> · {tr("Beatmap ID unresolved")}</>
                         )}
                       </p>
+                      <DifficultyStatus display={d} />
+                      {supplemented(m)}
                     </div>
                     {stats(m)}
                     <BeatmapActions

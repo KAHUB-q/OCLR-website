@@ -55,8 +55,8 @@ test(`legacy S5 links work without a provider lookup (${locale}, ${theme})`, asy
     dialog.locator('a[href="https://osu.ppy.sh/beatmaps/2678913"]'),
   ).toBeVisible();
   await expect(dialog.locator('a[href="osu://b/2678913"]')).toBeVisible();
-  await expect(dialog.locator(".archive-map-stats")).toContainText("210");
-  await expect(dialog.locator(".archive-map-stats")).toContainText("8.5");
+  await expect(dialog.locator(".map-detail-grid").first()).toContainText("210");
+  await expect(dialog.locator(".map-detail-grid").first()).toContainText("8.5");
   await page.keyboard.press("Escape");
   await page.screenshot({
     path: info.outputPath(`s5-${theme}.png`),

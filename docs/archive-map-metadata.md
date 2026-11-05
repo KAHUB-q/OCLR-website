@@ -1,4 +1,4 @@
-# Historical mappool metadata supplements (#335)
+# Historical mappool metadata supplements (#335, #850)
 
 S4's import contains 75 literal `#N/A` titles out of 76 slots, despite having
 beatmap IDs for all slots. S5 and S6 source packages contain missing titles and
@@ -170,3 +170,80 @@ still grow and wrap. The geometry check now covers both brightness modes.
 Check/build passed, and both corrected tests passed on desktop/mobile (four
 checks). At the organizer's request, CI monitoring was stopped and the changes
 were submitted to PR #337 without claiming complete CI acceptance.
+
+## Early seasons S1–S3 (#850, 2026-11-05)
+
+The same exact-BID projection now covers S1–S3. The checked-in
+[public saved-map inventory](imports/early-season-mappools.json) retains all 11
+pools and 192 original rows, including source cell references, before correction.
+The official refresh script reads this inventory as well as the existing S4–S6
+packages; a fresh capture and `--resume` both retain the early-season IDs.
+The snapshot now resolves 339 of 343 distinct S1–S6/original BIDs; no lookups are
+pending. Each successful row retains its own official URL, capture time and map
+update time.
+
+The old projection's S4–S6 allowlist caused the early-season gaps. Early imports
+also often contain artist/song text without a trailing difficulty. The display
+now keeps that literal title, fills blank/formula-error fields, and exposes the
+exact official artist/difficulty separately where absent. Cards, compact rows,
+details, search and title sort share these enriched records. New labels are
+`Artist` (曲师／曲師) and `Difficulty` (难度名称／難度名稱); organizer wording review
+remains part of acceptance.
+
+Compact rows keep difficulty status and provenance inside their identity cell,
+so extra disclosure elements cannot become grid columns and squeeze song titles
+into unreadable widths on mobile. Existing MainSheet styles are reused.
+
+| Season | Pools | Valid slots | Missing titles before → after | Missing length / CS / AR / OD, each, before → after |
+| --- | --- | --- | --- | --- |
+| S1 | 3 | 59 | 0 → 0 | 59 → 0 |
+| S2 | 5 | 68 | 25 → 1 | 68 → 1 |
+| S3 | 3 | 63 | 5 → 0 | 63 → 0 |
+
+Thus 29 of the 30 reported empty titles are recovered, and 189 of 190 valid
+slots have all eight metadata fields plus a difficulty name. Existing non-null
+historical titles, mapper names, metrics and zeroes remain authoritative.
+
+### Unavailable exact difficulty and covers
+
+S2 / `captain-qualifier` / NM2 / **1009329** remains unresolved. Its
+[official difficulty page](https://osu.ppy.sh/beatmaps/1009329) returned HTTP 404
+on capture and on a separate confirmation request. The original public
+[S2 workbook](https://docs.google.com/spreadsheets/d/1lQrHwsbPb5nC-MDPbHSNkL2RFD1eEcS-LbGonEr10QY/edit),
+`captain's qualifier mappool!B5:H5`, was independently read with a bounded public
+GViz request: B = NM2, C–F = `#N/A`, G = `https://old.ppy.sh/b/1009329`,
+H = 1009329. It supplies no surviving title or attributes. A surviving original
+`.osu` file or historical exact-BID evidence is needed; no other difficulty is
+substituted. The slot, ID and explicit unavailable state remain visible.
+
+The prior full public cover scan also confirms two S1 image 404s: GS NM3
+659750 / set 293275 and ES1 HD3 776326 / set 352290. Their official map metadata
+is available and is filled, while failed covers retain the existing `Cover
+unavailable` state. S2 NM2 has no surviving set/cover source. Other S1–S3 cover
+sources from that scan match the captured set IDs. Broader image recovery remains
+tracked in #852; this change does not fabricate replacement images.
+
+### Source preservation and regeneration
+
+The organizer confirmed S2 **GS** had neither DT5 nor TB1. The shared
+`archiveMappoolMaps` projection removes exactly those two slots from the pool,
+filters, totals, stage navigation and `archiveCounts` (also used by import review
+and public summaries). S2 **Final** DT5 804387 and TB1 1962336 remain and receive
+missing titles normally. Other editions/pools are unaffected.
+
+S1–S3 have no maintained standalone import builder in this checkout. Keeping the
+correction in the shared projection means an old save, a re-opened/serialized
+archive, a regenerated import or a remote saved-data read follows the same rule.
+Raw evidence and saved-data map records remain intact, including the two phantom
+source rows; no schema normalization or destructive reimport rewrites them.
+This deliberately preserves `statisticsArchiveKey`, reviewed results and
+published statistical snapshots. Deploying the reviewed code is sufficient for
+existing saved archives. No production data write or migration is required.
+
+Unit coverage walks every pool/slot, checks preserved values and exact-BID
+coverage, reopens serialized raw records, verifies scoped removals/counts and
+unchanged statistics identity, and preserves the refresh inventory. Focused
+component coverage checks desktop/mobile cards, compact rows, details,
+search/sort, image failure and unavailable maps; the S5 fallback regression is
+included. Actual command results are recorded in the PR, separately from CI and
+organizer acceptance.

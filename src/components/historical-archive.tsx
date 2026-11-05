@@ -7,6 +7,7 @@ import {
 import { supportsArchiveStatistics } from "@/lib/archive-statistics-model";
 import { getAppTranslations } from "@/i18n/server";
 import { archivePoolMetadata } from "@/lib/archive-map-metadata";
+import { archiveMappoolMaps } from "@/lib/archive-mappool-slots";
 import { catalogDifficulty } from "@/lib/difficulty-catalog";
 import { archiveArtworkLookup } from "@/lib/archive-artwork";
 import { archiveBracket } from "@/lib/archive-bracket";
@@ -791,7 +792,7 @@ export async function HistoricalArchiveView({
           stages={a.pools.map((p) => ({
             id: p.id,
             name: p.name,
-            count: p.maps.length,
+            count: archiveMappoolMaps(p, a.editionSlug).length,
             href: href("mappools", p.id),
           }))}
         />

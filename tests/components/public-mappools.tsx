@@ -7,6 +7,8 @@ import { PageHeading } from "../../src/components/ui";
 import { syntheticPublicPools } from "../fixtures/public-mappools";
 import { legacyS5Mappool } from "../fixtures/legacy-s5-mappool";
 import { archivePoolMetadata } from "../../src/lib/archive-map-metadata";
+import { archiveMappoolMaps } from "../../src/lib/archive-mappool-slots";
+import earlyInventory from "../../docs/imports/early-season-mappools.json";
 import { baseDifficulty } from "../../src/lib/difficulty-display";
 import {
   difficultyMods,
@@ -29,9 +31,19 @@ document.documentElement.dataset.theme = params.get("theme") ?? "light";
 document.documentElement.dataset.appearance =
   params.get("appearance") ?? "default";
 const messages = locale === "en" ? en : locale === "zh-Hans" ? hans : hant;
-const legacy = params.has("legacy-s5")
-  ? archivePoolMetadata(legacyS5Mappool, "s5")
+const earlySeason = (params.get("early-season") ??
+  "s1") as keyof typeof earlyInventory.seasons;
+const earlyPools = params.has("early-season")
+  ? earlyInventory.seasons[earlySeason]
   : null;
+const earlyPool = earlyPools?.find(
+  (pool) => pool.id === (params.get("pool") ?? "gs"),
+);
+const legacy = earlyPool
+  ? archivePoolMetadata(earlyPool, earlySeason)
+  : params.has("legacy-s5")
+    ? archivePoolMetadata(legacyS5Mappool, "s5")
+    : null;
 type Pool = (typeof syntheticPublicPools)[number];
 const difficultyPools: Pool[] = syntheticPublicPools.map((pool) => ({
   ...pool,
@@ -151,14 +163,21 @@ createRoot(document.getElementById("root")!).render(
             }
             artworkSetIds={legacy?.setIds ?? {}}
             missingBeatmapIds={legacy?.missingBeatmapIds}
-            stages={[
-              {
-                id: "archive",
-                name: "Synthetic archive",
-                count: 1,
-                href: "#archive",
-              },
-            ]}
+            stages={
+              earlyPools?.map((pool) => ({
+                id: pool.id,
+                name: pool.name,
+                count: archiveMappoolMaps(pool, earlySeason).length,
+                href: `/public-mappools?archive&early-season=${earlySeason}&pool=${pool.id}`,
+              })) ?? [
+                {
+                  id: "archive",
+                  name: "Synthetic archive",
+                  count: 1,
+                  href: "#archive",
+                },
+              ]
+            }
           />
         </div>
       ) : params.has("detail") ? (

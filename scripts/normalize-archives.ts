@@ -7,8 +7,15 @@ import {
   verifyArchiveRelations,
 } from "../src/lib/archive-relations";
 import { HttpError } from "../src/lib/http";
+import {
+  assertArchiveOperatorEnvironment,
+  archiveOperatorDiagnostic,
+  type ArchiveOperatorPhase,
+} from "./archive-operator-diagnostics";
 
 env.loadEnvConfig(process.cwd());
+let phase: ArchiveOperatorPhase = "arguments",
+  activeSlug: string | undefined;
 try {
   const args = process.argv.slice(2),
     allowed = ["--dry-run", "--apply", "--rebuild", "--verify"];
@@ -24,6 +31,9 @@ try {
   const selected = args.filter((a) => !a.startsWith("--"));
   if (selected.some((s) => !/^[a-z0-9][a-z0-9-]{0,79}$/.test(s)))
     throw new HttpError(400, "Invalid edition slug.");
+  phase = "environment";
+  assertArchiveOperatorEnvironment();
+  phase = "discover";
   const slugs = selected.length
     ? [...new Set(selected)]
     : (
@@ -37,11 +47,14 @@ try {
         .sort();
   const totals = { seasons: slugs.length, documents: 0, stale: 0, created: 0 };
   for (const slug of slugs) {
+    activeSlug = slug;
+    phase = args.includes("--apply") ? "apply" : "preview";
     const result = await backfillArchiveRelations(
       slug,
       args.includes("--apply"),
       args.includes("--rebuild"),
     );
+    if (args.includes("--verify")) phase = "verify";
     const verified = args.includes("--verify")
       ? await db().transaction((tx) => verifyArchiveRelations(tx, slug), {
           isolationLevel: "repeatable read",
@@ -58,9 +71,9 @@ try {
   console.log(JSON.stringify({ total: totals }));
 } catch (error) {
   console.error(
-    error instanceof HttpError
-      ? error.message
-      : "Historical normalization failed; check the reviewed schema and configured database.",
+    JSON.stringify(
+      archiveOperatorDiagnostic(error, { phase, slug: activeSlug }),
+    ),
   );
   process.exitCode = 1;
 } finally {

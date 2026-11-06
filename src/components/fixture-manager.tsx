@@ -88,6 +88,7 @@ function FixtureForm({
   );
   const round = data.rounds.find((r) => r.round.id === roundId);
   const exhibition = round?.stage === "exhibition";
+  const knockout = round?.stage === "knockout";
   // Keep legacy official-team result history intact when only editing its schedule.
   const legacyExhibition =
     exhibition &&
@@ -108,10 +109,10 @@ function FixtureForm({
     scheduledAt: time,
     timeZone,
     status,
-    homeSourceId: !exhibition && homeSourceId ? homeSourceId : null,
-    homeSourceOutcome: !exhibition && homeSourceId ? homeSourceOutcome : null,
-    awaySourceId: !exhibition && awaySourceId ? awaySourceId : null,
-    awaySourceOutcome: !exhibition && awaySourceId ? awaySourceOutcome : null,
+    homeSourceId: knockout && homeSourceId ? homeSourceId : null,
+    homeSourceOutcome: knockout && homeSourceId ? homeSourceOutcome : null,
+    awaySourceId: knockout && awaySourceId ? awaySourceId : null,
+    awaySourceOutcome: knockout && awaySourceId ? awaySourceOutcome : null,
     action: fixture ? "edit" : "create",
     ...(fixture
       ? { fixtureId: fixture.id, expectedVersion: fixture.version }

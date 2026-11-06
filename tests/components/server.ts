@@ -59,6 +59,7 @@ const bundle = await build({
     "tests/components/player-profile-cover.tsx",
     "tests/components/player-profile-no-cover.tsx",
     "tests/components/backup-manager.tsx",
+    "tests/components/archive-importer.tsx",
   ],
   alias: { "next/image": resolve("tests/components/next-image.ts") },
   external: ["/rookie-stage.svg", "/themes/*", "/fonts/*", "/branding/*"],
@@ -237,7 +238,9 @@ createServer((request, response) => {
         ? "appearance-navigation"
         : request.url?.startsWith("/backup-manager")
           ? "backup-manager"
-          : fixture;
+          : request.url?.startsWith("/archive-importer")
+            ? "archive-importer"
+            : fixture;
     response.end(
       `<!doctype html><html><head><meta name="viewport" content="width=device-width, initial-scale=1"><link rel="stylesheet" href="/${fixtureName}.css"></head><body><div id="root"></div><script nonce="${nonce}" src="/${fixtureName}.js"></script></body></html>`,
     );

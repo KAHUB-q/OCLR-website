@@ -8,7 +8,7 @@ import {
   sql,
   getTableColumns,
 } from "drizzle-orm";
-import type { AnyPgTable } from "drizzle-orm/pg-core";
+import { unionAll, type AnyPgTable } from "drizzle-orm/pg-core";
 import { db } from "@/db";
 import {
   editionState,
@@ -100,17 +100,29 @@ async function loadDocuments(reader: Reader, kind: string, ids: string[]) {
   for (const id of ids)
     result.set(id, Object.fromEntries(layout.entities.map((e) => [e.key, []])));
   if (!ids.length) return result;
-  for (const entity of layout.entities) {
-    const table = tables[entity.key];
-    const rows = await reader
-      .select()
+  // One round trip for all typed entities/documents. Build row JSON only for
+  // transport; the authoritative data remains in typed columns and retained JSONB.
+  const queries = layout.entities.map((entity) => {
+    const table = tables[entity.key],
+      columns = getTableColumns(table);
+    return reader
+      .select({
+        documentId: columns.documentId,
+        entity: sql<string>`${entity.key}::text`,
+        rows: sql<RelationRow[]>`jsonb_agg(
+        (to_jsonb(${table}) - 'document_id' - 'parent_id' - 'record_key') ||
+        jsonb_build_object('parentId', ${columns.parentId}, 'recordKey', ${columns.recordKey})
+        ORDER BY ${columns.id})`,
+      })
       .from(table)
-      .where(inArray(getTableColumns(table).documentId, ids));
-    for (const value of rows) {
-      const { documentId, ...row } = value;
-      result.get(String(documentId))![entity.key].push(row as RelationRow);
-    }
-  }
+      .where(inArray(columns.documentId, ids))
+      .groupBy(columns.documentId);
+  });
+  const rows = await (queries.length === 1
+    ? queries[0]
+    : unionAll(queries[0], queries[1], ...queries.slice(2)));
+  for (const row of rows)
+    result.get(String(row.documentId))![row.entity] = row.rows;
   return result;
 }
 async function saveDocument(
@@ -295,31 +307,75 @@ export async function syncArchiveRelations(
   return { slug, created, documents: active.length, sources: sources.length };
 }
 
-export async function normalizedArchive(state: ArchiveState, reader: Reader) {
-  if (disabled() || !state.configuration?.archive) return undefined;
-  const hash = archiveContentHash(
-    historicalArchiveSchema.parse(state.configuration.archive),
+/** Batch the catalogue without one head/entity query per season. Each decoded
+ * archive still has to match its current source hash independently.
+ */
+export async function normalizedArchives(
+  states: ArchiveState[],
+  reader: Reader,
+) {
+  const result = new Map<
+    string,
+    ReturnType<typeof historicalArchiveSchema.parse>
+  >();
+  if (disabled()) return result;
+  const hashes = new Map(
+    states
+      .filter((s) => s.configuration?.archive)
+      .map((state) => [
+        state.slug,
+        archiveContentHash(
+          historicalArchiveSchema.parse(state.configuration!.archive),
+        ),
+      ]),
   );
-  const found = (await heads(reader, state.slug, ["archive"])).find(
-    (p) =>
-      p.head.documentKey === "archive" &&
-      p.head.sourceHash === hash &&
-      p.document.contentHash === hash &&
-      p.document.codecVersion === ARCHIVE_RELATION_CODEC,
-  );
-  if (!found) return undefined;
-  try {
-    const data = await loadDocuments(reader, "archive", [found.document.id]);
-    const archive = historicalArchiveSchema.parse(
-      decodeArchiveRelations(
-        layoutFor("archive"),
-        data.get(found.document.id)!,
+  if (!hashes.size) return result;
+  const current = await reader
+    .select({ head: archiveRelationHeads, document: archiveRelationDocuments })
+    .from(archiveRelationHeads)
+    .innerJoin(
+      archiveRelationDocuments,
+      eq(archiveRelationHeads.documentId, archiveRelationDocuments.id),
+    )
+    .where(
+      and(
+        inArray(archiveRelationHeads.editionSlug, [...hashes.keys()]),
+        eq(archiveRelationHeads.documentKey, "archive"),
       ),
     );
-    return archiveContentHash(archive) === hash ? archive : undefined;
+  const matching = current.filter(
+    ({ head, document }) =>
+      head.sourceHash === hashes.get(head.editionSlug) &&
+      document.contentHash === head.sourceHash &&
+      document.codecVersion === ARCHIVE_RELATION_CODEC,
+  );
+  if (!matching.length) return result;
+  let data: Map<string, RelationData>;
+  try {
+    data = await loadDocuments(
+      reader,
+      "archive",
+      matching.map((p) => p.document.id),
+    );
   } catch {
-    return undefined;
+    return result;
   }
+  for (const { head, document } of matching) {
+    try {
+      const archive = historicalArchiveSchema.parse(
+        decodeArchiveRelations(layoutFor("archive"), data.get(document.id)!),
+      );
+      if (archiveContentHash(archive) === hashes.get(head.editionSlug))
+        result.set(head.editionSlug, archive);
+    } catch {
+      /* One incomplete document never invalidates another season. */
+    }
+  }
+  return result;
+}
+
+export async function normalizedArchive(state: ArchiveState, reader: Reader) {
+  return (await normalizedArchives([state], reader)).get(state.slug);
 }
 
 /** No source JSONB is selected when every digest has a matching typed document. */

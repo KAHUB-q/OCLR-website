@@ -7,7 +7,7 @@ import {
   expect,
   vi,
 } from "vitest";
-import { eq, sql } from "drizzle-orm";
+import { and, eq, sql } from "drizzle-orm";
 import { db, closeDb } from "../../src/db";
 import {
   archiveRelationDocuments,
@@ -113,8 +113,16 @@ describe.skipIf(!url)("complete historical database relations", () => {
       history,
     );
     expect(await db().select().from(users)).toEqual([]);
+    const started = performance.now();
+    const catalog = await observe(() => readTournaments(true));
+    console.info("archive catalog benchmark", {
+      seasons: catalog.value.length,
+      queries: catalog.statements.length,
+      responseBytes: Buffer.byteLength(JSON.stringify(catalog.value)),
+      milliseconds: performance.now() - started,
+    });
     expect({
-      public: await readTournaments(true),
+      public: catalog.value,
       private: await readTournaments(),
       performance: await playerMapPerformance(await publicPlayer(91003)),
     }).toEqual(before);
@@ -126,6 +134,9 @@ describe.skipIf(!url)("complete historical database relations", () => {
         s.includes('from "archive_rel_statistics_source_games_scores"'),
       ),
     ).toBe(true);
+    // Profile identity/timeline reads enumerate every public season. Their
+    // query count must not grow by one query per relation per season.
+    expect(catalog.statements.length).toBeLessThanOrEqual(3);
     const detailed = await observe(() => publicArchiveStatistics("s7", "one"));
     expect(sourceJson(detailed.statements)).toEqual([]);
     expect(detailed.value.matchDetails).toHaveLength(1);
@@ -141,6 +152,80 @@ describe.skipIf(!url)("complete historical database relations", () => {
         await db().select().from(archiveRelArchiveQualifiersRecordsScores)
       ).every((r) => r.value_score === 0),
     ).toBe(true);
+  });
+  it("isolates incomplete/stale seasons and rechecks publication on the next read", async () => {
+    await seed("s8");
+    await backfillArchiveRelations("s7", true);
+    await backfillArchiveRelations("s8", true);
+    vi.stubEnv("OCLR_ARCHIVE_READ_MODEL", "jsonb");
+    const expected = await readTournaments(true);
+    vi.stubEnv("OCLR_ARCHIVE_READ_MODEL", "");
+    const [original] = await db()
+      .select()
+      .from(archiveRelationDocuments)
+      .where(
+        and(
+          eq(archiveRelationDocuments.editionSlug, "s7"),
+          eq(archiveRelationDocuments.documentKey, "archive"),
+        ),
+      );
+    const [incomplete] = await db()
+      .insert(archiveRelationDocuments)
+      .values({
+        editionSlug: "s7",
+        documentKey: "archive",
+        kind: "archive",
+        contentHash: original.contentHash,
+        codecVersion: original.codecVersion,
+      })
+      .returning();
+    await db()
+      .update(archiveRelationHeads)
+      .set({ documentId: incomplete.id })
+      .where(
+        and(
+          eq(archiveRelationHeads.editionSlug, "s7"),
+          eq(archiveRelationHeads.documentKey, "archive"),
+        ),
+      );
+    const mixed = await observe(() => readTournaments(true));
+    expect(mixed.value).toEqual(expected);
+    expect(mixed.statements.length).toBeLessThanOrEqual(6);
+    const [hidden] = await db()
+      .select()
+      .from(editionState)
+      .where(eq(editionState.slug, "s7"));
+    await db()
+      .update(editionState)
+      .set({ configuration: { ...hidden.configuration!, published: false } })
+      .where(eq(editionState.slug, "s7"));
+    expect((await readTournaments(true)).map((r) => r.edition.slug)).toEqual([
+      "s8",
+    ]);
+    expect((await readTournaments()).map((r) => r.edition.slug).sort()).toEqual(
+      ["s7", "s8"],
+    );
+    const [changed] = await db()
+      .select()
+      .from(editionState)
+      .where(eq(editionState.slug, "s8"));
+    await db()
+      .update(editionState)
+      .set({
+        configuration: {
+          ...changed.configuration!,
+          archive: {
+            ...changed.configuration!.archive!,
+            teams: changed.configuration!.archive!.teams.map((team, i) =>
+              i === 0 ? { ...team, name: "Synthetic changed source" } : team,
+            ),
+          },
+        },
+      })
+      .where(eq(editionState.slug, "s8"));
+    expect(
+      (await readTournaments(true))[0].edition.archive!.teams[0].name,
+    ).toBe("Synthetic changed source");
   });
   it("is idempotent under concurrency and updates only changed documents while retaining prior versions", async () => {
     const results = await Promise.all([

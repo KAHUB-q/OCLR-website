@@ -109,10 +109,13 @@ export function RefereeIrc({
     pane?.scrollTo({ top: pane.scrollHeight, behavior: "auto" });
   }, [relay?.commands]);
   const callbacks = useRef({ onWorkspace, onConfirmed, onRoomChange });
+  const appliedMutation = useRef(0);
   useEffect(() => {
     callbacks.current = { onWorkspace, onConfirmed, onRoomChange };
   }, [onWorkspace, onConfirmed, onRoomChange]);
   function applyView(view: RelayView) {
+    // An earlier poll must not replace a successful command or disconnect response.
+    appliedMutation.current++;
     setRelay(view);
     callbacks.current.onRoomChange?.(
       view.connection &&
@@ -131,6 +134,7 @@ export function RefereeIrc({
     const controller = new AbortController();
     let timer: ReturnType<typeof setTimeout>;
     async function poll() {
+      const mutationAtStart = appliedMutation.current;
       try {
         const response = await fetch(endpoint, {
           cache: "no-store",
@@ -138,7 +142,11 @@ export function RefereeIrc({
         });
         if (!response.ok) throw Error();
         const view = (await response.json()) as RelayView;
-        if (controller.signal.aborted) return;
+        if (
+          controller.signal.aborted ||
+          mutationAtStart !== appliedMutation.current
+        )
+          return;
         setRelay(view);
         callbacks.current.onRoomChange?.(
           view.connection &&
@@ -155,7 +163,10 @@ export function RefereeIrc({
         );
         setError((value) => (value === "load" ? null : value));
       } catch {
-        if (!controller.signal.aborted) {
+        if (
+          !controller.signal.aborted &&
+          mutationAtStart === appliedMutation.current
+        ) {
           setRelay(null);
           callbacks.current.onRoomChange?.(null);
           setError((value) => value ?? "load");

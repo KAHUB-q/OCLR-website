@@ -171,7 +171,8 @@ export function ArchiveStaffResolver({
             url={`/api/admin/tournaments/${archive.editionSlug}`}
             disabled={!valid}
             canConfirm={valid}
-            onError={() => {
+            onError={(message) => {
+              setError(tr(message));
               setCandidate(null);
               setConfirmed(false);
             }}

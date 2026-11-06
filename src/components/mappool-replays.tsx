@@ -47,6 +47,7 @@ export function MappoolReplays({
   const pending = requestPending || refreshing;
   const uploading = requestPending && operation === "upload";
   const [error, setError] = useState(""),
+    [listError, setListError] = useState(""),
     [status, setStatus] = useState("");
   const [deleting, setDeleting] = useState<ReplayItem | null>(null);
   const input = useRef<HTMLInputElement>(null),
@@ -72,7 +73,7 @@ export function MappoolReplays({
     const controller = new AbortController();
     listRequest.current = controller;
     setLoading(true);
-    setError("");
+    setListError("");
     try {
       const response = await fetch(url, {
         cache: "no-store",
@@ -87,7 +88,7 @@ export function MappoolReplays({
     } catch (err) {
       if (listRequest.current !== controller || controller.signal.aborted)
         return;
-      setError(
+      setListError(
         err instanceof Error
           ? err.message
           : tr("Could not load replays. Retry the list."),
@@ -182,6 +183,7 @@ export function MappoolReplays({
     setOperation("delete");
     setPending(true);
     setError("");
+    setStatus("");
     try {
       const response = await fetch(`${url}/${deleting.id}`, {
         method: "DELETE",
@@ -414,6 +416,11 @@ export function MappoolReplays({
             </form>
           )}
           {status && <p role="status">{tr(status)}</p>}
+          {listError && (
+            <p role="alert" className="error-text">
+              {tr(listError)}
+            </p>
+          )}
           {error && !deleting && (
             <p id={`${id}-error`} role="alert" className="error-text">
               {tr(error)}

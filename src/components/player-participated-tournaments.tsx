@@ -68,6 +68,7 @@ export function PlayerParticipatedTournaments({
         >
           <div className={styles.allContents}>
             <Link
+              prefetch={false}
               className={`button ${styles.showAll}`}
               href={`/players/${osuId}`}
               onClick={(event) => choose(event, null)}
@@ -86,6 +87,7 @@ export function PlayerParticipatedTournaments({
           return (
             <li key={edition.editionSlug}>
               <Link
+                prefetch={false}
                 className={`${styles.card} ${current ? styles.selected : ""}`}
                 href={`/players/${osuId}?edition=${edition.editionSlug}`}
                 aria-current={current ? "page" : undefined}

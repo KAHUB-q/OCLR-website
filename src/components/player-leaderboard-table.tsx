@@ -194,7 +194,9 @@ export function PlayerLeaderboardTable({
               <tr key={row.osuId}>
                 <td>{rank}</td>
                 <td>
-                  <Link href={`/players/${row.osuId}`}>{row.username}</Link>
+                  <Link prefetch={false} href={`/players/${row.osuId}`}>
+                    {row.username}
+                  </Link>
                 </td>
                 <td>
                   {row.pp === null

@@ -2357,3 +2357,77 @@ export const archiveRelationHeads = pgTable(
     }),
   ],
 );
+
+// Immutable background-generated public rankings. Raw archives/MP JSONB remain authoritative.
+export const playerLeaderboardVersions = pgTable(
+  "player_leaderboard_versions",
+  {
+    id: uuid("id").primaryKey().defaultRandom(),
+    sourceHash: text("source_hash").notNull(),
+    projectorVersion: integer("projector_version").notNull(),
+    calculatedAt: timestamp("calculated_at", { withTimezone: true })
+      .notNull()
+      .defaultNow(),
+    editions: integer("editions").notNull(),
+    unavailableEditions: integer("unavailable_editions").notNull(),
+    maps: integer("maps").notNull(),
+    skippedMaps: integer("skipped_maps").notNull(),
+    players: integer("players").notNull(),
+  },
+  (t) => [
+    index("player_leaderboard_source_idx").on(
+      t.sourceHash,
+      t.projectorVersion,
+      t.calculatedAt,
+    ),
+    check(
+      "player_leaderboard_source_hash",
+      sql`${t.sourceHash} ~ '^[a-f0-9]{64}$'`,
+    ),
+    check(
+      "player_leaderboard_counts",
+      sql`${t.editions} >= 0 AND ${t.unavailableEditions} >= 0 AND ${t.maps} >= 0 AND ${t.skippedMaps} >= 0 AND ${t.players} >= 0`,
+    ),
+  ],
+);
+export const playerLeaderboardRows = pgTable(
+  "player_leaderboard_rows",
+  {
+    generationId: uuid("generation_id")
+      .notNull()
+      .references(() => playerLeaderboardVersions.id),
+    position: integer("position").notNull(),
+    osuId: bigint("osu_id", { mode: "number" }).notNull(),
+    username: text("username").notNull(),
+    team: text("team"),
+    mra: doublePrecision("mra").notNull(),
+    rws: doublePrecision("rws"),
+    classCategory:
+      text("class_category").$type<import("@/lib/player-class").BaseClass>(),
+    classCode:
+      text("class_code").$type<import("@/lib/player-class").PlayerClassCode>(),
+    wins: integer("wins").notNull(),
+    losses: integer("losses").notNull(),
+    draws: integer("draws").notNull(),
+    appearances: integer("appearances").notNull(),
+    winRate: doublePrecision("win_rate"),
+    participation: doublePrecision("participation"),
+    nm: doublePrecision("nm").notNull(),
+    mod: doublePrecision("mod").notNull(),
+    hd: doublePrecision("hd").notNull(),
+    hr: doublePrecision("hr").notNull(),
+    dt: doublePrecision("dt").notNull(),
+  },
+  (t) => [
+    primaryKey({ columns: [t.generationId, t.osuId] }),
+    unique("player_leaderboard_order_key").on(t.generationId, t.position),
+    check(
+      "player_leaderboard_row_identity",
+      sql`${t.osuId} > 0 AND ${t.osuId} <= 9007199254740991 AND ${t.position} >= 0`,
+    ),
+    check(
+      "player_leaderboard_row_class",
+      sql`(${t.classCategory} IS NULL) = (${t.classCode} IS NULL)`,
+    ),
+  ],
+);

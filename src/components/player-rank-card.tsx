@@ -286,6 +286,7 @@ export function PlayerRankCard({
       <span className={styles.scrim} aria-hidden="true" />
       <span className={styles.typeBand} aria-hidden="true" />
       <Link
+        prefetch={false}
         className={styles.avatarFrame}
         href={`/players/${player.osuId}`}
         aria-label={player.username}
@@ -315,6 +316,7 @@ export function PlayerRankCard({
               }
             >
               <Link
+                prefetch={false}
                 ref={nameTextRef}
                 className={styles.name}
                 href={`/players/${player.osuId}`}

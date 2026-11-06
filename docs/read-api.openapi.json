@@ -2,7 +2,7 @@
   "openapi": "3.1.0",
   "info": {
     "title": "OCLR Read API",
-    "version": "1.23.0",
+    "version": "1.24.0",
     "description": "Versioned saved reads (#269–#272). Public projections remain public-only even with a token. Explicit invalid Authorization never falls back to anonymous/cookies. Reads never fetch providers or mutate business data. Later collection pages require version and restart on 409."
   },
   "servers": [{ "url": "/" }],
@@ -47,7 +47,7 @@
                 "schema": { "type": "string", "format": "uuid" }
               },
               "X-OCLR-Read-Contract": {
-                "schema": { "type": "string", "const": "1.23.0" }
+                "schema": { "type": "string", "const": "1.24.0" }
               }
             },
             "content": {
@@ -230,7 +230,7 @@
                 "schema": { "type": "string", "format": "uuid" }
               },
               "X-OCLR-Read-Contract": {
-                "schema": { "type": "string", "const": "1.23.0" }
+                "schema": { "type": "string", "const": "1.24.0" }
               }
             },
             "content": {
@@ -407,7 +407,7 @@
                 "schema": { "type": "string", "format": "uuid" }
               },
               "X-OCLR-Read-Contract": {
-                "schema": { "type": "string", "const": "1.23.0" }
+                "schema": { "type": "string", "const": "1.24.0" }
               }
             },
             "content": {
@@ -574,7 +574,7 @@
                 "schema": { "type": "string", "format": "uuid" }
               },
               "X-OCLR-Read-Contract": {
-                "schema": { "type": "string", "const": "1.23.0" }
+                "schema": { "type": "string", "const": "1.24.0" }
               }
             },
             "content": {
@@ -737,7 +737,7 @@
                 "schema": { "type": "string", "format": "uuid" }
               },
               "X-OCLR-Read-Contract": {
-                "schema": { "type": "string", "const": "1.23.0" }
+                "schema": { "type": "string", "const": "1.24.0" }
               },
               "Content-Disposition": {
                 "description": "Replay attachment filename; CORS-exposed",
@@ -912,7 +912,7 @@
                 "schema": { "type": "string", "format": "uuid" }
               },
               "X-OCLR-Read-Contract": {
-                "schema": { "type": "string", "const": "1.23.0" }
+                "schema": { "type": "string", "const": "1.24.0" }
               },
               "Content-Disposition": {
                 "description": "Replay attachment filename; CORS-exposed",
@@ -1080,7 +1080,7 @@
                 "schema": { "type": "string", "format": "uuid" }
               },
               "X-OCLR-Read-Contract": {
-                "schema": { "type": "string", "const": "1.23.0" }
+                "schema": { "type": "string", "const": "1.24.0" }
               }
             },
             "content": {
@@ -1240,7 +1240,7 @@
                 "schema": { "type": "string", "format": "uuid" }
               },
               "X-OCLR-Read-Contract": {
-                "schema": { "type": "string", "const": "1.23.0" }
+                "schema": { "type": "string", "const": "1.24.0" }
               }
             },
             "content": {
@@ -1413,7 +1413,7 @@
                 "schema": { "type": "string", "format": "uuid" }
               },
               "X-OCLR-Read-Contract": {
-                "schema": { "type": "string", "const": "1.23.0" }
+                "schema": { "type": "string", "const": "1.24.0" }
               }
             },
             "content": {
@@ -1594,7 +1594,7 @@
                 "schema": { "type": "string", "format": "uuid" }
               },
               "X-OCLR-Read-Contract": {
-                "schema": { "type": "string", "const": "1.23.0" }
+                "schema": { "type": "string", "const": "1.24.0" }
               }
             },
             "content": {
@@ -1775,7 +1775,7 @@
                 "schema": { "type": "string", "format": "uuid" }
               },
               "X-OCLR-Read-Contract": {
-                "schema": { "type": "string", "const": "1.23.0" }
+                "schema": { "type": "string", "const": "1.24.0" }
               }
             },
             "content": {
@@ -1946,7 +1946,7 @@
                 "schema": { "type": "string", "format": "uuid" }
               },
               "X-OCLR-Read-Contract": {
-                "schema": { "type": "string", "const": "1.23.0" }
+                "schema": { "type": "string", "const": "1.24.0" }
               }
             },
             "content": {
@@ -2117,7 +2117,7 @@
                 "schema": { "type": "string", "format": "uuid" }
               },
               "X-OCLR-Read-Contract": {
-                "schema": { "type": "string", "const": "1.23.0" }
+                "schema": { "type": "string", "const": "1.24.0" }
               }
             },
             "content": {
@@ -2288,7 +2288,7 @@
                 "schema": { "type": "string", "format": "uuid" }
               },
               "X-OCLR-Read-Contract": {
-                "schema": { "type": "string", "const": "1.23.0" }
+                "schema": { "type": "string", "const": "1.24.0" }
               }
             },
             "content": {
@@ -2461,7 +2461,7 @@
                 "schema": { "type": "string", "format": "uuid" }
               },
               "X-OCLR-Read-Contract": {
-                "schema": { "type": "string", "const": "1.23.0" }
+                "schema": { "type": "string", "const": "1.24.0" }
               }
             },
             "content": {
@@ -2634,7 +2634,7 @@
                 "schema": { "type": "string", "format": "uuid" }
               },
               "X-OCLR-Read-Contract": {
-                "schema": { "type": "string", "const": "1.23.0" }
+                "schema": { "type": "string", "const": "1.24.0" }
               }
             },
             "content": {
@@ -2818,7 +2818,7 @@
                 "schema": { "type": "string", "format": "uuid" }
               },
               "X-OCLR-Read-Contract": {
-                "schema": { "type": "string", "const": "1.23.0" }
+                "schema": { "type": "string", "const": "1.24.0" }
               }
             },
             "content": {
@@ -3010,7 +3010,7 @@
                 "schema": { "type": "string", "format": "uuid" }
               },
               "X-OCLR-Read-Contract": {
-                "schema": { "type": "string", "const": "1.23.0" }
+                "schema": { "type": "string", "const": "1.24.0" }
               }
             },
             "content": {
@@ -3193,7 +3193,7 @@
                 "schema": { "type": "string", "format": "uuid" }
               },
               "X-OCLR-Read-Contract": {
-                "schema": { "type": "string", "const": "1.23.0" }
+                "schema": { "type": "string", "const": "1.24.0" }
               }
             },
             "content": {
@@ -3378,7 +3378,7 @@
                 "schema": { "type": "string", "format": "uuid" }
               },
               "X-OCLR-Read-Contract": {
-                "schema": { "type": "string", "const": "1.23.0" }
+                "schema": { "type": "string", "const": "1.24.0" }
               }
             },
             "content": {
@@ -3557,7 +3557,7 @@
                 "schema": { "type": "string", "format": "uuid" }
               },
               "X-OCLR-Read-Contract": {
-                "schema": { "type": "string", "const": "1.23.0" }
+                "schema": { "type": "string", "const": "1.24.0" }
               }
             },
             "content": {
@@ -3730,7 +3730,7 @@
                 "schema": { "type": "string", "format": "uuid" }
               },
               "X-OCLR-Read-Contract": {
-                "schema": { "type": "string", "const": "1.23.0" }
+                "schema": { "type": "string", "const": "1.24.0" }
               }
             },
             "content": {
@@ -3901,7 +3901,7 @@
                 "schema": { "type": "string", "format": "uuid" }
               },
               "X-OCLR-Read-Contract": {
-                "schema": { "type": "string", "const": "1.23.0" }
+                "schema": { "type": "string", "const": "1.24.0" }
               }
             },
             "content": {
@@ -4072,7 +4072,7 @@
                 "schema": { "type": "string", "format": "uuid" }
               },
               "X-OCLR-Read-Contract": {
-                "schema": { "type": "string", "const": "1.23.0" }
+                "schema": { "type": "string", "const": "1.24.0" }
               }
             },
             "content": {
@@ -4243,7 +4243,7 @@
                 "schema": { "type": "string", "format": "uuid" }
               },
               "X-OCLR-Read-Contract": {
-                "schema": { "type": "string", "const": "1.23.0" }
+                "schema": { "type": "string", "const": "1.24.0" }
               }
             },
             "content": {
@@ -4414,7 +4414,7 @@
                 "schema": { "type": "string", "format": "uuid" }
               },
               "X-OCLR-Read-Contract": {
-                "schema": { "type": "string", "const": "1.23.0" }
+                "schema": { "type": "string", "const": "1.24.0" }
               }
             },
             "content": {
@@ -4585,7 +4585,7 @@
                 "schema": { "type": "string", "format": "uuid" }
               },
               "X-OCLR-Read-Contract": {
-                "schema": { "type": "string", "const": "1.23.0" }
+                "schema": { "type": "string", "const": "1.24.0" }
               }
             },
             "content": {
@@ -4769,7 +4769,7 @@
                 "schema": { "type": "string", "format": "uuid" }
               },
               "X-OCLR-Read-Contract": {
-                "schema": { "type": "string", "const": "1.23.0" }
+                "schema": { "type": "string", "const": "1.24.0" }
               }
             },
             "content": {
@@ -5007,7 +5007,7 @@
                 "schema": { "type": "string", "format": "uuid" }
               },
               "X-OCLR-Read-Contract": {
-                "schema": { "type": "string", "const": "1.23.0" }
+                "schema": { "type": "string", "const": "1.24.0" }
               }
             },
             "content": {
@@ -5238,7 +5238,7 @@
                 "schema": { "type": "string", "format": "uuid" }
               },
               "X-OCLR-Read-Contract": {
-                "schema": { "type": "string", "const": "1.23.0" }
+                "schema": { "type": "string", "const": "1.24.0" }
               }
             },
             "content": {
@@ -5423,7 +5423,7 @@
                 "schema": { "type": "string", "format": "uuid" }
               },
               "X-OCLR-Read-Contract": {
-                "schema": { "type": "string", "const": "1.23.0" }
+                "schema": { "type": "string", "const": "1.24.0" }
               }
             },
             "content": {
@@ -5606,7 +5606,7 @@
                 "schema": { "type": "string", "format": "uuid" }
               },
               "X-OCLR-Read-Contract": {
-                "schema": { "type": "string", "const": "1.23.0" }
+                "schema": { "type": "string", "const": "1.24.0" }
               }
             },
             "content": {
@@ -5772,7 +5772,7 @@
                 "schema": { "type": "string", "format": "uuid" }
               },
               "X-OCLR-Read-Contract": {
-                "schema": { "type": "string", "const": "1.23.0" }
+                "schema": { "type": "string", "const": "1.24.0" }
               }
             },
             "content": {
@@ -5921,7 +5921,7 @@
                 "schema": { "type": "string", "format": "uuid" }
               },
               "X-OCLR-Read-Contract": {
-                "schema": { "type": "string", "const": "1.23.0" }
+                "schema": { "type": "string", "const": "1.24.0" }
               }
             },
             "content": {
@@ -6070,7 +6070,7 @@
                 "schema": { "type": "string", "format": "uuid" }
               },
               "X-OCLR-Read-Contract": {
-                "schema": { "type": "string", "const": "1.23.0" }
+                "schema": { "type": "string", "const": "1.24.0" }
               }
             },
             "content": {
@@ -6268,7 +6268,7 @@
                 "schema": { "type": "string", "format": "uuid" }
               },
               "X-OCLR-Read-Contract": {
-                "schema": { "type": "string", "const": "1.23.0" }
+                "schema": { "type": "string", "const": "1.24.0" }
               }
             },
             "content": {
@@ -6471,7 +6471,7 @@
                 "schema": { "type": "string", "format": "uuid" }
               },
               "X-OCLR-Read-Contract": {
-                "schema": { "type": "string", "const": "1.23.0" }
+                "schema": { "type": "string", "const": "1.24.0" }
               }
             },
             "content": {
@@ -6728,7 +6728,7 @@
                 "schema": { "type": "string", "format": "uuid" }
               },
               "X-OCLR-Read-Contract": {
-                "schema": { "type": "string", "const": "1.23.0" }
+                "schema": { "type": "string", "const": "1.24.0" }
               }
             },
             "content": {
@@ -6976,7 +6976,7 @@
                 "schema": { "type": "string", "format": "uuid" }
               },
               "X-OCLR-Read-Contract": {
-                "schema": { "type": "string", "const": "1.23.0" }
+                "schema": { "type": "string", "const": "1.24.0" }
               }
             },
             "content": {
@@ -7125,7 +7125,7 @@
                 "schema": { "type": "string", "format": "uuid" }
               },
               "X-OCLR-Read-Contract": {
-                "schema": { "type": "string", "const": "1.23.0" }
+                "schema": { "type": "string", "const": "1.24.0" }
               }
             },
             "content": {
@@ -7276,7 +7276,7 @@
                 "schema": { "type": "string", "format": "uuid" }
               },
               "X-OCLR-Read-Contract": {
-                "schema": { "type": "string", "const": "1.23.0" }
+                "schema": { "type": "string", "const": "1.24.0" }
               }
             },
             "content": {
@@ -7436,7 +7436,7 @@
                 "schema": { "type": "string", "format": "uuid" }
               },
               "X-OCLR-Read-Contract": {
-                "schema": { "type": "string", "const": "1.23.0" }
+                "schema": { "type": "string", "const": "1.24.0" }
               }
             },
             "content": {
@@ -7607,7 +7607,7 @@
                 "schema": { "type": "string", "format": "uuid" }
               },
               "X-OCLR-Read-Contract": {
-                "schema": { "type": "string", "const": "1.23.0" }
+                "schema": { "type": "string", "const": "1.24.0" }
               }
             },
             "content": {
@@ -7780,7 +7780,7 @@
                 "schema": { "type": "string", "format": "uuid" }
               },
               "X-OCLR-Read-Contract": {
-                "schema": { "type": "string", "const": "1.23.0" }
+                "schema": { "type": "string", "const": "1.24.0" }
               }
             },
             "content": {
@@ -7951,7 +7951,7 @@
                 "schema": { "type": "string", "format": "uuid" }
               },
               "X-OCLR-Read-Contract": {
-                "schema": { "type": "string", "const": "1.23.0" }
+                "schema": { "type": "string", "const": "1.24.0" }
               }
             },
             "content": {
@@ -8122,7 +8122,7 @@
                 "schema": { "type": "string", "format": "uuid" }
               },
               "X-OCLR-Read-Contract": {
-                "schema": { "type": "string", "const": "1.23.0" }
+                "schema": { "type": "string", "const": "1.24.0" }
               }
             },
             "content": {
@@ -8295,7 +8295,7 @@
                 "schema": { "type": "string", "format": "uuid" }
               },
               "X-OCLR-Read-Contract": {
-                "schema": { "type": "string", "const": "1.23.0" }
+                "schema": { "type": "string", "const": "1.24.0" }
               }
             },
             "content": {
@@ -8466,7 +8466,7 @@
                 "schema": { "type": "string", "format": "uuid" }
               },
               "X-OCLR-Read-Contract": {
-                "schema": { "type": "string", "const": "1.23.0" }
+                "schema": { "type": "string", "const": "1.24.0" }
               }
             },
             "content": {
@@ -8639,7 +8639,7 @@
                 "schema": { "type": "string", "format": "uuid" }
               },
               "X-OCLR-Read-Contract": {
-                "schema": { "type": "string", "const": "1.23.0" }
+                "schema": { "type": "string", "const": "1.24.0" }
               }
             },
             "content": {
@@ -8812,7 +8812,7 @@
                 "schema": { "type": "string", "format": "uuid" }
               },
               "X-OCLR-Read-Contract": {
-                "schema": { "type": "string", "const": "1.23.0" }
+                "schema": { "type": "string", "const": "1.24.0" }
               }
             },
             "content": {
@@ -8983,7 +8983,7 @@
                 "schema": { "type": "string", "format": "uuid" }
               },
               "X-OCLR-Read-Contract": {
-                "schema": { "type": "string", "const": "1.23.0" }
+                "schema": { "type": "string", "const": "1.24.0" }
               }
             },
             "content": {
@@ -9160,7 +9160,7 @@
                 "schema": { "type": "string", "format": "uuid" }
               },
               "X-OCLR-Read-Contract": {
-                "schema": { "type": "string", "const": "1.23.0" }
+                "schema": { "type": "string", "const": "1.24.0" }
               }
             },
             "content": {
@@ -9349,7 +9349,7 @@
                 "schema": { "type": "string", "format": "uuid" }
               },
               "X-OCLR-Read-Contract": {
-                "schema": { "type": "string", "const": "1.23.0" }
+                "schema": { "type": "string", "const": "1.24.0" }
               }
             },
             "content": {
@@ -9532,7 +9532,7 @@
                 "schema": { "type": "string", "format": "uuid" }
               },
               "X-OCLR-Read-Contract": {
-                "schema": { "type": "string", "const": "1.23.0" }
+                "schema": { "type": "string", "const": "1.24.0" }
               }
             },
             "content": {
@@ -9694,7 +9694,7 @@
                 "schema": { "type": "string", "format": "uuid" }
               },
               "X-OCLR-Read-Contract": {
-                "schema": { "type": "string", "const": "1.23.0" }
+                "schema": { "type": "string", "const": "1.24.0" }
               }
             },
             "content": {
@@ -9845,7 +9845,7 @@
                 "schema": { "type": "string", "format": "uuid" }
               },
               "X-OCLR-Read-Contract": {
-                "schema": { "type": "string", "const": "1.23.0" }
+                "schema": { "type": "string", "const": "1.24.0" }
               }
             },
             "content": {
@@ -10013,7 +10013,7 @@
                 "schema": { "type": "string", "format": "uuid" }
               },
               "X-OCLR-Read-Contract": {
-                "schema": { "type": "string", "const": "1.23.0" }
+                "schema": { "type": "string", "const": "1.24.0" }
               }
             },
             "content": {
@@ -10198,7 +10198,7 @@
                 "schema": { "type": "string", "format": "uuid" }
               },
               "X-OCLR-Read-Contract": {
-                "schema": { "type": "string", "const": "1.23.0" }
+                "schema": { "type": "string", "const": "1.24.0" }
               }
             },
             "content": {
@@ -10381,7 +10381,7 @@
                 "schema": { "type": "string", "format": "uuid" }
               },
               "X-OCLR-Read-Contract": {
-                "schema": { "type": "string", "const": "1.23.0" }
+                "schema": { "type": "string", "const": "1.24.0" }
               }
             },
             "content": {
@@ -10570,7 +10570,7 @@
                 "schema": { "type": "string", "format": "uuid" }
               },
               "X-OCLR-Read-Contract": {
-                "schema": { "type": "string", "const": "1.23.0" }
+                "schema": { "type": "string", "const": "1.24.0" }
               }
             },
             "content": {
@@ -10753,7 +10753,7 @@
                 "schema": { "type": "string", "format": "uuid" }
               },
               "X-OCLR-Read-Contract": {
-                "schema": { "type": "string", "const": "1.23.0" }
+                "schema": { "type": "string", "const": "1.24.0" }
               }
             },
             "content": {
@@ -10932,7 +10932,7 @@
                 "schema": { "type": "string", "format": "uuid" }
               },
               "X-OCLR-Read-Contract": {
-                "schema": { "type": "string", "const": "1.23.0" }
+                "schema": { "type": "string", "const": "1.24.0" }
               }
             },
             "content": {
@@ -11117,7 +11117,7 @@
                 "schema": { "type": "string", "format": "uuid" }
               },
               "X-OCLR-Read-Contract": {
-                "schema": { "type": "string", "const": "1.23.0" }
+                "schema": { "type": "string", "const": "1.24.0" }
               }
             },
             "content": {
@@ -11260,6 +11260,320 @@
         }
       }
     },
+    "/api/v1/rankings/players": {
+      "get": {
+        "operationId": "playerLeaderboard",
+        "description": "Saved-only domain projection for the existing site. Subject-bound resources use the actual token identity; no initialization, provider request or mutation.",
+        "x-oclr-issues": [269, 271, 272, 186],
+        "x-oclr-scopes": ["tournaments:read"],
+        "x-oclr-query-model": "playerLeaderboard",
+        "x-oclr-coverage": "docs/remote-coverage.json",
+        "x-oclr-read-only": true,
+        "x-response-size-limit": 2097152,
+        "security": [{}, { "DeveloperBearer": [] }],
+        "parameters": [],
+        "responses": {
+          "200": {
+            "description": "Saved read projection; no provider work or business writes",
+            "headers": {
+              "Cache-Control": {
+                "schema": { "type": "string", "const": "no-store" }
+              },
+              "X-Request-Id": {
+                "schema": { "type": "string", "format": "uuid" }
+              },
+              "X-OCLR-Read-Contract": {
+                "schema": { "type": "string", "const": "1.24.0" }
+              }
+            },
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "required": ["data", "meta"],
+                  "additionalProperties": false,
+                  "properties": {
+                    "data": {
+                      "$ref": "#/components/schemas/playerLeaderboard"
+                    },
+                    "meta": { "$ref": "#/components/schemas/ReadMeta" }
+                  }
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Machine-readable error; no-store and matching CORS headers for allowed origins",
+            "content": {
+              "application/json": {
+                "schema": { "$ref": "#/components/schemas/ReadError" }
+              }
+            }
+          },
+          "401": {
+            "description": "Machine-readable error; no-store and matching CORS headers for allowed origins",
+            "content": {
+              "application/json": {
+                "schema": { "$ref": "#/components/schemas/ReadError" }
+              }
+            }
+          },
+          "403": {
+            "description": "Machine-readable error; no-store and matching CORS headers for allowed origins",
+            "content": {
+              "application/json": {
+                "schema": { "$ref": "#/components/schemas/ReadError" }
+              }
+            }
+          },
+          "404": {
+            "description": "Machine-readable error; no-store and matching CORS headers for allowed origins",
+            "content": {
+              "application/json": {
+                "schema": { "$ref": "#/components/schemas/ReadError" }
+              }
+            }
+          },
+          "409": {
+            "description": "Machine-readable error; no-store and matching CORS headers for allowed origins",
+            "content": {
+              "application/json": {
+                "schema": { "$ref": "#/components/schemas/ReadError" }
+              }
+            }
+          },
+          "413": {
+            "description": "Machine-readable error; no-store and matching CORS headers for allowed origins",
+            "content": {
+              "application/json": {
+                "schema": { "$ref": "#/components/schemas/ReadError" }
+              }
+            }
+          },
+          "429": {
+            "description": "Machine-readable error; no-store and matching CORS headers for allowed origins",
+            "headers": {
+              "Retry-After": {
+                "description": "Wait this many seconds before a new request; no automatic replay",
+                "schema": { "type": "integer", "minimum": 1 }
+              }
+            },
+            "content": {
+              "application/json": {
+                "schema": { "$ref": "#/components/schemas/ReadError" }
+              }
+            }
+          },
+          "500": {
+            "description": "Machine-readable error; no-store and matching CORS headers for allowed origins",
+            "content": {
+              "application/json": {
+                "schema": { "$ref": "#/components/schemas/ReadError" }
+              }
+            }
+          },
+          "503": {
+            "description": "Machine-readable error; no-store and matching CORS headers for allowed origins",
+            "content": {
+              "application/json": {
+                "schema": { "$ref": "#/components/schemas/ReadError" }
+              }
+            }
+          }
+        }
+      },
+      "head": {
+        "operationId": "playerLeaderboardHead",
+        "description": "Identical authorization, status and headers; no response body.",
+        "x-oclr-issues": [269, 271, 272, 186],
+        "security": [{}, { "DeveloperBearer": [] }],
+        "parameters": [],
+        "responses": {
+          "200": { "description": "Identical GET status and headers; no body" },
+          "400": { "description": "Identical GET status and headers; no body" },
+          "401": { "description": "Identical GET status and headers; no body" },
+          "403": { "description": "Identical GET status and headers; no body" },
+          "404": { "description": "Identical GET status and headers; no body" },
+          "409": { "description": "Identical GET status and headers; no body" },
+          "413": { "description": "Identical GET status and headers; no body" },
+          "429": { "description": "Identical GET status and headers; no body" },
+          "500": { "description": "Identical GET status and headers; no body" },
+          "503": { "description": "Identical GET status and headers; no body" }
+        }
+      },
+      "options": {
+        "operationId": "playerLeaderboardPreflight",
+        "x-oclr-issues": [269, 271, 272, 186],
+        "security": [],
+        "responses": {
+          "204": { "description": "Read-only preflight, no private data" },
+          "403": { "description": "Origin, method or headers denied" }
+        }
+      }
+    },
+    "/api/v1/players/{osuId}/mra": {
+      "get": {
+        "operationId": "publicPlayerMra",
+        "description": "Saved-only domain projection for the existing site. Subject-bound resources use the actual token identity; no initialization, provider request or mutation.",
+        "x-oclr-issues": [269, 271, 272, 186],
+        "x-oclr-scopes": ["tournaments:read"],
+        "x-oclr-query-model": "publicPlayerMra",
+        "x-oclr-coverage": "docs/remote-coverage.json",
+        "x-oclr-read-only": true,
+        "x-response-size-limit": 2097152,
+        "security": [{}, { "DeveloperBearer": [] }],
+        "parameters": [
+          {
+            "name": "osuId",
+            "in": "path",
+            "required": true,
+            "schema": { "type": "string", "pattern": "^[1-9][0-9]*$" }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Saved read projection; no provider work or business writes",
+            "headers": {
+              "Cache-Control": {
+                "schema": { "type": "string", "const": "no-store" }
+              },
+              "X-Request-Id": {
+                "schema": { "type": "string", "format": "uuid" }
+              },
+              "X-OCLR-Read-Contract": {
+                "schema": { "type": "string", "const": "1.24.0" }
+              }
+            },
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "required": ["data", "meta"],
+                  "additionalProperties": false,
+                  "properties": {
+                    "data": { "$ref": "#/components/schemas/publicPlayerMra" },
+                    "meta": { "$ref": "#/components/schemas/ReadMeta" }
+                  }
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Machine-readable error; no-store and matching CORS headers for allowed origins",
+            "content": {
+              "application/json": {
+                "schema": { "$ref": "#/components/schemas/ReadError" }
+              }
+            }
+          },
+          "401": {
+            "description": "Machine-readable error; no-store and matching CORS headers for allowed origins",
+            "content": {
+              "application/json": {
+                "schema": { "$ref": "#/components/schemas/ReadError" }
+              }
+            }
+          },
+          "403": {
+            "description": "Machine-readable error; no-store and matching CORS headers for allowed origins",
+            "content": {
+              "application/json": {
+                "schema": { "$ref": "#/components/schemas/ReadError" }
+              }
+            }
+          },
+          "404": {
+            "description": "Machine-readable error; no-store and matching CORS headers for allowed origins",
+            "content": {
+              "application/json": {
+                "schema": { "$ref": "#/components/schemas/ReadError" }
+              }
+            }
+          },
+          "409": {
+            "description": "Machine-readable error; no-store and matching CORS headers for allowed origins",
+            "content": {
+              "application/json": {
+                "schema": { "$ref": "#/components/schemas/ReadError" }
+              }
+            }
+          },
+          "413": {
+            "description": "Machine-readable error; no-store and matching CORS headers for allowed origins",
+            "content": {
+              "application/json": {
+                "schema": { "$ref": "#/components/schemas/ReadError" }
+              }
+            }
+          },
+          "429": {
+            "description": "Machine-readable error; no-store and matching CORS headers for allowed origins",
+            "headers": {
+              "Retry-After": {
+                "description": "Wait this many seconds before a new request; no automatic replay",
+                "schema": { "type": "integer", "minimum": 1 }
+              }
+            },
+            "content": {
+              "application/json": {
+                "schema": { "$ref": "#/components/schemas/ReadError" }
+              }
+            }
+          },
+          "500": {
+            "description": "Machine-readable error; no-store and matching CORS headers for allowed origins",
+            "content": {
+              "application/json": {
+                "schema": { "$ref": "#/components/schemas/ReadError" }
+              }
+            }
+          },
+          "503": {
+            "description": "Machine-readable error; no-store and matching CORS headers for allowed origins",
+            "content": {
+              "application/json": {
+                "schema": { "$ref": "#/components/schemas/ReadError" }
+              }
+            }
+          }
+        }
+      },
+      "head": {
+        "operationId": "publicPlayerMraHead",
+        "description": "Identical authorization, status and headers; no response body.",
+        "x-oclr-issues": [269, 271, 272, 186],
+        "security": [{}, { "DeveloperBearer": [] }],
+        "parameters": [
+          {
+            "name": "osuId",
+            "in": "path",
+            "required": true,
+            "schema": { "type": "string", "pattern": "^[1-9][0-9]*$" }
+          }
+        ],
+        "responses": {
+          "200": { "description": "Identical GET status and headers; no body" },
+          "400": { "description": "Identical GET status and headers; no body" },
+          "401": { "description": "Identical GET status and headers; no body" },
+          "403": { "description": "Identical GET status and headers; no body" },
+          "404": { "description": "Identical GET status and headers; no body" },
+          "409": { "description": "Identical GET status and headers; no body" },
+          "413": { "description": "Identical GET status and headers; no body" },
+          "429": { "description": "Identical GET status and headers; no body" },
+          "500": { "description": "Identical GET status and headers; no body" },
+          "503": { "description": "Identical GET status and headers; no body" }
+        }
+      },
+      "options": {
+        "operationId": "publicPlayerMraPreflight",
+        "x-oclr-issues": [269, 271, 272, 186],
+        "security": [],
+        "responses": {
+          "204": { "description": "Read-only preflight, no private data" },
+          "403": { "description": "Origin, method or headers denied" }
+        }
+      }
+    },
     "/api/v1/me": {
       "get": {
         "operationId": "getApiIdentity",
@@ -11283,7 +11597,7 @@
                 "schema": { "type": "string", "format": "uuid" }
               },
               "X-OCLR-Read-Contract": {
-                "schema": { "type": "string", "const": "1.23.0" }
+                "schema": { "type": "string", "const": "1.24.0" }
               }
             },
             "content": {
@@ -11432,7 +11746,7 @@
                 "schema": { "type": "string", "format": "uuid" }
               },
               "X-OCLR-Read-Contract": {
-                "schema": { "type": "string", "const": "1.23.0" }
+                "schema": { "type": "string", "const": "1.24.0" }
               }
             },
             "content": {
@@ -11617,7 +11931,7 @@
                 "schema": { "type": "string", "format": "uuid" }
               },
               "X-OCLR-Read-Contract": {
-                "schema": { "type": "string", "const": "1.23.0" }
+                "schema": { "type": "string", "const": "1.24.0" }
               }
             },
             "content": {
@@ -11815,7 +12129,7 @@
                 "schema": { "type": "string", "format": "uuid" }
               },
               "X-OCLR-Read-Contract": {
-                "schema": { "type": "string", "const": "1.23.0" }
+                "schema": { "type": "string", "const": "1.24.0" }
               }
             },
             "content": {
@@ -12021,7 +12335,7 @@
                 "schema": { "type": "string", "format": "uuid" }
               },
               "X-OCLR-Read-Contract": {
-                "schema": { "type": "string", "const": "1.23.0" }
+                "schema": { "type": "string", "const": "1.24.0" }
               }
             },
             "content": {
@@ -12243,7 +12557,7 @@
                 "schema": { "type": "string", "format": "uuid" }
               },
               "X-OCLR-Read-Contract": {
-                "schema": { "type": "string", "const": "1.23.0" }
+                "schema": { "type": "string", "const": "1.24.0" }
               }
             },
             "content": {
@@ -12457,7 +12771,7 @@
                 "schema": { "type": "string", "format": "uuid" }
               },
               "X-OCLR-Read-Contract": {
-                "schema": { "type": "string", "const": "1.23.0" }
+                "schema": { "type": "string", "const": "1.24.0" }
               }
             },
             "content": {
@@ -12655,7 +12969,7 @@
                 "schema": { "type": "string", "format": "uuid" }
               },
               "X-OCLR-Read-Contract": {
-                "schema": { "type": "string", "const": "1.23.0" }
+                "schema": { "type": "string", "const": "1.24.0" }
               }
             },
             "content": {
@@ -12834,7 +13148,7 @@
                 "schema": { "type": "string", "format": "uuid" }
               },
               "X-OCLR-Read-Contract": {
-                "schema": { "type": "string", "const": "1.23.0" }
+                "schema": { "type": "string", "const": "1.24.0" }
               }
             },
             "content": {
@@ -13021,7 +13335,7 @@
                 "schema": { "type": "string", "format": "uuid" }
               },
               "X-OCLR-Read-Contract": {
-                "schema": { "type": "string", "const": "1.23.0" }
+                "schema": { "type": "string", "const": "1.24.0" }
               }
             },
             "content": {
@@ -26964,6 +27278,123 @@
           }
         },
         "required": ["beatmapId", "matches"],
+        "additionalProperties": false
+      },
+      "playerLeaderboard": {
+        "type": "object",
+        "properties": {
+          "players": {
+            "type": "array",
+            "items": {
+              "type": "object",
+              "properties": {
+                "osuId": { "type": "number" },
+                "username": { "type": "string" },
+                "team": { "anyOf": [{ "type": "null" }, { "type": "string" }] },
+                "pp": { "anyOf": [{ "type": "null" }, { "type": "number" }] },
+                "mra": { "type": "number" },
+                "rws": { "anyOf": [{ "type": "null" }, { "type": "number" }] },
+                "classification": {
+                  "$ref": "#/components/schemas/Read2c425a16fc28"
+                },
+                "wins": { "type": "number" },
+                "losses": { "type": "number" },
+                "draws": { "type": "number" },
+                "appearances": { "type": "number" },
+                "winRate": {
+                  "anyOf": [{ "type": "null" }, { "type": "number" }]
+                },
+                "participation": {
+                  "anyOf": [{ "type": "null" }, { "type": "number" }]
+                },
+                "nm": { "type": "number" },
+                "mod": { "type": "number" },
+                "hd": { "type": "number" },
+                "hr": { "type": "number" },
+                "dt": { "type": "number" }
+              },
+              "required": [
+                "osuId",
+                "username",
+                "team",
+                "pp",
+                "mra",
+                "rws",
+                "classification",
+                "wins",
+                "losses",
+                "draws",
+                "appearances",
+                "winRate",
+                "participation",
+                "nm",
+                "mod",
+                "hd",
+                "hr",
+                "dt"
+              ],
+              "additionalProperties": false
+            }
+          },
+          "maps": { "type": "number" },
+          "state": {
+            "anyOf": [
+              { "type": "string", "const": "pending" },
+              { "type": "string", "const": "ready" }
+            ]
+          },
+          "editions": { "type": "number" },
+          "unavailableEditions": { "type": "number" },
+          "skippedMaps": { "type": "number" },
+          "calculatedAt": {
+            "anyOf": [{ "type": "null" }, { "type": "string" }]
+          },
+          "art": {
+            "type": "object",
+            "properties": {},
+            "required": [],
+            "additionalProperties": {
+              "type": "object",
+              "properties": {
+                "avatarUrl": {
+                  "anyOf": [{ "type": "null" }, { "type": "string" }]
+                },
+                "coverUrl": {
+                  "anyOf": [{ "type": "null" }, { "type": "string" }]
+                }
+              },
+              "required": ["avatarUrl", "coverUrl"],
+              "additionalProperties": false
+            }
+          }
+        },
+        "required": [
+          "players",
+          "maps",
+          "state",
+          "editions",
+          "unavailableEditions",
+          "skippedMaps",
+          "calculatedAt",
+          "art"
+        ],
+        "additionalProperties": false
+      },
+      "publicPlayerMra": {
+        "type": "object",
+        "properties": {
+          "mra": { "anyOf": [{ "type": "null" }, { "type": "number" }] },
+          "state": {
+            "anyOf": [
+              { "type": "string", "const": "pending" },
+              { "type": "string", "const": "ready" }
+            ]
+          },
+          "calculatedAt": {
+            "anyOf": [{ "type": "null" }, { "type": "string" }]
+          }
+        },
+        "required": ["mra", "state", "calculatedAt"],
         "additionalProperties": false
       },
       "ReadMeta": {

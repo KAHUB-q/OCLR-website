@@ -1,0 +1,12 @@
+[Unit]
+Description=Check OCLR published player leaderboard every minute
+
+[Timer]
+OnCalendar=*-*-* *:*:00
+AccuracySec=1s
+RandomizedDelaySec=5s
+Persistent=true
+Unit=oclr-leaderboard.service
+
+[Install]
+WantedBy=timers.target

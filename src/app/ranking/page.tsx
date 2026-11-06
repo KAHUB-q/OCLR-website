@@ -143,19 +143,27 @@ async function LeaderboardContent() {
             "PP is the player's latest published osu! pp. Wins, losses, appearances and participation are counted per map.",
           )}
         </p>
-        <p className="muted small">
-          {tr("{value0} players · {value1} editions · {value2} maps", {
-            value0: data.players.length,
-            value1: data.editions,
-            value2: data.maps,
-          })}
-          {data.skippedMaps > 0 &&
-            ` · ${tr("{value0} maps skipped for missing maximum combo", {
-              value0: data.skippedMaps,
-            })}`}
-        </p>
+        {data.state === "ready" && (
+          <p className="muted small">
+            {tr("{value0} players · {value1} editions · {value2} maps", {
+              value0: data.players.length,
+              value1: data.editions,
+              value2: data.maps,
+            })}
+            {data.skippedMaps > 0 &&
+              ` · ${tr("{value0} maps skipped for missing maximum combo", {
+                value0: data.skippedMaps,
+              })}`}
+          </p>
+        )}
       </InfoNote>
-      {data.players.length && anchors ? (
+      {data.state === "pending" ? (
+        <EmptyState title={tr("Leaderboard calculation pending")}>
+          {tr(
+            "The leaderboard is calculated in the background. Please check again shortly.",
+          )}
+        </EmptyState>
+      ) : data.players.length && anchors ? (
         <PlayerLeaderboardCards players={cards} anchors={anchors} />
       ) : (
         <EmptyState title={tr("No player statistics yet")}>

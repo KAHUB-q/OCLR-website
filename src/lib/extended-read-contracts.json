@@ -9014,6 +9014,117 @@
       },
       "required": ["beatmapId", "matches"],
       "additionalProperties": false
+    },
+    "playerLeaderboard": {
+      "type": "object",
+      "properties": {
+        "players": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "properties": {
+              "osuId": { "type": "number" },
+              "username": { "type": "string" },
+              "team": { "anyOf": [{ "type": "null" }, { "type": "string" }] },
+              "pp": { "anyOf": [{ "type": "null" }, { "type": "number" }] },
+              "mra": { "type": "number" },
+              "rws": { "anyOf": [{ "type": "null" }, { "type": "number" }] },
+              "classification": { "$ref": "#/$defs/Read2c425a16fc28" },
+              "wins": { "type": "number" },
+              "losses": { "type": "number" },
+              "draws": { "type": "number" },
+              "appearances": { "type": "number" },
+              "winRate": {
+                "anyOf": [{ "type": "null" }, { "type": "number" }]
+              },
+              "participation": {
+                "anyOf": [{ "type": "null" }, { "type": "number" }]
+              },
+              "nm": { "type": "number" },
+              "mod": { "type": "number" },
+              "hd": { "type": "number" },
+              "hr": { "type": "number" },
+              "dt": { "type": "number" }
+            },
+            "required": [
+              "osuId",
+              "username",
+              "team",
+              "pp",
+              "mra",
+              "rws",
+              "classification",
+              "wins",
+              "losses",
+              "draws",
+              "appearances",
+              "winRate",
+              "participation",
+              "nm",
+              "mod",
+              "hd",
+              "hr",
+              "dt"
+            ],
+            "additionalProperties": false
+          }
+        },
+        "maps": { "type": "number" },
+        "state": {
+          "anyOf": [
+            { "type": "string", "const": "pending" },
+            { "type": "string", "const": "ready" }
+          ]
+        },
+        "editions": { "type": "number" },
+        "unavailableEditions": { "type": "number" },
+        "skippedMaps": { "type": "number" },
+        "calculatedAt": { "anyOf": [{ "type": "null" }, { "type": "string" }] },
+        "art": {
+          "type": "object",
+          "properties": {},
+          "required": [],
+          "additionalProperties": {
+            "type": "object",
+            "properties": {
+              "avatarUrl": {
+                "anyOf": [{ "type": "null" }, { "type": "string" }]
+              },
+              "coverUrl": {
+                "anyOf": [{ "type": "null" }, { "type": "string" }]
+              }
+            },
+            "required": ["avatarUrl", "coverUrl"],
+            "additionalProperties": false
+          }
+        }
+      },
+      "required": [
+        "players",
+        "maps",
+        "state",
+        "editions",
+        "unavailableEditions",
+        "skippedMaps",
+        "calculatedAt",
+        "art"
+      ],
+      "additionalProperties": false
+    },
+    "publicPlayerMra": {
+      "type": "object",
+      "properties": {
+        "mra": { "anyOf": [{ "type": "null" }, { "type": "number" }] },
+        "state": {
+          "anyOf": [
+            { "type": "string", "const": "pending" },
+            { "type": "string", "const": "ready" }
+          ]
+        },
+        "calculatedAt": { "anyOf": [{ "type": "null" }, { "type": "string" }] }
+      },
+      "required": ["mra", "state", "calculatedAt"],
+      "additionalProperties": false
     }
   }
 }

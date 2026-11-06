@@ -20,6 +20,7 @@ const tournamentArtwork = new Set([
 
 const bundle = await build({
   entryPoints: [
+    "tests/components/player-leaderboard.tsx",
     "tests/components/event-players.tsx",
     "tests/components/public-results.tsx",
     "tests/components/exhibition-pool-import.tsx",
@@ -227,7 +228,9 @@ createServer((request, response) => {
                     ? "workbench-compact"
                     : request.url?.startsWith("/country-flags")
                       ? "country-flags"
-                      : entry;
+                      : request.url?.startsWith("/player-leaderboard")
+                        ? "player-leaderboard"
+                        : entry;
     const fixtureName = request.url?.startsWith("/event-players")
       ? "event-players"
       : request.url?.startsWith("/appearance-navigation")

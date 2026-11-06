@@ -386,6 +386,12 @@ export function EventStatistics({
             aria-pressed={view === i}
             onClick={() => {
               setView(i);
+              if (
+                i !== 1 &&
+                slot &&
+                !scores.some((s) => eventMapKey(s) === slot)
+              )
+                setSlot("");
               setSort(
                 i === 1
                   ? "Map"

@@ -1,7 +1,7 @@
 "use client";
 import { refereeMessage } from "@/i18n/referee";
 import Link from "next/link";
-import { useCallback, useEffect, useState } from "react";
+import { useCallback, useEffect, useRef, useState } from "react";
 import { useAppTranslations } from "@/i18n/shared";
 import type { RefereeReconciliationWorkspace } from "@/lib/referee-reconciliation";
 import styles from "./referee-reconciliation.module.css";
@@ -22,28 +22,30 @@ export function RefereeReconciliation({
     body: Record<string, unknown>;
     attemptId: string;
   } | null>(null);
+  const readGeneration = useRef(0);
   const url = `/api/admin/tournaments/${slug}/matches/${fixtureId}/referee/reconciliation`;
-  const load = useCallback(async () => {
-    const response = await fetch(url, { cache: "no-store" });
-    const body = await response.json();
-    if (!response.ok) throw new Error(body.error);
-    setData(body);
-  }, [url]);
-  useEffect(() => {
-    let active = true;
-    fetch(url, { cache: "no-store" })
+  const load = useCallback(() => {
+    const generation = ++readGeneration.current;
+    return fetch(url, { cache: "no-store" })
       .then(async (response) => {
         const body = await response.json();
+        if (generation !== readGeneration.current) return;
         if (!response.ok) throw new Error(body.error);
-        if (active) setData(body);
+        setData(body);
       })
       .catch((e) => {
-        if (active) setError(e.message);
+        if (generation === readGeneration.current) {
+          setError(e instanceof Error ? e.message : String(e));
+        }
       });
-    return () => {
-      active = false;
-    };
   }, [url]);
+  useEffect(() => {
+    const reads = readGeneration;
+    void load();
+    return () => {
+      reads.current++;
+    };
+  }, [load]);
   async function save(attemptId: string) {
     if (!data || busy) return;
     const value = choices[attemptId] ?? "";
@@ -65,6 +67,8 @@ export function RefereeReconciliation({
         },
       };
     }
+    // A read started before this write must not restore its older workspace.
+    readGeneration.current++;
     setPending(request);
     setBusy(true);
     setError("");
@@ -118,7 +122,7 @@ export function RefereeReconciliation({
             disabled={busy}
             onClick={() => {
               setError("");
-              load().catch((e) => setError(e.message));
+              void load();
             }}
           >
             {tr("Refresh reconciliation")}

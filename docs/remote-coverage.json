@@ -1826,17 +1826,15 @@
       "authority": "saved-read",
       "operations": [
         "getOclrProfile",
-        "listPublicPlayers",
         "listPublicTournaments",
-        "publicArchiveStatistics",
+        "publicPlayerMra",
         "publicRoundRatings"
       ],
       "commands": "Denied in remote mode; connection management and preference cookies remain separate",
       "metadata": "Same file; shared request adapter for dynamic data",
       "services": [
+        "src/lib/player-leaderboard.ts#publicPlayerMra",
         "src/lib/public-read-models.ts / frontend-data.ts (listPublicTournaments)",
-        "src/lib/archive-statistics.ts#publicArchiveStatistics",
-        "src/lib/public-read-models.ts / frontend-data.ts (listPublicPlayers)",
         "src/lib/public-read-models.ts / frontend-data.ts (getOclrProfile)",
         "src/lib/ratings.ts#publicRoundRatings"
       ],
@@ -1883,11 +1881,13 @@
       "operations": [
         "listPublicPlayers",
         "listPublicTournaments",
+        "playerLeaderboard",
         "publicArchiveStatistics"
       ],
       "commands": "Denied in remote mode; connection management and preference cookies remain separate",
       "metadata": "Same file; shared request adapter for dynamic data",
       "services": [
+        "src/lib/player-leaderboard.ts#playerLeaderboard",
         "src/lib/public-read-models.ts / frontend-data.ts (listPublicTournaments)",
         "src/lib/archive-statistics.ts#publicArchiveStatistics",
         "src/lib/public-read-models.ts / frontend-data.ts (listPublicPlayers)"

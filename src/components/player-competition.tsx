@@ -93,6 +93,7 @@ export function PlayerCompetition({
 function SquadAvatar({ member }: { member: CompetitionRosterMember }) {
   return (
     <Link
+      prefetch={false}
       className={styles.squadAvatar}
       href={`/players/${member.osuId}`}
       title={member.username}

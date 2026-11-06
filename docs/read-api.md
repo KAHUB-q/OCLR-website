@@ -452,3 +452,10 @@ BID); existing entries return `null`, and older saved-read backends may omit thi
 replay attachments are included. The historical pool selector composes existing
 public tournament, enrollment and mappool resources; it adds no remote write
 capability.
+
+Contract 1.24.0 adds public saved-ranking reads at `/rankings/players` and
+`/players/{osuId}/mra`. Responses include `state` (`ready`/`pending`) and
+`calculatedAt`; a missing/stale snapshot never starts a calculation or writes
+from this channel. Single-player reads use the generation/UID index. See
+[background player analytics](background-player-analytics.md) for source guards,
+background refresh and the older-backend compatibility path.

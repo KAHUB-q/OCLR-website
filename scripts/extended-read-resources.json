@@ -577,5 +577,25 @@
     "public": false,
     "query": [],
     "scope": "tournaments:private:read"
+  },
+  {
+    "module": "player-leaderboard",
+    "fn": "playerLeaderboard",
+    "id": "playerLeaderboard",
+    "path": "/rankings/players",
+    "args": [],
+    "public": true,
+    "query": [],
+    "scope": "tournaments:read"
+  },
+  {
+    "module": "player-leaderboard",
+    "fn": "publicPlayerMra",
+    "id": "publicPlayerMra",
+    "path": "/players/{osuId}/mra",
+    "args": ["osuId"],
+    "public": true,
+    "query": [],
+    "scope": "tournaments:read"
   }
 ]

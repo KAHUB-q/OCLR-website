@@ -92,6 +92,7 @@ export function PlayerRatings({
                     <td>{p.rank}</td>
                     <th scope="row">
                       <Link
+                        prefetch={false}
                         className="text-link"
                         href={`/players/${p.userId}?edition=${slug}`}
                       >

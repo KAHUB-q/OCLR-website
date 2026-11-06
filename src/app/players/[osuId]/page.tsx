@@ -11,7 +11,7 @@ import {
   summarizeMapPerformance,
   type PlayerMapPerformance,
 } from "@/lib/player-map-performance";
-import { playerLeaderboard } from "@/lib/player-leaderboard";
+import { publicPlayerMra } from "@/lib/player-leaderboard";
 import {
   buildPlayerTimeline,
   type PlayerTimeline,
@@ -19,10 +19,7 @@ import {
 import { getPublicEditions } from "@/lib/content";
 import { archiveKeyVisual } from "@/lib/archive-key-visual";
 import { getAppTranslations } from "@/i18n/server";
-import {
-  frontendProfile,
-  frontendUsernameOwner,
-} from "@/lib/frontend-data";
+import { frontendProfile, frontendUsernameOwner } from "@/lib/frontend-data";
 import { remoteMode } from "@/lib/data-source";
 import { profileBws, profileBwsMany } from "@/lib/bws";
 import { publicRoundRatings } from "@/lib/ratings";
@@ -68,9 +65,7 @@ async function ProfileContent({
     }
     const owner = await frontendUsernameOwner(name);
     if (!owner) notFound();
-    redirect(
-      `/players/${owner.osuId}${edition ? `?edition=${edition}` : ""}`,
-    );
+    redirect(`/players/${owner.osuId}${edition ? `?edition=${edition}` : ""}`);
   }
   let data: Awaited<ReturnType<typeof frontendProfile>>;
   let publishedEditions: Awaited<ReturnType<typeof getPublicEditions>>;
@@ -202,7 +197,7 @@ async function ProfileContent({
       participation.length ? playerCompetitionRecord(participation) : null,
       participation.length ? playerMapPerformance(participation) : null,
       participation.length
-        ? playerLeaderboard().catch(() => null)
+        ? publicPlayerMra(Number(osuId)).catch(() => null)
         : Promise.resolve(null),
       Promise.all(
         selectableEditions.map(async (entry) => {
@@ -233,15 +228,15 @@ async function ProfileContent({
       ),
     ]);
 
-  const mra =
-    leaderboard?.players.find((row) => row.osuId === Number(osuId))?.mra ??
-    null;
+  const mra = leaderboard?.mra ?? null;
 
   // BWS review is edition-scoped, so each panel needs its own computation.
   // The remote adapter has no public badge-review resource; it keeps the
   // profile-wide value rather than issuing one full profile read per edition.
-  const bwsByEdition: Record<string, Awaited<ReturnType<typeof profileBws>>> =
-    {};
+  const bwsByEdition: Record<
+    string,
+    Awaited<ReturnType<typeof profileBws>>
+  > = {};
   if (data.snapshot) {
     if (remoteMode()) {
       for (const entry of selectableEditions)

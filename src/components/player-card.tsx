@@ -13,7 +13,7 @@ export function PlayerCard({
   roleLabel,
   roleCode,
   team,
-  prefetch,
+  prefetch = false,
 }: {
   osuId: number;
   username: string;

@@ -26,6 +26,12 @@ export async function extendedRead(
   const actor = principal?.subject;
   const filters = Object.fromEntries(query);
   switch (id) {
+    case "playerLeaderboard":
+      return (await import("./player-leaderboard")).databasePlayerLeaderboard();
+    case "publicPlayerMra":
+      return (await import("./player-leaderboard")).databasePublicPlayerMra(
+        playerId,
+      );
     case "nextStreamingRead":
       return (await import("./streaming-read")).nextStreamingRead(
         actor!,

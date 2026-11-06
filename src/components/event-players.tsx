@@ -122,6 +122,7 @@ export function EventPlayers({
                       <Link
                         className="text-link small"
                         href={p.href}
+                        prefetch={false}
                         aria-label={tr("OCLR profile")}
                       >
                         {tr("OCLR profile")} ↗

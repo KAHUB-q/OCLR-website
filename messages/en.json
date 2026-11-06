@@ -3923,6 +3923,19 @@
     "mdd9cafc5c3df": "HD force",
     "mc9a46baf3f52": "HR force",
     "mdf23577e3db6": "DT force",
-    "m2ef9d509bd5a": "Ranking"
+    "m2ef9d509bd5a": "Ranking",
+    "mf3e2b841a4bc": "Applying requires --expected-revision=N.",
+    "m0d78f8da80d3": "Saved S2 archive is required.",
+    "m516a989166f7": "S2 revision changed; preview again.",
+    "ma588520f53e6": "S2 pool correction would change selected scores; review required.",
+    "m2b8bf3583a09": "Published S2 fixture would become invalid; review required.",
+    "mc34c7919e787": "S2 pool correction would change recorded picks or bans; review required.",
+    "ma83d0f52b9ab": "Saved historical archive is required.",
+    "ma54353cb28cc": "Historical relations are stale; run the reviewed apply first.",
+    "mbf77e8579575": "Historical relational verification failed; source JSONB was preserved.",
+    "m5dfbc1c9319a": "Background calculation requires an operator database.",
+    "m3fc50e5563e9": "Historical source metadata is incomplete; run the reviewed normalization first.",
+    "mfc6773bd1458": "Leaderboard calculation pending",
+    "m18f0dd15158c": "The leaderboard is calculated in the background. Please check again shortly."
   }
 }

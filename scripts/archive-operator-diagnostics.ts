@@ -70,6 +70,8 @@ export function assertArchiveOperatorEnvironment(
 }
 
 const safeMessages = new Set([
+  "Background calculation requires an operator database.",
+  "Historical source metadata is incomplete; run the reviewed normalization first.",
   "Use [slugs...] [--dry-run | --apply [--rebuild]] [--verify].",
   "Invalid edition slug.",
   "Saved historical archive is required.",

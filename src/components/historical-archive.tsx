@@ -130,7 +130,9 @@ export async function HistoricalArchiveView({
     <Link href={href("teams", id)}>{team(id).name}</Link>
   );
   const playerLink = (p: Pick<PublicPlayer, "osuId" | "username">) => (
-    <Link href={playerHref(p.osuId)}>{p.username}</Link>
+    <Link prefetch={false} href={playerHref(p.osuId)}>
+      {p.username}
+    </Link>
   );
   const role = (
     p: Pick<
@@ -668,6 +670,7 @@ export async function HistoricalArchiveView({
         {section === "player" && (
           <>
             <Link
+              prefetch={false}
               className="context-link"
               href={`/players/${players[0].osuId}?edition=${edition.slug}`}
             >

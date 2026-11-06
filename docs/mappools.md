@@ -1,5 +1,15 @@
 # Mappool implementation and workflows
 
+## Candidate creation times (#965)
+
+Candidate cards show the original creation time on their final row below the
+intended rounds, labelled **Added at**,
+using the workbench's existing locale-aware UTC timestamp format and semantic
+`time` element. The value comes from the candidate's saved `createdAt`, distinct
+from metadata refresh or workspace snapshot times. The timestamp can wrap in
+narrow columns; the author's profile link stays on the artist row. Editable and
+read-only workspaces share the same display.
+
 ## Candidate skillset tags (#735)
 
 The private selection workbench displays each candidate in three columns at list

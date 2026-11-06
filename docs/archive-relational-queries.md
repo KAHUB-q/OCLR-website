@@ -1,4 +1,4 @@
-# Historical JSONB correction and relational reads (#899, #900, #902, #905)
+# Historical JSONB correction and relational reads (#899, #900, #902, #905, #911)
 
 JSONB remains the authoritative saved evidence. Corrected current data and old
 evidence are different versions: S2 GS never had DT5 or TB1. They must be removed
@@ -131,6 +131,50 @@ Team/game indexes support this scope. Unrelated games can be omitted without
 changing the analysis. Detailed fixture
 reports load MP sources only for the requested fixture. Remote clients continue
 to use the same saved-read resources and response fields.
+
+### High-frequency player-map aggregation (#911)
+
+Migration `0080_archive_analysis_indexes.sql` adds a typed map title to existing
+validated score facts, populated from their retained payloads. It adds two partial
+covering indexes for counted scores (`raw_score >= 2000`): generation/UID/game/team
+and generation/team/game. The existing generation/game index retrieves all
+participants in the player's games. Original JSONB, payloads, generations and
+immutable revisions are retained; no source result or publication is changed.
+The migration updates derived rows and builds indexes transactionally, so allow
+for its write locks in the normal reviewed deployment window.
+
+The profile's historical map analysis now uses SQL competition ranks, game means,
+team totals, explicit winners and distinct team-game counts. Only personal map
+rows and the team-map denominator are returned. Bench games count toward team
+participation without transferring their individual scores. Ranking/means use
+every counted participant; duplicate UIDs retain their best competition rank.
+Raw scores establish team winners unless the existing projection resolved a
+winner. Source-ordered floating-point sums, the score threshold and ties match
+the existing model. Final personal-map sorting, categories, mods and career
+summary arithmetic share the existing TypeScript implementation.
+
+This uses the same public-generation guard as other cached statistics reads in
+one read-only repeatable snapshot. Unpublished editions, changed archives,
+configuration, source digests, score policy or EZ multiplier cannot use stale
+facts. Missing generations fall back to the existing validated complete-relations
+or JSONB pipeline. Live approved results and remote read contracts are unchanged.
+
+Existing matching projector-v2 generations gain this SQL path after migration.
+Complete normalization alone does not prepare the optional validated score cache.
+On the intended operator host, with the reviewed release, approved configuration
+and a restorable backup, preview and populate it using the existing commands:
+
+```sh
+npm run db:backfill-archive-reads -- --dry-run
+npm run db:backfill-archive-reads -- --apply
+```
+
+Both discover all saved historical archives; optional slug arguments restrict the
+scope. Normal application writes still synchronize complete relations and
+invalidate stale score generations; rerun this optional backfill for updated
+stable archives. `OCLR_ARCHIVE_READ_MODEL=jsonb` retains the existing read rollback.
+No backfill occurs during public requests. See the [#911 verification record](verification/issue-911/README.md)
+for exact equivalence, migration preservation and synthetic query-plan evidence.
 
 The pure projector roundtrips the archive and each source snapshot before a
 version is saved. Object-key ordering is ignored only for JSONB content hashes;

@@ -1,5 +1,5 @@
 import { relationalArchive } from "./archive-read";
-import { syncArchiveRelations } from "./archive-relations";
+import { normalizedArchives, syncArchiveRelations } from "./archive-relations";
 import { correctS2PoolArchive } from "./archive-pool-correction-model";
 import { db } from "@/db";
 import {
@@ -117,12 +117,15 @@ export async function readTournaments(publicOnly = false) {
       ),
     )
     .orderBy(desc(editionState.configurationUpdatedAt), editionState.slug);
+  const archives = await normalizedArchives(rows, db());
   const result: NonNullable<ReturnType<typeof storedEdition>>[] = [];
   for (const row of rows) {
     const saved = storedEdition(row)!;
     if (saved.edition.archive)
       saved.edition.archive =
-        (await relationalArchive(row, db())) ?? saved.edition.archive;
+        archives.get(row.slug) ??
+        (await relationalArchive(row, db())) ??
+        saved.edition.archive;
     result.push(
       publicOnly && saved.edition.archive
         ? {

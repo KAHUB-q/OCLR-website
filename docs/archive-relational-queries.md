@@ -1,4 +1,4 @@
-# Historical JSONB correction and relational reads (#899, #900, #902, #905, #911)
+# Historical JSONB correction and relational reads (#899, #900, #902, #905, #911, #913)
 
 JSONB remains the authoritative saved evidence. Corrected current data and old
 evidence are different versions: S2 GS never had DT5 or TB1. They must be removed
@@ -184,6 +184,18 @@ read-model backfill. Each generation identifies the edition revision, full saved
 statistics manifest, projector version and score policy/EZ multiplier.
 
 ### Complete relations for every historical season (#905)
+
+The player-profile follow-up (#913) batches complete relation reads: the public
+season catalogue reads current document pointers for all visible seasons once,
+then uses one `UNION ALL`/`jsonb_agg` query to transport their typed entity rows.
+A fully normalized catalogue needs three queries regardless of the season count,
+instead of one query per entity per season. Single-archive and MP snapshot reads
+also batch their entity tables. Each document is decoded and hash-checked against
+its own current source; stale or incomplete seasons fall back independently.
+These JSON query results are transport values, not new saved JSONB or a process
+cache. Publication and source changes are rechecked on subsequent reads. The
+profile retains all its season panels and immediate switching. No additional
+migration or backfill is required for this follow-up. See the [#913 investigation](verification/issue-913/README.md).
 
 Migration `0079_complete_archive_relations.sql` adds 31 typed domain relations
 and immutable document versions with mutable current pointers. This covers every

@@ -154,10 +154,11 @@ export function PlayerLeaderboardCards({
       // MRA is the default order, so it only switches between descending and
       // ascending. It goes dark only while another column owns the sort.
       if (key === "mra") {
-        if (!current || current.key !== "mra") {
+        const effective = current ?? DEFAULT_SORT;
+        if (effective.key !== "mra") {
           return { key: "mra", dir: "desc" };
         }
-        return { key: "mra", dir: current.dir === "desc" ? "asc" : "desc" };
+        return { key: "mra", dir: effective.dir === "desc" ? "asc" : "desc" };
       }
       if (!current || current.key !== key) return { key, dir: "desc" };
       if (current.dir === "desc") return { key, dir: "asc" };

@@ -1,0 +1,69 @@
+{
+  "dataset": {
+    "scores": 40000,
+    "games": 5000,
+    "personalMaps": 10,
+    "teamMaps": 500
+  },
+  "transferred": {
+    "previous": {
+      "rows": 4000,
+      "bytes": 935471
+    },
+    "aggregate": {
+      "rows": 1,
+      "bytes": 2379
+    }
+  },
+  "plans": {
+    "previous": {
+      "executionMs": 10.866,
+      "rows": 4000,
+      "sharedHits": 5387,
+      "sharedReads": 0,
+      "indexes": [
+        {
+          "name": "archive_read_play_counted_uid_idx",
+          "rows": 10,
+          "loops": 2,
+          "heapFetches": 4
+        }
+      ]
+    },
+    "aggregate": {
+      "executionMs": 0.512,
+      "rows": 1,
+      "sharedHits": 66,
+      "sharedReads": 0,
+      "indexes": [
+        {
+          "name": "archive_read_play_counted_uid_idx",
+          "rows": 10,
+          "loops": 1,
+          "heapFetches": 2
+        },
+        {
+          "name": "archive_read_play_game_idx",
+          "rows": 8,
+          "loops": 10
+        },
+        {
+          "name": "archive_read_play_counted_uid_idx",
+          "rows": 10,
+          "loops": 1,
+          "heapFetches": 2
+        },
+        {
+          "name": "archive_read_play_counted_team_idx",
+          "rows": 2000,
+          "loops": 1,
+          "heapFetches": 15
+        }
+      ]
+    }
+  },
+  "endToEndMedianMs": {
+    "previous": 20.505416999999966,
+    "aggregate": 3.6299999999999955
+  }
+}

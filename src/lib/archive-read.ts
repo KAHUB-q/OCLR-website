@@ -524,7 +524,10 @@ async function statisticsManifestHash(reader: Reader, slug: string) {
     ? null
     : archiveContentHash(sources);
 }
-async function currentPublicStatisticsVersion(slug: string, reader: Reader) {
+export async function currentPublicStatisticsVersion(
+  slug: string,
+  reader: Reader,
+) {
   if (remoteMode() || process.env.OCLR_ARCHIVE_READ_MODEL === "jsonb")
     return undefined;
   const [state] = await reader

@@ -25,6 +25,78 @@ import bootstrap from "../../drizzle/legacy-editions.json" with { type: "json" }
 import s10Archive from "../../docs/imports/s10-archive.json" with { type: "json" };
 const base = process.env.TEST_DATABASE_URL;
 
+describe.skipIf(!base)("historical analysis index upgrade (#911)", () => {
+  it("upgrades 0079 facts without changing source JSONB, revisions or saved payloads", async () =>
+    isolated(async (pool) => {
+      const folder = mkdtempSync(join(tmpdir(), "oclr-analysis-upgrade-"));
+      try {
+        cpSync("drizzle", folder, { recursive: true });
+        const path = join(folder, "meta/_journal.json");
+        const journal = JSON.parse(readFileSync(path, "utf8"));
+        journal.entries = journal.entries.filter(
+          (entry: { idx: number }) => entry.idx < 80,
+        );
+        writeFileSync(path, JSON.stringify(journal));
+        await migrate(drizzle(pool), { migrationsFolder: folder });
+        const f = archiveQueryFixture(),
+          row = f.rows[0];
+        await pool.query(
+          "INSERT INTO edition_state(slug,configuration) VALUES ('s7',$1)",
+          [{ ...edition, slug: undefined, archive: f.archive }],
+        );
+        await pool.query(
+          "INSERT INTO historical_statistics(edition_slug,mp_id,fixture_id,version,draft,published,published_at) VALUES ('s7',$1,$2,$3,$4,$5,$6)",
+          [
+            row.mpId,
+            row.fixtureId,
+            row.version,
+            row.draft,
+            row.published,
+            row.publishedAt,
+          ],
+        );
+        const {
+          rows: [generation],
+        } = await pool.query(
+          "INSERT INTO archive_read_versions(edition_slug,configuration_version,archive_hash,source_hash,projector_version,header) VALUES ('s7',1,$1,$1,2,'{}') RETURNING id",
+          ["a".repeat(64)],
+        );
+        const payload = { title: "Synthetic map — 原樣保留", extra: [null, 0] };
+        await pool.query(
+          "INSERT INTO archive_read_plays(generation_id,position,fixture_id,mp_id,game_id,stage,slot,score,raw_score,score_multiplier,played_at,scoring_type,mods,payload) VALUES ($1,0,'one',1,1,'final','NM1',5000,5000,1,'','score','{}',$2)",
+          [generation.id, payload],
+        );
+        const sources = (
+          await pool.query("SELECT * FROM historical_statistics")
+        ).rows;
+        const revisions = (
+          await pool.query("SELECT * FROM historical_statistics_revisions")
+        ).rows;
+        const versions = (
+          await pool.query("SELECT * FROM archive_read_versions")
+        ).rows;
+        await migrate(drizzle(pool), { migrationsFolder: "./drizzle" });
+        await migrate(drizzle(pool), { migrationsFolder: "./drizzle" });
+        expect(
+          (await pool.query("SELECT * FROM historical_statistics")).rows,
+        ).toEqual(sources);
+        expect(
+          (await pool.query("SELECT * FROM historical_statistics_revisions"))
+            .rows,
+        ).toEqual(revisions);
+        expect(
+          (await pool.query("SELECT * FROM archive_read_versions")).rows,
+        ).toEqual(versions);
+        expect(
+          (await pool.query("SELECT title,payload FROM archive_read_plays"))
+            .rows,
+        ).toEqual([{ title: payload.title, payload }]);
+      } finally {
+        rmSync(folder, { recursive: true, force: true });
+      }
+    }));
+});
+
 describe.skipIf(!base)("complete historical relations upgrade (#905)", () => {
   it("upgrades a populated 0078 database without changing JSONB, revisions or existing read generations", async () =>
     isolated(async (pool, connection) => {

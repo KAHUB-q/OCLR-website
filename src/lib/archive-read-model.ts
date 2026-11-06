@@ -384,6 +384,7 @@ export function buildArchiveReadData(
             osuId: play.osuId,
             teamId: play.teamId,
             stage: play.stage,
+            title: play.title,
             slot: play.slot,
             beatmapId: play.beatmapId,
             score: play.score,

@@ -2188,6 +2188,7 @@ export const archiveReadPlays = pgTable(
     osuId: archiveBigint("osu_id"),
     teamId: text("team_id"),
     stage: text("stage").notNull(),
+    title: text("title").notNull().default(""),
     slot: text("slot").notNull(),
     beatmapId: archiveBigint("beatmap_id"),
     score: archiveBigint("score").notNull(),
@@ -2219,6 +2220,12 @@ export const archiveReadPlays = pgTable(
       t.teamId,
     ),
     index("archive_read_play_map_idx").on(t.generationId, t.beatmapId),
+    index("archive_read_play_counted_uid_idx")
+      .on(t.generationId, t.osuId, t.gameId, t.teamId)
+      .where(sql`${t.rawScore} >= 2000`),
+    index("archive_read_play_counted_team_idx")
+      .on(t.generationId, t.teamId, t.gameId)
+      .where(sql`${t.rawScore} >= 2000`),
   ],
 );
 

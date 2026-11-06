@@ -6,6 +6,17 @@ import {
 } from "next/dist/shared/lib/app-router-context.shared-runtime";
 import { ArchiveImporter } from "../../src/components/archive-importer";
 import en from "../../messages/en.json";
+import { historicalArchive } from "../fixtures/historical-archive";
+
+const staffArchive = new URLSearchParams(location.search).has("staff")
+  ? {
+      ...historicalArchive,
+      staff: historicalArchive.staff.map((person) => ({
+        ...person,
+        osuId: null,
+      })),
+    }
+  : undefined;
 
 const router: AppRouterInstance = {
   back() {},
@@ -24,6 +35,7 @@ createRoot(document.getElementById("root")!).render(
         revision={0}
         eligible
         published={false}
+        archive={staffArchive}
       />
     </AppRouterContext.Provider>
   </NextIntlClientProvider>,

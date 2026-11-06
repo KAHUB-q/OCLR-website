@@ -58,6 +58,11 @@ export function AwardManager({ initial }: { initial: Data }) {
         throw new Error(result.error ?? "Unable to save changes.");
       setData(result);
       setWeeks(result.weeks);
+      setSelected((current) =>
+        result.weeks.some((week: AwardWeek) => week.number === current)
+          ? current
+          : (result.weeks[0]?.number ?? 1),
+      );
       setPolicy(result.policy);
       setNotice("Saved.");
     } catch (e) {

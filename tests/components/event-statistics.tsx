@@ -43,7 +43,12 @@ const coverage = {
       round: "Final",
       teams: ["Same team", "Same team"],
       teamIds: ["X", "Y"],
-      maps: [score],
+      maps: [
+        score,
+        ...(new URLSearchParams(location.search).has("unplayed")
+          ? [{ ...score, slot: "HD1", mapId: 1002, title: "Unplayed map" }]
+          : []),
+      ],
       picks: [],
       bans: [
         { team: "Same team", teamId: "X", maps: [] },

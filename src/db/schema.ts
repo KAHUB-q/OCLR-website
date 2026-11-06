@@ -2335,6 +2335,26 @@ export const archiveRelationDocuments = pgTable(
     ),
   ],
 );
+// Transaction-maintained source identity. Public reads compare small digests;
+// they do not serialize/hash the source archive during each request.
+export const historicalArchiveSources = pgTable(
+  "historical_archive_sources",
+  {
+    editionSlug: text("edition_slug")
+      .primaryKey()
+      .references(() => editionState.slug, {
+        onDelete: "cascade",
+        onUpdate: "cascade",
+      }),
+    sourceHash: text("source_hash").notNull(),
+  },
+  (t) => [
+    check(
+      "historical_archive_source_hash",
+      sql`${t.sourceHash} ~ '^[a-f0-9]{64}$'`,
+    ),
+  ],
+);
 export const archiveRelationHeads = pgTable(
   "archive_relation_heads",
   {
@@ -2344,6 +2364,7 @@ export const archiveRelationHeads = pgTable(
     documentKey: text("document_key").notNull(),
     documentId: uuid("document_id").notNull(),
     sourceHash: text("source_hash").notNull(),
+    archiveSourceDigest: text("archive_source_digest"),
   },
   (t) => [
     primaryKey({ columns: [t.editionSlug, t.documentKey] }),
@@ -2355,6 +2376,10 @@ export const archiveRelationHeads = pgTable(
         archiveRelationDocuments.id,
       ],
     }),
+    check(
+      "archive_relation_head_digest",
+      sql`${t.archiveSourceDigest} IS NULL OR (${t.documentKey} = 'archive' AND ${t.archiveSourceDigest} ~ '^[a-f0-9]{64}$')`,
+    ),
   ],
 );
 

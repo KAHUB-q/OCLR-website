@@ -1,5 +1,5 @@
 import { vi } from "vitest";
-import type { PoolClient } from "pg";
+import type { PoolClient, QueryResult } from "pg";
 import { getPool } from "../src/db";
 type Spy = {
   mock: { calls: unknown[][]; results: { type: string; value: unknown }[] };
@@ -16,6 +16,9 @@ export async function observe<T>(run: () => Promise<T>) {
     }
   };
   pool.on("acquire", acquired);
+  // Pool.query uses the callback form of client.query internally. Its promise
+  // owns the result; checked-out transaction clients return their own promise.
+  const poolQueries = vi.spyOn(pool, "query");
   try {
     const value = await run();
     const statements = spies.flatMap((s) =>
@@ -27,17 +30,33 @@ export async function observe<T>(run: () => Promise<T>) {
             : "",
       ),
     );
-    let bytes = 0;
-    for (const s of spies)
+    let bytes = 0,
+      sourceArchives = 0;
+    for (const s of [...spies, poolQueries])
       for (const r of s.mock.results)
         if (r.type === "return") {
           const result = await r.value;
-          if (result && typeof result === "object" && "rows" in result)
-            bytes += Buffer.byteLength(JSON.stringify(result.rows));
+          if (result && typeof result === "object" && "rows" in result) {
+            const response = result as QueryResult;
+            bytes += Buffer.byteLength(JSON.stringify(response.rows));
+            const configuration =
+              response.fields?.findIndex(
+                (field: { name: string }) => field.name === "configuration",
+              ) ?? -1;
+            if (configuration >= 0)
+              for (const row of response.rows) {
+                const raw = Array.isArray(row)
+                  ? row[configuration]
+                  : row.configuration;
+                const value = typeof raw === "string" ? JSON.parse(raw) : raw;
+                if (value?.archive) sourceArchives++;
+              }
+          }
         }
-    return { value, statements, bytes };
+    return { value, statements, bytes, sourceArchives };
   } finally {
     pool.removeListener("acquire", acquired);
+    poolQueries.mockRestore();
     for (const s of spies) s.mockRestore();
   }
 }

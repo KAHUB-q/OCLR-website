@@ -15,6 +15,7 @@ import {
   editionState,
   historicalStatistics,
   historicalStatisticsRevisions,
+  historicalArchiveSources,
   users,
 } from "../../src/db/schema";
 import {
@@ -81,11 +82,14 @@ describe.skipIf(!url)("complete historical database relations", () => {
   it("normalizes every saved season and retains exact public/private and analysis results", async () => {
     for (let n = 1; n <= 10; n++) if (n !== 7) await seed(`s${n}`);
     vi.stubEnv("OCLR_ARCHIVE_READ_MODEL", "jsonb");
+    const jsonbCatalogue = await observe(() => readTournaments(true));
+    expect(jsonbCatalogue.sourceArchives).toBe(10);
     const before = {
-      public: await readTournaments(true),
+      public: jsonbCatalogue.value,
       private: await readTournaments(),
       performance: await playerMapPerformance(await publicPlayer(91003)),
     };
+    const configurations = await db().select().from(editionState);
     const raw = await db().select().from(historicalStatistics),
       history = await db().select().from(historicalStatisticsRevisions);
     const statistics = await publicArchiveStatistics("s7");
@@ -103,12 +107,14 @@ describe.skipIf(!url)("complete historical database relations", () => {
         current: 3,
         stale: 0,
         created: 3,
+        archiveReadReady: true,
       });
       expect(await verifyArchiveRelations(db(), slug)).toMatchObject({
         documents: 3,
       });
     }
     expect(await db().select().from(historicalStatistics)).toEqual(raw);
+    expect(await db().select().from(editionState)).toEqual(configurations);
     expect(await db().select().from(historicalStatisticsRevisions)).toEqual(
       history,
     );
@@ -120,6 +126,7 @@ describe.skipIf(!url)("complete historical database relations", () => {
       queries: catalog.statements.length,
       responseBytes: Buffer.byteLength(JSON.stringify(catalog.value)),
       milliseconds: performance.now() - started,
+      sourceArchives: catalog.sourceArchives,
     });
     expect({
       public: catalog.value,
@@ -136,7 +143,14 @@ describe.skipIf(!url)("complete historical database relations", () => {
     ).toBe(true);
     // Profile identity/timeline reads enumerate every public season. Their
     // query count must not grow by one query per relation per season.
-    expect(catalog.statements.length).toBeLessThanOrEqual(3);
+    expect(catalog.statements.length).toBeLessThanOrEqual(2);
+    expect(catalog.sourceArchives).toBe(0);
+    const single = await observe(() => readTournament("s7", undefined, true));
+    expect(single.value).toEqual(
+      before.public.find((r) => r.edition.slug === "s7"),
+    );
+    expect(single.sourceArchives).toBe(0);
+    expect(single.statements.length).toBe(2);
     const detailed = await observe(() => publicArchiveStatistics("s7", "one"));
     expect(sourceJson(detailed.statements)).toEqual([]);
     expect(detailed.value.matchDetails).toHaveLength(1);
@@ -152,6 +166,51 @@ describe.skipIf(!url)("complete historical database relations", () => {
         await db().select().from(archiveRelArchiveQualifiersRecordsScores)
       ).every((r) => r.value_score === 0),
     ).toBe(true);
+  });
+  it("upgrades existing document heads without rebuilding sources and preserves live-season JSONB", async () => {
+    await backfillArchiveRelations("s7", true);
+    await seedEditions([{ ...edition, slug: "current-test" }]);
+    const source = await db().select().from(editionState);
+    const documents = await db().select().from(archiveRelationDocuments);
+    await db().update(archiveRelationHeads).set({ archiveSourceDigest: null });
+    expect(await backfillArchiveRelations("s7")).toMatchObject({
+      stale: 0,
+      created: 0,
+      archiveReadReady: false,
+    });
+    await expect(verifyArchiveRelations(db(), "s7")).rejects.toMatchObject({
+      status: 409,
+    });
+    const prior = await observe(() => readTournaments());
+    expect(prior.sourceArchives).toBe(1);
+    expect(
+      prior.value.find((r) => r.edition.slug === "current-test")?.edition
+        .registration,
+    ).toEqual(edition.registration);
+    expect(await backfillArchiveRelations("s7", true)).toMatchObject({
+      stale: 0,
+      created: 0,
+      archiveReadReady: true,
+    });
+    const ready = await observe(() => readTournaments());
+    expect(ready.value).toEqual(prior.value);
+    expect(ready.sourceArchives).toBe(0);
+    expect(await db().select().from(archiveRelationDocuments)).toEqual(
+      documents,
+    );
+    expect(await db().select().from(editionState)).toEqual(source);
+    await db()
+      .delete(historicalArchiveSources)
+      .where(eq(historicalArchiveSources.editionSlug, "s7"));
+    expect((await observe(() => readTournament("s7"))).sourceArchives).toBe(1);
+    expect(await backfillArchiveRelations("s7")).toMatchObject({
+      archiveReadReady: false,
+    });
+    expect(await backfillArchiveRelations("s7", true)).toMatchObject({
+      archiveReadReady: true,
+      created: 0,
+    });
+    expect((await observe(() => readTournament("s7"))).sourceArchives).toBe(0);
   });
   it("isolates incomplete/stale seasons and rechecks publication on the next read", async () => {
     await seed("s8");
@@ -191,6 +250,7 @@ describe.skipIf(!url)("complete historical database relations", () => {
     const mixed = await observe(() => readTournaments(true));
     expect(mixed.value).toEqual(expected);
     expect(mixed.statements.length).toBeLessThanOrEqual(6);
+    await expect(verifyArchiveRelations(db(), "s7")).rejects.toThrow();
     const [hidden] = await db()
       .select()
       .from(editionState)
@@ -223,9 +283,20 @@ describe.skipIf(!url)("complete historical database relations", () => {
         },
       })
       .where(eq(editionState.slug, "s8"));
-    expect(
-      (await readTournaments(true))[0].edition.archive!.teams[0].name,
-    ).toBe("Synthetic changed source");
+    const edited = await observe(() => readTournament("s8", undefined, true));
+    expect(edited.value!.edition.archive!.teams[0].name).toBe(
+      "Synthetic changed source",
+    );
+    expect(edited.sourceArchives).toBe(1);
+    expect(await backfillArchiveRelations("s8")).toMatchObject({
+      archiveReadReady: false,
+    });
+    await backfillArchiveRelations("s8", true);
+    const refreshed = await observe(() =>
+      readTournament("s8", undefined, true),
+    );
+    expect(refreshed.value).toEqual(edited.value);
+    expect(refreshed.sourceArchives).toBe(0);
   });
   it("is idempotent under concurrency and updates only changed documents while retaining prior versions", async () => {
     const results = await Promise.all([
@@ -266,6 +337,41 @@ describe.skipIf(!url)("complete historical database relations", () => {
     });
     expect(await db().select().from(archiveRelationDocuments)).toHaveLength(7);
   });
+  it("keeps edition metadata and immutable archives together across concurrent updates", async () => {
+    await backfillArchiveRelations("s7", true);
+    const before = await readTournament("s7", undefined, true);
+    await db().transaction(
+      async (reader) => {
+        expect(await readTournament("s7", reader, true)).toEqual(before);
+        await db().transaction(async (writer) => {
+          const [source] = await writer
+            .select()
+            .from(editionState)
+            .where(eq(editionState.slug, "s7"))
+            .for("update");
+          const configuration = structuredClone(source.configuration!);
+          configuration.name = "Synthetic updated edition";
+          configuration.archive!.teams[0].name = "Synthetic updated team";
+          await writer
+            .update(editionState)
+            .set({
+              configuration,
+              configurationVersion: source.configurationVersion + 1,
+            })
+            .where(eq(editionState.slug, "s7"));
+          await syncArchiveRelations(writer, "s7");
+        });
+        expect(await readTournament("s7", reader, true)).toEqual(before);
+      },
+      { isolationLevel: "repeatable read", accessMode: "read only" },
+    );
+    const after = await observe(() => readTournament("s7", undefined, true));
+    expect(after.value?.edition.name).toBe("Synthetic updated edition");
+    expect(after.value?.edition.archive!.teams[0].name).toBe(
+      "Synthetic updated team",
+    );
+    expect(after.sourceArchives).toBe(0);
+  });
   it("invalidates legacy edits and removes withdrawn heads without deleting evidence", async () => {
     await backfillArchiveRelations("s7", true);
     await db()
@@ -295,6 +401,8 @@ describe.skipIf(!url)("complete historical database relations", () => {
     const raw = await db().select().from(historicalStatistics),
       history = await db().select().from(historicalStatisticsRevisions),
       heads = await db().select().from(archiveRelationHeads);
+    const configurations = await db().select().from(editionState);
+    const digests = await db().select().from(historicalArchiveSources);
     await db().execute(
       sql`CREATE FUNCTION public.synthetic_relation_failure() RETURNS trigger LANGUAGE plpgsql AS $$ BEGIN RAISE EXCEPTION 'synthetic relation failure'; END; $$`,
     );
@@ -309,6 +417,12 @@ describe.skipIf(!url)("complete historical database relations", () => {
             .from(editionState)
             .where(eq(editionState.slug, "s7"))
             .for("update");
+          await tx
+            .update(editionState)
+            .set({
+              configuration: sql`jsonb_set(configuration,'{archive,notes}','["Synthetic rolled back"]'::jsonb)`,
+            })
+            .where(eq(editionState.slug, "s7"));
           await tx
             .update(historicalStatistics)
             .set({ draft: { ...raw[0].draft, included: [1] }, version: 4 });
@@ -328,6 +442,8 @@ describe.skipIf(!url)("complete historical database relations", () => {
       history,
     );
     expect(await db().select().from(archiveRelationHeads)).toEqual(heads);
+    expect(await db().select().from(editionState)).toEqual(configurations);
+    expect(await db().select().from(historicalArchiveSources)).toEqual(digests);
     expect(await db().select().from(archiveRelationDocuments)).toHaveLength(3);
   });
   it("protects normalized history and rejects cross-season pointers", async () => {

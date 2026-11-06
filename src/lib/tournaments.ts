@@ -1,5 +1,7 @@
-import { relationalArchive } from "./archive-read";
-import { normalizedArchives, syncArchiveRelations } from "./archive-relations";
+import {
+  archiveEditionStates,
+  syncArchiveRelations,
+} from "./archive-relations";
 import { correctS2PoolArchive } from "./archive-pool-correction-model";
 import { db } from "@/db";
 import {
@@ -12,7 +14,7 @@ import {
   teams,
   tournamentStages,
 } from "@/db/schema";
-import { and, desc, eq, isNotNull, isNull, sql } from "drizzle-orm";
+import { and, eq, isNotNull, isNull, sql } from "drizzle-orm";
 import { randomUUID } from "node:crypto";
 import { isDeepStrictEqual } from "node:util";
 import { z } from "zod";
@@ -77,22 +79,8 @@ export async function readTournament(
       publicOnly ? "publicEnrollment" : "privateSavedTournament",
       { slug },
     );
-  const [row] = await (reader ?? db())
-    .select()
-    .from(editionState)
-    .where(
-      and(
-        eq(editionState.slug, slug),
-        isNotNull(editionState.configuration),
-        publicOnly
-          ? sql`${editionState.configuration}->>'published' = 'true'`
-          : undefined,
-      ),
-    );
+  const [row] = await archiveEditionStates(reader ?? db(), publicOnly, slug);
   const saved = row ? storedEdition(row) : undefined;
-  if (row && saved?.edition.archive)
-    saved.edition.archive =
-      (await relationalArchive(row, reader ?? db())) ?? saved.edition.archive;
   return saved && publicOnly && saved.edition.archive
     ? {
         ...saved,
@@ -105,27 +93,10 @@ export async function readTournament(
 }
 export async function readTournaments(publicOnly = false) {
   if (!process.env.DATABASE_URL) return [];
-  const rows = await db()
-    .select()
-    .from(editionState)
-    .where(
-      and(
-        isNotNull(editionState.configuration),
-        publicOnly
-          ? sql`${editionState.configuration}->>'published' = 'true'`
-          : undefined,
-      ),
-    )
-    .orderBy(desc(editionState.configurationUpdatedAt), editionState.slug);
-  const archives = await normalizedArchives(rows, db());
+  const rows = await archiveEditionStates(db(), publicOnly);
   const result: NonNullable<ReturnType<typeof storedEdition>>[] = [];
   for (const row of rows) {
     const saved = storedEdition(row)!;
-    if (saved.edition.archive)
-      saved.edition.archive =
-        archives.get(row.slug) ??
-        (await relationalArchive(row, db())) ??
-        saved.edition.archive;
     result.push(
       publicOnly && saved.edition.archive
         ? {

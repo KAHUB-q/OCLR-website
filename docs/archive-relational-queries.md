@@ -1,4 +1,4 @@
-# Historical JSONB correction and relational reads (#899, #900, #902, #905, #911, #913)
+# Historical JSONB correction and relational reads (#899, #900, #902, #905, #911, #913, #919)
 
 JSONB remains the authoritative saved evidence. Corrected current data and old
 evidence are different versions: S2 GS never had DT5 or TB1. They must be removed
@@ -188,7 +188,7 @@ statistics manifest, projector version and score policy/EZ multiplier.
 The player-profile follow-up (#913) batches complete relation reads: the public
 season catalogue reads current document pointers for all visible seasons once,
 then uses one `UNION ALL`/`jsonb_agg` query to transport their typed entity rows.
-A fully normalized catalogue needs three queries regardless of the season count,
+A fully normalized catalogue needed three queries at that stage regardless of the season count,
 instead of one query per entity per season. Single-archive and MP snapshot reads
 also batch their entity tables. Each document is decoded and hash-checked against
 its own current source; stale or incomplete seasons fall back independently.
@@ -196,6 +196,59 @@ These JSON query results are transport values, not new saved JSONB or a process
 cache. Publication and source changes are rechecked on subsequent reads. The
 profile retains all its season panels and immediate switching. No additional
 migration or backfill is required for this follow-up. See the [#913 investigation](verification/issue-913/README.md).
+
+### Direct archive reads after migration (#919)
+
+Migration `0082_archive_relational_cutover.sql` adds the small
+`historical_archive_sources` digest sidecar and a nullable source digest on each
+archive current head. It initializes source identities without updating source
+configurations, timestamps, versions, approvals or JSONB history. A configuration
+trigger maintains the digest transactionally, including legacy archive edits that
+do not increase the edition revision. Non-archive changes preserve the identity.
+Removing an archive removes only its digest; immutable documents/history remain.
+
+Once an existing head has been verified and its digest populated, a tournament
+read compares the small source/head identities and pins the immutable document
+in the same statement that selects edition/publication metadata. That statement
+omits `configuration.archive` from the returned configuration. One batched typed
+query reconstructs every selected archive and checks its canonical content hash.
+Ready catalogue and individual-season reads need **two queries**, and transfer
+no source archive JSONB. Requests do not calculate source JSONB hashes or write
+migration metadata. The remaining tournament settings/rules retain their existing
+configuration storage and contracts, including active-season registration data.
+
+Missing source metadata, old heads/codecs and source changes select the preserved
+JSONB directly. An incomplete typed document causes a full source-row reload,
+including the current publication flag, rather than mixing configuration revisions.
+Other seasons keep their valid relation path. Public sanitization, private source
+appendices, source ordering and every existing API response shape are unchanged.
+Normal authorized archive/statistics writes keep JSONB and complete relations
+synchronized in the same transaction. This is a read cutover for historical data;
+the preserved JSONB remains saved evidence and the compatibility/rebuild source.
+
+After the reviewed migration/deployment and normal restorable backup, use the
+operator shell described above:
+
+```sh
+npm run db:normalize-archives -- --dry-run
+npm run db:normalize-archives -- --apply --verify
+npm run db:normalize-archives -- --dry-run --verify
+```
+
+Every historical season must report `current == documents`, `stale: 0`,
+`obsolete: 0`, `archiveReadReady: true` and successful `verified` counts. The total
+`archiveReadReady` is the number of ready seasons and must equal `seasons`.
+Immediately after migration, existing typed documents can be current while
+`archiveReadReady` is false: the normal apply verifies their source association
+and fills head metadata without rebuilding unchanged documents (`created: 0`).
+Full `--verify` checks stored typed values, beyond manifest readiness. Do not use
+`--rebuild` for the normal upgrade. It remains available for repairing incomplete
+derived documents while retaining prior versions. Missing source metadata can be
+repaired by the same apply without changing source JSONB.
+
+`OCLR_ARCHIVE_READ_MODEL=jsonb` still selects the original source reader and
+retains all derived evidence. No rollback requires dropping tables or deleting
+JSONB. No production migration or cutover is implied by local tests or a merge.
 
 Migration `0079_complete_archive_relations.sql` adds 31 typed domain relations
 and immutable document versions with mutable current pointers. This covers every

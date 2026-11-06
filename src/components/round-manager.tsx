@@ -9,7 +9,7 @@ import {
 import { RoundRules } from "./competition-settings";
 import type { FixtureWorkspace } from "@/lib/fixtures";
 import { ReadOnlyFields, StaffReadOnlyContext } from "./staff-read-only";
-import { useId, useState } from "react";
+import { useEffect, useId, useRef, useState } from "react";
 import { useAppTranslations } from "@/i18n/shared";
 import type { MappoolWorkspace } from "@/lib/mappools";
 import { WorkspaceTabs } from "./workspace-tabs";
@@ -34,6 +34,13 @@ function RoundForm({
   onError: (message: string) => void;
 }) {
   const tr = useAppTranslations();
+  const active = useRef(true);
+  useEffect(() => {
+    active.current = true;
+    return () => {
+      active.current = false;
+    };
+  }, []);
   const [name, setName] = useState(round?.name ?? "");
   const [position, setPosition] = useState(
     String(round?.position ?? nextPosition),
@@ -74,7 +81,10 @@ function RoundForm({
               Number(position) <= 999
             }
             url={url}
-            onSuccess={onSuccess}
+            onSuccess={() => {
+              // A completed save must not close an editor opened after this one.
+              if (active.current) onSuccess();
+            }}
             onError={onError}
             payload={
               round

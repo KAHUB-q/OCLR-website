@@ -19,6 +19,7 @@ import {
   statisticsSource,
 } from "../fixtures/archive-statistics";
 import { statisticsArchiveKey } from "../../src/lib/archive-statistics-key";
+import { archiveContentHash } from "../../src/lib/archive-read-model";
 const base = process.env.TEST_DATABASE_URL;
 describe.skipIf(!base)(
   "historical relational migration and immutable JSONB history",
@@ -43,9 +44,8 @@ describe.skipIf(!base)(
           journal = JSON.parse(
             readFileSync("drizzle/meta/_journal.json", "utf8"),
           );
-        journal.entries = journal.entries.filter(
-          (e: { idx: number }) => e.idx < 77,
-        );
+        const entries = journal.entries;
+        journal.entries = entries.filter((e: { idx: number }) => e.idx < 77);
         for (const entry of journal.entries)
           copyFileSync(
             `drizzle/${entry.tag}.sql`,
@@ -69,7 +69,44 @@ describe.skipIf(!base)(
         );
         const saved = (await pool.query("SELECT * FROM historical_statistics"))
           .rows;
+        // A populated pre-cutover database must retain its existing typed
+        // documents/heads and start in the compatible source-read state.
+        journal.entries = entries.filter((e: { idx: number }) => e.idx < 82);
+        for (const entry of journal.entries.filter(
+          (e: { idx: number }) => e.idx >= 77,
+        ))
+          copyFileSync(
+            `drizzle/${entry.tag}.sql`,
+            join(folder, `${entry.tag}.sql`),
+          );
+        writeFileSync(file, JSON.stringify(journal));
+        await migrate(drizzle(pool), { migrationsFolder: folder });
+        const hash = archiveContentHash(statisticsArchive);
+        const document = (
+          await pool.query(
+            "INSERT INTO archive_relation_documents(edition_slug,document_key,kind,content_hash,codec_version) VALUES ('s7','archive','archive',$1,1) RETURNING *",
+            [hash],
+          )
+        ).rows[0];
+        await pool.query(
+          "INSERT INTO archive_relation_heads(edition_slug,document_key,document_id,source_hash) VALUES ('s7','archive',$1,$2)",
+          [document.id, hash],
+        );
         await migrate(drizzle(pool), { migrationsFolder: "drizzle" });
+        expect(
+          (await pool.query("SELECT * FROM archive_relation_documents")).rows,
+        ).toEqual([document]);
+        expect(
+          (await pool.query("SELECT * FROM archive_relation_heads")).rows,
+        ).toEqual([
+          {
+            edition_slug: "s7",
+            document_key: "archive",
+            document_id: document.id,
+            source_hash: hash,
+            archive_source_digest: null,
+          },
+        ]);
         await migrate(drizzle(pool), { migrationsFolder: "drizzle" });
         expect(
           (await pool.query("SELECT * FROM historical_statistics")).rows,

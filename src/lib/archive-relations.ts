@@ -14,6 +14,7 @@ import {
   editionState,
   historicalStatistics,
   historicalStatisticsSources,
+  historicalArchiveSources,
   archiveRelationDocuments,
   archiveRelationHeads,
 } from "@/db/schema";
@@ -48,6 +49,111 @@ const layoutFor = (kind: string) =>
 const statisticsKey = (mpId: number, kind: string) => `${mpId}:${kind}`;
 const disabled = () =>
   remoteMode() || process.env.OCLR_ARCHIVE_READ_MODEL === "jsonb";
+// Native digests are calculated only at writes/operator verification. Requests
+// compare the small sidecar; canonical content hashes verify decoded rows.
+const archiveDatabaseDigest = sql<string>`encode(sha256(convert_to((${editionState.configuration}->'archive')::text, 'UTF8')), 'hex')`;
+
+/** Pin a verified immutable document in the same statement that reads its
+ * configuration/publication metadata. Ready rows omit archive JSONB entirely.
+ * Only a missing/old/stale document or a failed roundtrip needs the source.
+ */
+export async function archiveEditionStates(
+  reader: Reader,
+  publicOnly = false,
+  slug?: string,
+): Promise<ArchiveState[]> {
+  const visible = and(
+    isNotNull(editionState.configuration),
+    slug ? eq(editionState.slug, slug) : undefined,
+    publicOnly
+      ? sql`${editionState.configuration}->>'published' = 'true'`
+      : undefined,
+  );
+  if (disabled())
+    return reader
+      .select()
+      .from(editionState)
+      .where(visible)
+      .orderBy(desc(editionState.configurationUpdatedAt), editionState.slug);
+  const ready = and(
+    eq(archiveRelationDocuments.kind, "archive"),
+    eq(archiveRelationDocuments.codecVersion, ARCHIVE_RELATION_CODEC),
+    eq(archiveRelationDocuments.contentHash, archiveRelationHeads.sourceHash),
+    eq(
+      archiveRelationHeads.archiveSourceDigest,
+      historicalArchiveSources.sourceHash,
+    ),
+  );
+  const current = await reader
+    .select({
+      state: {
+        ...getTableColumns(editionState),
+        configuration: sql<ArchiveState["configuration"]>`CASE WHEN ${ready}
+        THEN ${editionState.configuration} - 'archive' ELSE ${editionState.configuration} END`.as(
+          "configuration",
+        ),
+      },
+      documentId: sql<
+        string | null
+      >`CASE WHEN ${ready} THEN ${archiveRelationDocuments.id} ELSE NULL END`,
+      contentHash: archiveRelationDocuments.contentHash,
+    })
+    .from(editionState)
+    .leftJoin(
+      historicalArchiveSources,
+      eq(historicalArchiveSources.editionSlug, editionState.slug),
+    )
+    .leftJoin(
+      archiveRelationHeads,
+      and(
+        eq(archiveRelationHeads.editionSlug, editionState.slug),
+        eq(archiveRelationHeads.documentKey, "archive"),
+      ),
+    )
+    .leftJoin(
+      archiveRelationDocuments,
+      eq(archiveRelationDocuments.id, archiveRelationHeads.documentId),
+    )
+    .where(visible)
+    .orderBy(desc(editionState.configurationUpdatedAt), editionState.slug);
+  const ids = current.flatMap((row) =>
+    row.documentId ? [row.documentId] : [],
+  );
+  const data = await loadDocuments(reader, "archive", ids);
+  const failed: string[] = [];
+  for (const row of current) {
+    if (!row.documentId) continue;
+    try {
+      const archive = historicalArchiveSchema.parse(
+        decodeArchiveRelations(layoutFor("archive"), data.get(row.documentId)!),
+      );
+      if (
+        archive.editionSlug !== row.state.slug ||
+        archiveContentHash(archive) !== row.contentHash
+      )
+        throw new Error("Incomplete typed historical archive");
+      row.state.configuration = { ...row.state.configuration!, archive };
+    } catch {
+      failed.push(row.state.slug);
+    }
+  }
+  // Reload the entire source row, including its publication flag, rather than
+  // mixing an archive from a later revision with earlier configuration metadata.
+  const fallback = failed.length
+    ? await reader
+        .select()
+        .from(editionState)
+        .where(and(visible, inArray(editionState.slug, failed)))
+    : [];
+  const bySlug = new Map(fallback.map((state) => [state.slug, state]));
+  return current.flatMap(({ state }) =>
+    failed.includes(state.slug)
+      ? bySlug.has(state.slug)
+        ? [bySlug.get(state.slug)!]
+        : []
+      : [state],
+  );
+}
 
 async function heads(reader: Reader, slug: string, keys?: string[]) {
   return reader
@@ -220,6 +326,12 @@ export async function syncArchiveRelations(
   const archive = historicalArchiveSchema.parse(state.configuration.archive);
   if (archive.editionSlug !== slug)
     throw new Error("Historical edition scope mismatch");
+  // Repair missing/stale metadata explicitly under the caller's edition lock.
+  // The normal configuration trigger maintains it in the source transaction.
+  await tx.execute(sql`INSERT INTO ${historicalArchiveSources}(edition_slug,source_hash)
+    SELECT ${editionState.slug}, ${archiveDatabaseDigest} FROM ${editionState}
+    WHERE ${editionState.slug} = ${slug}
+    ON CONFLICT(edition_slug) DO UPDATE SET source_hash=EXCLUDED.source_hash`);
   // Lock source identities without transferring their large JSONB values.
   await tx
     .select({ mpId: historicalStatistics.mpId })
@@ -255,6 +367,14 @@ export async function syncArchiveRelations(
         force,
       ),
     );
+  // Also upgrades already normalized archives without rebuilding documents or
+  // touching source JSONB, revisions, configuration timestamps or statistics.
+  await tx.execute(sql`UPDATE ${archiveRelationHeads}
+    SET archive_source_digest = ${archiveDatabaseDigest}
+    FROM ${editionState}
+    WHERE ${archiveRelationHeads.editionSlug} = ${editionState.slug}
+      AND ${editionState.slug} = ${slug}
+      AND ${archiveRelationHeads.documentKey} = 'archive'`);
   const dirty = sources.filter(
     (s) =>
       force ||
@@ -439,10 +559,18 @@ export async function normalizedStatistics(
 
 export async function archiveRelationsReport(reader: Reader, slug: string) {
   const [state] = await reader
-    .select()
+    .select({
+      state: editionState,
+      digest: archiveDatabaseDigest,
+      sourceDigest: historicalArchiveSources.sourceHash,
+    })
     .from(editionState)
+    .leftJoin(
+      historicalArchiveSources,
+      eq(historicalArchiveSources.editionSlug, editionState.slug),
+    )
     .where(eq(editionState.slug, slug));
-  if (!state?.configuration?.archive)
+  if (!state?.state.configuration?.archive)
     throw new HttpError(404, "Saved historical archive is required.");
   const current = await heads(reader, slug),
     sources = await metadata(reader, slug);
@@ -450,7 +578,7 @@ export async function archiveRelationsReport(reader: Reader, slug: string) {
     [
       "archive",
       archiveContentHash(
-        historicalArchiveSchema.parse(state.configuration.archive),
+        historicalArchiveSchema.parse(state.state.configuration.archive),
       ),
     ],
   ]);
@@ -476,13 +604,22 @@ export async function archiveRelationsReport(reader: Reader, slug: string) {
     current: expected.size - stale,
     stale,
     obsolete: current.filter((c) => !expected.has(c.head.documentKey)).length,
+    archiveReadReady: current.some(
+      (c) =>
+        c.head.documentKey === "archive" &&
+        c.head.sourceHash === expected.get("archive") &&
+        c.document.contentHash === expected.get("archive") &&
+        c.document.codecVersion === ARCHIVE_RELATION_CODEC &&
+        c.head.archiveSourceDigest === state.digest &&
+        state.sourceDigest === state.digest,
+    ),
   };
 }
 
 /** Compare all persisted typed values with the preserved JSONB, without exposing it. */
 export async function verifyArchiveRelations(reader: Reader, slug: string) {
   const report = await archiveRelationsReport(reader, slug);
-  if (report.stale || report.obsolete)
+  if (report.stale || report.obsolete || !report.archiveReadReady)
     throw new HttpError(
       409,
       "Historical relations are stale; run the reviewed apply first.",

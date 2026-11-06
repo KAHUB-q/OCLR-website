@@ -45,7 +45,13 @@ try {
         .filter((s) => s.configuration?.archive)
         .map((s) => s.slug)
         .sort();
-  const totals = { seasons: slugs.length, documents: 0, stale: 0, created: 0 };
+  const totals = {
+    seasons: slugs.length,
+    documents: 0,
+    stale: 0,
+    created: 0,
+    archiveReadReady: 0,
+  };
   for (const slug of slugs) {
     activeSlug = slug;
     phase = args.includes("--apply") ? "apply" : "preview";
@@ -64,6 +70,7 @@ try {
     totals.documents += result.documents;
     totals.stale += result.stale;
     totals.created += result.created;
+    totals.archiveReadReady += Number(result.archiveReadReady);
     console.log(
       JSON.stringify({ ...result, ...(verified ? { verified } : {}) }),
     );

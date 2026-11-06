@@ -1,0 +1,17 @@
+{
+  "node": "v24.22.2",
+  "fixture": {
+    "seasons": 10,
+    "rawGames": 5010,
+    "players": 120,
+    "countedMaps": 30
+  },
+  "pendingMs": 3.08,
+  "workerMs": 3349.35,
+  "legacyFullLeaderboardMs": [3136.3, 3156.49, 3180.12],
+  "savedFullLeaderboardMs": [6.87, 5.82, 6.12, 6.48, 5.66],
+  "tenConcurrentReadsMs": 37.21,
+  "wireBytes": 54327,
+  "exactFullDto": true,
+  "generationsAfterReads": 1
+}

@@ -1,0 +1,50 @@
+[
+  {
+    "kind": "html",
+    "status": 200,
+    "ttfbSeconds": 0.386292,
+    "totalSeconds": 0.539036,
+    "bytes": 749444,
+    "contentType": "text/html; charset=utf-8"
+  },
+  {
+    "kind": "html",
+    "status": 200,
+    "ttfbSeconds": 0.309444,
+    "totalSeconds": 0.374648,
+    "bytes": 749444,
+    "contentType": "text/html; charset=utf-8"
+  },
+  {
+    "kind": "html",
+    "status": 200,
+    "ttfbSeconds": 0.318249,
+    "totalSeconds": 0.393076,
+    "bytes": 749444,
+    "contentType": "text/html; charset=utf-8"
+  },
+  {
+    "kind": "rsc",
+    "status": 200,
+    "ttfbSeconds": 0.035794,
+    "totalSeconds": 0.323192,
+    "bytes": 444357,
+    "contentType": "text/x-component"
+  },
+  {
+    "kind": "rsc",
+    "status": 200,
+    "ttfbSeconds": 0.053824,
+    "totalSeconds": 0.343061,
+    "bytes": 444357,
+    "contentType": "text/x-component"
+  },
+  {
+    "kind": "rsc",
+    "status": 200,
+    "ttfbSeconds": 0.036817,
+    "totalSeconds": 0.31638,
+    "bytes": 444357,
+    "contentType": "text/x-component"
+  }
+]

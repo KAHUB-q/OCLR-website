@@ -80,6 +80,21 @@ stops future checks; readers continue requiring current results. Do not
 down-migrate a serving database. macOS tests do not establish Linux/systemd or
 production activation acceptance.
 
+## Verify the ranking page after activation (#917)
+
+Check `/api/health` for the intended release, then make a small number of anonymous
+reads of `/api/v1/rankings/players` and `/ranking`. A fast `pending` response only
+confirms the request is not rebuilding rankings; it does not confirm that the first
+calculation or timer is working. Verify `state: "ready"`, expected counts and a
+calculation timestamp after the explicit first job, then confirm repeat reads use
+the same generation until sources change. If results remain pending, inspect the
+existing worker's count-only diagnostics and timer journal before starting another
+job. Do not add a second scheduler or a request-triggered fallback.
+
+The [#917 verification record](verification/issue-917/README.md) compares the complete
+saved leaderboard with the original request path and provides an isolated synthetic
+benchmark. Production HTTP timings and local synthetic timings are recorded separately.
+
 ## Saved-read compatibility and validation
 
 Contract **1.24.0** adds anonymous/read-only `GET /api/v1/rankings/players` and

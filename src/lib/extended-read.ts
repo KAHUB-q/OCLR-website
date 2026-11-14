@@ -28,6 +28,10 @@ export async function extendedRead(
   switch (id) {
     case "playerLeaderboard":
       return (await import("./player-leaderboard")).databasePlayerLeaderboard();
+    case "careerLeaderboard":
+      return (await import("./saved-rankings")).databaseCareerLeaderboard();
+    case "beatmapLeaderboard":
+      return (await import("./saved-rankings")).databaseBeatmapLeaderboard();
     case "publicPlayerMra":
       return (await import("./player-leaderboard")).databasePublicPlayerMra(
         playerId,

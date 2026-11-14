@@ -1,54 +1,22 @@
-import { archiveArtworkSetIds } from "./archive-artwork";
+import savedMapMetadata from "@/data/archive-beatmaps.json";
 import { parseArchiveTitle } from "./archive-map-metadata";
-import { publicArchiveStatistics } from "./archive-statistics-reads";
-import { getPublicEditions } from "./content";
-import { remoteMode } from "./data-source";
+import type {
+  publicArchiveStatistics,
+  PublicArchiveStatistics,
+} from "./archive-statistics-reads";
+import { HttpError } from "./http-error";
 import type { Edition } from "./editions";
 import { eventMapKey } from "./event-statistics-model";
 import { fitBeatmapDifficulty, type FittedPlay } from "./fitted-difficulty";
 import { publicMappools } from "./mappool-reads";
 import { minimumCountedScore } from "./player-map-performance-model";
 import type { Appearance } from "./preferences";
+import type {
+  BeatmapLeaderboardRow,
+  BeatmapRankingSnapshot,
+} from "./ranking-snapshot-model";
 
-/** One beatmap, aggregated across every published edition it appeared in. */
-export type BeatmapLeaderboardRow = {
-  beatmapId: number;
-  /** osu! beatmapset ID used for cover and list artwork. */
-  beatmapSetId: number | null;
-  title: string;
-  /** Parsed difficulty name, or null when the title carries none. */
-  difficulty: string | null;
-  /** Display label such as `HD2`; a lone tiebreaker map stays `TB`. */
-  slot: string;
-  /** Season of the edition whose pool owns `slot`. */
-  season: string | null;
-  /** Edition name used when the season has no theme label. */
-  editionName: string;
-  /** Season theme the owning edition configures, if any. */
-  appearance: Appearance | null;
-  /** Round (live pool) or pool name (archive) that owns `slot`. */
-  round: string;
-  /** Whether `round` is a stored archive pool name or a live round name. */
-  archive: boolean;
-  /** Stored pool id for archive rows, empty for live rounds. */
-  roundId: string;
-  stars: number | null;
-  /** Star rating corrected by the fitted-difficulty model. */
-  fittedStars: number | null;
-  /** Signed correction the model applies to `stars`; null without a rating. */
-  fittedOffset: number | null;
-  picks: number | null;
-  bans: number | null;
-  plays: number;
-  averageAccuracy: number | null;
-  averageCombo: number | null;
-};
-
-export type BeatmapLeaderboard = {
-  maps: BeatmapLeaderboardRow[];
-  editions: number;
-  unavailableEditions: string[];
-};
+const savedMaps: Record<string, { setId: number }> = savedMapMetadata.maps;
 
 type PoolMap = {
   beatmapId: number;
@@ -241,11 +209,12 @@ function mergeMap(
 /**
  * Build the beatmap ranking from published editions. Every edition's published
  * mappools supply identity and stars, while its public statistics supply
- * counted scores plus fixture picks and bans. No projection is saved, so a
- * missing edition is reported instead of shrinking the ranking silently.
+ * counted scores plus fixture picks and bans.
  */
-export async function beatmapLeaderboard(): Promise<BeatmapLeaderboard> {
-  const editions = await getPublicEditions();
+export async function projectBeatmapLeaderboard(
+  editions: readonly Edition[],
+  readStatistics: typeof publicArchiveStatistics,
+): Promise<BeatmapRankingSnapshot> {
   const unavailable = new Set<string>();
   const rows = new Map<number, BeatmapAccumulator>();
   /**
@@ -257,25 +226,22 @@ export async function beatmapLeaderboard(): Promise<BeatmapLeaderboard> {
   /** Counted plays per map, reduced to the guidance-score inputs. */
   const guidancePlays = new Map<number, FittedPlay[]>();
 
-  const results = await Promise.all(
-    editions.map(async (edition) => {
-      try {
-        const [statistics, maps] = await Promise.all([
-          publicArchiveStatistics(edition.slug),
-          edition.archive
-            ? Promise.resolve(archiveMaps(edition))
-            : liveMaps(edition),
-        ]);
-        return { edition, statistics, maps };
-      } catch {
-        unavailable.add(edition.slug);
-        return null;
-      }
-    }),
-  );
+  const results = [];
+  for (const edition of editions) {
+    let statistics: PublicArchiveStatistics | null = null;
+    try {
+      statistics = await readStatistics(edition.slug);
+    } catch (error) {
+      if (!(error instanceof HttpError) || error.status !== 404) throw error;
+      unavailable.add(edition.slug);
+    }
+    const maps = edition.archive
+      ? archiveMaps(edition)
+      : await liveMaps(edition);
+    results.push({ edition, statistics, maps });
+  }
 
   for (const result of results) {
-    if (!result) continue;
     const priority = seasonPriority(result.edition.season);
     for (const map of result.maps) {
       mergeMap(accumulator(rows, map.beatmapId), map, result.edition, priority);
@@ -283,8 +249,8 @@ export async function beatmapLeaderboard(): Promise<BeatmapLeaderboard> {
   }
 
   for (const result of results) {
-    if (!result) continue;
     const { statistics } = result;
+    if (!statistics) continue;
     const editionSlug = result.edition.slug;
 
     for (const play of statistics.plays) {
@@ -356,27 +322,6 @@ export async function beatmapLeaderboard(): Promise<BeatmapLeaderboard> {
     }
   }
 
-  // Historical imports usually omit the beatmapset ID even though artwork is
-  // available from osu!. Resolve the missing IDs in one cached lookup; artwork
-  // is optional, so a provider failure leaves the rows intact.
-  if (!remoteMode()) {
-    const missing = [...rows.values()]
-      .filter((row) => row.beatmapSetId === null)
-      .map((row) => row.beatmapId);
-    if (missing.length > 0) {
-      try {
-        const setIds = await archiveArtworkSetIds(missing);
-        for (const row of rows.values()) {
-          if (row.beatmapSetId !== null) continue;
-          const setId = setIds[row.beatmapId];
-          if (setId !== null && setId !== undefined) row.beatmapSetId = setId;
-        }
-      } catch {
-        // Artwork is supplemental; keep the ranking usable without it.
-      }
-    }
-  }
-
   const fits = fitBeatmapDifficulty(
     [...rows.values()].map((row) => ({
       beatmapId: row.beatmapId,
@@ -394,7 +339,7 @@ export async function beatmapLeaderboard(): Promise<BeatmapLeaderboard> {
     const fit = fits.get(row.beatmapId);
     return {
       beatmapId: row.beatmapId,
-      beatmapSetId: row.beatmapSetId,
+      beatmapSetId: row.beatmapSetId ?? savedMaps[row.beatmapId]?.setId ?? null,
       title: row.title || `#${row.beatmapId}`,
       difficulty: row.difficulty,
       slot: row.slot || "—",
@@ -428,7 +373,9 @@ export async function beatmapLeaderboard(): Promise<BeatmapLeaderboard> {
 
   return {
     maps,
-    editions: results.filter(Boolean).length,
+    editions: results.filter(
+      ({ maps, statistics }) => maps.length || statistics,
+    ).length,
     unavailableEditions: [...unavailable].sort(),
   };
 }

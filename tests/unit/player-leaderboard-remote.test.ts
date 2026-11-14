@@ -20,6 +20,10 @@ import {
   playerLeaderboard,
   publicPlayerMra,
 } from "../../src/lib/player-leaderboard";
+import {
+  beatmapLeaderboard,
+  careerLeaderboard,
+} from "../../src/lib/saved-rankings";
 describe("background ranking remote adapter", () => {
   beforeEach(() => {
     state.resource.mockReset();
@@ -52,6 +56,35 @@ describe("background ranking remote adapter", () => {
     expect(state.resource).toHaveBeenLastCalledWith("publicPlayerMra", {
       osuId: 42,
     });
+    expect(state.database).not.toHaveBeenCalled();
+  });
+  it("requires the saved career and beatmap resources for the new ranking pages", async () => {
+    state.version = "1.34.0";
+    expect(await careerLeaderboard()).toMatchObject({
+      state: "pending",
+      players: [],
+    });
+    expect(await beatmapLeaderboard()).toMatchObject({
+      state: "pending",
+      maps: [],
+    });
+    expect(state.resource).not.toHaveBeenCalled();
+    state.version = "1.35.0";
+    state.resource
+      .mockResolvedValueOnce({ state: "ready", players: [] })
+      .mockResolvedValueOnce({ state: "ready", maps: [] });
+    expect(await careerLeaderboard()).toMatchObject({
+      state: "ready",
+      players: [],
+    });
+    expect(await beatmapLeaderboard()).toMatchObject({
+      state: "ready",
+      maps: [],
+    });
+    expect(state.resource.mock.calls).toEqual([
+      ["careerLeaderboard"],
+      ["beatmapLeaderboard"],
+    ]);
     expect(state.database).not.toHaveBeenCalled();
   });
   it("keeps the legacy public-score compatibility path for older v1 backends", async () => {

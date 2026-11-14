@@ -7,10 +7,8 @@ import type {
 import { BeatmapLeaderboardCards } from "@/components/beatmap-leaderboard-cards";
 import { RankingContext } from "@/components/ranking-context";
 import { getAppTranslations } from "@/i18n/server";
-import {
-  beatmapLeaderboard,
-  type BeatmapLeaderboardRow,
-} from "@/lib/beatmap-leaderboard";
+import type { BeatmapLeaderboardRow } from "@/lib/ranking-snapshot-model";
+import { beatmapLeaderboard } from "@/lib/saved-rankings";
 import { mixColor } from "@/lib/rank-colors";
 import { remotePage } from "@/lib/remote-page";
 
@@ -75,9 +73,10 @@ function positionsFor(
 function offsetPalettes(offsets: number[]) {
   const build = (sorted: number[], target: string) => {
     const palette = new Map<number, string>();
-    for (let start = 0; start < sorted.length; ) {
+    for (let start = 0; start < sorted.length;) {
       let end = start;
-      while (end + 1 < sorted.length && sorted[end + 1] === sorted[start]) end++;
+      while (end + 1 < sorted.length && sorted[end + 1] === sorted[start])
+        end++;
       const position =
         sorted.length === 1 ? 0.5 : (start + end) / 2 / (sorted.length - 1);
       const tier = Math.min(9, Math.floor(position * 10 + 1e-9));
@@ -108,7 +107,9 @@ function rankCards(rows: BeatmapLeaderboardRow[]): BeatmapRankCardData[] {
   }
   const offsets = rows
     .map((row) => row.fittedOffset)
-    .filter((value): value is number => value !== null && Number.isFinite(value));
+    .filter(
+      (value): value is number => value !== null && Number.isFinite(value),
+    );
   const palettes = offsetPalettes(offsets);
   return rows.map((row, index) => {
     const statPositions = {} as Record<BeatmapStatKey, number | null>;
@@ -188,18 +189,26 @@ async function BeatmapContent() {
             "Fitted difficulty blends the star ranking with a guidance-score ranking, then reads the result back off the pool's star distribution. The offset is the fitted value minus the star rating; its colour ranks the positive and the negative offsets into ten shades each.",
           )}
         </p>
-        <p className="muted small">
-          {tr("{value0} maps · {value1} editions", {
-            value0: data.maps.length,
-            value1: data.editions,
-          })}
-          {data.unavailableEditions.length > 0 &&
-            ` · ${tr("{value0} editions unavailable", {
-              value0: data.unavailableEditions.length,
-            })}`}
-        </p>
+        {data.state === "ready" && (
+          <p className="muted small">
+            {tr("{value0} maps · {value1} editions", {
+              value0: data.maps.length,
+              value1: data.editions,
+            })}
+            {data.unavailableEditions.length > 0 &&
+              ` · ${tr("{value0} editions unavailable", {
+                value0: data.unavailableEditions.length,
+              })}`}
+          </p>
+        )}
       </InfoNote>
-      {data.maps.length ? (
+      {data.state === "pending" ? (
+        <EmptyState title={tr("Leaderboard calculation pending")}>
+          {tr(
+            "The leaderboard is calculated in the background. Please check again shortly.",
+          )}
+        </EmptyState>
+      ) : data.maps.length ? (
         <BeatmapLeaderboardCards
           maps={cards}
           defaultSort={{ key: "picks", dir: "desc" }}

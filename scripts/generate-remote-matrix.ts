@@ -51,12 +51,6 @@ const componentOps: Record<string, string[]> = {
     "publicArchiveStatistics",
     "listPublicPlayers",
   ],
-  // The beatmap page reads editions, archived score statistics and live pools.
-  beatmapLeaderboard: [
-    "listPublicTournaments",
-    "publicArchiveStatistics",
-    "publicMappools",
-  ],
   RegistrationList: ["listApplications", "listStaffTournaments", "staffAccess"],
   EventPlayers: ["publicPlayerMessages"],
   PlayerMessageBoard: ["publicPlayerMessages"],

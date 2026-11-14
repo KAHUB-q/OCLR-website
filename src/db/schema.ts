@@ -2721,3 +2721,23 @@ export const playerLeaderboardRows = pgTable(
     ),
   ],
 );
+
+// Each row is a complete derived ranking, published atomically by the timer.
+export const rankingSnapshots = pgTable(
+  "ranking_snapshots",
+  {
+    id: uuid("id").primaryKey().defaultRandom(),
+    kind: text("kind", { enum: ["career", "beatmap"] }).notNull(),
+    sourceHash: text("source_hash").notNull(),
+    calculatedAt: timestamp("calculated_at", { withTimezone: true })
+      .notNull()
+      .defaultNow(),
+    result: jsonb("result").notNull(),
+  },
+  (t) => [
+    index("ranking_snapshots_source_idx").on(t.kind, t.sourceHash, t.calculatedAt),
+    check("ranking_snapshots_kind", sql`${t.kind} IN ('career', 'beatmap')`),
+    check("ranking_snapshots_hash", sql`${t.sourceHash} ~ '^[a-f0-9]{64}$'`),
+    check("ranking_snapshots_result", sql`jsonb_typeof(${t.result}) = 'object'`),
+  ],
+);

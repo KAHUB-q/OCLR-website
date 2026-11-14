@@ -633,7 +633,7 @@
                     "type": "string"
                   },
                   "configuration": {
-                    "$ref": "#/components/schemas/Read0d9f6267668b"
+                    "$ref": "#/components/schemas/Read7b1d7de8924b"
                   },
                   "configurationVersion": {
                     "type": "number"
@@ -1202,17 +1202,17 @@
         ],
         "additionalProperties": false
       },
-      "Read0d9f6267668b": {
+      "Read7b1d7de8924b": {
         "anyOf": [
           {
             "type": "null"
           },
           {
-            "$ref": "#/components/schemas/Read9c79bb1304dd"
+            "$ref": "#/components/schemas/Read0d3c249a440f"
           }
         ]
       },
-      "Read9c79bb1304dd": {
+      "Read0d3c249a440f": {
         "type": "object",
         "properties": {
           "name": {
@@ -1292,6 +1292,9 @@
               }
             ]
           },
+          "archive": {
+            "$ref": "#/components/schemas/Readc005b0a27eee"
+          },
           "rules": {
             "$ref": "#/components/schemas/Readcb41459d5612"
           },
@@ -1314,9 +1317,6 @@
                 "type": "number"
               }
             ]
-          },
-          "archive": {
-            "$ref": "#/components/schemas/Readc005b0a27eee"
           },
           "automaticEligibility": {
             "$ref": "#/components/schemas/Read9d043f4f751e"
@@ -1611,253 +1611,6 @@
           {
             "type": "string",
             "const": "chromatic-origins"
-          }
-        ]
-      },
-      "Readcb41459d5612": {
-        "anyOf": [
-          {
-            "type": "null"
-          },
-          {
-            "$ref": "#/components/schemas/Read8d1572d5fb08"
-          }
-        ]
-      },
-      "Read8d1572d5fb08": {
-        "type": "object",
-        "properties": {
-          "version": {
-            "type": "string"
-          },
-          "sections": {
-            "type": "array",
-            "items": {
-              "type": "object",
-              "properties": {
-                "heading": {
-                  "type": "string"
-                },
-                "body": {
-                  "type": "string"
-                }
-              },
-              "required": [
-                "heading",
-                "body"
-              ],
-              "additionalProperties": false
-            }
-          }
-        },
-        "required": [
-          "version",
-          "sections"
-        ],
-        "additionalProperties": false
-      },
-      "Read53d8bb6b02cb": {
-        "type": "array",
-        "items": {
-          "$ref": "#/components/schemas/Read3e69714f262b"
-        }
-      },
-      "Read3e69714f262b": {
-        "type": "object",
-        "properties": {
-          "label": {
-            "type": "string"
-          },
-          "at": {
-            "anyOf": [
-              {
-                "type": "null"
-              },
-              {
-                "type": "string"
-              }
-            ]
-          },
-          "kind": {
-            "anyOf": [
-              {
-                "type": "null",
-                "x-oclr-undefined": true
-              },
-              {
-                "type": "string",
-                "const": "group"
-              },
-              {
-                "type": "string",
-                "const": "knockout"
-              }
-            ]
-          },
-          "endAt": {
-            "anyOf": [
-              {
-                "type": "null",
-                "x-oclr-undefined": true
-              },
-              {
-                "type": "null"
-              },
-              {
-                "type": "string"
-              }
-            ]
-          },
-          "precision": {
-            "anyOf": [
-              {
-                "type": "null",
-                "x-oclr-undefined": true
-              },
-              {
-                "type": "string",
-                "const": "day"
-              },
-              {
-                "type": "string",
-                "const": "instant"
-              }
-            ]
-          }
-        },
-        "required": [
-          "label",
-          "at"
-        ],
-        "additionalProperties": false
-      },
-      "Read5ab2db77dabd": {
-        "type": "object",
-        "properties": {
-          "logo": {
-            "$ref": "#/components/schemas/Read23fb18671aa9"
-          },
-          "background": {
-            "anyOf": [
-              {
-                "type": "null"
-              },
-              {
-                "type": "string",
-                "const": "/oclr-s11-website-background.webp"
-              }
-            ]
-          },
-          "keyVisual": {
-            "$ref": "#/components/schemas/Read789fefbfbc20"
-          }
-        },
-        "required": [
-          "logo",
-          "background",
-          "keyVisual"
-        ],
-        "additionalProperties": false
-      },
-      "Read23fb18671aa9": {
-        "anyOf": [
-          {
-            "type": "null"
-          },
-          {
-            "type": "string",
-            "const": "/oclr-s11-square-logo.webp"
-          },
-          {
-            "type": "string",
-            "const": "/archive/s10/thumbnail.webp"
-          },
-          {
-            "type": "string",
-            "const": "/archive/s9/thumbnail.webp"
-          },
-          {
-            "type": "string",
-            "const": "/archive/s8/thumbnail.webp"
-          },
-          {
-            "type": "string",
-            "const": "/archive/s7/key-visual.jpg"
-          },
-          {
-            "type": "string",
-            "const": "/archive/s6/key-visual.webp"
-          },
-          {
-            "type": "string",
-            "const": "/archive/s5/key-visual.webp"
-          },
-          {
-            "type": "string",
-            "const": "/archive/s4/key-visual.avif"
-          },
-          {
-            "type": "string",
-            "const": "/archive/s3/key-visual.avif"
-          },
-          {
-            "type": "string",
-            "const": "/archive/s2/key-visual.avif"
-          },
-          {
-            "type": "string",
-            "const": "/archive/s1/key-visual.webp"
-          }
-        ]
-      },
-      "Read789fefbfbc20": {
-        "anyOf": [
-          {
-            "type": "null"
-          },
-          {
-            "type": "string",
-            "const": "/archive/s10/thumbnail.webp"
-          },
-          {
-            "type": "string",
-            "const": "/archive/s9/thumbnail.webp"
-          },
-          {
-            "type": "string",
-            "const": "/archive/s8/thumbnail.webp"
-          },
-          {
-            "type": "string",
-            "const": "/archive/s7/key-visual.jpg"
-          },
-          {
-            "type": "string",
-            "const": "/archive/s6/key-visual.webp"
-          },
-          {
-            "type": "string",
-            "const": "/archive/s5/key-visual.webp"
-          },
-          {
-            "type": "string",
-            "const": "/archive/s4/key-visual.avif"
-          },
-          {
-            "type": "string",
-            "const": "/archive/s3/key-visual.avif"
-          },
-          {
-            "type": "string",
-            "const": "/archive/s2/key-visual.avif"
-          },
-          {
-            "type": "string",
-            "const": "/archive/s1/key-visual.webp"
-          },
-          {
-            "type": "string",
-            "const": "/oclr-s11-key-visual.webp"
           }
         ]
       },
@@ -4126,6 +3879,253 @@
           "source"
         ],
         "additionalProperties": false
+      },
+      "Readcb41459d5612": {
+        "anyOf": [
+          {
+            "type": "null"
+          },
+          {
+            "$ref": "#/components/schemas/Read8d1572d5fb08"
+          }
+        ]
+      },
+      "Read8d1572d5fb08": {
+        "type": "object",
+        "properties": {
+          "version": {
+            "type": "string"
+          },
+          "sections": {
+            "type": "array",
+            "items": {
+              "type": "object",
+              "properties": {
+                "heading": {
+                  "type": "string"
+                },
+                "body": {
+                  "type": "string"
+                }
+              },
+              "required": [
+                "heading",
+                "body"
+              ],
+              "additionalProperties": false
+            }
+          }
+        },
+        "required": [
+          "version",
+          "sections"
+        ],
+        "additionalProperties": false
+      },
+      "Read53d8bb6b02cb": {
+        "type": "array",
+        "items": {
+          "$ref": "#/components/schemas/Read3e69714f262b"
+        }
+      },
+      "Read3e69714f262b": {
+        "type": "object",
+        "properties": {
+          "label": {
+            "type": "string"
+          },
+          "at": {
+            "anyOf": [
+              {
+                "type": "null"
+              },
+              {
+                "type": "string"
+              }
+            ]
+          },
+          "kind": {
+            "anyOf": [
+              {
+                "type": "null",
+                "x-oclr-undefined": true
+              },
+              {
+                "type": "string",
+                "const": "group"
+              },
+              {
+                "type": "string",
+                "const": "knockout"
+              }
+            ]
+          },
+          "endAt": {
+            "anyOf": [
+              {
+                "type": "null",
+                "x-oclr-undefined": true
+              },
+              {
+                "type": "null"
+              },
+              {
+                "type": "string"
+              }
+            ]
+          },
+          "precision": {
+            "anyOf": [
+              {
+                "type": "null",
+                "x-oclr-undefined": true
+              },
+              {
+                "type": "string",
+                "const": "day"
+              },
+              {
+                "type": "string",
+                "const": "instant"
+              }
+            ]
+          }
+        },
+        "required": [
+          "label",
+          "at"
+        ],
+        "additionalProperties": false
+      },
+      "Read5ab2db77dabd": {
+        "type": "object",
+        "properties": {
+          "logo": {
+            "$ref": "#/components/schemas/Read23fb18671aa9"
+          },
+          "background": {
+            "anyOf": [
+              {
+                "type": "null"
+              },
+              {
+                "type": "string",
+                "const": "/oclr-s11-website-background.webp"
+              }
+            ]
+          },
+          "keyVisual": {
+            "$ref": "#/components/schemas/Read789fefbfbc20"
+          }
+        },
+        "required": [
+          "logo",
+          "background",
+          "keyVisual"
+        ],
+        "additionalProperties": false
+      },
+      "Read23fb18671aa9": {
+        "anyOf": [
+          {
+            "type": "null"
+          },
+          {
+            "type": "string",
+            "const": "/oclr-s11-square-logo.webp"
+          },
+          {
+            "type": "string",
+            "const": "/archive/s10/thumbnail.webp"
+          },
+          {
+            "type": "string",
+            "const": "/archive/s9/thumbnail.webp"
+          },
+          {
+            "type": "string",
+            "const": "/archive/s8/thumbnail.webp"
+          },
+          {
+            "type": "string",
+            "const": "/archive/s7/key-visual.jpg"
+          },
+          {
+            "type": "string",
+            "const": "/archive/s6/key-visual.webp"
+          },
+          {
+            "type": "string",
+            "const": "/archive/s5/key-visual.webp"
+          },
+          {
+            "type": "string",
+            "const": "/archive/s4/key-visual.avif"
+          },
+          {
+            "type": "string",
+            "const": "/archive/s3/key-visual.avif"
+          },
+          {
+            "type": "string",
+            "const": "/archive/s2/key-visual.avif"
+          },
+          {
+            "type": "string",
+            "const": "/archive/s1/key-visual.webp"
+          }
+        ]
+      },
+      "Read789fefbfbc20": {
+        "anyOf": [
+          {
+            "type": "null"
+          },
+          {
+            "type": "string",
+            "const": "/archive/s10/thumbnail.webp"
+          },
+          {
+            "type": "string",
+            "const": "/archive/s9/thumbnail.webp"
+          },
+          {
+            "type": "string",
+            "const": "/archive/s8/thumbnail.webp"
+          },
+          {
+            "type": "string",
+            "const": "/archive/s7/key-visual.jpg"
+          },
+          {
+            "type": "string",
+            "const": "/archive/s6/key-visual.webp"
+          },
+          {
+            "type": "string",
+            "const": "/archive/s5/key-visual.webp"
+          },
+          {
+            "type": "string",
+            "const": "/archive/s4/key-visual.avif"
+          },
+          {
+            "type": "string",
+            "const": "/archive/s3/key-visual.avif"
+          },
+          {
+            "type": "string",
+            "const": "/archive/s2/key-visual.avif"
+          },
+          {
+            "type": "string",
+            "const": "/archive/s1/key-visual.webp"
+          },
+          {
+            "type": "string",
+            "const": "/oclr-s11-key-visual.webp"
+          }
+        ]
       },
       "Read9d043f4f751e": {
         "anyOf": [

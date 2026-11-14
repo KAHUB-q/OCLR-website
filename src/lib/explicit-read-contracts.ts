@@ -14,6 +14,10 @@ import type { ConfigurationReadContracts } from "./configuration-read-contracts"
 import type { CompetitionDetailReadContracts } from "./competition-detail-read-contracts";
 import type { StaffWorkspaceReadContracts } from "./staff-workspace-read-contracts";
 import type { FixtureReadContracts } from "./fixture-read-contracts";
+import {
+  beatmapLeaderboardReadContract,
+  careerLeaderboardReadContract,
+} from "./ranking-snapshot-model";
 export type StructuralReadContracts = ConfigurationReadContracts &
   CompetitionDetailReadContracts &
   StaffWorkspaceReadContracts &
@@ -211,6 +215,8 @@ export const explicitReadContracts = {
   publicPlayerMra,
   publicPlayerParticipation: publicPlayerParticipationReadContract,
   playerLeaderboard: playerLeaderboardReadContract,
+  careerLeaderboard: careerLeaderboardReadContract,
+  beatmapLeaderboard: beatmapLeaderboardReadContract,
   publicBracket: publicBracketReadContract,
   publicCompetition: publicCompetitionReadContract,
   candidateComments,

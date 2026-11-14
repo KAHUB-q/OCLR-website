@@ -1,7 +1,3 @@
-import {
-  beatmapLeaderboardReadContract,
-  careerLeaderboardReadContract,
-} from "./ranking-snapshot-model";
 import { z } from "zod";
 import { replaySummarySchema } from "./replay-model";
 import { playerMessageSchema } from "./player-message-model";
@@ -18,6 +14,10 @@ import type { ConfigurationReadContracts } from "./configuration-read-contracts"
 import type { CompetitionDetailReadContracts } from "./competition-detail-read-contracts";
 import type { StaffWorkspaceReadContracts } from "./staff-workspace-read-contracts";
 import type { FixtureReadContracts } from "./fixture-read-contracts";
+import {
+  beatmapLeaderboardReadContract,
+  careerLeaderboardReadContract,
+} from "./ranking-snapshot-model";
 export type StructuralReadContracts = ConfigurationReadContracts &
   CompetitionDetailReadContracts &
   StaffWorkspaceReadContracts &

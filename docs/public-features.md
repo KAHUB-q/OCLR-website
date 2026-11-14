@@ -109,7 +109,10 @@ The player profile summary can also show the current osu!standard tournament
 rating from [o!TR](https://otr.stagec.net). Set `OTR_API_KEY` in the server's
 runtime environment to enable lookups for publicly listed players. The note
 links to the provider profile and shows when the rating was fetched. The
-server caches the public result for up to five minutes. The column shows
+player profile and S11 directory share a PostgreSQL cache keyed by osu! UID.
+The server refreshes a saved rating after 24 hours and checks again after one
+hour when o!TR confirms a player has no rating. On a temporary API failure, it
+serves the last saved rating and backs off for five minutes. The column shows
 “No rating data” when the key or rating is unavailable, including in saved
 remote development mode.
 

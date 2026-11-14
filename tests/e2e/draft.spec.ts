@@ -506,19 +506,25 @@ test.describe("isolated multi-captain rehearsal", () => {
       fixture.staff.username,
     ])
       expect(payload).not.toContain(forbidden);
-    await a.context.clearCookies();
-    await a.context.addCookies(englishStorage.cookies);
-    await staff.context.clearCookies();
-    await staff.context.addCookies(englishStorage.cookies);
+    const logouts = await Promise.all(
+      [a, staff].map(({ context }) =>
+        context.request.post("/auth/logout", {
+          headers: { Origin: origin },
+          maxRedirects: 0,
+        }),
+      ),
+    );
+    for (const logout of logouts) expect(logout.status()).toBe(303);
     await expect(
       a.page.getByRole("heading", {
         name: "Sign-in or captain access changed.",
         exact: true,
       }),
-    ).toBeVisible();
+    ).toBeVisible({ timeout: 15000 });
     await expect(a.page.locator(".draft-picks > li")).toHaveCount(0);
     await expect(staff.page.getByRole("main").getByRole("alert")).toHaveText(
       "Staff access is unavailable. Sign in again or contact the organizer.",
+      { timeout: 15000 },
     );
     await expect(staff.page.locator(".draft-picks > li")).toHaveCount(0);
   });
@@ -544,7 +550,21 @@ test.describe("isolated multi-captain rehearsal", () => {
         exact: true,
       })
       .click();
-    await Promise.all([
+    const pickPath = `/api/tournaments/${slug}/draft/picks`;
+    const ready = Promise.withResolvers<void>();
+    let submissions = 0;
+    for (const { page } of [a, staff]) {
+      await page.route(`**${pickPath}`, async (route) => {
+        // Release both confirmations together so a live snapshot cannot
+        // invalidate the second selection before its request is sent.
+        if (++submissions === 2) ready.resolve();
+        await ready.promise;
+        await route.continue();
+      });
+    }
+    const [captainResponse, staffResponse] = await Promise.all([
+      a.page.waitForResponse((response) => response.url().endsWith(pickPath)),
+      staff.page.waitForResponse((response) => response.url().endsWith(pickPath)),
       a.page.getByRole("button", { name: "Confirm Pick", exact: true }).click(),
       staff.page
         .getByRole("button", {
@@ -553,25 +573,27 @@ test.describe("isolated multi-captain rehearsal", () => {
         })
         .click(),
     ]);
+    const responses = [captainResponse, staffResponse];
+    expect(responses.map((response) => response.status()).sort()).toEqual([
+      200, 409,
+    ]);
+    const conflict = responses.find((response) => response.status() === 409)!;
+    expect(await conflict.json()).toMatchObject({
+      error: expect.stringContaining("Draft state changed"),
+    });
     await expect
       .poll(async () => (await db().select().from(draftPicks)).length)
       .toBe(1);
-    await expect
-      .poll(
-        async () =>
-          (await a.page.locator("main").innerText()) +
-          (await staff.page.locator("main").innerText()),
-      )
-      .toContain("Draft state changed");
+    for (const { page } of [a, staff]) {
+      await expect(
+        page.getByLabel("Pending selection", { exact: true }),
+      ).not.toContainText(fixture.players[0].username);
+    }
     await expect(
       staff.page.getByText("Committed changes await publication.", {
         exact: false,
       }),
     ).toHaveCount(0);
-    const cancel = staff.page
-      .locator("dialog[open]")
-      .getByRole("button", { name: "Cancel", exact: true });
-    if (await cancel.count()) await cancel.click();
     await expect(
       staff.page.getByRole("button", {
         name: `Select for Captain ${fixture.b.username}`,
@@ -592,6 +614,21 @@ test.describe("isolated multi-captain rehearsal", () => {
     const slug = isMobile ? "draft-mobile-test" : "draft-desktop-test";
     const fixture = await prepareDraft(slug, isMobile ? 120001 : 110001);
     const a = await actor(browser, fixture.a.osuId, isMobile);
+    const snapshotPath = `/api/tournaments/${slug}/draft/captain`;
+    const resumeSnapshots = Promise.withResolvers<void>();
+    let holdSnapshots = false;
+    await a.page.route(
+      (url) => url.pathname === snapshotPath,
+      async (route) => {
+        // Exercise a lost receipt while the authoritative snapshot is delayed.
+        if (new URL(route.request().url()).searchParams.has("live")) {
+          await route.fulfill({ status: 204 });
+          return;
+        }
+        if (holdSnapshots) await resumeSnapshots.promise;
+        await route.continue();
+      },
+    );
     await a.page.goto(`/tournaments/${slug}/draft/captain`);
     const choose = a.page.getByRole("button", {
       name: `Choose ${fixture.players[0].username}`,
@@ -612,6 +649,7 @@ test.describe("isolated multi-captain rehearsal", () => {
     ).toBeDisabled();
     await choose.focus();
     await choose.press("Enter");
+    holdSnapshots = true;
     const payloads: object[] = [];
     await a.page.route(
       `**/api/tournaments/${slug}/draft/picks`,
@@ -643,11 +681,13 @@ test.describe("isolated multi-captain rehearsal", () => {
     expect(payloads).toHaveLength(2);
     expect(payloads[1]).toEqual(payloads[0]);
     expect(await db().select().from(draftPicks)).toHaveLength(1);
-    await expect(
-      a.page
-        .getByRole("list", { name: "My team roster", exact: true })
-        .locator("li"),
-    ).toHaveCount(1);
+    holdSnapshots = false;
+    resumeSnapshots.resolve();
+    const roster = a.page
+      .getByRole("list", { name: "My team roster", exact: true })
+      .locator("li");
+    await expect(roster).toHaveCount(2);
+    await expect(roster.last()).toContainText(fixture.players[0].username);
     await expect(a.page.getByRole("dialog")).toHaveCount(0);
   });
 });

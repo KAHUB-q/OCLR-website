@@ -108,15 +108,15 @@ export async function databasePublicPlayerMra(
     };
   });
 }
-async function supportsBackgroundReads() {
+export async function supportsRankingReads(minor: number) {
   const { frontendConnection } = await import("./frontend-data");
   const version = /^1\.(\d+)\./.exec(
     (await frontendConnection()).contractVersion ?? "",
   );
-  return !!version && Number(version[1]) >= 24;
+  return !!version && Number(version[1]) >= minor;
 }
 export async function playerLeaderboard(): Promise<PlayerLeaderboard> {
-  if (remoteMode() && !(await supportsBackgroundReads())) {
+  if (remoteMode() && !(await supportsRankingReads(24))) {
     // Compatibility with older read-only backends; current backends use saved results.
     const { getPublicEditions } = await import("./content");
     const { publicArchiveStatistics } = await import("./archive-statistics-reads");
@@ -150,7 +150,7 @@ export async function playerLeaderboard(): Promise<PlayerLeaderboard> {
 }
 export async function publicPlayerMra(osuId: number): Promise<PublicPlayerMra> {
   if (!remoteMode()) return databasePublicPlayerMra(osuId);
-  if (await supportsBackgroundReads())
+  if (await supportsRankingReads(24))
     return frontendResource<PublicPlayerMra>("publicPlayerMra", { osuId });
   const legacy = await playerLeaderboard();
   return {

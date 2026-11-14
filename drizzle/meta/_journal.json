@@ -673,6 +673,13 @@
       "when": 1794451110389,
       "tag": "0095_s11_imported_player_ratings",
       "breakpoints": true
+    },
+    {
+      "idx": 96,
+      "version": "7",
+      "when": 1794690356589,
+      "tag": "0096_background_career_beatmap_rankings",
+      "breakpoints": true
     }
   ]
 }

@@ -497,6 +497,12 @@ while retaining its exact prior statistics identity through `sourceTitle`;
 existing maps without these fields remain compatible. See
 [the S2 NM2 recovery](archive-map-metadata.md#s2-nm2-official-file-recovery-852).
 
+Contract 1.35.0 adds public `GET /rankings/career` and `GET /rankings/beatmap`.
+They return the current background snapshot with `state` and `calculatedAt`, or
+empty results in `pending` state while the snapshot is missing or stale. See
+[background player analytics](background-player-analytics.md) for the shared
+worker and its publication checks.
+
 Contract 1.34.0 adds optional `importedRatings` to published S11 player rows.
 It contains the imported SIP total and ETX total with provisional and outdated
 flags when available. The browser write contract 0.5.0 adds the Admin CSV import.

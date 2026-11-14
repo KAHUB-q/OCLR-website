@@ -589,6 +589,26 @@
     "scope": "tournaments:read"
   },
   {
+    "module": "saved-rankings",
+    "fn": "careerLeaderboard",
+    "id": "careerLeaderboard",
+    "path": "/rankings/career",
+    "args": [],
+    "public": true,
+    "query": [],
+    "scope": "tournaments:read"
+  },
+  {
+    "module": "saved-rankings",
+    "fn": "beatmapLeaderboard",
+    "id": "beatmapLeaderboard",
+    "path": "/rankings/beatmap",
+    "args": [],
+    "public": true,
+    "query": [],
+    "scope": "tournaments:read"
+  },
+  {
     "module": "player-leaderboard",
     "fn": "publicPlayerMra",
     "id": "publicPlayerMra",

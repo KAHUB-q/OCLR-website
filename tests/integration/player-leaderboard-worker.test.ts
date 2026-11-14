@@ -10,19 +10,32 @@ import {
 import { eq, sql } from "drizzle-orm";
 import { db, closeDb, readOnlyData } from "../../src/db";
 import {
+  captains,
   editionState,
   historicalStatistics,
   historicalStatisticsRevisions,
+  mappoolEntries,
+  mappools,
+  memberships,
   playerLeaderboardRows,
   playerLeaderboardVersions,
   playerNames,
+  rankingSnapshots,
+  teams,
+  tournamentRounds,
+  tournamentStages,
   userProfileCache,
+  users,
 } from "../../src/db/schema";
 import { refreshPlayerLeaderboard } from "../../src/lib/player-leaderboard-worker";
 import {
   databasePlayerLeaderboard,
   databasePublicPlayerMra,
 } from "../../src/lib/player-leaderboard";
+import {
+  databaseBeatmapLeaderboard,
+  databaseCareerLeaderboard,
+} from "../../src/lib/saved-rankings";
 import { projectPlayerLeaderboard } from "../../src/lib/player-leaderboard-projector";
 import * as statistics from "../../src/lib/archive-statistics-reads";
 import { readTournaments } from "../../src/lib/tournament-reads";
@@ -30,6 +43,7 @@ import { withReadChannel } from "../../src/lib/read-channel";
 import { readApiRoute } from "../../src/lib/read-api";
 import { archiveQueryFixture } from "../fixtures/archive-query";
 import { edition } from "../fixtures/edition";
+import { syntheticPublicPools } from "../fixtures/public-mappools";
 import { seedEditions } from "../fixtures/editions";
 import { normalizeOsuProfile } from "../../src/lib/osu-profile-model";
 import { profileResponse } from "../fixtures/osu-profile";
@@ -45,11 +59,13 @@ describe.skipIf(!url)("background public player analytics (#916)", () => {
     vi.stubEnv("DATABASE_URL", url!);
     vi.stubEnv("APP_URL", "https://oclr.example.test");
     vi.stubEnv("OCLR_DEVELOPER_ORIGINS", "http://localhost:3000");
+    vi.stubEnv("OSU_CLIENT_ID", undefined);
+    vi.stubEnv("OSU_CLIENT_SECRET", undefined);
   });
   beforeEach(async () => {
     vi.restoreAllMocks();
     await db().execute(
-      sql`TRUNCATE edition_state,users,user_profile_cache,player_names,player_leaderboard_versions CASCADE`,
+      sql`TRUNCATE edition_state,users,user_profile_cache,player_names,player_leaderboard_versions,ranking_snapshots CASCADE`,
     );
     const f = archiveQueryFixture();
     await seedEditions([
@@ -131,6 +147,176 @@ describe.skipIf(!url)("background public player analytics (#916)", () => {
       db().update(playerLeaderboardRows).set({ mra: 9 }),
     ).rejects.toThrow();
     await expect(db().delete(playerLeaderboardVersions)).rejects.toThrow();
+  });
+  it("publishes career totals and beatmap stats through the shared job and invalidates only the affected live ranking", async () => {
+    const projection = vi.spyOn(statistics, "publicArchiveStatistics");
+    for (const kind of ["career", "beatmap"]) {
+      const response = await readApiRoute(
+        new Request(`https://oclr.example.test/api/v1/rankings/${kind}`),
+      );
+      expect(response.status).toBe(200);
+      expect((await response.json()).data).toMatchObject({
+        state: "pending",
+        calculatedAt: null,
+      });
+    }
+    expect(projection).not.toHaveBeenCalled();
+    expect(await db().select().from(rankingSnapshots)).toEqual([]);
+    expect(await refreshPlayerLeaderboard(true)).toMatchObject({
+      career: "updated",
+      beatmap: "updated",
+    });
+    expect(projection).toHaveBeenCalledTimes(1);
+    const initialCareer = await databaseCareerLeaderboard();
+    expect(
+      initialCareer.players.find((row) => row.osuId === 91003)?.career,
+    ).toMatchObject({ seasons: 1, mapsPlayed: expect.any(Number) });
+    const initialBeatmaps = await databaseBeatmapLeaderboard();
+    expect(initialBeatmaps.maps).toEqual(
+      expect.arrayContaining([
+        expect.objectContaining({
+          beatmapId: 10001,
+          plays: expect.any(Number),
+        }),
+      ]),
+    );
+
+    const slug = edition.slug;
+    await seedEditions([edition]);
+    await db()
+      .insert(users)
+      .values({ osuId: 91003, username: "Synthetic player" });
+    await db()
+      .insert(captains)
+      .values({
+        editionSlug: slug,
+        userId: 91003,
+        position: 1,
+        published: true,
+      });
+    const [team] = await db()
+      .insert(teams)
+      .values({
+        editionSlug: slug,
+        captainId: 91003,
+        name: "Synthetic team",
+        finalizedAt: new Date(),
+        identityPublished: true,
+        rosterPublished: true,
+      })
+      .returning();
+    await db()
+      .insert(memberships)
+      .values({
+        editionSlug: slug,
+        teamId: team.id,
+        userId: 91003,
+        origin: "synthetic",
+      });
+    const [stage] = await db()
+      .insert(tournamentStages)
+      .values({ editionSlug: slug, kind: "knockout" })
+      .returning();
+    const [round] = await db()
+      .insert(tournamentRounds)
+      .values({
+        editionSlug: slug,
+        stageId: stage.id,
+        name: "Grand Final",
+        position: 1,
+      })
+      .returning();
+    const [pool] = await db()
+      .insert(mappools)
+      .values({
+        editionSlug: slug,
+        roundId: round.id,
+        name: "Live pool",
+        publishedAt: new Date(),
+      })
+      .returning();
+    const { beatmapId, metadata, category, position } =
+      syntheticPublicPools[0].entries[0];
+    await db()
+      .insert(mappoolEntries)
+      .values({ poolId: pool.id, beatmapId, metadata, category, position });
+
+    await refreshPlayerLeaderboard(true);
+    projection.mockClear();
+    const career = await databaseCareerLeaderboard();
+    const beatmaps = await databaseBeatmapLeaderboard();
+    expect(
+      career.players.find((row) => row.osuId === 91003)?.career.seasons,
+    ).toBe(2);
+    expect(
+      beatmaps.maps.find((row) => row.beatmapId === beatmapId),
+    ).toMatchObject({
+      difficulty: metadata.difficulty,
+      stars: metadata.stars,
+      plays: 0,
+    });
+    for (const [kind, result] of [
+      ["career", career],
+      ["beatmap", beatmaps],
+    ] as const) {
+      const response = await readApiRoute(
+        new Request(`https://oclr.example.test/api/v1/rankings/${kind}`),
+      );
+      expect(response.status).toBe(200);
+      expect((await response.json()).data).toEqual(result);
+    }
+    expect(await refreshPlayerLeaderboard(true)).toMatchObject({
+      status: "current",
+    });
+    expect(projection).not.toHaveBeenCalled();
+
+    await db()
+      .update(mappoolEntries)
+      .set({ metadata: { ...metadata, stars: metadata.stars + 1 } })
+      .where(eq(mappoolEntries.poolId, pool.id));
+    expect(await databaseBeatmapLeaderboard()).toMatchObject({
+      state: "pending",
+      maps: [],
+    });
+    expect(await databaseCareerLeaderboard()).toEqual(career);
+    expect(await refreshPlayerLeaderboard(true)).toMatchObject({
+      career: "current",
+      beatmap: "updated",
+    });
+    expect(
+      (await databaseBeatmapLeaderboard()).maps.find(
+        (row) => row.beatmapId === beatmapId,
+      )?.stars,
+    ).toBe(metadata.stars + 1);
+    await db()
+      .update(mappools)
+      .set({ publishedAt: null })
+      .where(eq(mappools.id, pool.id));
+    expect(await databaseBeatmapLeaderboard()).toMatchObject({
+      state: "pending",
+      maps: [],
+    });
+
+    await db()
+      .update(teams)
+      .set({ rosterPublished: false })
+      .where(eq(teams.id, team.id));
+    expect(await databaseCareerLeaderboard()).toMatchObject({
+      state: "pending",
+      players: [],
+    });
+    await refreshPlayerLeaderboard(true);
+    expect(
+      (await databaseCareerLeaderboard()).players.find(
+        (row) => row.osuId === 91003,
+      )?.career.seasons,
+    ).toBe(1);
+    expect(
+      (await databaseBeatmapLeaderboard()).maps.some(
+        (row) => row.beatmapId === beatmapId,
+      ),
+    ).toBe(false);
+    await expect(db().delete(rankingSnapshots)).rejects.toThrow();
   });
   it("keeps saved pp/art fresh without recalculating rankings and invalidates immediately on source or publication changes", async () => {
     await refreshPlayerLeaderboard(true);
@@ -311,6 +497,7 @@ describe.skipIf(!url)("background public player analytics (#916)", () => {
       created: false,
     });
     expect(await db().select().from(playerLeaderboardVersions)).toEqual([]);
+    expect(await db().select().from(rankingSnapshots)).toEqual([]);
     spy.mockRestore();
     await refreshPlayerLeaderboard(true);
     const before = await db().select().from(playerLeaderboardVersions);

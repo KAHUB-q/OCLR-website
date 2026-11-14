@@ -10,11 +10,8 @@ import {
 } from "@/components/player-leaderboard-cards";
 import { RankingContext } from "@/components/ranking-context";
 import { getAppTranslations } from "@/i18n/server";
-import {
-  careerLeaderboard,
-  type CareerLeaderboardRow,
-} from "@/lib/player-career";
-import { playerLeaderboard } from "@/lib/player-leaderboard";
+import type { CareerLeaderboardRow } from "@/lib/ranking-snapshot-model";
+import { careerLeaderboard } from "@/lib/saved-rankings";
 import { remotePage } from "@/lib/remote-page";
 
 import styles from "./page.module.css";
@@ -112,7 +109,7 @@ export async function generateMetadata() {
 
 async function CareerContent() {
   const tr = await getAppTranslations();
-  const data = await careerLeaderboard(await playerLeaderboard());
+  const data = await careerLeaderboard();
   const cards = rankCards(data.players);
   const columns: LeaderboardColumn[] = [
     { key: "uid", label: "#" },

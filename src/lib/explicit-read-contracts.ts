@@ -1,3 +1,7 @@
+import {
+  beatmapLeaderboardReadContract,
+  careerLeaderboardReadContract,
+} from "./ranking-snapshot-model";
 import { z } from "zod";
 import { replaySummarySchema } from "./replay-model";
 import { playerMessageSchema } from "./player-message-model";
@@ -211,6 +215,8 @@ export const explicitReadContracts = {
   publicPlayerMra,
   publicPlayerParticipation: publicPlayerParticipationReadContract,
   playerLeaderboard: playerLeaderboardReadContract,
+  careerLeaderboard: careerLeaderboardReadContract,
+  beatmapLeaderboard: beatmapLeaderboardReadContract,
   publicBracket: publicBracketReadContract,
   publicCompetition: publicCompetitionReadContract,
   candidateComments,

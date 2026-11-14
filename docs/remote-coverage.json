@@ -1884,18 +1884,10 @@
       "file": "src/app/ranking/beatmap/page.tsx",
       "kind": "page",
       "authority": "saved-read",
-      "operations": [
-        "listPublicTournaments",
-        "publicArchiveStatistics",
-        "publicMappools"
-      ],
+      "operations": ["beatmapLeaderboard"],
       "commands": "Denied in remote mode; connection management and preference cookies remain separate",
       "metadata": "Same file; shared request adapter for dynamic data",
-      "services": [
-        "src/lib/public-read-models.ts / frontend-data.ts (listPublicTournaments)",
-        "src/lib/archive-statistics-reads.ts#publicArchiveStatistics",
-        "src/lib/mappool-reads.ts#publicMappools"
-      ],
+      "services": ["src/lib/saved-rankings.ts#beatmapLeaderboard"],
       "test": "remote-e2e/full-site.spec.ts + integration/extended-read.test.ts",
       "authorization": "Existing publication/subject boundaries",
       "adapter": "shared service wrapper → fixed v1 resource",
@@ -1906,20 +1898,10 @@
       "file": "src/app/ranking/career/page.tsx",
       "kind": "page",
       "authority": "saved-read",
-      "operations": [
-        "listPublicPlayers",
-        "listPublicTournaments",
-        "playerLeaderboard",
-        "publicArchiveStatistics"
-      ],
+      "operations": ["careerLeaderboard"],
       "commands": "Denied in remote mode; connection management and preference cookies remain separate",
       "metadata": "Same file; shared request adapter for dynamic data",
-      "services": [
-        "src/lib/player-leaderboard.ts#playerLeaderboard",
-        "src/lib/public-read-models.ts / frontend-data.ts (listPublicTournaments)",
-        "src/lib/archive-statistics-reads.ts#publicArchiveStatistics",
-        "src/lib/public-read-models.ts / frontend-data.ts (listPublicPlayers)"
-      ],
+      "services": ["src/lib/saved-rankings.ts#careerLeaderboard"],
       "test": "remote-e2e/full-site.spec.ts + integration/extended-read.test.ts",
       "authorization": "Existing publication/subject boundaries",
       "adapter": "shared service wrapper → fixed v1 resource",

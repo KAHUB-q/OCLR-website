@@ -680,6 +680,13 @@
       "when": 1794690356589,
       "tag": "0096_background_career_beatmap_rankings",
       "breakpoints": true
+    },
+    {
+      "idx": 97,
+      "version": "7",
+      "when": 1794698762736,
+      "tag": "0097_otr_rating_cache",
+      "breakpoints": true
     }
   ]
 }

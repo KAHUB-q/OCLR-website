@@ -2,6 +2,9 @@ import { afterEach, describe, expect, it, vi } from "vitest";
 import { getDirectoryOtrRatings, getOtrRating } from "../../src/lib/otr-rating";
 
 vi.mock("server-only", () => ({}));
+vi.mock("../../src/lib/otr-rating-cache", () => ({
+  readCachedOtrRating: (_osuId: number, load: () => Promise<unknown>) => load(),
+}));
 
 const stats = {
   playerInfo: { id: 321, osuId: 1060 },

@@ -206,7 +206,14 @@ export function MatchDetailsView({
                     </thead>
                     <tbody>
                       {g.scores.map((s, index) => (
-                        <tr key={`${s.osuId}:${index}`}>
+                        <tr
+                          key={`${s.osuId}:${index}`}
+                          data-lobby-team={
+                            s.lobbyTeam === "red" || s.lobbyTeam === "blue"
+                              ? s.lobbyTeam
+                              : undefined
+                          }
+                        >
                           <th scope="row">
                             {exhibition ? (
                               <a
@@ -249,13 +256,15 @@ export function MatchDetailsView({
                             )}
                           </td>
                           <td>
-                            {s.lobbyTeam === "blue"
-                              ? tr("Blue")
-                              : s.lobbyTeam === "red"
-                                ? tr("Red")
-                                : s.lobbyTeam === "none"
-                                  ? tr("No team")
-                                  : tr("Not recorded")}{" "}
+                            <span className={styles.lobbyTeam}>
+                              {s.lobbyTeam === "blue"
+                                ? tr("Blue")
+                                : s.lobbyTeam === "red"
+                                  ? tr("Red")
+                                  : s.lobbyTeam === "none"
+                                    ? tr("No team")
+                                    : tr("Not recorded")}
+                            </span>{" "}
                             / {number(s.slot)}
                           </td>
                           <td>{number(s.total)}</td>

@@ -138,6 +138,29 @@ describe("match-page presentation", () => {
     expect(match(data)).not.toContain("Failed scores counted as 0");
   });
 
+  it("marks the recorded lobby side regardless of reviewed team mapping", () => {
+    const data = details();
+    data.rating = null;
+    const game = data.games[0];
+    game.rosterMapping = true;
+    const scores = game.scores.slice(0, 4).map((score, index) => ({
+      ...score,
+      teamId: data.teamIds[0],
+      lobbyTeam: (["red", "blue", "none", null] as const)[index],
+    }));
+    game.scores = scores;
+    data.games = [game];
+
+    const html = match(data);
+    expect(html.match(/<tr(?: data-lobby-team="[^"]+")?>/g)).toEqual([
+      "<tr>",
+      '<tr data-lobby-team="red">',
+      '<tr data-lobby-team="blue">',
+      "<tr>",
+      "<tr>",
+    ]);
+  });
+
   it("keeps unavailable states and the full rating view used by other pages", () => {
     expect(match(null)).toContain("Match details unavailable.");
     const data = details();

@@ -1,7 +1,12 @@
 .scores {
+  --lobby-stripe-width: 3px;
   min-width: 68rem;
   font-size: var(--text-small);
   font-variant-numeric: tabular-nums;
+}
+
+:global(html[data-theme="dark"]) .scores {
+  --lobby-stripe-width: 4px;
 }
 
 .scores th,
@@ -30,6 +35,75 @@
 
 .scores td:nth-child(3) {
   white-space: nowrap;
+}
+
+.scores tr[data-lobby-team="red"] {
+  --lobby-tint: light-dark(#fcf0f2, #392631);
+  --lobby-marker: light-dark(#bd4566, #ff8b9d);
+  --lobby-label-background: light-dark(#f8dce4, #583345);
+  --lobby-label-text: light-dark(#8b2142, #ffd6df);
+}
+
+.scores tr[data-lobby-team="blue"] {
+  --lobby-tint: light-dark(#edf6ff, #1c304a);
+  --lobby-marker: light-dark(#3582bd, #7bbaff);
+  --lobby-label-background: light-dark(#d9ebff, #284769);
+  --lobby-label-text: light-dark(#174d83, #d4eaff);
+}
+
+.scores tr[data-lobby-team] {
+  --lobby-row: color-mix(in srgb, var(--lobby-tint) 85%, var(--site-surface));
+  background: var(--lobby-row);
+  color: var(--site-foreground);
+}
+
+.scores tr[data-lobby-team]:hover {
+  background: color-mix(in srgb, var(--lobby-row) 93%, var(--lobby-marker));
+}
+
+.scores tr[data-lobby-team] > th {
+  box-shadow: inset var(--lobby-stripe-width) 0 var(--lobby-marker);
+}
+
+.scores tr[data-lobby-team] > :is(th, td) {
+  border-bottom-color: light-dark(
+    var(--site-border),
+    color-mix(in srgb, var(--site-border) 45%, var(--lobby-row))
+  );
+}
+
+.scores
+  tr:is(
+    [data-lobby-team="red"]:has(+ [data-lobby-team="blue"]),
+    [data-lobby-team="blue"]:has(+ [data-lobby-team="red"])
+  )
+  > :is(th, td) {
+  border-bottom-color: light-dark(
+    color-mix(in srgb, var(--site-control-border) 35%, var(--site-border)),
+    color-mix(in srgb, var(--site-control-border) 65%, var(--site-border))
+  );
+}
+
+.scores tr[data-lobby-team] .lobbyTeam {
+  display: inline-block;
+  padding: 0.125rem 0.4375rem;
+  border-radius: 0.25rem;
+  background: var(--lobby-label-background);
+  color: var(--lobby-label-text);
+  box-shadow: inset 0 0 0 1px
+    light-dark(
+      transparent,
+      color-mix(in srgb, var(--lobby-marker) 35%, transparent)
+    );
+  font-size: var(--text-label);
+  font-weight: 650;
+}
+
+.scores tr[data-lobby-team] :global(.text-link) {
+  color: light-dark(
+    var(--site-accent),
+    color-mix(in srgb, var(--site-foreground) 65%, var(--site-accent))
+  );
 }
 
 .scores th:nth-child(n + 4):nth-child(-n + 8),

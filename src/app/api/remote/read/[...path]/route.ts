@@ -1,8 +1,9 @@
 import { NextResponse } from "next/server";
 import { frontendRemoteRead } from "@/lib/frontend-data";
+import { withFrontendReadRequest } from "@/lib/next-frontend-request";
 import { remoteConfiguration } from "@/lib/data-source";
 import { RemoteDataError } from "@/lib/remote-errors";
-export async function GET(
+async function readGET(
   request: Request,
   { params }: { params: Promise<{ path: string[] }> },
 ) {
@@ -38,6 +39,13 @@ export async function GET(
     );
   }
 }
+export async function GET(
+  request: Request,
+  context: Parameters<typeof readGET>[1],
+) {
+  return withFrontendReadRequest(() => readGET(request, context));
+}
+
 export async function HEAD(
   request: Request,
   context: { params: Promise<{ path: string[] }> },

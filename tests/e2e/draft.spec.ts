@@ -544,7 +544,21 @@ test.describe("isolated multi-captain rehearsal", () => {
         exact: true,
       })
       .click();
-    await Promise.all([
+    const pickPath = `/api/tournaments/${slug}/draft/picks`;
+    const ready = Promise.withResolvers<void>();
+    let submissions = 0;
+    for (const { page } of [a, staff]) {
+      await page.route(`**${pickPath}`, async (route) => {
+        // Release both confirmations together so a live snapshot cannot
+        // invalidate the second selection before its request is sent.
+        if (++submissions === 2) ready.resolve();
+        await ready.promise;
+        await route.continue();
+      });
+    }
+    const [captainResponse, staffResponse] = await Promise.all([
+      a.page.waitForResponse((response) => response.url().endsWith(pickPath)),
+      staff.page.waitForResponse((response) => response.url().endsWith(pickPath)),
       a.page.getByRole("button", { name: "Confirm Pick", exact: true }).click(),
       staff.page
         .getByRole("button", {
@@ -553,25 +567,27 @@ test.describe("isolated multi-captain rehearsal", () => {
         })
         .click(),
     ]);
+    const responses = [captainResponse, staffResponse];
+    expect(responses.map((response) => response.status()).sort()).toEqual([
+      200, 409,
+    ]);
+    const conflict = responses.find((response) => response.status() === 409)!;
+    expect(await conflict.json()).toMatchObject({
+      error: expect.stringContaining("Draft state changed"),
+    });
     await expect
       .poll(async () => (await db().select().from(draftPicks)).length)
       .toBe(1);
-    await expect
-      .poll(
-        async () =>
-          (await a.page.locator("main").innerText()) +
-          (await staff.page.locator("main").innerText()),
-      )
-      .toContain("Draft state changed");
+    for (const { page } of [a, staff]) {
+      await expect(
+        page.getByLabel("Pending selection", { exact: true }),
+      ).not.toContainText(fixture.players[0].username);
+    }
     await expect(
       staff.page.getByText("Committed changes await publication.", {
         exact: false,
       }),
     ).toHaveCount(0);
-    const cancel = staff.page
-      .locator("dialog[open]")
-      .getByRole("button", { name: "Cancel", exact: true });
-    if (await cancel.count()) await cancel.click();
     await expect(
       staff.page.getByRole("button", {
         name: `Select for Captain ${fixture.b.username}`,

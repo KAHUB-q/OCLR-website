@@ -34,29 +34,30 @@ export function useSnapshotUpdates<T>(
     const accessLost = (status: number) =>
       authLost(status) || (clearOnNotFound && status === 404);
     const snapshotUrl = endpoint;
-    const controller = new AbortController();
+    let connection = new AbortController();
     const streamUrl = new URL(endpoint, window.location.origin);
     streamUrl.searchParams.set("live", "1");
     let timer: ReturnType<typeof setTimeout>;
     let nextStreamAttempt = 0;
     let stopped = false;
 
-    function receive(update: Update<T>) {
-      if (controller.signal.aborted) return;
+    function receive(signal: AbortSignal, update: Update<T>) {
+      if (signal.aborted) return;
       if (update.type === "access-lost") stopped = true;
       notify(update);
     }
-    async function readSnapshot() {
+    async function readSnapshot(signal: AbortSignal) {
       const response = await fetch(snapshotUrl, {
         cache: "no-store",
         credentials,
-        signal: AbortSignal.any([controller.signal, AbortSignal.timeout(8000)]),
+        signal: AbortSignal.any([signal, AbortSignal.timeout(8000)]),
       });
-      if (accessLost(response.status)) return receive({ type: "access-lost" });
+      if (accessLost(response.status))
+        return receive(signal, { type: "access-lost" });
       if (!response.ok) throw new Error("snapshot");
-      receive({ type: "snapshot", value: await response.json() });
+      receive(signal, { type: "snapshot", value: await response.json() });
     }
-    async function stream() {
+    async function stream(signal: AbortSignal) {
       const watchdog = new AbortController();
       let deadline = setTimeout(() => watchdog.abort(), Math.min(pollMs, 8000));
       try {
@@ -64,7 +65,7 @@ export function useSnapshotUpdates<T>(
           cache: "no-store",
           credentials,
           headers: { Accept: streamType },
-          signal: AbortSignal.any([controller.signal, watchdog.signal]),
+          signal: AbortSignal.any([signal, watchdog.signal]),
         });
         if (
           !response.ok ||
@@ -77,7 +78,7 @@ export function useSnapshotUpdates<T>(
           .getReader();
         try {
           let buffer = "";
-          while (!stopped) {
+          while (!stopped && !signal.aborted) {
             const { done, value } = await reader.read();
             if (done) return;
             buffer += value;
@@ -88,13 +89,13 @@ export function useSnapshotUpdates<T>(
               clearTimeout(deadline);
               deadline = setTimeout(() => watchdog.abort(), 18000);
               if (message.status && accessLost(message.status)) {
-                receive({ type: "access-lost" });
+                receive(signal, { type: "access-lost" });
                 return;
               }
               if ("snapshot" in message) {
-                if (refreshBroadcastProfile) await readSnapshot();
+                if (refreshBroadcastProfile) await readSnapshot(signal);
                 else
-                  receive({
+                  receive(signal, {
                     type: "snapshot",
                     value: message.snapshot ?? null,
                   });
@@ -109,34 +110,52 @@ export function useSnapshotUpdates<T>(
         watchdog.abort();
       }
     }
-    async function update() {
+    async function update(signal: AbortSignal) {
       try {
-        await readSnapshot();
+        await readSnapshot(signal);
         if (
           !remote &&
           !stopped &&
-          !controller.signal.aborted &&
+          !signal.aborted &&
           Date.now() >= nextStreamAttempt
         ) {
           try {
-            await stream();
+            await stream(signal);
           } catch {
             // A closed, unsupported or buffered stream falls back to snapshots.
           } finally {
-            nextStreamAttempt = Date.now() + 30000;
+            if (!signal.aborted) nextStreamAttempt = Date.now() + 30000;
           }
         }
       } catch {
-        receive({ type: "offline" });
+        receive(signal, { type: "offline" });
       } finally {
-        if (!controller.signal.aborted && !stopped)
-          timer = setTimeout(update, pollMs);
+        if (!signal.aborted && !stopped)
+          timer = setTimeout(() => void update(signal), pollMs);
       }
     }
-    void update();
-    return () => {
-      controller.abort();
+    // An established stream can outlive a browser network change. Discard its
+    // in-flight updates and recheck the authoritative snapshot on reconnect.
+    function goOffline() {
+      connection.abort();
       clearTimeout(timer);
+      if (!stopped) notify({ type: "offline" });
+    }
+    function goOnline() {
+      if (stopped || !connection.signal.aborted) return;
+      connection = new AbortController();
+      nextStreamAttempt = 0;
+      void update(connection.signal);
+    }
+    window.addEventListener("offline", goOffline);
+    window.addEventListener("online", goOnline);
+    if (navigator.onLine) void update(connection.signal);
+    else goOffline();
+    return () => {
+      connection.abort();
+      clearTimeout(timer);
+      window.removeEventListener("offline", goOffline);
+      window.removeEventListener("online", goOnline);
     };
   }, [
     endpoint,

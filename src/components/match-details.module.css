@@ -5,7 +5,10 @@
   font-variant-numeric: tabular-nums;
 }
 
-:global(html[data-theme="dark"]) .scores {
+/* Retro Arcade keeps dark surfaces in both brightness modes. */
+:global(html[data-theme="dark"]) .scores,
+:global(html[data-appearance="retro-arcade"]) .scores {
+  color-scheme: dark;
   --lobby-stripe-width: 4px;
 }
 
@@ -53,6 +56,10 @@
 
 .scores tr[data-lobby-team] {
   --lobby-row: color-mix(in srgb, var(--lobby-tint) 85%, var(--site-surface));
+  --lobby-link: light-dark(
+    var(--site-accent),
+    color-mix(in srgb, var(--site-foreground) 65%, var(--site-accent))
+  );
   background: var(--lobby-row);
   color: var(--site-foreground);
 }
@@ -65,19 +72,22 @@
   box-shadow: inset var(--lobby-stripe-width) 0 var(--lobby-marker);
 }
 
-.scores tr[data-lobby-team] > :is(th, td) {
+.details .scores tr[data-lobby-team] > :is(th[scope="row"], td) {
+  background-color: transparent;
+  color: inherit;
   border-bottom-color: light-dark(
     var(--site-border),
     color-mix(in srgb, var(--site-border) 45%, var(--lobby-row))
   );
 }
 
-.scores
+.details
+  .scores
   tr:is(
     [data-lobby-team="red"]:has(+ [data-lobby-team="blue"]),
     [data-lobby-team="blue"]:has(+ [data-lobby-team="red"])
   )
-  > :is(th, td) {
+  > :is(th[scope="row"], td) {
   border-bottom-color: light-dark(
     color-mix(in srgb, var(--site-control-border) 35%, var(--site-border)),
     color-mix(in srgb, var(--site-control-border) 65%, var(--site-border))
@@ -100,10 +110,7 @@
 }
 
 .scores tr[data-lobby-team] :global(.text-link) {
-  color: light-dark(
-    var(--site-accent),
-    color-mix(in srgb, var(--site-foreground) 65%, var(--site-accent))
-  );
+  color: var(--lobby-link);
 }
 
 .scores th:nth-child(n + 4):nth-child(-n + 8),

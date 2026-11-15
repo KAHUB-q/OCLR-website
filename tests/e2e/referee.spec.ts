@@ -402,7 +402,7 @@ test.describe("referee command workspace", () => {
       exact: true,
     });
     await pool
-      .getByRole("button", { name: "Blue team BAN", exact: true })
+      .getByRole("button", { name: "Red team BAN", exact: true })
       .first()
       .click();
     await expect

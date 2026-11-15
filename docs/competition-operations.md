@@ -299,9 +299,10 @@ website configuration storage; sending a command does not save a rule override.
 
 ### BP score and automatic IRC sync (#621)
 
-The score summary displays the red team on the left and blue team on the right,
-including each team’s saved score. Ban/Pick controls follow the same red-first
-visual order without changing team identities or the recorded BP sequence.
+The score summary, Ban/Pick controls and IRC score notices use fixture team
+IDs to identify sides. The home side is red on the left (slots 1–4 in a
+standard 4v4 room), and the away side is blue on the right (slots 5–8).
+Open exhibitions use their saved red and blue side IDs.
 The score summary stays sticky inside the BP section only; the undo
 button is always visible in that summary, outside the collapsed outcome editor.
 Empty replay/outcome rows are omitted to keep the floating panel compact on phones.

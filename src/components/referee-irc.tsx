@@ -67,6 +67,12 @@ export function RefereeIrc({
   const inFlight = useRef(false),
     log = useRef<HTMLDivElement>(null);
   const commandStatus = useRef<HTMLDetailsElement>(null);
+  const followingLog = useRef(true);
+  const latestMessage = relay?.messages.at(-1)?.id;
+  useEffect(() => {
+    const pane = log.current;
+    if (pane && followingLog.current) pane.scrollTop = pane.scrollHeight;
+  }, [latestMessage, history.length]);
   const seenCommands = useRef(new Set<string>());
   useEffect(() => {
     const commands = relay?.commands ?? [];
@@ -448,76 +454,78 @@ export function RefereeIrc({
               : tr("IRC not connected")}
         </span>
       </header>
-      {syncEvents.length > 0 && (
-        <div role="status" className={styles.syncStatus}>
-          <span>
-            {syncError
-              ? tr(
-                  "BP saved. IRC sync is pending. Check the connection and retry safely.",
-                )
-              : tr("Syncing saved BP to IRC…")}
-          </span>
-          {syncError && syncDetail && (
-            <span className="small">{syncDetail}</span>
-          )}
-          {syncError && (
-            <button
-              type="button"
-              className="secondary"
-              onClick={() => {
-                syncPaused.current = false;
-                setSyncError(false);
-                setSyncRetry((n) => n + 1);
-              }}
-            >
-              {tr("Retry IRC sync")}
-            </button>
-          )}
-        </div>
-      )}
-      {simulation ? (
-        <p className="small muted">
-          {tr("No real IRC connection. Simulated sends do not reach osu!.")}
-        </p>
-      ) : (
-        <>
-          <div className={styles.ircLaunchActions}>
-            {!connected && launchUrl && (
-              <a className="button secondary" href={launchUrl}>
-                {tr("Open OCLR IRC")}
-              </a>
+      <div className={styles.ircSessionControls}>
+        {syncEvents.length > 0 && (
+          <div role="status" className={styles.syncStatus}>
+            <span>
+              {syncError
+                ? tr(
+                    "BP saved. IRC sync is pending. Check the connection and retry safely.",
+                  )
+                : tr("Syncing saved BP to IRC…")}
+            </span>
+            {syncError && syncDetail && (
+              <span className="small">{syncDetail}</span>
             )}
-            <a className="button secondary" href="/desktop/sessions">
-              {tr("Manage connections")}
-            </a>
+            {syncError && (
+              <button
+                type="button"
+                className="secondary"
+                onClick={() => {
+                  syncPaused.current = false;
+                  setSyncError(false);
+                  setSyncRetry((n) => n + 1);
+                }}
+              >
+                {tr("Retry IRC sync")}
+              </button>
+            )}
           </div>
-          {relay?.connection && (
-            <div className={styles.ircConnection}>
-              <span className="small">
-                {relay.connection.ircUsername} ·{" "}
-                {relay.connection.roomId
-                  ? `#mp_${relay.connection.roomId}`
-                  : "BanchoBot"}
-              </span>
-              <div className={styles.ircConnectionActions}>
-                {rejoinUrl && (
-                  <a className="button secondary" href={rejoinUrl}>
-                    {tr("Rejoin room")}
-                  </a>
-                )}
-                <button
-                  type="button"
-                  className="secondary"
-                  disabled={disabled || sending}
-                  onClick={() => void disconnect()}
-                >
-                  {tr("Disconnect relay")}
-                </button>
-              </div>
+        )}
+        {simulation ? (
+          <p className="small muted">
+            {tr("No real IRC connection. Simulated sends do not reach osu!.")}
+          </p>
+        ) : (
+          <>
+            <div className={styles.ircLaunchActions}>
+              {!connected && launchUrl && (
+                <a className="button secondary" href={launchUrl}>
+                  {tr("Open OCLR IRC")}
+                </a>
+              )}
+              <a className="button secondary" href="/desktop/sessions">
+                {tr("Manage connections")}
+              </a>
             </div>
-          )}
-        </>
-      )}
+            {relay?.connection && (
+              <div className={styles.ircConnection}>
+                <span className="small">
+                  {relay.connection.ircUsername} ·{" "}
+                  {relay.connection.roomId
+                    ? `#mp_${relay.connection.roomId}`
+                    : "BanchoBot"}
+                </span>
+                <div className={styles.ircConnectionActions}>
+                  {rejoinUrl && (
+                    <a className="button secondary" href={rejoinUrl}>
+                      {tr("Rejoin room")}
+                    </a>
+                  )}
+                  <button
+                    type="button"
+                    className="secondary"
+                    disabled={disabled || sending}
+                    onClick={() => void disconnect()}
+                  >
+                    {tr("Disconnect relay")}
+                  </button>
+                </div>
+              </div>
+            )}
+          </>
+        )}
+      </div>
       <div
         className={styles.ircLog}
         role="log"
@@ -525,6 +533,12 @@ export function RefereeIrc({
           simulation ? tr("Simulated IRC history") : tr("IRC room projection")
         }
         ref={log}
+        tabIndex={0}
+        onScroll={(event) => {
+          const pane = event.currentTarget;
+          followingLog.current =
+            pane.scrollHeight - pane.clientHeight - pane.scrollTop < 24;
+        }}
       >
         {simulation ? (
           history.map((line, index) => (

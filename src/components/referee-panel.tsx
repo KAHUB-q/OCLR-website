@@ -21,6 +21,7 @@ import {
   validateRefereeAction,
   refereeActionSchema,
   resolveRefereeActor,
+  type RefereeAttempt,
   type RefereeEvent,
 } from "@/lib/referee-model";
 import { bpSyncSource } from "@/lib/referee-sync";
@@ -468,6 +469,28 @@ export function RefereePanel({
   const exPick = state.activeSelections.find(
     (s) => s.id === state.lastSelectionId,
   );
+  function attemptSummary(attempt: RefereeAttempt, superseded = false) {
+    return (
+      <>
+        <span className={styles.recordContext}>
+          {tr("Attempt {number}", { number: attempt.number })}
+        </span>
+        <span>{refereeMessage(tr, attempt.status)}</span>
+        {attempt.winnerTeamId && (
+          <strong
+            data-team={refereeTeamSide(data.fixture, attempt.winnerTeamId)}
+          >
+            {tr("Winner")}: {teamName(attempt.winnerTeamId)}
+          </strong>
+        )}
+        {superseded && (
+          <span className={styles.recordContext}>
+            {tr("Superseded by replay")}
+          </span>
+        )}
+      </>
+    );
+  }
   function historyDetail(event: RefereeEvent) {
     const p = event.payload;
     if (p.type === "order_set") {
@@ -1214,127 +1237,137 @@ export function RefereePanel({
                 const attempt = s.attempts.at(-1);
                 const last = s.id === state.lastSelectionId;
                 return (
-                  <article key={s.id} className={styles.record}>
-                    <h3>
-                      {s.stepIndex + 1}. {s.kind.toUpperCase()} · {s.category}
-                      {data.maps.find((m) => m.id === s.entryId)?.position ??
-                        ""}
-                    </h3>
-                    <p>
-                      {tr("Selected by {team}", { team: teamName(s.teamId) })} ·{" "}
-                      {s.beatmapId}
-                    </p>
-                    {s.kind !== "ban" &&
-                      basis.policy?.maxReplaysPerMap !== undefined && (
-                        <p className="small muted">
-                          {tr("Replays used: {used} / {limit}", {
-                            used: s.attempts.length - 1,
-                            limit: basis.policy.maxReplaysPerMap,
+                  <article
+                    key={s.id}
+                    className={styles.record}
+                    data-current={last && !!attempt ? "" : undefined}
+                  >
+                    <div className={styles.recordSummary}>
+                      <h3>
+                        <span>
+                          {s.stepIndex + 1}. {s.kind.toUpperCase()} ·{" "}
+                        </span>
+                        {s.category}
+                        {data.maps.find((m) => m.id === s.entryId)?.position ??
+                          ""}
+                      </h3>
+                      <p className={styles.recordMeta}>
+                        <span>
+                          {tr("Selected by {team}", {
+                            team: teamName(s.teamId),
                           })}
+                        </span>
+                        <span className={styles.recordId}>{s.beatmapId}</span>
+                        {attempt && (
+                          <span>
+                            {s.exMode ? tr("EX mode") : tr("Normal mode")}
+                          </span>
+                        )}
+                        {attempt &&
+                          basis.policy?.maxReplaysPerMap !== undefined && (
+                            <span>
+                              {tr("Replays used: {used} / {limit}", {
+                                used: s.attempts.length - 1,
+                                limit: basis.policy.maxReplaysPerMap,
+                              })}
+                            </span>
+                          )}
+                      </p>
+                      {attempt && (
+                        <p className={styles.recordResult}>
+                          {attemptSummary(attempt)}
                         </p>
                       )}
-                    {s.kind !== "ban" && (
-                      <p className="small muted">
-                        {s.exMode ? tr("EX mode") : tr("Normal mode")}
-                      </p>
-                    )}
-                    {s.attempts.map((a) => (
-                      <p className="small" key={a.id}>
-                        {tr("Attempt {number}", { number: a.number })} ·{" "}
-                        {refereeMessage(tr, a.status)}
-                        {a.winnerTeamId
-                          ? ` · ${tr("Winner")}: ${teamName(a.winnerTeamId)}`
-                          : ""}
-                        {a.id !== attempt?.id
-                          ? ` · ${tr("Superseded by replay")}`
-                          : ""}
+                    </div>
+                    {s.attempts.slice(0, -1).map((previous) => (
+                      <p className={styles.recordPrevious} key={previous.id}>
+                        {attemptSummary(previous, true)}
                       </p>
                     ))}
                     {last && attempt && (
-                      <div className={styles.stack}>
-                        <div className="actions">
-                          {attempt.status === "pending" && (
-                            <button
-                              type="button"
-                              className="secondary"
-                              disabled={disabled || stale}
-                              onClick={() =>
-                                send({ action: "start_attempt", pickId: s.id })
-                              }
-                            >
-                              {tr("Record actual start")}
-                            </button>
-                          )}
-                          {data.teams.map((t) => (
-                            <button
-                              type="button"
-                              key={t.id}
-                              disabled={disabled || stale}
-                              onClick={() =>
-                                send({
-                                  action: "resolve_attempt",
-                                  pickId: s.id,
-                                  status: "completed",
-                                  winnerTeamId: t.id,
-                                })
-                              }
-                            >
-                              {tr("Record win: {team}", { team: t.name })}
-                            </button>
-                          ))}
-                        </div>
-                        <div className="actions">
+                      <div className={styles.recordActions}>
+                        {attempt.status === "pending" && (
                           <button
+                            type="button"
                             className="secondary"
+                            disabled={disabled || stale}
+                            onClick={() =>
+                              send({ action: "start_attempt", pickId: s.id })
+                            }
+                          >
+                            {tr("Record actual start")}
+                          </button>
+                        )}
+                        {data.teams.map((t) => (
+                          <button
+                            type="button"
+                            key={t.id}
                             disabled={disabled || stale}
                             onClick={() =>
                               send({
                                 action: "resolve_attempt",
                                 pickId: s.id,
-                                status: "tied",
-                                winnerTeamId: null,
+                                status: "completed",
+                                winnerTeamId: t.id,
                               })
                             }
                           >
-                            {tr("Record tie")}
+                            {tr("Record win: {team}", { team: t.name })}
                           </button>
-                          <button
-                            className="secondary"
-                            disabled={disabled || stale}
-                            onClick={() =>
-                              send({
-                                action: "resolve_attempt",
-                                pickId: s.id,
-                                status: "aborted",
-                                winnerTeamId: null,
-                              })
-                            }
-                          >
-                            {tr("Record abort")}
-                          </button>
-                          <button
-                            className="secondary"
-                            disabled={
-                              disabled ||
-                              stale ||
-                              ["pending", "playing"].includes(attempt.status) ||
-                              (basis.policy?.maxReplaysPerMap !== undefined &&
-                                s.attempts.length - 1 >=
-                                  basis.policy.maxReplaysPerMap)
-                            }
-                            onClick={() =>
-                              send({ action: "replay_attempt", pickId: s.id })
-                            }
-                          >
-                            {tr("Record replay")}
-                          </button>
-                        </div>
+                        ))}
+                        <button
+                          type="button"
+                          className="secondary"
+                          disabled={disabled || stale}
+                          onClick={() =>
+                            send({
+                              action: "resolve_attempt",
+                              pickId: s.id,
+                              status: "tied",
+                              winnerTeamId: null,
+                            })
+                          }
+                        >
+                          {tr("Record tie")}
+                        </button>
+                        <button
+                          type="button"
+                          className="secondary"
+                          disabled={disabled || stale}
+                          onClick={() =>
+                            send({
+                              action: "resolve_attempt",
+                              pickId: s.id,
+                              status: "aborted",
+                              winnerTeamId: null,
+                            })
+                          }
+                        >
+                          {tr("Record abort")}
+                        </button>
+                        <button
+                          type="button"
+                          className="secondary"
+                          disabled={
+                            disabled ||
+                            stale ||
+                            ["pending", "playing"].includes(attempt.status) ||
+                            (basis.policy?.maxReplaysPerMap !== undefined &&
+                              s.attempts.length - 1 >=
+                                basis.policy.maxReplaysPerMap)
+                          }
+                          onClick={() =>
+                            send({ action: "replay_attempt", pickId: s.id })
+                          }
+                        >
+                          {tr("Record replay")}
+                        </button>
                       </div>
                     )}
                   </article>
                 );
               })}
-              <details>
+              <details className={styles.recordHistory}>
                 <summary>{tr("Full correction history")}</summary>
                 <ol className={styles.history}>
                   {model.events.map((e) => (

@@ -236,3 +236,28 @@ details > .stack {
     gap: 0.25rem;
   }
 }
+
+.assistant[data-stage="preparation"] {
+  gap: 0.625rem;
+  padding: 0.75rem 1rem;
+}
+.assistant[data-stage="preparation"] .modules {
+  gap: 0.75rem;
+}
+.assistant[data-stage="preparation"] .commandModule h4 {
+  margin-bottom: 0.25rem;
+}
+.assistant[data-stage="preparation"] .compactCommand {
+  padding-block: 0.1875rem;
+}
+.assistant[data-stage="preparation"] .setupSettings,
+.assistant[data-stage="preparation"] .command {
+  padding-top: 0.25rem;
+}
+@media (hover: hover) and (pointer: fine) {
+  .assistant[data-stage="preparation"] .compactCommand .iconCopy {
+    width: 2rem;
+    height: 2rem;
+    min-height: 2rem;
+  }
+}

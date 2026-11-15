@@ -238,6 +238,7 @@ export function RefereeCommands({
   return (
     <section
       className={`panel ${styles.assistant}`}
+      data-stage={stage}
       aria-label={
         stage === "preparation" ? tr("Command list") : tr("Current commands")
       }

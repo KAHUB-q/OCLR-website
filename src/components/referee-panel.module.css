@@ -516,21 +516,20 @@
     inset 3px 0 var(--referee-pool-team-color);
 }
 .poolRow[data-selection="ban"] {
-  --referee-pool-selection-fill: color-mix(in srgb, var(--site-border) 18%, var(--site-surface));
-  position: relative;
-  isolation: isolate;
+  --referee-pool-selection-fill: #e3e3e3;
+  --referee-mod-ink: #424242;
+  --referee-pool-ban-detail: #575757;
 }
-.poolRow[data-selection="ban"]::after {
-  content: "";
-  position: absolute;
-  inset: 1px 1px 1px 3px;
-  border-radius: 0.375rem;
-  background: color-mix(in srgb, var(--site-tint) 22%, transparent);
-  pointer-events: none;
+:global(html[data-theme="dark"]) .poolRow[data-selection="ban"] {
+  --referee-pool-selection-fill: #3a3a3a;
+  --referee-mod-ink: #e0e0e0;
+  --referee-pool-ban-detail: #c4c4c4;
 }
-.poolRow[data-selection="ban"] .poolContext {
-  position: relative;
-  z-index: 1;
+.poolRow[data-selection="ban"] .poolTitle {
+  color: var(--referee-mod-ink);
+}
+.poolRow[data-selection="ban"] .poolDetail small {
+  color: var(--referee-pool-ban-detail);
 }
 .poolActions {
   display: flex;

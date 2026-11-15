@@ -232,3 +232,35 @@
     flex: 1 1 auto;
   }
 }
+
+.history {
+  padding-block: 0.625rem;
+}
+
+.history > summary {
+  display: list-item;
+  padding-block: 0.625rem;
+  font-size: var(--text-small);
+  font-weight: 650;
+}
+
+.historyEntries {
+  margin: 0.25rem 0 0;
+  padding-inline-start: 1.5rem;
+}
+
+.historyEntries li {
+  padding-block: 0.375rem;
+}
+
+.historyEntries li + li {
+  border-block-start: 1px solid var(--site-border);
+}
+
+.history :is(p, ol) {
+  overflow-wrap: anywhere;
+}
+
+.history p {
+  margin: 0;
+}

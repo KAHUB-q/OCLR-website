@@ -1,24 +1,3 @@
-.batch {
-  display: grid;
-  gap: 0.75rem;
-}
-
-.batchActions {
-  display: flex;
-  flex-wrap: wrap;
-  align-items: end;
-  gap: 0.5rem 0.75rem;
-}
-
-.batchActions > label:first-child:not(.batchReason),
-.batchActions > span {
-  align-self: center;
-}
-
-.batchReason {
-  flex: 1 1 16rem;
-}
-
 .games {
   list-style: none;
   padding: 0;
@@ -29,16 +8,24 @@
 .gameRow {
   display: grid;
   grid-template-columns: auto minmax(0, 1fr);
-  gap: 0.75rem;
+  gap: 0.25rem;
   align-items: start;
   padding: 0 0.5rem;
   border-block-end: 1px solid var(--site-border);
 }
 
 .selectGame {
+  display: grid;
+  place-items: center;
+  inline-size: 2rem;
+  block-size: 2.75rem;
+}
+
+.selectGame input {
   inline-size: 1.125rem;
   block-size: 1.125rem;
-  margin-block-start: 0.8rem;
+  margin: 0;
+  accent-color: var(--site-accent);
 }
 
 .gameDetails > summary {
@@ -56,8 +43,8 @@
   flex-wrap: wrap;
   gap: 0.25rem 0.75rem;
   align-items: baseline;
-  margin-inline-start: 0.75rem;
-  font-size: 0.875rem;
+  margin-inline-start: 0.5rem;
+  font-size: var(--text-support);
 }
 
 .score {
@@ -72,4 +59,144 @@
   justify-content: space-between;
   padding-block: 0.5rem;
   border-block-end: 1px solid var(--site-border);
+}
+
+.workspace {
+  display: grid;
+  gap: 0.75rem;
+  margin-block-start: 0.75rem;
+  min-width: 0;
+}
+
+.reviewCard,
+.reviewSection,
+.preview,
+.release,
+.gameContent,
+.history {
+  display: grid;
+  gap: 0.625rem;
+  min-width: 0;
+}
+
+.reviewCard {
+  padding-block: 0.875rem;
+}
+
+.reviewCard :is(h2, h3, p),
+.history :is(h2, p) {
+  margin: 0;
+  overflow-wrap: anywhere;
+}
+
+.reviewCard h2,
+.history h2 {
+  font-size: var(--text-heading);
+}
+
+.reviewCard h3 {
+  font-size: var(--text-small);
+}
+
+.importControls,
+.sourceMeta,
+.sourcePicker,
+.previewScore,
+.batch,
+.batchExclusion {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 0.375rem 0.75rem;
+}
+
+.importControls,
+.batchExclusion {
+  align-items: end;
+}
+
+.importControls > label {
+  flex: 1 1 15rem;
+}
+
+.importControls > :global(.notice) {
+  flex-basis: 100%;
+}
+
+.importSource {
+  display: grid;
+  gap: 0.25rem;
+  min-width: 0;
+}
+
+.sourceMeta > span {
+  overflow-wrap: anywhere;
+}
+
+.sourcePicker {
+  padding-block-end: 0.625rem;
+  border-block-end: 1px solid var(--site-border);
+}
+
+.sourcePicker h2 {
+  font-size: var(--text-small);
+}
+
+.sourcePicker select {
+  width: auto;
+  flex: 0 1 12rem;
+  min-width: 0;
+}
+
+.preview,
+.release {
+  padding-block-start: 0.75rem;
+  border-block-start: 1px solid var(--site-border);
+}
+
+.previewScore {
+  align-items: baseline;
+}
+
+.previewScore strong {
+  font-size: var(--text-heading);
+}
+
+.reviewCard .messages {
+  padding-block: 0.5rem;
+  margin: 0;
+  max-width: none;
+  font-size: var(--text-support);
+}
+
+ul.messages {
+  padding-inline-start: 1.5rem;
+}
+
+.batchExclusion {
+  flex: 1 1 22rem;
+}
+
+.batchExclusion > label {
+  flex: 1 1 11rem;
+}
+
+.history details {
+  padding-block: 0.625rem;
+}
+
+.history summary {
+  display: list-item;
+  padding-block: 0.5rem;
+  overflow-wrap: anywhere;
+}
+
+@media (pointer: coarse) {
+  .selectGame {
+    inline-size: 2.75rem;
+  }
+
+  .gameRow {
+    padding-inline-start: 0;
+  }
 }

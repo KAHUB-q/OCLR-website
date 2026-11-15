@@ -339,7 +339,6 @@
       "authority": "saved-read",
       "operations": [
         "getApiIdentity",
-        "matchRatingWorkspace",
         "matchReview",
         "staffAccess",
         "staffFixtures",
@@ -352,7 +351,6 @@
         "src/lib/auth/staff.ts#staffAccess",
         "src/lib/public-read-models.ts / frontend-data.ts (getApiIdentity)",
         "src/lib/fixture-reads.ts#staffFixtures",
-        "src/lib/ratings.ts#matchRatingWorkspace",
         "src/lib/result-review.ts#matchReview"
       ],
       "test": "remote-e2e/full-site.spec.ts + integration/extended-read.test.ts",

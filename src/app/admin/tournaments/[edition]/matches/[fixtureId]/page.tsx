@@ -2,7 +2,6 @@ import { competitionStageLabel } from "@/lib/competition-stage";
 import Link from "next/link";
 import { MatchReviewPanel } from "@/components/match-review";
 import { MatchSourceCompletion } from "@/components/match-source-completion";
-import { PlayerRatings } from "@/components/player-ratings";
 import { StreamingManager } from "@/components/streaming-manager";
 import { PageHeading } from "@/components/ui";
 import { getAppTranslations } from "@/i18n/server";
@@ -13,7 +12,6 @@ import { formatDate } from "@/lib/editions";
 import { fixtureSlot } from "@/lib/fixture-views";
 import { staffFixtures } from "@/lib/fixture-reads";
 import { HttpError } from "@/lib/http";
-import { matchRatingWorkspace } from "@/lib/ratings";
 import { remotePage } from "@/lib/remote-page";
 import { matchReview } from "@/lib/result-review";
 import { canViewStreaming } from "@/lib/streaming-staff";
@@ -115,12 +113,6 @@ async function Issue271Page({
       );
     }
     const data = review.context;
-    const rating = await matchRatingWorkspace(actor, edition, fixtureId).catch(
-      (error: unknown) => {
-        if (error instanceof HttpError && error.status === 403) return null;
-        throw error;
-      },
-    );
     return (
       <>
         <PageHeading
@@ -175,7 +167,6 @@ async function Issue271Page({
         </div>
         {streamingPanel}
         <MatchReviewPanel data={review} slug={edition} />
-        {rating && <PlayerRatings report={rating} slug={edition} />}
       </>
     );
   });

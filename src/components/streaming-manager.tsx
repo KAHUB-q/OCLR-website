@@ -482,12 +482,12 @@ export function StreamingManager({
         ))}
       </ul>
       {detail && (
-        <div className="panel form-stack">
-          <h2>{tr("Streaming task history")}</h2>
+        <details className={`panel ${styles.history}`}>
+          <summary>{tr("Streaming task history")}</summary>
           {!data.history.length && (
             <p className="muted">{tr("No streaming task changes yet.")}</p>
           )}
-          <ol className="streaming-history">
+          <ol className={styles.historyEntries}>
             {data.history.map((h) => {
               const command = h.detail.command as { action: string };
               const task = (h.detail.after ?? h.detail.before) as
@@ -529,7 +529,7 @@ export function StreamingManager({
               );
             })}
           </ol>
-        </div>
+        </details>
       )}
     </section>
   );

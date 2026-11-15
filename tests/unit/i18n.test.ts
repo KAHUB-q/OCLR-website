@@ -7,6 +7,7 @@ import en from "../../messages/en.json";
 import hans from "../../messages/zh-Hans.json";
 import hant from "../../messages/zh-Hant.json";
 import { defaultLocale, locales, readLocale } from "../../src/i18n/config";
+import { matchReviewMessage } from "../../src/i18n/match-review";
 import { appTranslator } from "../../src/i18n/translate";
 import { readThemePreference } from "../../src/lib/preferences";
 import { formatDate } from "../../src/lib/editions";
@@ -156,6 +157,23 @@ describe("localized interface catalogs", () => {
       expect(tr("Selection cancelled.")).not.toBe("Selection cancelled.");
       expect(tr("Sign in with osu! to continue.")).not.toBe(
         "Sign in with osu! to continue.",
+      );
+      expect(
+        matchReviewMessage(tr, "Include at least one completed game."),
+      ).toBe(
+        locale === "zh-Hans"
+          ? "请至少纳入一局已完成的比赛。"
+          : "請至少納入一局已完成的比賽。",
+      );
+      expect(
+        matchReviewMessage(
+          tr,
+          "Game 42: Player 123 has no verified fixture-team attribution. No player score records are available.",
+        ),
+      ).toBe(
+        locale === "zh-Hans"
+          ? "小局 42：尚未确认选手 123 在本场对局的队伍归属。 没有可用的选手分数记录。"
+          : "小局 42：尚未確認選手 123 在本場對局的隊伍歸屬。 沒有可用的選手分數記錄。",
       );
       expect(
         tr("Approved organizer wording that has no translated variant."),

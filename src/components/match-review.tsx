@@ -9,6 +9,8 @@ import {
 } from "./staff-read-only";
 
 import { useAppTranslations } from "@/i18n/shared";
+import { matchReviewMessage } from "@/i18n/match-review";
+import { formatDate } from "@/lib/editions";
 
 import Link from "next/link";
 import { useState } from "react";
@@ -47,11 +49,15 @@ function Operation({
       description={tr("Fixture: {value0}. {value1}", {
         value0: data.context.fixture.label,
         value1:
-          action === "approve_publish" ||
-          action === "publish" ||
           action === "void"
-            ? "This changes public results and dependent standings or bracket slots. Review every dependent fixture before confirming."
-            : "Review the selected result proposal before confirming.",
+            ? tr(
+                "Withdrawing preserves the audit trail and source history. Review dependent fixtures before confirming.",
+              )
+            : action === "approve_publish" || action === "publish"
+              ? tr(
+                  "This changes public results and dependent standings or bracket slots. Review every dependent fixture before confirming.",
+                )
+              : tr("Review the selected result proposal before confirming."),
       })}
       url={`/api/admin/tournaments/${slug}/matches/${data.context.fixture.id}/results`}
       payload={{
@@ -109,7 +115,7 @@ function SourceReview({
   const list = Object.values(decisions);
   const preview = previewMatch(source, data.context, list);
   const teamName = (id: string | null) =>
-    data.context.teams.find((t) => t.id === id)?.name ?? "Unresolved";
+    data.context.teams.find((t) => t.id === id)?.name ?? tr("Unresolved");
   const eligible = preview.games.filter(
     (g) =>
       selected.includes(g.game.id) &&
@@ -153,22 +159,17 @@ function SourceReview({
   }
   return (
     <ReadOnlyFields>
-      <section className="section-space stack" aria-labelledby="games-heading">
-        <div>
-          <h2 id="games-heading">{tr("Review MP games")}</h2>
-          <p className="muted">
-            {tr(
-              "Include valid games and explicitly exclude warmups, rematches or invalid games with a reason. Raw provider scores cannot be edited here.",
-            )}
-          </p>
-        </div>
-        {source.warnings.map((warning, i) => (
-          <p className="notice" key={i}>
-            {warning}
-          </p>
-        ))}
+      <section className={styles.reviewSection} aria-labelledby="games-heading">
+        <h2 id="games-heading">{tr("Review MP games")}</h2>
+        {!!source.warnings.length && (
+          <ul className={`notice ${styles.messages}`}>
+            {source.warnings.map((warning, index) => (
+              <li key={index}>{matchReviewMessage(tr, warning)}</li>
+            ))}
+          </ul>
+        )}
         {data.diff && (
-          <div className="notice">
+          <div className={`notice ${styles.messages}`}>
             <strong>{tr("Upstream changes require review")}</strong>
             <p>
               {tr("Added games: ")}
@@ -182,43 +183,39 @@ function SourceReview({
         )}
         {source.games.length > 0 && (
           <div className={styles.batch}>
-            <div className={styles.batchActions}>
-              <label className="check-label">
-                <input
-                  type="checkbox"
-                  checked={allSelected}
-                  ref={(input) => {
-                    if (input)
-                      input.indeterminate = !allSelected && selected.length > 0;
-                  }}
-                  onChange={() =>
-                    setSelected(
-                      allSelected ? [] : source.games.map((g) => g.id),
-                    )
-                  }
-                />
-                {tr("Select all games")}
-              </label>
-              <span className="small muted" role="status">
-                {tr("Selected: {value0}", { value0: selected.length })}
-              </span>
-              <button
-                className="button secondary"
-                type="button"
-                disabled={!eligible.length}
-                onClick={() => applySelected(true)}
-              >
-                {exhibition
-                  ? tr("Include eligible games ({value0})", {
-                      value0: eligible.length,
-                    })
-                  : tr("Include eligible games and confirm rules ({value0})", {
-                      value0: eligible.length,
-                    })}
-              </button>
-            </div>
-            <div className={styles.batchActions}>
-              <label className={`field ${styles.batchReason}`}>
+            <label className="check-label">
+              <input
+                type="checkbox"
+                checked={allSelected}
+                ref={(input) => {
+                  if (input)
+                    input.indeterminate = !allSelected && selected.length > 0;
+                }}
+                onChange={() =>
+                  setSelected(allSelected ? [] : source.games.map((g) => g.id))
+                }
+              />
+              {tr("Select all games")}
+            </label>
+            <span className="small muted" role="status">
+              {tr("Selected: {value0}", { value0: selected.length })}
+            </span>
+            <button
+              className="button secondary"
+              type="button"
+              disabled={!eligible.length}
+              onClick={() => applySelected(true)}
+            >
+              {exhibition
+                ? tr("Include eligible games ({value0})", {
+                    value0: eligible.length,
+                  })
+                : tr("Include eligible games and confirm rules ({value0})", {
+                    value0: eligible.length,
+                  })}
+            </button>
+            <div className={styles.batchExclusion}>
+              <label className="field">
                 <span>{tr("Shared exclusion reason")}</span>
                 <input
                   value={exclusionReason}
@@ -251,20 +248,21 @@ function SourceReview({
                 );
             return (
               <div className={styles.gameRow} key={g.game.id}>
-                <input
-                  className={styles.selectGame}
-                  type="checkbox"
-                  aria-label={tr("Select game {value0}", { value0: i + 1 })}
-                  checked={selected.includes(g.game.id)}
-                  onChange={(e) => {
-                    const checked = e.target.checked;
-                    setSelected((old) =>
-                      checked
-                        ? [...old, g.game.id]
-                        : old.filter((id) => id !== g.game.id),
-                    );
-                  }}
-                />
+                <label className={styles.selectGame}>
+                  <input
+                    type="checkbox"
+                    aria-label={tr("Select game {value0}", { value0: i + 1 })}
+                    checked={selected.includes(g.game.id)}
+                    onChange={(e) => {
+                      const checked = e.target.checked;
+                      setSelected((old) =>
+                        checked
+                          ? [...old, g.game.id]
+                          : old.filter((id) => id !== g.game.id),
+                      );
+                    }}
+                  />
+                </label>
                 <details className={styles.gameDetails}>
                   <summary>
                     <strong>
@@ -296,7 +294,7 @@ function SourceReview({
                       )}
                     </span>
                   </summary>
-                  <div className="form-stack">
+                  <div className={styles.gameContent}>
                     <p className="muted">
                       {tr("Game ID ")}
                       {g.game.id} · {g.game.teamType ?? tr("Unknown team mode")}{" "}
@@ -511,12 +509,12 @@ function SourceReview({
                     })}
                     {g.problems.map((p, n) => (
                       <p className="notice error-text" key={n}>
-                        {p}
+                        {matchReviewMessage(tr, p)}
                       </p>
                     ))}
                     {g.warnings.map((p, n) => (
                       <p className="notice" key={n}>
-                        {p}
+                        {matchReviewMessage(tr, p)}
                       </p>
                     ))}
                     <p>
@@ -537,31 +535,39 @@ function SourceReview({
             );
           })}
         </div>
-        <article className="panel stack">
-          <h3>{tr("New review preview")}</h3>
-          <p className="score">
-            {preview.series.homeWins} : {preview.series.awayWins}
+        <section
+          className={styles.preview}
+          aria-labelledby="review-preview-heading"
+        >
+          <h3 id="review-preview-heading">{tr("New review preview")}</h3>
+          <p className={styles.previewScore}>
+            <strong className={styles.score}>
+              {preview.series.homeWins} : {preview.series.awayWins}
+            </strong>
+            <span className="small muted">
+              {preview.series.complete
+                ? preview.series.draw
+                  ? tr("Configured draw")
+                  : tr("Proposed winner: {value0}", {
+                      value0: teamName(preview.series.winnerTeamId),
+                    })
+                : tr("Series not resolved")}{" "}
+              · {preview.series.includedGames} {tr(" included games")}
+            </span>
           </p>
-          <p>
-            {preview.series.complete
-              ? preview.series.draw
-                ? tr("Configured draw")
-                : tr("Proposed winner: {value0}", {
-                    value0: teamName(preview.series.winnerTeamId),
-                  })
-              : tr("Series not resolved")}{" "}
-            · {preview.series.includedGames} {tr(" included games")}
-          </p>
-          {preview.blockers.map((b, i) => (
-            <p className="notice" key={i}>
-              {b}
-            </p>
-          ))}
+          {!!preview.blockers.length && (
+            <ul className={`notice ${styles.messages}`}>
+              {preview.blockers.map((blocker, i) => (
+                <li key={i}>{matchReviewMessage(tr, blocker)}</li>
+              ))}
+            </ul>
+          )}
           <label className="field">
             <span>
               {tr("Public result note (optional, visible after publication)")}
             </span>
             <textarea
+              rows={2}
               maxLength={1000}
               value={publicNote}
               onChange={(e) => setNote(e.target.value)}
@@ -606,14 +612,12 @@ function SourceReview({
               }}
               onError={onError}
             />
-          ) : (
-            <p className="muted">
-              {tr(
-                "Complete every game decision, resolve blockers and confirm the review to submit.",
-              )}
+          ) : preview.canSubmit ? (
+            <p className="small muted">
+              {tr("Confirm the review to submit a proposed result.")}
             </p>
-          )}
-        </article>
+          ) : null}
+        </section>
       </section>
     </ReadOnlyFields>
   );
@@ -634,7 +638,7 @@ function RefereeResultReview({
   return (
     <ReadOnlyFields>
       <section
-        className="panel form-stack"
+        className={styles.reviewSection}
         aria-labelledby="referee-review-heading"
       >
         <h2 id="referee-review-heading">{tr("Review referee record")}</h2>
@@ -660,6 +664,7 @@ function RefereeResultReview({
                 {tr("Public result note (optional, visible after publication)")}
               </span>
               <textarea
+                rows={2}
                 maxLength={1000}
                 value={publicNote}
                 onChange={(e) => setPublicNote(e.target.value)}
@@ -759,79 +764,85 @@ export function MatchReviewPanel({
   const base = `/api/admin/tournaments/${slug}/matches/${context.fixture.id}`;
   return (
     <StaffReadOnlyContext value={readOnly}>
-      <div className="stack">
+      <div className={styles.workspace}>
         {notice && (
           <p className="notice error-text" role="alert">
             {tr(notice)}
           </p>
         )}
-        <section className="panel form-stack">
+        <section className={`panel ${styles.reviewCard}`}>
           <h2>{tr("Import official multiplayer data")}</h2>
-          <p className="muted">
-            {tr(
-              "Imports stay private until a result is approved and published.",
-            )}
-          </p>
-          <label className="field">
-            <span>{tr("osu! MP link or match ID")}</span>
-            <input
-              type="text"
-              disabled={readOnly}
-              inputMode="url"
-              maxLength={250}
-              value={match}
-              onChange={(e) => setMatch(e.target.value)}
-              placeholder="https://osu.ppy.sh/community/matches/…"
+          <div className={styles.importControls}>
+            <label className="field">
+              <span>{tr("osu! MP link or match ID")}</span>
+              <input
+                type="text"
+                disabled={readOnly}
+                inputMode="url"
+                maxLength={250}
+                value={match}
+                onChange={(e) => setMatch(e.target.value)}
+                placeholder="https://osu.ppy.sh/community/matches/…"
+              />
+            </label>
+            <ConfirmMutation
+              requireConfirmation={false}
+              canConfirm={Boolean(match.trim())}
+              loadingFeedback="button"
+              className="secondary"
+              label={tr("Retrieve match data")}
+              title={tr("Import an official osu! match snapshot")}
+              description={tr(
+                "The provider snapshot will be stored for staff review. Any existing published result stays unchanged.",
+              )}
+              url={`${base}/imports`}
+              payload={{
+                requestKey,
+                expectedVersion: state?.version ?? 0,
+                expectedFixtureVersion: context.fixture.version,
+                match,
+                confirmed: true,
+              }}
+              onSuccess={() => {
+                setKey(crypto.randomUUID());
+                setNotice("");
+              }}
             />
-          </label>
-          <ConfirmMutation
-            requireConfirmation={false}
-            label={tr("Retrieve match data")}
-            title={tr("Import an official osu! match snapshot")}
-            description={tr(
-              "The provider snapshot will be stored for staff review. Any existing published result stays unchanged.",
-            )}
-            url={`${base}/imports`}
-            payload={{
-              requestKey,
-              expectedVersion: state?.version ?? 0,
-              expectedFixtureVersion: context.fixture.version,
-              match,
-              confirmed: true,
-            }}
-            onSuccess={() => {
-              setKey(crypto.randomUUID());
-              setNotice("");
-            }}
-            onError={setNotice}
-          />
-          <p className="muted">
-            {state ? state.state.replaceAll("_", " ") : tr("No report yet")}
-          </p>
-          {data.sourceError && <p className="notice">{data.sourceError}</p>}
+          </div>
+          {data.sourceError && (
+            <p className="notice">{matchReviewMessage(tr, data.sourceError)}</p>
+          )}
           {data.source && (
-            <div>
-              <a
-                className="text-link"
-                href={`https://osu.ppy.sh/community/matches/${data.source.match.id}`}
-                target="_blank"
-                rel="noreferrer"
-              >
-                {tr("MP #")}
-                {data.source.match.id} ↗
-              </a>
-              <p>{data.source.match.title}</p>
-              <p className="muted">
-                {tr(
-                  "Lobby titles do not establish official team identity. Retrieved",
-                )}{" "}
-                {new Date(data.source.fetchedAt).toISOString()} ·{" "}
-                {data.source.complete
-                  ? tr("Completed source history")
-                  : tr("Incomplete / ongoing source")}
-              </p>
+            <div className={styles.importSource}>
+              <div className={styles.sourceMeta}>
+                <a
+                  className="text-link"
+                  href={`https://osu.ppy.sh/community/matches/${data.source.match.id}`}
+                  target="_blank"
+                  rel="noreferrer"
+                >
+                  {tr("MP #")}
+                  {data.source.match.id} ↗
+                </a>
+                <span>{data.source.match.title}</span>
+                <span className="small muted">
+                  {data.source.complete
+                    ? tr("Completed source history")
+                    : tr("Incomplete / ongoing source")}
+                </span>
+              </div>
+
               <details>
                 <summary>{tr("Advanced source details")}</summary>
+                <p className="small muted">
+                  {tr("Retrieved at {value0}", {
+                    value0: formatDate(
+                      data.source.fetchedAt,
+                      context.fixture.timeZone,
+                      tr.locale,
+                    ),
+                  })}
+                </p>
                 <p className="break-anywhere">
                   {tr("Fingerprint: ")}
                   {data.source.fingerprint}
@@ -844,7 +855,7 @@ export function MatchReviewPanel({
             </div>
           )}
         </section>
-        <section className="panel stack">
+        <section className={`panel ${styles.reviewCard}`}>
           <h2>
             {context.round.stage === "exhibition"
               ? tr("Exhibition sides")
@@ -888,191 +899,200 @@ export function MatchReviewPanel({
             </details>
           )}
         </section>
-        {referee && data.source && (
-          <label className="field">
-            <span>{tr("Result source")}</span>
-            <select
-              value={reviewKind}
-              onChange={(e) =>
-                setReviewKind(e.target.value === "referee" ? "referee" : "mp")
-              }
-            >
-              <option value="mp">{tr("MP Link")}</option>
-              <option value="referee">{tr("Referee record")}</option>
-            </select>
-          </label>
-        )}
-        {referee && (
-          <div hidden={!showReferee}>
-            <RefereeResultReview
-              key={`${referee.revision}-${referee.dependencyFingerprint}`}
-              data={data}
-              slug={slug}
-              onError={setNotice}
-            />
-          </div>
-        )}
-        {data.source && (
-          <div hidden={showReferee}>
-            <SourceReview
-              key={`${data.importId}-${context.fixture.version}-${context.round.version}-${context.pool?.version ?? 0}`}
-              data={data}
-              slug={slug}
-              onError={setNotice}
-            />
-          </div>
-        )}
-        <section className="panel stack">
-          <h2>{tr("Approval and publication")}</h2>
-          <p>
-            {state?.state === "submitted"
-              ? tr("Pending approval")
-              : state?.state === "approved" && data.current?.approvedAt
-                ? tr("Approved result")
-                : data.current
-                  ? tr("Draft result")
-                  : tr("No proposed result")}{" "}
-            · {data.published ? tr("Published result") : tr("Not published")}
-          </p>
-          {data.current?.proposal && (
-            <p>
-              {tr("Current proposal: ")}
-              {data.current.proposal.series.homeWins} :{" "}
-              {data.current.proposal.series.awayWins} ·{" "}
-              {data.current.approvedAt
-                ? tr("Approved")
-                : tr("Awaiting approval")}
-            </p>
-          )}
-          {data.current?.proposal?.referee && (
-            <details>
-              <summary>{tr("Referee-recorded map outcomes")}</summary>
-              <RefereeResultGames
-                data={data}
-                games={data.current.proposal.referee.games}
-              />
-            </details>
-          )}
-          {data.published?.proposal && (
-            <p>
-              {tr("Published score: ")}
-              {data.published.proposal.series.homeWins} :{" "}
-              {data.published.proposal.series.awayWins}
-              {tr(". It remains visible while a correction is under review.")}
-            </p>
-          )}
-          {data.dependents.length > 0 && (
-            <div>
-              <h3>
-                {tr("Dependent fixtures requiring review after a correction")}
-              </h3>
-              <ul>
-                {data.dependents.map((f) => (
-                  <li key={f.id}>
-                    <Link
-                      className="text-link"
-                      href={`/admin/tournaments/${slug}/matches/${f.id}`}
-                    >
-                      {f.label}
-                    </Link>{" "}
-                    ·{" "}
-                    {f.published
-                      ? tr("Published fixture")
-                      : tr("Private fixture")}
-                  </li>
-                ))}
-              </ul>
+        <div className={`panel ${styles.reviewCard}`}>
+          {(referee || data.source) && (
+            <div className={styles.sourcePicker}>
+              <h2 id="result-source-heading">{tr("Result source")}</h2>
+              {referee && data.source ? (
+                <select
+                  aria-labelledby="result-source-heading"
+                  value={reviewKind}
+                  onChange={(e) =>
+                    setReviewKind(
+                      e.target.value === "referee" ? "referee" : "mp",
+                    )
+                  }
+                >
+                  <option value="mp">{tr("MP Link")}</option>
+                  <option value="referee">{tr("Referee record")}</option>
+                </select>
+              ) : (
+                <span>
+                  {data.source ? tr("MP Link") : tr("Referee record")}
+                </span>
+              )}
             </div>
           )}
-          {context.canApprove ? (
-            <>
-              <label className="check-label">
-                <input
-                  type="checkbox"
-                  checked={progression}
-                  onChange={(e) => setProgression(e.target.checked)}
+          {referee && (
+            <div hidden={!showReferee}>
+              <RefereeResultReview
+                key={`${referee.revision}-${referee.dependencyFingerprint}`}
+                data={data}
+                slug={slug}
+                onError={setNotice}
+              />
+            </div>
+          )}
+          {data.source && (
+            <div hidden={showReferee}>
+              <SourceReview
+                key={`${data.importId}-${context.fixture.version}-${context.round.version}-${context.pool?.version ?? 0}`}
+                data={data}
+                slug={slug}
+                onError={setNotice}
+              />
+            </div>
+          )}
+          <section className={styles.release} aria-labelledby="release-heading">
+            <h2 id="release-heading">{tr("Approval and publication")}</h2>
+            <p>
+              {state?.state === "submitted"
+                ? tr("Pending approval")
+                : state?.state === "approved" && data.current?.approvedAt
+                  ? tr("Approved result")
+                  : data.current
+                    ? tr("Draft result")
+                    : tr("No proposed result")}{" "}
+              · {data.published ? tr("Published result") : tr("Not published")}
+            </p>
+            {data.current?.proposal && (
+              <p>
+                {tr("Current proposal: ")}
+                {data.current.proposal.series.homeWins} :{" "}
+                {data.current.proposal.series.awayWins} ·{" "}
+                {data.current.approvedAt
+                  ? tr("Approved")
+                  : tr("Awaiting approval")}
+              </p>
+            )}
+            {data.current?.proposal?.referee && (
+              <details>
+                <summary>{tr("Referee-recorded map outcomes")}</summary>
+                <RefereeResultGames
+                  data={data}
+                  games={data.current.proposal.referee.games}
                 />
-                {tr(
-                  "I reviewed the effect on dependent fixtures and public standings or brackets",
-                )}
-              </label>
-              <div className="actions">
-                {state?.state === "submitted" && (
-                  <>
-                    {progression && (
+              </details>
+            )}
+            {data.published?.proposal && (
+              <p>
+                {tr("Published score: ")}
+                {data.published.proposal.series.homeWins} :{" "}
+                {data.published.proposal.series.awayWins}
+                {tr(". It remains visible while a correction is under review.")}
+              </p>
+            )}
+            {data.dependents.length > 0 && (
+              <div>
+                <h3>
+                  {tr("Dependent fixtures requiring review after a correction")}
+                </h3>
+                <ul>
+                  {data.dependents.map((f) => (
+                    <li key={f.id}>
+                      <Link
+                        className="text-link"
+                        href={`/admin/tournaments/${slug}/matches/${f.id}`}
+                      >
+                        {f.label}
+                      </Link>{" "}
+                      ·{" "}
+                      {f.published
+                        ? tr("Published fixture")
+                        : tr("Private fixture")}
+                    </li>
+                  ))}
+                </ul>
+              </div>
+            )}
+            {context.canApprove ? (
+              state &&
+              state.currentRevision > 0 && (
+                <>
+                  <label className="check-label">
+                    <input
+                      type="checkbox"
+                      checked={progression}
+                      onChange={(e) => setProgression(e.target.checked)}
+                    />
+                    {tr(
+                      "I reviewed the effect on dependent fixtures and public standings or brackets",
+                    )}
+                  </label>
+                  <div className="actions">
+                    {state?.state === "submitted" && (
+                      <>
+                        {progression && (
+                          <Operation
+                            label={tr("Approve & publish result")}
+                            action="approve_publish"
+                            data={data}
+                            slug={slug}
+                            extra={{
+                              revision: state.currentRevision,
+                              progressionAcknowledged: true,
+                            }}
+                            onError={setNotice}
+                          />
+                        )}
+                        <Operation
+                          label={tr("Reject proposed result")}
+                          action="reject"
+                          data={data}
+                          slug={slug}
+                          extra={{ revision: state.currentRevision }}
+                          onError={setNotice}
+                        />
+                      </>
+                    )}
+                    {state?.state === "approved" &&
+                      progression &&
+                      state.currentRevision !== state.publishedRevision && (
+                        <Operation
+                          label={tr("Publish approved result")}
+                          action="publish"
+                          data={data}
+                          slug={slug}
+                          extra={{
+                            revision: state.currentRevision,
+                            progressionAcknowledged: true,
+                          }}
+                          onError={setNotice}
+                        />
+                      )}
+                    {state?.publishedRevision && (
                       <Operation
-                        label={tr("Approve & publish result")}
-                        action="approve_publish"
+                        label={tr("Unpublish result")}
+                        action="unpublish"
                         data={data}
                         slug={slug}
-                        extra={{
-                          revision: state.currentRevision,
-                          progressionAcknowledged: true,
-                        }}
+
                         onError={setNotice}
                       />
                     )}
-                    <Operation
-                      label={tr("Reject proposed result")}
-                      action="reject"
-                      data={data}
-                      slug={slug}
-                      extra={{ revision: state.currentRevision }}
-                      onError={setNotice}
-                    />
-                  </>
-                )}
-                {state?.state === "approved" &&
-                  progression &&
-                  state.currentRevision !== state.publishedRevision && (
-                    <Operation
-                      label={tr("Publish approved result")}
-                      action="publish"
-                      data={data}
-                      slug={slug}
-                      extra={{
-                        revision: state.currentRevision,
-                        progressionAcknowledged: true,
-                      }}
-                      onError={setNotice}
-                    />
-                  )}
-                {state?.publishedRevision && (
-                  <Operation
-                    label={tr("Unpublish result")}
-                    action="unpublish"
-                    data={data}
-                    slug={slug}
-
-                    onError={setNotice}
-                  />
-                )}
-                {state && state.currentRevision > 0 && progression && (
-                  <Operation
-                    label={tr("Withdraw official result")}
-                    action="void"
-                    data={data}
-                    slug={slug}
-                    extra={{ progressionAcknowledged: true }}
-                    onError={setNotice}
-                  />
-                )}
-              </div>
-              <p className="muted">
-                {tr(
-                  "Withdrawing retains the audit trail and source history. It does not award a forfeit or change team rosters. Publish the fixture before publishing its result.",
-                )}
+                    {state && state.currentRevision > 0 && progression && (
+                      <Operation
+                        label={tr("Withdraw official result")}
+                        action="void"
+                        data={data}
+                        slug={slug}
+                        extra={{ progressionAcknowledged: true }}
+                        onError={setNotice}
+                      />
+                    )}
+                  </div>
+                </>
+              )
+            ) : (
+              <p className="notice">
+                {tr("An Admin must approve and publish submitted results.")}
               </p>
-            </>
-          ) : (
-            <p className="notice">
-              {tr("An Admin must approve and publish submitted results.")}
-            </p>
-          )}
-        </section>
-        <section className="section-space">
+            )}
+          </section>
+        </div>
+        <section className={styles.history}>
           <h2>{tr("Review history")}</h2>
-          <div className="stack">
+          <div className={styles.reviewSection}>
             {data.revisions.map((r) => (
               <details className="panel" key={r.revision}>
                 <summary>
@@ -1081,7 +1101,8 @@ export function MatchReviewPanel({
                     : r.approvedAt
                       ? tr("Approved result")
                       : tr("Submitted result")}{" "}
-                  · {new Date(r.createdAt).toISOString()}
+                  ·{" "}
+                  {formatDate(r.createdAt, context.fixture.timeZone, tr.locale)}
                 </summary>
                 {r.reason && <p>{r.reason}</p>}
                 <p>

@@ -2,6 +2,7 @@ import { db } from "@/db";
 import {
   captains,
   fixtures,
+  mappoolEntries,
   mappools,
   matchImports,
   matchGames,
@@ -455,6 +456,22 @@ async function databasePublicFixture(
         ? ((await readTournament(slug, tx, true))?.edition.ezScoreMultiplier ??
           1)
         : 1;
+      const pool = fixture.pool;
+      const publicPool =
+        pool && proposal.data.poolSnapshot?.poolId === pool.id
+          ? {
+              ...pool,
+              entries: await tx
+                .select({
+                  id: mappoolEntries.id,
+                  beatmapId: mappoolEntries.beatmapId,
+                  category: mappoolEntries.category,
+                  position: mappoolEntries.position,
+                })
+                .from(mappoolEntries)
+                .where(eq(mappoolEntries.poolId, pool.id)),
+            }
+          : undefined;
       const details = withStatisticsScores(
         reviewedMatchDetails(
           proposal.data,
@@ -462,6 +479,7 @@ async function databasePublicFixture(
           fixture.result.mpId,
           fixture.result.revision,
           identities,
+          publicPool,
         ),
         ezScoreMultiplier,
       );

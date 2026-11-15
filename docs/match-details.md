@@ -63,6 +63,15 @@ Same-viewport synthetic screenshots and the review wording are recorded in
 
 ## Consistency and delivery
 
+The map result card leads with reviewed team totals and the winner or tie.
+The raw MP totals, settings, timestamps and game identifiers remain available in
+the expandable game details. Both ordinary and historical seasons use this card.
+Each game links to its published pool slot when the exact beatmap ID has one
+unambiguous match. Historical details use the pool selected in that MP review.
+Ordinary details verify the approved pool snapshot against the still-published
+entry before linking to it. Unlisted maps and older saved results without a
+matching slot retain the osu! beatmap link.
+
 Ordinary details, official result and rating are read in one repeatable-read,
 read-only transaction. Historical archive identity, published snapshots, score
 projection and rating use one such transaction; the page also checks its archive

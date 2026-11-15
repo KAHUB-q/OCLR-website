@@ -2,9 +2,167 @@
 import Link from "./pending-link";
 import { useAppTranslations } from "@/i18n/shared";
 import { formatDate } from "@/lib/editions";
-import type { MatchDetails } from "@/lib/match-details-model";
+import { mappoolDisplayName } from "@/lib/mappool-label";
+import type { MatchDetailGame, MatchDetails } from "@/lib/match-details-model";
 import { PlayerRatings } from "./player-ratings";
 import styles from "./match-details.module.css";
+
+function MapResultSummary({
+  game,
+  index,
+  slug,
+  teamNames,
+  timeZone,
+  exhibition,
+  historical,
+}: {
+  game: MatchDetailGame;
+  index: number;
+  slug: string;
+  teamNames: readonly [string, string];
+  timeZone: string;
+  exhibition: boolean;
+  historical: boolean;
+}) {
+  const tr = useAppTranslations();
+  const number = (value: number | null) =>
+    value === null ? tr("Not recorded") : value.toLocaleString(tr.locale);
+  const date = (value: string | null) =>
+    value ? formatDate(value, timeZone, tr.locale) : tr("Not recorded");
+  const [first, second] = game.effectiveTotals;
+  const complete = first !== null && second !== null;
+  const winner =
+    game.included && complete && first !== second
+      ? first > second
+        ? 0
+        : 1
+      : -1;
+  const slot = game.poolSlot;
+  return (
+    <div className={styles.mapSummary}>
+      <header className={styles.mapHeader}>
+        <div className={styles.mapContext}>
+          {slot && (
+            <Link
+              className={styles.poolSlot}
+              href={`/tournaments/${slug}/mappools/${encodeURIComponent(slot.poolId)}#${encodeURIComponent(slot.anchor)}`}
+            >
+              <strong>{slot.slot}</strong>{" "}
+              {historical
+                ? mappoolDisplayName(tr, slot.poolName, slot.poolId)
+                : slot.poolName}{" "}
+              <span aria-hidden="true">↗</span>
+            </Link>
+          )}
+          <span>
+            {tr("MAP ")}
+            {index + 1}
+          </span>
+          <span className={styles.mapStatus}>
+            {game.included
+              ? exhibition
+                ? tr("Included in exhibition result")
+                : tr("Included in official result")
+              : exhibition
+                ? tr("Excluded from exhibition result")
+                : tr("Excluded from official result")}
+          </span>
+        </div>
+        <h3>
+          {game.beatmap?.artist ? `${game.beatmap.artist} — ` : ""}
+          {game.beatmap?.title ?? tr("Beatmap unavailable")}
+        </h3>
+        <div className={styles.mapContext}>
+          <span>{game.beatmap?.difficulty ?? tr("Not recorded")}</span>
+          {game.beatmapId && (
+            <a
+              className="text-link"
+              href={`https://osu.ppy.sh/beatmaps/${game.beatmapId}`}
+              rel="noreferrer"
+            >
+              {tr("osu! beatmap")} ↗
+            </a>
+          )}
+        </div>
+      </header>
+      <section className={styles.reviewedTotals}>
+        <h4>{tr("Reviewed totals")}</h4>
+        {game.included ? (
+          <>
+            <dl className={styles.teamTotals}>
+              {teamNames.map((name, teamIndex) => (
+                <div
+                  key={teamIndex}
+                  className={
+                    teamIndex === winner ? styles.winningTotal : undefined
+                  }
+                >
+                  <dt>
+                    {name}
+                    {teamIndex === winner && (
+                      <span className={styles.winnerLabel}>{tr("Winner")}</span>
+                    )}
+                  </dt>
+                  <dd>{number(game.effectiveTotals[teamIndex])}</dd>
+                </div>
+              ))}
+            </dl>
+            {!complete || first === second ? (
+              <p className="small muted">
+                {tr("Winner")}:{" "}
+                {complete ? tr("Approved tied map") : tr("Not recorded")}
+              </p>
+            ) : null}
+          </>
+        ) : (
+          <p className="muted">{tr("Not applicable")}</p>
+        )}
+      </section>
+      <details className={styles.mpDetails}>
+        <summary>{tr("Original MP and game details")}</summary>
+        <dl className="detail-list">
+          <div>
+            <dt>{tr("Actual MP totals")}</dt>
+            <dd>
+              {teamNames[0]}: {number(game.rawTotals[0])} · {teamNames[1]}:{" "}
+              {number(game.rawTotals[1])}
+            </dd>
+          </div>
+          <div>
+            <dt>{tr("Settings")}</dt>
+            <dd>
+              {game.modsKnown
+                ? game.mods.join(" / ") || "NM"
+                : tr("Not recorded")}{" "}
+              · {game.mode ?? tr("Not recorded")} ·{" "}
+              {game.teamType ?? tr("Not recorded")} ·{" "}
+              {game.scoringType ?? tr("Not recorded")}
+            </dd>
+          </div>
+          <div>
+            <dt>{tr("Time")}</dt>
+            <dd>
+              {date(game.startTime)} → {date(game.endTime)}
+            </dd>
+          </div>
+          <div>
+            <dt>{tr("Source")}</dt>
+            <dd>
+              <a
+                className="text-link"
+                href={`https://osu.ppy.sh/community/matches/${game.mpId}`}
+                rel="noreferrer"
+              >
+                MP #{game.mpId}
+              </a>{" "}
+              · {tr("Game {value0}", { value0: game.gameId })}
+            </dd>
+          </div>
+        </dl>
+      </details>
+    </div>
+  );
+}
 
 export function MatchDetailsView({
   details,
@@ -25,8 +183,6 @@ export function MatchDetailsView({
     value == null ? tr("Not recorded") : value.toLocaleString(tr.locale);
   const team = (id: string | null) =>
     teams.find((t) => t.id === id)?.name ?? tr("Unresolved");
-  const date = (value: string | null) =>
-    value ? formatDate(value, timeZone, tr.locale) : tr("Not recorded");
   if (!details)
     return (
       <section className="section-space stack">
@@ -80,48 +236,15 @@ export function MatchDetailsView({
             id={`game-${g.gameId}`}
             key={`${g.mpId}:${g.gameId}`}
           >
-            <div>
-              <p className="eyebrow">
-                {tr("MAP ")}
-                {i + 1} · MP #{g.mpId} ·{" "}
-                {tr("Game {value0}", { value0: g.gameId })}
-              </p>
-              <h3>
-                {g.beatmap?.artist ? `${g.beatmap.artist} — ` : ""}
-                {g.beatmap?.title ?? tr("Beatmap unavailable")}
-              </h3>
-              <p className="muted">
-                {g.beatmap?.difficulty ?? tr("Not recorded")}
-              </p>
-              {g.beatmapId && (
-                <a
-                  className="text-link"
-                  href={`https://osu.ppy.sh/beatmaps/${g.beatmapId}`}
-                  rel="noreferrer"
-                >
-                  {tr("Beatmap ")}
-                  {g.beatmapId} ↗
-                </a>
-              )}
-            </div>
-            <p>
-              <strong>
-                {g.included
-                  ? exhibition
-                    ? tr("Included in exhibition result")
-                    : tr("Included in official result")
-                  : exhibition
-                    ? tr("Excluded from exhibition result")
-                    : tr("Excluded from official result")}
-              </strong>{" "}
-              · {g.modsKnown ? g.mods.join(" / ") || "NM" : tr("Not recorded")}{" "}
-              · {g.mode ?? tr("Not recorded")} ·{" "}
-              {g.teamType ?? tr("Not recorded")} ·{" "}
-              {g.scoringType ?? tr("Not recorded")}
-            </p>
-            <p className="small muted">
-              {date(g.startTime)} → {date(g.endTime)}
-            </p>
+            <MapResultSummary
+              game={g}
+              index={i}
+              slug={slug}
+              teamNames={[team(details.teamIds[0]), team(details.teamIds[1])]}
+              timeZone={timeZone}
+              exhibition={exhibition}
+              historical={historical}
+            />
             {g.rosterMapping && (
               <p className="notice">{tr("Team mapping adjusted")}</p>
             )}
@@ -134,41 +257,6 @@ export function MatchDetailsView({
                   s.total !== 0 &&
                   s.effectiveTotal === 0,
               ) && <p className="notice">{tr("Failed scores counted as 0")}</p>}
-            <dl className="detail-list">
-              <div>
-                <dt>{tr("Actual MP totals")}</dt>
-                <dd>
-                  {team(details.teamIds[0])}: {number(g.rawTotals[0])} ·{" "}
-                  {team(details.teamIds[1])}: {number(g.rawTotals[1])}
-                </dd>
-              </div>
-              <div>
-                <dt>{tr("Reviewed totals")}</dt>
-                <dd>
-                  {g.included
-                    ? `${team(details.teamIds[0])}: ${number(g.effectiveTotals[0])} · ${team(details.teamIds[1])}: ${number(g.effectiveTotals[1])}`
-                    : tr("Not applicable")}
-                </dd>
-              </div>
-              {g.included && (
-                <div>
-                  <dt>{tr("Winner")}</dt>
-                  <dd>
-                    {g.effectiveTotals.some((n) => n === null)
-                      ? tr("Not recorded")
-                      : g.effectiveTotals[0] === g.effectiveTotals[1]
-                        ? tr("Approved tied map")
-                        : team(
-                            details.teamIds[
-                              g.effectiveTotals[0]! > g.effectiveTotals[1]!
-                                ? 0
-                                : 1
-                            ],
-                          )}
-                  </dd>
-                </div>
-              )}
-            </dl>
             {!!g.withheldScores && (
               <p className="notice">{tr("Player data incomplete")}</p>
             )}

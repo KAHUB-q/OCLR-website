@@ -77,6 +77,8 @@ describe("match-page presentation", () => {
       const data = details();
       const html = match(data, historical);
       expect(html).toContain("Actual MP totals");
+      expect(html).toContain("Original MP and game details");
+      expect(html).toContain("/tournaments/s7/mappools/final#map-NM1");
       expect(html).toContain("Reviewed score");
       expect(html).toContain("Accuracy");
       expect(html).toContain("300 / 100 / 50");

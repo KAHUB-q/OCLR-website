@@ -7,6 +7,7 @@ import {
 } from "./archive-statistics-model";
 import type { ExplicitReadData } from "./explicit-read-contracts";
 import { statisticsScore } from "./statistics-score";
+import { slotLabel } from "./mappool-model";
 
 export type MatchDetailScore = {
   osuId: number;
@@ -38,6 +39,7 @@ export type MatchDetailGame = {
   revision: string;
   beatmapId: number | null;
   beatmap: MatchGame["beatmap"];
+  poolSlot?: { poolId: string; poolName: string; slot: string; anchor: string };
   startTime: string | null;
   endTime: string | null;
   mode: string | null;
@@ -55,6 +57,15 @@ export type MatchDetailGame = {
   rawTotals: [number | null, number | null];
   effectiveTotals: [number | null, number | null];
 };
+
+function uniqueBeatmap<T extends { beatmapId: number | null }>(
+  entries: readonly T[],
+  beatmapId: number | null,
+): T | undefined {
+  if (beatmapId === null) return undefined;
+  const matches = entries.filter((entry) => entry.beatmapId === beatmapId);
+  return matches.length === 1 ? matches[0] : undefined;
+}
 export type MatchDetails = {
   sources: { mpId: number; revision: string; complete: boolean }[];
   games: MatchDetailGame[];
@@ -193,7 +204,18 @@ export function reviewedMatchDetails(
   mpId: number,
   revision: number,
   identities: Map<number, string>,
+  publicPool?: {
+    id: string;
+    name: string;
+    entries: readonly {
+      id: string;
+      beatmapId: number;
+      category: string;
+      position: number;
+    }[];
+  },
 ): MatchDetails {
+  const snapshot = proposal.poolSnapshot;
   const projected = games.map((g) => {
     const reviewed = proposal.games.find((r) => r.gameId === g.id);
     const decision = proposal.decisions.find((d) => d.gameId === g.id);
@@ -239,6 +261,21 @@ export function reviewedMatchDetails(
     );
     if (reviewed)
       result.effectiveTotals = [reviewed.homeScore, reviewed.awayScore];
+    if (publicPool && snapshot?.poolId === publicPool.id) {
+      const saved = uniqueBeatmap(snapshot.entries, g.beatmapId);
+      const published = uniqueBeatmap(publicPool.entries, g.beatmapId);
+      if (
+        saved &&
+        published?.category === saved.category &&
+        published.position === saved.position
+      )
+        result.poolSlot = {
+          poolId: publicPool.id,
+          poolName: publicPool.name,
+          slot: slotLabel(saved.category, saved.position),
+          anchor: `map-${published.id}`,
+        };
+    }
     return result;
   });
   return {
@@ -257,8 +294,9 @@ export function archiveMatchDetails(
 ): MatchDetails {
   const fixture = archive.matches.find((f) => f.id === fixtureId)!;
   const teamIds: [string, string] = [fixture.teamA, fixture.teamB];
-  const games = snapshots.flatMap(({ snapshot: s, revision }) =>
-    s.source.games.map((g) => {
+  const games = snapshots.flatMap(({ snapshot: s, revision }) => {
+    const pool = archive.pools.find((p) => p.id === s.poolId);
+    return s.source.games.map((g) => {
       const included = s.included.includes(g.id);
       const retained = statisticsScores(g, s.excludedScores);
       const scores = g.scores.flatMap((score) => {
@@ -275,6 +313,7 @@ export function archiveMatchDetails(
           ),
         ];
       });
+      const map = pool && uniqueBeatmap(pool.maps, g.beatmapId);
       return {
         ...detailGame(
           g,
@@ -285,6 +324,16 @@ export function archiveMatchDetails(
           teamIds,
           s.rosterTeamGames?.includes(g.id),
         ),
+        ...(pool && map
+          ? {
+              poolSlot: {
+                poolId: pool.id,
+                poolName: pool.name,
+                slot: map.slot,
+                anchor: `map-${map.slot}`,
+              },
+            }
+          : {}),
         ...(included
           ? {}
           : {
@@ -293,8 +342,8 @@ export function archiveMatchDetails(
                 ("unknown" as const),
             }),
       };
-    }),
-  );
+    });
+  });
   return {
     sources: snapshots.map(({ snapshot: s, revision }) => ({
       mpId: s.source.match.id,

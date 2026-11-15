@@ -38,10 +38,7 @@ import {
   publicFixture,
 } from "../../src/lib/public-competition";
 import { approvedRatingGames } from "../../src/lib/approved-rating-games";
-import {
-  ratingIdentities,
-  staffRoundRatings,
-} from "../../src/lib/rating-data";
+import { ratingIdentities, staffRoundRatings } from "../../src/lib/rating-data";
 import { publicMatchRating, publicRoundRatings } from "../../src/lib/ratings";
 import { publicPlayer } from "../../src/lib/players";
 import { playerCompetitionRecord } from "../../src/lib/player-competition";
@@ -359,12 +356,17 @@ describe.skipIf(!url)(
       const firstFixtureId = fixtureId;
       const secondPoolId = randomUUID();
       await db()
+        .update(mappools)
+        .set({ publishedAt: new Date() })
+        .where(eq(mappools.id, poolId));
+      await db()
         .insert(mappools)
         .values({
           id: secondPoolId,
           editionSlug: "test-cup",
           roundId: fixtureBody.roundId as string,
           name: "Synthetic second pool",
+          publishedAt: new Date(),
         });
       await db()
         .insert(mappoolEntries)
@@ -407,12 +409,31 @@ describe.skipIf(!url)(
           await resultCommand(referee, "test-cup", fixtureId, submission(view))
         ).review;
         await published(await approved(view));
+        const id = second ? secondPoolId : poolId;
+        const detail = (await publicFixture("test-cup", fixtureId))?.details;
+        const entries = await db()
+          .select()
+          .from(mappoolEntries)
+          .where(eq(mappoolEntries.poolId, id));
+        expect(detail?.games.map((game) => game.poolSlot)).toEqual(
+          source.games.map((game, index) => ({
+            poolId: id,
+            poolName: expect.any(String),
+            slot: second ? `HD${index + 7}` : `NM${index + 1}`,
+            anchor: `map-${entries.find((entry) => entry.beatmapId === game.beatmapId)!.id}`,
+          })),
+        );
       }
       // Editing current pool rows must not relabel the published revision.
       await db()
         .update(mappoolEntries)
         .set({ category: "HR" })
         .where(eq(mappoolEntries.poolId, secondPoolId));
+      expect(
+        (await publicFixture("test-cup", fixtureId))?.details?.games.map(
+          (game) => game.poolSlot,
+        ),
+      ).toEqual([undefined, undefined, undefined]);
       const performance = await playerMapPerformance(await publicPlayer(uid));
       expect(performance.mapsPlayed).toBe(6);
       const maps = performance.editions[0].maps;

@@ -497,6 +497,10 @@ while retaining its exact prior statistics identity through `sourceTitle`;
 existing maps without these fields remain compatible. See
 [the S2 NM2 recovery](archive-map-metadata.md#s2-nm2-official-file-recovery-852).
 
+Contract 1.36.0 adds optional `poolSlot` to each game in native and historical
+match details. It links to an unambiguous beatmap slot in the published pool
+used for that result. Earlier backends omit this field.
+
 Contract 1.35.0 adds public `GET /rankings/career` and `GET /rankings/beatmap`.
 They return the current background snapshot with `state` and `calculatedAt`, or
 empty results in `pending` state while the snapshot is missing or stale. See

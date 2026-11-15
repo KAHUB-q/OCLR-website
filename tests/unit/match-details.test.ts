@@ -31,6 +31,14 @@ describe("public match detail projection", () => {
     expect(d.sources).toHaveLength(2);
     expect(d.games.map((g) => g.gameId)).toEqual([1, 4]);
     expect(d.games.map((g) => g.beatmapId)).toEqual([10001, 10001]);
+    expect(d.games.map((g) => g.poolSlot)).toEqual(
+      Array(2).fill({
+        poolId: "final",
+        poolName: statisticsArchive.pools[0].name,
+        slot: "NM1",
+        anchor: "map-NM1",
+      }),
+    );
     expect(d.games[0].scores).toHaveLength(4);
     expect(d.games[0].scores[0].hits).toEqual({
       great: 90,
@@ -38,6 +46,18 @@ describe("public match detail projection", () => {
       meh: 2,
       miss: 3,
     });
+  });
+  it("omits links for an unlisted map or a beatmap shared by multiple slots", () => {
+    const archive = structuredClone(statisticsArchive);
+    const s = snapshot();
+    const pool = archive.pools[0];
+    pool.maps.push({ ...pool.maps[0], slot: "HD1" });
+    s.source.games[1].beatmapId = 99999;
+    const [ambiguous, unlisted] = archiveMatchDetails(archive, "one", [
+      { snapshot: s, revision: "published" },
+    ]).games;
+    expect(ambiguous.poolSlot).toBeUndefined();
+    expect(unlisted.poolSlot).toBeUndefined();
   });
   it("preserves actual failed scores, zero, missing values and exclusion without leaking provider payload", () => {
     const s = statisticsSource().games[0].scores[0];

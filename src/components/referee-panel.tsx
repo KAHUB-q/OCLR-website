@@ -30,7 +30,6 @@ import { refereeCommands } from "@/lib/referee-commands";
 import { RefereeIrc } from "./referee-irc";
 import { RefereeCommands } from "./referee-commands";
 import { RefereeReconciliation } from "./referee-reconciliation";
-import { SheetIcon } from "./sheet-icon";
 import styles from "./referee-panel.module.css";
 
 const stageIds = [
@@ -1210,6 +1209,9 @@ export function RefereePanel({
                         const used = state.activeSelections.find(
                           (s) => s.entryId === m.id,
                         );
+                        const usedSide = used
+                          ? refereeTeamSide(data.fixture, used.teamId)
+                          : undefined;
                         let allowed = true;
                         try {
                           validateRefereeAction(model, {
@@ -1225,6 +1227,8 @@ export function RefereePanel({
                             key={m.id}
                             tabIndex={used ? 0 : undefined}
                             data-selected={ircSelection?.entryId === m.id}
+                            data-selection={used?.kind}
+                            data-team={usedSide}
                           >
                             <div
                               className={styles.poolTitle}
@@ -1245,10 +1249,7 @@ export function RefereePanel({
                               {used ? (
                                 <span
                                   className={`${styles.poolContext} ${styles.teamInk}`}
-                                  data-team={refereeTeamSide(
-                                    data.fixture,
-                                    used.teamId,
-                                  )}
+                                  data-team={usedSide}
                                 >
                                   {teamName(used.teamId)} ·{" "}
                                   {used.kind.toUpperCase()}
@@ -1268,7 +1269,6 @@ export function RefereePanel({
                                     data-entry-id={m.id}
                                     onClick={recordPoolSelection}
                                   >
-                                    <SheetIcon kind="check" />
                                     {tr("referee_neutral_pick")}
                                   </button>
                                 </div>
@@ -1295,14 +1295,8 @@ export function RefereePanel({
                                         data-entry-id={m.id}
                                         onClick={recordPoolSelection}
                                       >
-                                        <span aria-hidden="true">
-                                          {side === "red" ? "R" : "B"}
-                                        </span>
-                                        <SheetIcon
-                                          kind={
-                                            kind === "ban" ? "ban" : "check"
-                                          }
-                                        />
+                                        {side === "red" ? "R" : "B"}{" "}
+                                        {kind.toUpperCase()}
                                       </button>
                                     )),
                                   )}

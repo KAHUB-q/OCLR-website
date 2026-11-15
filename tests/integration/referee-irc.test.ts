@@ -270,7 +270,7 @@ describe.skipIf(!url)("IRC relay persistence and confirmation", () => {
     const notice = (await sync()).command!;
     expect(notice.target).toBe("#mp_123");
     expect(notice.text).toMatch(
-      /\| RED 0 - 1 BLUE \| Next: (?:BAN|PICK) (?:RED|BLUE) /,
+      /\| RED 1 - 0 BLUE \| Next: BAN BLUE /,
     );
     expect(
       (await sync([{ commandId: notice.id, status: "notified" }])).command,

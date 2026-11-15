@@ -15,8 +15,8 @@ const data = params.has("stale")
   ? changedWorkspace(params.get("stale") === "recorded")
   : workspace();
 if (params.has("longnames")) {
-  data.teams[0].name = "Blue Team · 超長隊伍名稱ABCDEFGHIJKLMNOPQRSTUVWXYZ";
-  data.teams[1].name = "Red Team · 超長隊伍名稱ABCDEFGHIJKLMNOPQRSTUVWXYZ";
+  data.teams[0].name = "Red Team · 超長隊伍名稱ABCDEFGHIJKLMNOPQRSTUVWXYZ";
+  data.teams[1].name = "Blue Team · 超長隊伍名稱ABCDEFGHIJKLMNOPQRSTUVWXYZ";
 }
 data.canRecord = !params.has("readonly");
 createRoot(document.getElementById("root")!).render(

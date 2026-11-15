@@ -4,7 +4,14 @@ import { useSnapshotUpdates } from "./use-poll";
 import { useStaffReadOnly } from "./staff-read-only";
 import Link from "next/link";
 import { refereeMessage } from "@/i18n/referee";
-import { useEffect, useId, useRef, useState, type ReactNode } from "react";
+import {
+  useEffect,
+  useId,
+  useRef,
+  useState,
+  type MouseEvent,
+  type ReactNode,
+} from "react";
 import { useAppTranslations } from "@/i18n/shared";
 import type { RefereeWorkspace } from "@/lib/referee-workspace";
 import type { RefereeCommand } from "@/lib/referee-write-contracts";
@@ -17,6 +24,7 @@ import {
   type RefereeEvent,
 } from "@/lib/referee-model";
 import { bpSyncSource } from "@/lib/referee-sync";
+import { refereeTeamSide } from "@/lib/referee-team-side";
 import { refereeCommands } from "@/lib/referee-commands";
 import { RefereeIrc } from "./referee-irc";
 import { RefereeCommands } from "./referee-commands";
@@ -442,11 +450,21 @@ export function RefereePanel({
   const mapActions = appliedSkipBans
     ? (["pick"] as const)
     : (["ban", "pick"] as const);
-  const nextTeamIndex = data.teams.findIndex(
-    (team) => team.id === state.nextStep?.teamId,
+  const redTeam = data.teams.find(
+    (team) => team.id === data.fixture.homeTeamId,
   );
-  const nextTeamSide =
-    nextTeamIndex === 1 ? "red" : nextTeamIndex === 0 ? "blue" : "neutral";
+  const blueTeam = data.teams.find(
+    (team) => team.id === data.fixture.awayTeamId,
+  );
+  const teamsBySide = [
+    ...(redTeam ? [{ team: redTeam, side: "red" as const }] : []),
+    ...(blueTeam ? [{ team: blueTeam, side: "blue" as const }] : []),
+  ];
+  const nextTeamSide = refereeTeamSide(data.fixture, state.nextStep?.teamId);
+  function recordPoolSelection(event: MouseEvent<HTMLButtonElement>) {
+    const { entryId } = event.currentTarget.dataset;
+    if (entryId) void send({ action: "record_selection", entryId });
+  }
   const exPick = state.activeSelections.find(
     (s) => s.id === state.lastSelectionId,
   );
@@ -541,18 +559,18 @@ export function RefereePanel({
         </div>
       </div>
       <div className={styles.summaryScore}>
-        {data.teams.length === 2 ? (
+        {redTeam && blueTeam ? (
           <>
             <div className={styles.summaryTeam} data-team="red">
-              <span>{data.teams[1].name}</span>
-              <strong>{state.score[data.teams[1].id] ?? 0}</strong>
+              <span>{redTeam.name}</span>
+              <strong>{state.score[redTeam.id] ?? 0}</strong>
             </div>
             <span className={styles.scoreDivider} aria-hidden="true">
               :
             </span>
             <div className={styles.summaryTeam} data-team="blue">
-              <span>{data.teams[0].name}</span>
-              <strong>{state.score[data.teams[0].id] ?? 0}</strong>
+              <span>{blueTeam.name}</span>
+              <strong>{state.score[blueTeam.id] ?? 0}</strong>
             </div>
           </>
         ) : (
@@ -571,13 +589,7 @@ export function RefereePanel({
                   <span
                     key={s.id}
                     className={styles.bpStep}
-                    data-team={
-                      s.teamId && s.teamId === data.teams[1]?.id
-                        ? "red"
-                        : s.teamId && s.teamId === data.teams[0]?.id
-                          ? "blue"
-                          : "neutral"
-                    }
+                    data-team={refereeTeamSide(data.fixture, s.teamId)}
                   >
                     {teamName(s.teamId)} {s.kind.toUpperCase()} {s.category}
                     {data.maps.find((m) => m.id === s.entryId)?.position}
@@ -998,12 +1010,7 @@ export function RefereePanel({
                       },
                       data.teams.map((t) => t.id),
                     );
-                    const side =
-                      actor && actor === data.teams[1]?.id
-                        ? "red"
-                        : actor && actor === data.teams[0]?.id
-                          ? "blue"
-                          : "neutral";
+                    const side = refereeTeamSide(data.fixture, actor);
                     return (
                       <li
                         key={index}
@@ -1071,8 +1078,8 @@ export function RefereePanel({
                       number: state.nextStep.index + 1,
                       action: state.nextStep.kind.toUpperCase(),
                       team:
-                        nextTeamIndex >= 0
-                          ? `${tr(nextTeamIndex === 1 ? "Red team" : "Blue team")} ${teamName(state.nextStep.teamId)}`
+                        nextTeamSide !== "neutral"
+                          ? `${tr(nextTeamSide === "red" ? "Red team" : "Blue team")} ${teamName(state.nextStep.teamId)}`
                           : teamName(
                               state.nextStep.teamId,
                               state.nextStep.kind === "tb",
@@ -1147,12 +1154,8 @@ export function RefereePanel({
                                   disabled={
                                     disabled || stale || dirtyOrder || !allowed
                                   }
-                                  onClick={() => {
-                                    void send({
-                                      action: "record_selection",
-                                      entryId: m.id,
-                                    });
-                                  }}
+                                  data-entry-id={m.id}
+                                  onClick={recordPoolSelection}
                                 >
                                   {tr("referee_neutral_pick")}
                                 </button>
@@ -1160,36 +1163,30 @@ export function RefereePanel({
                             ) : (
                               <div className={styles.poolActions}>
                                 {mapActions.flatMap((kind) =>
-                                  data.teams
-                                    .map((team, index) => (
-                                      <button
-                                        key={`${kind}-${team.id}`}
-                                        type="button"
-                                        className="secondary"
-                                        data-team={index === 0 ? "blue" : "red"}
-                                        disabled={
-                                          disabled ||
-                                          stale ||
-                                          dirtyOrder ||
-                                          !allowed ||
-                                          state.nextStep?.kind !== kind ||
-                                          (state.nextStep?.teamId !== null &&
-                                            state.nextStep?.teamId !== team.id)
-                                        }
-                                        onClick={() => {
-                                          void send({
-                                            action: "record_selection",
-                                            entryId: m.id,
-                                          });
-                                        }}
-                                      >
-                                        {index === 0
-                                          ? tr("Blue team")
-                                          : tr("Red team")}{" "}
-                                        {kind.toUpperCase()}
-                                      </button>
-                                    ))
-                                    .toReversed(),
+                                  teamsBySide.map(({ team, side }) => (
+                                    <button
+                                      key={`${kind}-${team.id}`}
+                                      type="button"
+                                      className="secondary"
+                                      data-team={side}
+                                      disabled={
+                                        disabled ||
+                                        stale ||
+                                        dirtyOrder ||
+                                        !allowed ||
+                                        state.nextStep?.kind !== kind ||
+                                        (state.nextStep?.teamId !== null &&
+                                          state.nextStep?.teamId !== team.id)
+                                      }
+                                      data-entry-id={m.id}
+                                      onClick={recordPoolSelection}
+                                    >
+                                      {side === "red"
+                                        ? tr("Red team")
+                                        : tr("Blue team")}{" "}
+                                      {kind.toUpperCase()}
+                                    </button>
+                                  )),
                                 )}
                               </div>
                             )}

@@ -16,9 +16,10 @@ const reactionAssets = new Set(
   ),
 );
 
-const themeAssets = new Set(
-  bundledSeasonThemes.flatMap((theme) => theme.assets),
-);
+const themeAssets = new Set([
+  "/lighting.png",
+  ...bundledSeasonThemes.flatMap((theme) => theme.assets),
+]);
 const tournamentArtwork = new Set([
   "/oclr-s11-square-logo.webp",
   "/oclr-s11-website-background.webp",
@@ -77,7 +78,13 @@ const bundle = await build({
     "tests/components/archive-importer.tsx",
   ],
   alias: { "next/image": resolve("tests/components/next-image.ts") },
-  external: ["/rookie-stage.svg", "/themes/*", "/fonts/*", "/branding/*"],
+  external: [
+    "/lighting.png",
+    "/rookie-stage.svg",
+    "/themes/*",
+    "/fonts/*",
+    "/branding/*",
+  ],
   bundle: true,
   write: false,
   outdir: "component-bundle",

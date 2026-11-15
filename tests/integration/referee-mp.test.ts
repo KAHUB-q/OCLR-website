@@ -263,7 +263,7 @@ describe.skipIf(!url)("MP binding and atomic provisional scores", () => {
     expect(w.projection.score[w.teams[0].id]).toBe(1);
     expect((await syncRelay(2)).command).toMatchObject({
       target: "#mp_880001",
-      text: expect.stringMatching(/^\[OCLR SCORE #\d+\].*RED 0 - 1 BLUE/),
+      text: expect.stringMatching(/^\[OCLR SCORE #\d+\].*RED 1 - 0 BLUE/),
     });
     expect((await syncRelay(3)).command).toBeNull();
     const [score] = await db().select().from(refereeMpScores);

@@ -219,7 +219,7 @@ test("new manual commands and automatic BP notices scroll command status to the 
     el.scrollTop = 0;
   });
   await pool(page)
-    .getByRole("button", { name: "Blue team BAN", exact: true })
+    .getByRole("button", { name: "Red team BAN", exact: true })
     .first()
     .click();
   await expect.poll(() => state.autos.length).toBe(1);
@@ -294,9 +294,9 @@ for (const locale of ["en", "zh-Hans", "zh-Hant"] as const) {
       ];
     const state = await setup(page);
     state.current().teams[0].name =
-      "Blue Team · 超長隊伍名稱ABCDEFGHIJKLMNOPQRSTUVWXYZ";
-    state.current().teams[1].name =
       "Red Team · 超長隊伍名稱ABCDEFGHIJKLMNOPQRSTUVWXYZ";
+    state.current().teams[1].name =
+      "Blue Team · 超長隊伍名稱ABCDEFGHIJKLMNOPQRSTUVWXYZ";
     await page.goto(`/referee-panel?locale=${locale}&theme=${theme}&longnames`);
     await expect(
       page.getByText(text("Showing applied order"), { exact: true }),
@@ -313,10 +313,10 @@ for (const locale of ["en", "zh-Hans", "zh-Hant"] as const) {
     });
     const rows = list.getByRole("listitem");
     await expect(rows).toHaveCount(5);
-    await expect(rows.nth(0)).toContainText(/1\s*BAN\s*Blue Team/);
-    await expect(rows.nth(1)).toContainText(/2\s*PICK\s*Blue Team/);
-    await expect(rows.nth(2)).toContainText(/3\s*BAN\s*Red Team/);
-    await expect(rows.nth(3)).toContainText(/4\s*PICK\s*Red Team/);
+    await expect(rows.nth(0)).toContainText(/1\s*BAN\s*Red Team/);
+    await expect(rows.nth(1)).toContainText(/2\s*PICK\s*Red Team/);
+    await expect(rows.nth(2)).toContainText(/3\s*BAN\s*Blue Team/);
+    await expect(rows.nth(3)).toContainText(/4\s*PICK\s*Blue Team/);
     await expect(rows.nth(4)).toContainText(/5\s*TB/);
     await expect(rows.nth(4)).toContainText("1:1");
     async function checkRows(sides: string[]) {
@@ -344,7 +344,7 @@ for (const locale of ["en", "zh-Hans", "zh-Hant"] as const) {
       ).toBe(true);
     }
     // Consecutive steps by the same team must each occupy their own row.
-    await checkRows(["blue", "blue", "red", "red", "neutral"]);
+    await checkRows(["red", "red", "blue", "blue", "neutral"]);
     const accessibility = await new AxeBuilder({ page })
       .include("details:has(ol[role='list'])")
       .analyze();
@@ -355,7 +355,7 @@ for (const locale of ["en", "zh-Hans", "zh-Hant"] as const) {
     await page
       .getByLabel(text("First Ban team"), { exact: true })
       .selectOption(id(11));
-    await checkRows(["red", "blue", "blue", "red", "neutral"]);
+    await checkRows(["blue", "red", "red", "blue", "neutral"]);
     await expect(
       page.getByText(text("Order preview — not saved"), { exact: true }),
     ).toBeVisible();
@@ -796,7 +796,7 @@ test("records Ban and Pick without an IRC connection or queue request", async ({
   const state = await setup(page);
   await page.goto("/referee-panel");
   await pool(page)
-    .getByRole("button", { name: "Blue team BAN", exact: true })
+    .getByRole("button", { name: "Red team BAN", exact: true })
     .first()
     .click();
   await expect(records(page)).toContainText("BAN NM1");
@@ -805,7 +805,7 @@ test("records Ban and Pick without an IRC connection or queue request", async ({
     page.getByRole("button", { name: "Send to local IRC", exact: true }),
   ).toBeDisabled();
   await pool(page)
-    .getByRole("button", { name: "Blue team PICK", exact: true })
+    .getByRole("button", { name: "Red team PICK", exact: true })
     .first()
     .click();
   await expect(records(page)).toContainText("PICK NM2");
@@ -823,7 +823,7 @@ test("keeps queued commands and late IRC receipts independent from already recor
   await page.goto("/referee-panel");
   await expect(page.getByText("IRC connected", { exact: true })).toBeVisible();
   await pool(page)
-    .getByRole("button", { name: "Blue team BAN", exact: true })
+    .getByRole("button", { name: "Red team BAN", exact: true })
     .first()
     .click();
   await expect(records(page)).toContainText("BAN NM1");
@@ -833,7 +833,7 @@ test("keeps queued commands and late IRC receipts independent from already recor
   ).toBeVisible();
   expect(state.queues).toHaveLength(0);
   await pool(page)
-    .getByRole("button", { name: "Blue team PICK", exact: true })
+    .getByRole("button", { name: "Red team PICK", exact: true })
     .first()
     .click();
   await expect(records(page)).toContainText("PICK NM2");
@@ -852,7 +852,7 @@ test("shows a conflict without preparing a command or advancing BP", async ({
   const state = await setup(page, { failure: "conflict" });
   await page.goto("/referee-panel");
   await pool(page)
-    .getByRole("button", { name: "Blue team BAN", exact: true })
+    .getByRole("button", { name: "Red team BAN", exact: true })
     .first()
     .click();
   await expect(
@@ -871,7 +871,7 @@ test("retries a lost save response with the same key and one selection", async (
   const state = await setup(page, { failure: "lost" });
   await page.goto("/referee-panel");
   await pool(page)
-    .getByRole("button", { name: "Blue team BAN", exact: true })
+    .getByRole("button", { name: "Red team BAN", exact: true })
     .first()
     .click();
   await page
@@ -889,7 +889,7 @@ test("blocks a second rapid click while the record is saving", async ({
   const state = await setup(page, { delay: true });
   await page.goto("/referee-panel");
   const button = pool(page)
-    .getByRole("button", { name: "Blue team BAN", exact: true })
+    .getByRole("button", { name: "Red team BAN", exact: true })
     .first();
   await button.evaluate((el: HTMLButtonElement) => {
     el.click();
@@ -904,7 +904,7 @@ test("simulation records on click and simulated sending does not record twice", 
   const state = await setup(page);
   await page.goto("/referee-panel?simulation");
   await pool(page)
-    .getByRole("button", { name: "Blue team BAN", exact: true })
+    .getByRole("button", { name: "Red team BAN", exact: true })
     .first()
     .evaluate((button: HTMLButtonElement) => {
       button.click();
@@ -912,14 +912,14 @@ test("simulation records on click and simulated sending does not record twice", 
     });
   await expect(records(page)).toContainText("BAN NM1");
   await expect(
-    page.getByText("[OCLR BP #2] BAN NM1 | Blue | https://osu.ppy.sh/b/10001", {
+    page.getByText("[OCLR BP #2] BAN NM1 | Red | https://osu.ppy.sh/b/10001", {
       exact: true,
     }),
   ).toBeVisible();
   await expect(records(page)).toContainText("BAN NM1");
   await expect(
     pool(page)
-      .getByRole("button", { name: "Blue team PICK", exact: true })
+      .getByRole("button", { name: "Red team PICK", exact: true })
       .first(),
   ).toBeEnabled();
   expect(state.writes).toHaveLength(0);
@@ -930,7 +930,7 @@ test("read-only users cannot record", async ({ page }) => {
   await page.goto("/referee-panel?readonly");
   await expect(
     pool(page)
-      .getByRole("button", { name: "Blue team BAN", exact: true })
+      .getByRole("button", { name: "Red team BAN", exact: true })
       .first(),
   ).toBeDisabled();
   expect(state.writes).toHaveLength(0);
@@ -974,7 +974,7 @@ test(`records with localized feedback in ${locale} at the workflow viewport`, as
     .locator("dd");
   await expect(process).toHaveText("—");
   await maps
-    .getByRole("button", { name: `${text("Blue team")} BAN`, exact: true })
+    .getByRole("button", { name: `${text("Red team")} BAN`, exact: true })
     .first()
     .click();
   await expect(
@@ -991,7 +991,7 @@ test(`records with localized feedback in ${locale} at the workflow viewport`, as
     ),
   ).toBe(true);
   await maps
-    .getByRole("button", { name: `${text("Blue team")} PICK`, exact: true })
+    .getByRole("button", { name: `${text("Red team")} PICK`, exact: true })
     .first()
     .click();
   await page
@@ -999,21 +999,21 @@ test(`records with localized feedback in ${locale} at the workflow viewport`, as
     .click();
   await page
     .getByRole("button", {
-      name: text("Record win: {team}").replace("{team}", "Blue"),
+      name: text("Record win: {team}").replace("{team}", "Red"),
       exact: true,
     })
     .click();
   await maps
-    .getByRole("button", { name: `${text("Red team")} BAN`, exact: true })
+    .getByRole("button", { name: `${text("Blue team")} BAN`, exact: true })
     .first()
     .click();
   await maps
-    .getByRole("button", { name: `${text("Red team")} PICK`, exact: true })
+    .getByRole("button", { name: `${text("Blue team")} PICK`, exact: true })
     .first()
     .click();
   await page
     .getByRole("button", {
-      name: text("Record win: {team}").replace("{team}", "Red"),
+      name: text("Record win: {team}").replace("{team}", "Blue"),
       exact: true,
     })
     .click();
@@ -1023,16 +1023,16 @@ test(`records with localized feedback in ${locale} at the workflow viewport`, as
     .click();
   const entries = process.locator(":scope > span");
   await expect(entries).toHaveText([
-    "Blue BAN NM1",
-    "Blue PICK NM2",
-    "Red BAN NM3",
-    "Red PICK NM4",
+    "Red BAN NM1",
+    "Red PICK NM2",
+    "Blue BAN NM3",
+    "Blue PICK NM4",
     `${text("Neutral tiebreaker")} TB TB1`,
   ]);
   const blue = "rgb(29, 78, 216)";
   const red = "rgb(185, 28, 28)";
   for (let index = 0; index < 4; index++)
-    await expect(entries.nth(index)).toHaveCSS("color", index < 2 ? blue : red);
+    await expect(entries.nth(index)).toHaveCSS("color", index < 2 ? red : blue);
   await expect(entries.last()).not.toHaveCSS("color", blue);
   await expect(entries.last()).not.toHaveCSS("color", red);
   if (isMobile) {
@@ -1113,7 +1113,7 @@ test("withdraw stays outside collapsed details and score floats only within BP",
     false,
   );
   await pool(page)
-    .getByRole("button", { name: "Blue team BAN", exact: true })
+    .getByRole("button", { name: "Red team BAN", exact: true })
     .first()
     .click();
   await expect(undo).toBeEnabled();
@@ -1153,7 +1153,7 @@ test("retrying an accepted automatic sync uses the same event and never duplicat
   const state = await setup(page, { connected: true, failure: "syncLost" });
   await page.goto("/referee-panel");
   await pool(page)
-    .getByRole("button", { name: "Blue team BAN", exact: true })
+    .getByRole("button", { name: "Red team BAN", exact: true })
     .first()
     .click();
   await page
@@ -1255,22 +1255,28 @@ test("bound MP sync updates the red-left scoreboard, fences stale IRC reads and 
   });
   await page.goto("/referee-panel");
   await pool(page)
-    .getByRole("button", { name: "Blue team BAN", exact: true })
+    .getByRole("button", { name: "Red team BAN", exact: true })
     .first()
     .click();
   await pool(page)
-    .getByRole("button", { name: "Blue team PICK", exact: true })
+    .getByRole("button", { name: "Red team PICK", exact: true })
     .first()
     .click();
   await records(page)
     .getByRole("button", { name: "Automatic sync", exact: true })
     .click();
   await expect.poll(() => syncs).toBeGreaterThan(0);
-  await expect(records(page).locator("strong")).toHaveText(["0", "1"]);
+  await expect(
+    records(page).locator('div[data-team="red"] > span'),
+  ).toHaveText("Red");
+  await expect(
+    records(page).locator('div[data-team="blue"] > span'),
+  ).toHaveText("Blue");
+  await expect(records(page).locator("strong")).toHaveText(["1", "0"]);
   const count = ircReads;
   await expect.poll(() => ircReads).toBeGreaterThan(count);
   if (syncs < 2)
-    await expect(records(page).locator("strong")).toHaveText(["0", "1"]);
+    await expect(records(page).locator("strong")).toHaveText(["1", "0"]);
   await expect(
     page.getByText("Replay or repeated beatmap", { exact: true }),
   ).toBeHidden();
@@ -1286,6 +1292,6 @@ test("bound MP sync updates the red-left scoreboard, fences stale IRC reads and 
     .getByRole("link", { name: "Review referee records", exact: true })
     .click();
   await expect(
-    page.getByRole("button", { name: "Record win: Blue", exact: true }),
+    page.getByRole("button", { name: "Record win: Red", exact: true }),
   ).toBeVisible();
 });

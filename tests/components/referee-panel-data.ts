@@ -146,14 +146,14 @@ export function workspace(events?: RefereeEvent[]): RefereeWorkspace {
     teams: [
       {
         id: id(10),
-        name: "Blue",
+        name: "Red",
         captainId: 1,
         captainUsername: "SyntheticBlue",
         members: [],
       },
       {
         id: id(11),
-        name: "Red",
+        name: "Blue",
         captainId: 2,
         captainUsername: "SyntheticRed",
         members: [],

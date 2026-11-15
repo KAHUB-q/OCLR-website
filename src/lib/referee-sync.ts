@@ -1,5 +1,6 @@
 import type { RefereeWorkspace } from "./referee-workspace";
 import type { RefereeEvent } from "./referee-model";
+import { refereeTeamSide } from "./referee-team-side";
 
 export type BpSyncStep = "notice" | "map" | "mods";
 export type BpSyncMetadata = {
@@ -63,7 +64,14 @@ export function scoreNoticeSource(
   )
     return null;
 
-  const [blue, red] = teams;
+  const { homeTeamId, awayTeamId } = workspace.fixture;
+  if (
+    !homeTeamId ||
+    !awayTeamId ||
+    !teams.some((team) => team.id === homeTeamId) ||
+    !teams.some((team) => team.id === awayTeamId)
+  )
+    return null;
   const next = projection.nextStep;
   let prompt = "Awaiting referee ruling";
   if (projection.complete) prompt = "Series complete";
@@ -72,18 +80,19 @@ export function scoreNoticeSource(
     if (next.kind === "tb") prompt = "Next: TB";
     else {
       const team = teams.find((item) => item.id === next.teamId);
-      if (team) {
+      const side = refereeTeamSide(workspace.fixture, next.teamId);
+      if (team && side !== "neutral") {
         const name =
           Array.from(
             team.name.replace(/[|\p{Cc}\p{Cf}\u2028\u2029]/gu, " ").trim(),
           )
             .slice(0, 48)
             .join("") || "Team";
-        prompt = `Next: ${next.kind.toUpperCase()} ${team.id === red.id ? "RED" : "BLUE"} ${name}`;
+        prompt = `Next: ${next.kind.toUpperCase()} ${side.toUpperCase()} ${name}`;
       }
     }
   }
-  const text = `${scoreNoticePrefix}${event.ordinal}] ${map.category}${map.position} | RED ${projection.score[red.id] ?? 0} - ${projection.score[blue.id] ?? 0} BLUE | ${prompt}`;
+  const text = `${scoreNoticePrefix}${event.ordinal}] ${map.category}${map.position} | RED ${projection.score[homeTeamId] ?? 0} - ${projection.score[awayTeamId] ?? 0} BLUE | ${prompt}`;
   return isScoreNotice(text) ? text : null;
 }
 export function bpSyncSource(workspace: RefereeWorkspace, eventId: string) {

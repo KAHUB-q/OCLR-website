@@ -16,6 +16,7 @@ import {
   allowedMakeCommand,
   confirmsIrcCommand,
   normalizedIrcUsername,
+  observedIrcStart,
   safeIrcMessages,
 } from "./referee-irc-model";
 import {
@@ -225,7 +226,7 @@ export async function refereeIrcRelay(
           )
         )
           continue;
-        if (command.selection) {
+        if (command.selection && "entryId" in command.selection) {
           const [issuer] = await tx
             .select()
             .from(users)
@@ -271,6 +272,61 @@ export async function refereeIrcRelay(
               : {}),
           })
           .where(eq(commands.id, command.id));
+    }
+    if (action.projection.status === "connected" && c.roomId > 0) {
+      const [start] = await tx
+        .select()
+        .from(commands)
+        .where(
+          and(eq(commands.connectionId, c.id), eq(commands.status, "sent")),
+        )
+        .limit(1);
+      const attempt = start?.selection;
+      if (
+        attempt &&
+        "attemptId" in attempt &&
+        start.target === `#mp_${c.roomId}` &&
+        observedIrcStart(
+          messages,
+          start.baselineMessageIds,
+          c.ircUsername,
+          start.text,
+          attempt.beatmapId,
+        )
+      ) {
+        let recordError: string | null = null;
+        try {
+          const [issuer] = await tx
+            .select()
+            .from(users)
+            .where(eq(users.osuId, start.actorId));
+          if (!issuer) throw new HttpError(403, "Referee access has changed.");
+          await refereeCommand(
+            issuer,
+            slug,
+            fixtureId,
+            {
+              action: "start_attempt",
+              pickId: attempt.pickId,
+              expectedRevision: attempt.expectedRevision,
+              dependencyFingerprint: attempt.dependencyFingerprint,
+              requestKey: start.requestKey,
+            },
+            tx,
+          );
+        } catch (error) {
+          if (!(error instanceof HttpError)) throw error;
+          recordError = error.message;
+        }
+        await tx
+          .update(commands)
+          .set({
+            status: recordError === null ? "confirmed" : "record_failed",
+            recordError,
+            confirmedAt: new Date(),
+          })
+          .where(eq(commands.id, start.id));
+      }
     }
     let command: null | { id: string; text: string; target: string } = null;
     if (

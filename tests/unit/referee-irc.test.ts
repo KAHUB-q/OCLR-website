@@ -6,10 +6,33 @@ import {
   confirmsMap,
   confirmsIrcCommand,
   normalizedIrcUsername,
+  observedIrcStart,
   safeIrcMessages,
   relaySchema,
 } from "../../src/lib/referee-irc-model";
 describe("IRC relay boundary", () => {
+  it("requires evidence for the same map and ignores a cancelled start", () => {
+    const messages = [
+      { sender: "Referee", text: "!mp start 10" },
+      { sender: "BanchoBot", text: "The match has started!" },
+      { sender: "BanchoBot", text: "Beatmap: https://osu.ppy.sh/b/75 Map" },
+    ].map((message, i) => ({ ...message, id: String(i), at: "" }));
+    expect(observedIrcStart(messages, [], "Referee", "!mp start 10", 75)).toBe(
+      true,
+    );
+    expect(observedIrcStart(messages, [], "Referee", "!mp start 10", 76)).toBe(
+      false,
+    );
+    messages.splice(1, 0, {
+      id: "cancel",
+      at: "",
+      sender: "BanchoBot",
+      text: "Aborted the match start timer",
+    });
+    expect(observedIrcStart(messages, [], "Referee", "!mp start 10", 75)).toBe(
+      false,
+    );
+  });
   it("leaves settings and referee queries to the desktop room synchronizer", () => {
     expect(allowedIrcCommand("!mp settings")).toBe(false);
     expect(allowedIrcCommand("!mp listrefs")).toBe(false);

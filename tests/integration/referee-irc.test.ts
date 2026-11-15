@@ -226,6 +226,74 @@ describe.skipIf(!url)("IRC relay persistence and confirmation", () => {
       requestKey: randomUUID(),
     });
   }
+  it.each([false, true])(
+    "records a relayed start only for the pinned attempt (revision changed: %s)",
+    async (changed) => {
+      await saveSelection();
+      const { workspace: picked } = await saveSelection();
+      const pick = picked.projection.activeSelections.at(-1)!;
+      const at = new Date().toISOString();
+      const message = (id: string, sender: string, text: string) => ({
+        id,
+        sender,
+        text,
+        at,
+      });
+      const bot = (id: string, text: string) => message(id, "BanchoBot", text);
+      const oldStart = bot("1", "The match has started!");
+      await parseIrcResponse(
+        await post(fixtureId, {
+          action: "queue",
+          requestKey: randomUUID(),
+          text: "!mp start 10",
+        }),
+      );
+      const { command } = await sync([], [oldStart]);
+      const echo = message("2", referee.username, "!mp start 10");
+      const countdown = bot("3", "Match starts in 10 seconds");
+      const fake = message("4", "Player", "The match has started!");
+      const transcript = [oldStart, echo, countdown, fake];
+      await sync([{ commandId: command!.id, status: "sent" }], transcript);
+      const state = () => refereeIrcView(referee, "test-cup", fixtureId);
+      expect(
+        (await state()).workspace.projection.activeSelections
+          .at(-1)
+          ?.attempts.at(-1)?.status,
+      ).toBe("pending");
+
+      if (changed) {
+        await refereeCommand(referee, "test-cup", fixtureId, {
+          action: "save_settings",
+          settings: picked.defaultSettings,
+          expectedRevision: picked.session!.revision,
+          dependencyFingerprint: picked.dependencyFingerprint,
+          requestKey: randomUUID(),
+        });
+      }
+      transcript.push(bot("5", "The match has started!"));
+      await sync([], transcript);
+      expect((await state()).commands.at(-1)?.status).toBe("sent");
+      transcript.push(
+        bot("6", `Beatmap: https://osu.ppy.sh/b/${pick.beatmapId} Synthetic`),
+      );
+      await sync([], transcript);
+      await sync([], transcript);
+
+      const saved = await state();
+      expect(saved.commands.at(-1)?.status).toBe(
+        changed ? "record_failed" : "confirmed",
+      );
+      expect(
+        saved.workspace.projection.activeSelections.at(-1)?.attempts.at(-1)
+          ?.status,
+      ).toBe(changed ? "pending" : "playing");
+      expect(
+        saved.workspace.events.filter(
+          ({ payload }) => payload.type === "attempt_started",
+        ),
+      ).toHaveLength(changed ? 0 : 1);
+    },
+  );
   async function autoPick() {
     bpSync = true;
     await sync();

@@ -11,7 +11,11 @@ import {
   index,
 } from "drizzle-orm/pg-core";
 import { fixtures, users } from "./schema";
-import type { IrcMessage, IrcSelection } from "../lib/referee-irc-model";
+import type {
+  IrcMessage,
+  IrcSelection,
+  IrcStartAttempt,
+} from "../lib/referee-irc-model";
 export const refereeIrcConnections = pgTable(
   "referee_irc_connections",
   {
@@ -60,7 +64,7 @@ export const refereeIrcCommands = pgTable(
       .default([]),
     automation:
       jsonb("automation").$type<import("../lib/referee-sync").BpSyncMetadata>(),
-    selection: jsonb("selection").$type<IrcSelection>(),
+    selection: jsonb("selection").$type<IrcSelection | IrcStartAttempt>(),
     status: text("status").notNull().default("queued"),
     recordError: text("record_error"),
     createdAt: timestamp("created_at", { withTimezone: true })

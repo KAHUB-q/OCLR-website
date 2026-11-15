@@ -26,6 +26,11 @@ export const ircSelectionSchema = z
   })
   .strict();
 export type IrcSelection = z.infer<typeof ircSelectionSchema>;
+export type IrcStartAttempt = Omit<IrcSelection, "entryId"> & {
+  pickId: string;
+  attemptId: string;
+  beatmapId: number;
+};
 export const ircQueueSchema = z.discriminatedUnion("action", [
   z
     .object({
@@ -115,6 +120,49 @@ export function allowedIrcCommand(text: string) {
   return /^(?:!mp map [1-9]\d{0,9}(?: [0-3])?|!mp mods (?:None|(?:NF|EZ|HD|HR|DT|HT|NC|FL|FI|SD|PF|SO|MR|[1-9]K|Freemod)(?: (?:NF|EZ|HD|HR|DT|HT|NC|FL|FI|SD|PF|SO|MR|[1-9]K|Freemod))*)|!mp set [0-3] [0-3] (?:[1-9]|1[0-6])|!mp (?:invite|addref) [A-Za-z0-9_\[\]-]{1,50}|!mp (?:timer|start) [1-9]\d{0,3}|!mp (?:abort|aborttimer))$/.test(
     text,
   );
+}
+
+export function observedIrcStart(
+  messages: IrcMessage[],
+  baseline: string[],
+  username: string,
+  command: string,
+  beatmapId: number,
+) {
+  const echo = messages.findLastIndex(
+    (message) =>
+      !baseline.includes(message.id) &&
+      normalizedIrcUsername(message.sender) ===
+        normalizedIrcUsername(username) &&
+      message.text === command,
+  );
+  if (echo < 0) return false;
+
+  let map: string | undefined;
+  let started = false;
+  for (const [index, message] of messages.entries()) {
+    if (message.sender !== "BanchoBot") continue;
+    const changedMap = /^(?:Beatmap changed to:?|Changed beatmap to) /i.test(
+      message.text,
+    );
+    if (index > echo && changedMap) return false;
+    if (changedMap || message.text.startsWith("Beatmap: ")) {
+      map =
+        /https:\/\/osu\.ppy\.sh\/(?:b|beatmaps)\/([1-9]\d*)(?=[\s\])]|$)/.exec(
+          message.text,
+        )?.[1];
+    }
+    if (index <= echo || baseline.includes(message.id)) continue;
+    if (
+      /^(?:Aborted the match start timer|Aborted the match|Countdown aborted)[!.]?$/.test(
+        message.text,
+      )
+    )
+      return false;
+    if (/^The match has started[!.]?$/.test(message.text)) started = true;
+    if (started && map !== undefined) return map === String(beatmapId);
+  }
+  return false;
 }
 export function confirmsMap(
   text: string,

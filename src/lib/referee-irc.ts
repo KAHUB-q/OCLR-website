@@ -11,7 +11,11 @@ import { assertCapability } from "./auth/staff";
 import { HttpError } from "./http-error";
 import { refereeCommands } from "./referee-commands";
 import { changeRefereeIrcBrowserWrite } from "./referee-irc-browser-contract";
-import { allowedIrcCommand, allowedMakeCommand } from "./referee-irc-model";
+import {
+  allowedIrcCommand,
+  allowedMakeCommand,
+  type IrcStartAttempt,
+} from "./referee-irc-model";
 import {
   isIrcConnected,
   readLatestIrcConnection,
@@ -275,6 +279,23 @@ export async function refereeIrcBrowserCommand(
         );
       }
     }
+    let startAttempt: IrcStartAttempt | null = null;
+    if (action.text.startsWith("!mp start ")) {
+      const w = await readRefereeWorkspace(tx, actor, slug, fixtureId);
+      const pick = w.projection.activeSelections.find(
+        (selection) => selection.id === w.projection.lastSelectionId,
+      );
+      const attempt = pick?.attempts.at(-1);
+      if (pick && attempt?.status === "pending") {
+        startAttempt = {
+          pickId: pick.id,
+          attemptId: attempt.id,
+          beatmapId: pick.beatmapId,
+          expectedRevision: w.session?.revision ?? 0,
+          dependencyFingerprint: w.dependencyFingerprint,
+        };
+      }
+    }
     await tx.insert(commands).values({
       connectionId: c.id,
       fixtureId,
@@ -283,7 +304,7 @@ export async function refereeIrcBrowserCommand(
       requestHash: digest(action),
       text: action.text,
       target: c.roomId === 0 ? "BanchoBot" : `#mp_${c.roomId}`,
-      selection: action.selection ?? null,
+      selection: action.selection ?? startAttempt,
     });
     return readRefereeIrcState(tx, actor, slug, fixtureId);
   });

@@ -977,10 +977,11 @@ test(`records with localized feedback in ${locale} at the workflow viewport`, as
     })
     .locator("dd");
   await expect(process).toHaveText("—");
-  await maps
+  const firstBan = maps
     .getByRole("button", { name: `${text("Red team")} BAN`, exact: true })
-    .first()
-    .click();
+    .first();
+  await expect(firstBan).toHaveText("R BAN");
+  await firstBan.click();
   await expect(
     page.getByText(
       text(
@@ -998,6 +999,7 @@ test(`records with localized feedback in ${locale} at the workflow viewport`, as
   const firstPick = maps
     .getByRole("button", { name: `${text("Red team")} PICK`, exact: true })
     .first();
+  await expect(firstPick).toHaveText("R PICK");
   if (!isMobile) {
     await page.mouse.move(0, 0);
     await expect(selectedContext).toHaveCSS("opacity", "0");
@@ -1070,6 +1072,19 @@ test(`records with localized feedback in ${locale} at the workflow viewport`, as
   ]);
   const blue = "rgb(29, 78, 216)";
   const red = "rgb(185, 28, 28)";
+  const selectedRows = maps.locator(
+    '[data-selection="ban"], [data-selection="pick"]',
+  );
+  await expect(selectedRows).toHaveCount(4);
+  for (const [index, row] of (await selectedRows.all()).entries()) {
+    const color = index < 2 ? red : blue;
+    await expect(row).toHaveCSS("box-shadow", `${color} 0px 0px 0px 2px inset`);
+    expect(
+      await row.evaluate(
+        (element) => getComputedStyle(element, "::after").content,
+      ),
+    ).toBe(index % 2 === 0 ? '""' : "none");
+  }
   for (let index = 0; index < 4; index++)
     await expect(entries.nth(index)).toHaveCSS("color", index < 2 ? red : blue);
   await expect(entries.last()).not.toHaveCSS("color", blue);

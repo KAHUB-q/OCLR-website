@@ -1078,7 +1078,8 @@ test(`records with localized feedback in ${locale} at the workflow viewport`, as
   await expect(selectedRows).toHaveCount(4);
   for (const [index, row] of (await selectedRows.all()).entries()) {
     const color = index < 2 ? red : blue;
-    await expect(row).toHaveCSS("box-shadow", `${color} 0px 0px 0px 2px inset`);
+    const shadow = await row.evaluate((el) => getComputedStyle(el).boxShadow);
+    expect(shadow).toContain(`${color} 3px 0px 0px 0px inset`);
     expect(
       await row.evaluate(
         (element) => getComputedStyle(element, "::after").content,

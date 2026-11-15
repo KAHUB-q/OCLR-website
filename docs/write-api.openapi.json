@@ -11894,7 +11894,7 @@
       "post": {
         "operationId": "relayRefereeIrc",
         "summary": "Bind, synchronize, or disconnect an assigned fixture's IRC relay",
-        "description": "Requires a current fixture assignment and an operational edition. Bind checks the authorized osu! identity and may advertise receiptReasons and bpSync. Sync ignores a repeated or older sequence and cannot dispatch the same queued command again. Omit optional capabilities for older clients. Command is null when there is nothing to dispatch. IRC projection and evidence lines reject control and format characters and Unicode line separators.",
+        "description": "Requires a current fixture assignment and an operational edition. Bind checks the authorized osu! identity and advertises optional capabilities, including namedScoreNotices for score notices with team names. Sync ignores a repeated or older sequence and cannot dispatch the same queued command again. Omit optional capabilities for older clients. Command is null when there is nothing to dispatch. IRC projection and evidence lines reject control and format characters and Unicode line separators.",
         "security": [
           {
             "desktopBearer": []
@@ -11991,6 +11991,10 @@
                         "const": true
                       },
                       "scoreNotices": {
+                        "type": "boolean",
+                        "const": true
+                      },
+                      "namedScoreNotices": {
                         "type": "boolean",
                         "const": true
                       },
@@ -12202,6 +12206,9 @@
                           "type": "boolean"
                         },
                         "scoreNotices": {
+                          "type": "boolean"
+                        },
+                        "namedScoreNotices": {
                           "type": "boolean"
                         }
                       },

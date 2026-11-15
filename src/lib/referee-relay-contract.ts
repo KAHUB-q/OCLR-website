@@ -16,6 +16,7 @@ const relayReceipt = z.object({
   receiptReasons: z.boolean().optional(),
   bpSync: z.boolean().optional(),
   scoreNotices: z.boolean().optional(),
+  namedScoreNotices: z.boolean().optional(),
 });
 
 export type RefereeRelayReceipt = z.infer<typeof relayReceipt>;
@@ -32,7 +33,7 @@ export const refereeRelayWrite = {
   request: relaySchema,
   summary: "Bind, synchronize, or disconnect an assigned fixture's IRC relay",
   description:
-    "Requires a current fixture assignment and an operational edition. Bind checks the authorized osu! identity and may advertise receiptReasons and bpSync. Sync ignores a repeated or older sequence and cannot dispatch the same queued command again. Omit optional capabilities for older clients. Command is null when there is nothing to dispatch. IRC projection and evidence lines reject control and format characters and Unicode line separators.",
+    "Requires a current fixture assignment and an operational edition. Bind checks the authorized osu! identity and advertises optional capabilities, including namedScoreNotices for score notices with team names. Sync ignores a repeated or older sequence and cannot dispatch the same queued command again. Omit optional capabilities for older clients. Command is null when there is nothing to dispatch. IRC projection and evidence lines reject control and format characters and Unicode line separators.",
   successStatus: 200,
   successDescription:
     "Versioned relay receipt. The request ID matches X-Request-Id.",

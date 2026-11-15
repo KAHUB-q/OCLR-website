@@ -120,6 +120,7 @@ export async function refereeIrcRelay(
         receiptReasons: true,
         bpSync: true,
         scoreNotices: true,
+        namedScoreNotices: true,
       };
     }
     const [c] = await tx
@@ -371,7 +372,8 @@ export async function refereeIrcRelay(
             const event = w.events.find(
               (item) => item.id === queued.automation?.eventId,
             );
-            const text = event && scoreNoticeSource(w, event);
+            const text =
+              event && scoreNoticeSource(w, event, action.namedScoreNotices);
             if (
               !text ||
               !w.canRecord ||

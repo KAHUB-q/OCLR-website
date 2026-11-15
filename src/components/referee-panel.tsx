@@ -482,21 +482,24 @@ export function RefereePanel({
             {tr("Record actual start")}
           </button>
         )}
-        {data.teams.map((t) => (
+        {teamsBySide.map(({ team, side }) => (
           <button
             type="button"
-            key={t.id}
+            key={side}
+            data-winner-side={side}
             disabled={disabled || stale}
             onClick={() =>
               send({
                 action: "resolve_attempt",
                 pickId: currentPick.id,
                 status: "completed",
-                winnerTeamId: t.id,
+                winnerTeamId: team.id,
               })
             }
           >
-            {tr("Record win: {team}", { team: t.name })}
+            {tr("Record win: {team}", {
+              team: tr(side === "red" ? "Red team" : "Blue team"),
+            })}
           </button>
         ))}
         <button

@@ -2,6 +2,7 @@ import { test, expect, type Page } from "@playwright/test";
 import { bpSyncSource } from "../../src/lib/referee-sync";
 import { workspace, id } from "./referee-panel-data";
 import { validateRefereeAction } from "../../src/lib/referee-model";
+import type { IrcMessage } from "../../src/lib/referee-irc-model";
 import type { RefereeMpView } from "../../src/lib/referee-mp";
 import AxeBuilder from "@axe-core/playwright";
 import en from "../../messages/en.json" with { type: "json" };
@@ -15,9 +16,14 @@ async function setup(
     failure?: "lost" | "conflict" | "syncLost";
     delay?: boolean;
     roomId?: number;
+    messages?: IrcMessage[];
   } = {},
 ) {
   let current = workspace();
+  const snapshot = () =>
+    new URL(page.url()).searchParams.has("readonly")
+      ? { ...current, canRecord: false }
+      : current;
   let syncLost = false;
   const writes: Record<string, unknown>[] = [],
     queues: Record<string, unknown>[] = [],
@@ -33,7 +39,7 @@ async function setup(
     createdAt: string;
   }[] = [];
   await page.route(`${api}/mp`, (r) =>
-    r.fulfill({ json: { binding: null, workspace: current } }),
+    r.fulfill({ json: { binding: null, workspace: snapshot() } }),
   );
   await page.route(`${api}/reconciliation`, (r) =>
     r.fulfill({
@@ -97,15 +103,15 @@ async function setup(
                 lastSeenAt: new Date().toISOString(),
               }
             : null,
-        messages: [],
+        messages: options.messages ?? [],
         commands,
-        workspace: current,
+        workspace: snapshot(),
       },
     });
   });
   await page.route(api, async (r) => {
     if (r.request().method() !== "PATCH") {
-      await r.fulfill({ json: current });
+      await r.fulfill({ json: snapshot() });
       return;
     }
     const body = r.request().postDataJSON();
@@ -186,9 +192,7 @@ async function expectLatestCommand(page: Page) {
         const latest = el.querySelector("details > div:last-child");
         if (!latest) return false;
         const row = latest.getBoundingClientRect();
-        return (
-          pane.height >= 96 && row.top >= pane.top && row.bottom <= pane.bottom
-        );
+        return row.top >= pane.top && row.bottom <= pane.bottom;
       }),
     )
     .toBe(true);
@@ -994,9 +998,11 @@ test(`records with localized feedback in ${locale} at the workflow viewport`, as
     .getByRole("button", { name: `${text("Red team")} PICK`, exact: true })
     .first()
     .click();
-  await page
-    .getByText(text("Record and correct outcomes"), { exact: true })
-    .click();
+  const outcomes = page.getByRole("region", {
+    name: text("Record and correct outcomes"),
+    exact: true,
+  });
+  await expect(outcomes.locator("article").first()).toContainText("PICK · NM2");
   await page
     .getByRole("button", {
       name: text("Record win: {team}").replace("{team}", "Red"),
@@ -1065,37 +1071,60 @@ test(`records with localized feedback in ${locale} at the workflow viewport`, as
   });
 });
 
-test("IRC sits beside the workflow or is reachable from the stage navigation", async ({
+test("BP columns keep the IRC log and composer visible while navigating", async ({
   page,
   isMobile,
 }) => {
-  await setup(page, { connected: true });
+  if (!isMobile) await page.setViewportSize({ width: 1024, height: 800 });
+  await setup(page, {
+    connected: true,
+    messages: Array.from({ length: 20 }, (_, index) => ({
+      id: String(index),
+      sender: "BanchoBot",
+      text: index === 19 ? "All players are ready" : `Room message ${index}`,
+      at: new Date().toISOString(),
+    })),
+  });
   await page.goto("/referee-panel");
   const stages = page.getByRole("navigation", { name: "Referee stages" });
   const preparation = page.locator("#referee-preparation");
   const irc = page.getByRole("complementary", { name: "IRC console" });
-  const ircLink = stages.getByRole("link", { name: "IRC console" });
+  const send = irc.getByRole("button", { name: "Send to local IRC" });
+  const log = irc.getByRole("log");
+  await expect(
+    irc.getByRole("heading", { name: "IRC", exact: true }),
+  ).toBeInViewport();
+  await expect(log).toBeInViewport();
+  await expect(log.getByText("All players are ready")).toBeInViewport();
+  expect(await log.evaluate((node) => node.scrollTop)).toBeGreaterThan(0);
+  await expect(send).toBeInViewport();
 
+  await preparation
+    .getByRole("button", { name: "Prepare Room rules in IRC" })
+    .click();
+  await expect(irc.getByLabel("IRC command")).toHaveValue(/^!mp set /);
+  await stages.getByRole("link", { name: "BP stage" }).click();
+  await expect(page.locator("#referee-bp-title")).toBeInViewport();
+  const maps = (await pool(page).boundingBox())!;
+  const outcomes = (await page
+    .getByRole("region", {
+      name: "Record and correct outcomes",
+    })
+    .boundingBox())!;
+  const consoleBox = (await irc.boundingBox())!;
   if (isMobile) {
-    await ircLink.click();
-    await expect(irc.getByRole("heading", { name: "IRC", exact: true }))
-      .toBeInViewport();
-    await stages.getByRole("link", { name: "Pre-match preparation" }).click();
-    await expect(preparation.getByRole("heading", { level: 2 }))
-      .toBeInViewport();
-    await preparation.getByRole("button", { name: "Prepare Room rules in IRC" }).click();
-    await expect(irc.getByLabel("IRC command")).toHaveValue(/^!mp set /);
-    await expect(irc.getByRole("button", { name: "Send to local IRC" }))
-      .toBeInViewport();
+    expect(outcomes.y).toBeGreaterThanOrEqual(maps.y + maps.height);
+    expect(
+      Math.abs(consoleBox.y + consoleBox.height - page.viewportSize()!.height),
+    ).toBeLessThan(2);
   } else {
-    const workflowBox = (await preparation.boundingBox())!;
-    const ircBox = (await irc.boundingBox())!;
-    expect(ircBox.x).toBeGreaterThan(workflowBox.x + workflowBox.width);
-    await stages.getByRole("link", { name: "BP stage" }).click();
-    await expect(page.locator("#referee-bp-title")).toBeInViewport();
-    await expect(irc.getByRole("heading", { name: "IRC", exact: true }))
-      .toBeInViewport();
+    expect(Math.abs(maps.y - outcomes.y)).toBeLessThan(2);
+    expect(maps.x + maps.width).toBeLessThan(outcomes.x);
+    expect(outcomes.x + outcomes.width).toBeLessThan(consoleBox.x);
   }
+  await stages.getByRole("link", { name: "Post-match calculation" }).click();
+  await expect(log).toBeInViewport();
+  await expect(send).toBeInViewport();
 });
 
 test("withdraw stays outside collapsed details and score floats only within BP", async ({

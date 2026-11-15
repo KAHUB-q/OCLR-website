@@ -72,7 +72,6 @@ export function RefereePanel({
   const [activeStage, setActiveStage] = useState<string>(stageIds[0]);
   const workspace = useRef<HTMLDivElement>(null);
   const stageNav = useRef<HTMLElement>(null);
-  const ircJump = useRef<HTMLAnchorElement>(null);
   const ircComposer = useRef<HTMLFormElement>(null);
   useEffect(() => {
     const node = workspace.current;
@@ -82,16 +81,9 @@ export function RefereePanel({
 
     let stickyBottom = 0;
     function updateStage() {
-      const ids = ircJump.current?.getClientRects().length
-        ? [...stageIds, ircId]
-        : stageIds;
-      const current = ids.findLast((id) => {
+      const current = stageIds.findLast((id) => {
         const top = document.getElementById(id)?.getBoundingClientRect().top;
-        const threshold =
-          id === ircId
-            ? Math.max(stickyBottom + 24, window.innerHeight * 0.4)
-            : stickyBottom + 24;
-        return top !== undefined && top <= threshold;
+        return top !== undefined && top <= stickyBottom + 24;
       });
       setActiveStage(current ?? stageIds[0]);
     }
@@ -469,6 +461,13 @@ export function RefereePanel({
   const exPick = state.activeSelections.find(
     (s) => s.id === state.lastSelectionId,
   );
+  const currentPick = exPick?.attempts.length ? exPick : undefined;
+  const records = currentPick
+    ? [
+        currentPick,
+        ...state.activeSelections.filter((item) => item.id !== currentPick.id),
+      ]
+    : state.activeSelections;
   function attemptSummary(attempt: RefereeAttempt, superseded = false) {
     return (
       <>
@@ -751,16 +750,6 @@ export function RefereePanel({
             {label}
           </a>
         ))}
-        <a
-          ref={ircJump}
-          className={styles.ircJump}
-          href={`#${ircId}`}
-          aria-label={tr("IRC console")}
-          aria-current={activeStage === ircId ? "location" : undefined}
-          onClick={() => setActiveStage(ircId)}
-        >
-          {"IRC"}
-        </a>
       </nav>
       <div className={styles.stageContent}>
         {simulation && (
@@ -831,10 +820,7 @@ export function RefereePanel({
             stage="preparation"
             onPrepare={(text) => {
               prepareCommand(text);
-              if (ircJump.current?.getClientRects().length) {
-                ircComposer.current?.focus({ preventScroll: true });
-                ircComposer.current?.scrollIntoView({ block: "nearest" });
-              }
+              ircComposer.current?.focus({ preventScroll: true });
             }}
             sentCommands={sentCommands}
             mapSelector={
@@ -867,24 +853,12 @@ export function RefereePanel({
         </section>
         <section
           id="referee-bp"
-          className={styles.stage}
+          className={`${styles.stage} ${styles.bpStage}`}
           aria-labelledby="referee-bp-title"
         >
           <header className={styles.stageHeading}>
             <h2 id="referee-bp-title">{tr("BP stage")}</h2>
           </header>
-          {!simulation && data.canRecord && !readOnly ? (
-            <RefereeMp
-              endpoint={`${endpoint}/mp`}
-              disabled={disabled}
-              roomId={ircRoomId}
-              onWorkspace={(next) => accept(next, true)}
-            >
-              {renderSummary}
-            </RefereeMp>
-          ) : (
-            renderSummary()
-          )}
           <div className="panel form-stack">
             <p className="muted">
               {tr(
@@ -1084,6 +1058,18 @@ export function RefereePanel({
               </div>
             )}
           </div>
+          {!simulation && data.canRecord && !readOnly ? (
+            <RefereeMp
+              endpoint={`${endpoint}/mp`}
+              disabled={disabled}
+              roomId={ircRoomId}
+              onWorkspace={(next) => accept(next, true)}
+            >
+              {renderSummary}
+            </RefereeMp>
+          ) : (
+            renderSummary()
+          )}
           <div className={styles.bpFlow}>
             <section
               className={`panel ${styles.pool}`}
@@ -1225,15 +1211,18 @@ export function RefereePanel({
                 </p>
               ))}
             </section>
-            <details
+            <section
               id="referee-record-editor"
               className={`panel ${styles.recordControls}`}
+              aria-labelledby="referee-record-title"
             >
-              <summary>{tr("Record and correct outcomes")}</summary>
+              <h2 id="referee-record-title">
+                {tr("Record and correct outcomes")}
+              </h2>
               {!state.activeSelections.length && (
                 <p className="muted">{tr("No Ban or Pick recorded yet.")}</p>
               )}
-              {state.activeSelections.map((s) => {
+              {records.map((s) => {
                 const attempt = s.attempts.at(-1);
                 const last = s.id === state.lastSelectionId;
                 return (
@@ -1384,7 +1373,7 @@ export function RefereePanel({
                   ))}
                 </ol>
               </details>
-            </details>
+            </section>
           </div>
         </section>
         <section

@@ -262,9 +262,6 @@ test.describe("referee command workspace", () => {
       summary.getByRole("button", { name: "Automatic sync", exact: true }),
     ).toBeDisabled();
     await page
-      .getByText("Record and correct outcomes", { exact: true })
-      .click();
-    await page
       .getByRole("button", { name: `Record win: ${home.name}`, exact: true })
       .click();
     await expect

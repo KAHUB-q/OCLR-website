@@ -30,6 +30,7 @@ import { refereeCommands } from "@/lib/referee-commands";
 import { RefereeIrc } from "./referee-irc";
 import { RefereeCommands } from "./referee-commands";
 import { RefereeReconciliation } from "./referee-reconciliation";
+import { SheetIcon } from "./sheet-icon";
 import styles from "./referee-panel.module.css";
 
 const stageIds = [
@@ -462,12 +463,90 @@ export function RefereePanel({
     (s) => s.id === state.lastSelectionId,
   );
   const currentPick = exPick?.attempts.length ? exPick : undefined;
-  const records = currentPick
-    ? [
-        currentPick,
-        ...state.activeSelections.filter((item) => item.id !== currentPick.id),
-      ]
-    : state.activeSelections;
+  const currentAttempt = currentPick?.attempts.at(-1);
+  const attemptOpen =
+    currentAttempt?.status === "pending" ||
+    currentAttempt?.status === "playing";
+  const resultActions =
+    currentPick && currentAttempt ? (
+      <div className={styles.recordActions}>
+        {currentAttempt.status === "pending" && (
+          <button
+            type="button"
+            className="secondary"
+            disabled={disabled || stale}
+            onClick={() =>
+              send({ action: "start_attempt", pickId: currentPick.id })
+            }
+          >
+            {tr("Record actual start")}
+          </button>
+        )}
+        {data.teams.map((t) => (
+          <button
+            type="button"
+            key={t.id}
+            disabled={disabled || stale}
+            onClick={() =>
+              send({
+                action: "resolve_attempt",
+                pickId: currentPick.id,
+                status: "completed",
+                winnerTeamId: t.id,
+              })
+            }
+          >
+            {tr("Record win: {team}", { team: t.name })}
+          </button>
+        ))}
+        <button
+          type="button"
+          className="secondary"
+          disabled={disabled || stale}
+          onClick={() =>
+            send({
+              action: "resolve_attempt",
+              pickId: currentPick.id,
+              status: "tied",
+              winnerTeamId: null,
+            })
+          }
+        >
+          {tr("Record tie")}
+        </button>
+        <button
+          type="button"
+          className="secondary"
+          disabled={disabled || stale}
+          onClick={() =>
+            send({
+              action: "resolve_attempt",
+              pickId: currentPick.id,
+              status: "aborted",
+              winnerTeamId: null,
+            })
+          }
+        >
+          {tr("Record abort")}
+        </button>
+        <button
+          type="button"
+          className="secondary"
+          disabled={
+            disabled ||
+            stale ||
+            ["pending", "playing"].includes(currentAttempt.status) ||
+            (basis.policy?.maxReplaysPerMap !== undefined &&
+              currentPick.attempts.length - 1 >= basis.policy.maxReplaysPerMap)
+          }
+          onClick={() =>
+            send({ action: "replay_attempt", pickId: currentPick.id })
+          }
+        >
+          {tr("Record replay")}
+        </button>
+      </div>
+    ) : null;
   function attemptSummary(attempt: RefereeAttempt, superseded = false) {
     return (
       <>
@@ -659,11 +738,19 @@ export function RefereePanel({
                             data.maps.find((m) => m.id === s.entryId)?.position
                           }{" "}
                           ·{" "}
-                          {attempt?.winnerTeamId
-                            ? tr("Winner: {team}", {
-                                team: teamName(attempt.winnerTeamId),
-                              })
-                            : refereeMessage(tr, attempt?.status ?? "pending")}
+                          {attempt?.winnerTeamId ? (
+                            <span
+                              className={styles.teamInk}
+                              data-team={refereeTeamSide(
+                                data.fixture,
+                                attempt.winnerTeamId,
+                              )}
+                            >
+                              {teamName(attempt.winnerTeamId)}
+                            </span>
+                          ) : (
+                            refereeMessage(tr, attempt?.status ?? "pending")
+                          )}
                         </span>
                       );
                     })
@@ -697,18 +784,19 @@ export function RefereePanel({
       </div>
       {!accessLost && (
         <div className={styles.matchActions}>
-          <Link href={`/admin/tournaments/${slug}/matches`}>
+          <Link
+            className="button secondary"
+            href={`/admin/tournaments/${slug}/matches`}
+          >
             {tr("My assigned matches")}
           </Link>
-          <Link href={`/admin/tournaments/${slug}/matches/${data.fixture.id}`}>
+          <Link
+            className="button secondary"
+            href={`/admin/tournaments/${slug}/matches/${data.fixture.id}`}
+          >
             {tr("Post-match review")}
           </Link>
-          <button
-            type="button"
-            className="secondary"
-            disabled={busy}
-            onClick={refresh}
-          >
+          <button type="button" disabled={busy} onClick={refresh}>
             {tr("Reload saved state")}
           </button>
         </div>
@@ -859,12 +947,7 @@ export function RefereePanel({
           <header className={styles.stageHeading}>
             <h2 id="referee-bp-title">{tr("BP stage")}</h2>
           </header>
-          <div className="panel form-stack">
-            <p className="muted">
-              {tr(
-                "Prepare a map command, then confirm it in IRC to advance the Ban / Pick record.",
-              )}
-            </p>
+          <div className={`panel ${styles.orderSettings}`}>
             {!data.canRecord && (
               <p className="notice">
                 {tr("Read-only access. Referee records cannot be changed.")}
@@ -877,35 +960,59 @@ export function RefereePanel({
                 ))}
               </ul>
             )}
-            {showSkipBans && (
-              <label className="check-label">
-                <input
-                  type="checkbox"
-                  checked={skipBans}
-                  disabled={
-                    disabled || stale || state.activeSelections.length > 0
-                  }
-                  onChange={(e) => {
-                    setDraftSkipBans(e.target.checked);
-                    setIrcSelection(null);
-                  }}
-                />
-                {tr("Skip bans")}
-              </label>
-            )}
-            <div className={styles.orders}>
-              {!skipBans && (
-                <label className="field" htmlFor={`${controlId}-first-ban`}>
-                  <span id={`${controlId}-first-ban-label`}>
-                    {tr("First Ban team")}
+            <div className={styles.orderBar}>
+              {showSkipBans && (
+                <label className="check-label">
+                  <input
+                    type="checkbox"
+                    checked={skipBans}
+                    disabled={
+                      disabled || stale || state.activeSelections.length > 0
+                    }
+                    onChange={(e) => {
+                      setDraftSkipBans(e.target.checked);
+                      setIrcSelection(null);
+                    }}
+                  />
+                  {tr("Skip bans")}
+                </label>
+              )}
+              <div className={styles.orders}>
+                {!skipBans && (
+                  <label className="field" htmlFor={`${controlId}-first-ban`}>
+                    <span id={`${controlId}-first-ban-label`}>
+                      {tr("First Ban team")}
+                    </span>
+                    <select
+                      id={`${controlId}-first-ban`}
+                      aria-labelledby={`${controlId}-first-ban-label`}
+                      value={firstBan}
+                      disabled={disabled || stale}
+                      onChange={(e) => {
+                        setFirstBan(e.target.value);
+                        setIrcSelection(null);
+                      }}
+                    >
+                      <option value="">{tr("Not set")}</option>
+                      {data.teams.map((t) => (
+                        <option key={t.id} value={t.id}>
+                          {t.name}
+                        </option>
+                      ))}
+                    </select>
+                  </label>
+                )}
+                <label className="field" htmlFor={`${controlId}-first-pick`}>
+                  <span id={`${controlId}-first-pick-label`}>
+                    {tr("First Pick team")}
                   </span>
                   <select
-                    id={`${controlId}-first-ban`}
-                    aria-labelledby={`${controlId}-first-ban-label`}
-                    value={firstBan}
+                    id={`${controlId}-first-pick`}
+                    aria-labelledby={`${controlId}-first-pick-label`}
+                    value={firstPick}
                     disabled={disabled || stale}
                     onChange={(e) => {
-                      setFirstBan(e.target.value);
+                      setFirstPick(e.target.value);
                       setIrcSelection(null);
                     }}
                   >
@@ -917,70 +1024,48 @@ export function RefereePanel({
                     ))}
                   </select>
                 </label>
-              )}
-              <label className="field" htmlFor={`${controlId}-first-pick`}>
-                <span id={`${controlId}-first-pick-label`}>
-                  {tr("First Pick team")}
-                </span>
-                <select
-                  id={`${controlId}-first-pick`}
-                  aria-labelledby={`${controlId}-first-pick-label`}
-                  value={firstPick}
-                  disabled={disabled || stale}
-                  onChange={(e) => {
-                    setFirstPick(e.target.value);
-                    setIrcSelection(null);
+              </div>
+              <div className="actions">
+                <button
+                  type="button"
+                  disabled={
+                    disabled ||
+                    stale ||
+                    !dirtyOrder ||
+                    (!skipBans && !banTeamId) ||
+                    (skipBansChanged && state.activeSelections.length > 0) ||
+                    !firstPick ||
+                    conflicts.length > 0
+                  }
+                  onClick={() =>
+                    send({
+                      action: "set_order",
+                      firstBanTeamId: banTeamId,
+                      firstPickTeamId: firstPick,
+                      ...(data.round.exhibition ? { skipBans } : {}),
+                    })
+                  }
+                >
+                  {tr("Apply order")}
+                </button>
+                <button
+                  type="button"
+                  className="secondary"
+                  disabled={busy || !dirtyOrder}
+                  onClick={() => {
+                    setDraftSkipBans(null);
+                    setFirstBan(appliedOrders.firstBanTeamId ?? "");
+                    setFirstPick(appliedOrders.firstPickTeamId ?? "");
                   }}
                 >
-                  <option value="">{tr("Not set")}</option>
-                  {data.teams.map((t) => (
-                    <option key={t.id} value={t.id}>
-                      {t.name}
-                    </option>
-                  ))}
-                </select>
-              </label>
-            </div>
-            <div className="actions">
-              <button
-                type="button"
-                disabled={
-                  disabled ||
-                  stale ||
-                  !dirtyOrder ||
-                  (!skipBans && !banTeamId) ||
-                  (skipBansChanged && state.activeSelections.length > 0) ||
-                  !firstPick ||
-                  conflicts.length > 0
-                }
-                onClick={() =>
-                  send({
-                    action: "set_order",
-                    firstBanTeamId: banTeamId,
-                    firstPickTeamId: firstPick,
-                    ...(data.round.exhibition ? { skipBans } : {}),
-                  })
-                }
-              >
-                {tr("Apply order")}
-              </button>
-              <button
-                type="button"
-                className="secondary"
-                disabled={busy || !dirtyOrder}
-                onClick={() => {
-                  setDraftSkipBans(null);
-                  setFirstBan(appliedOrders.firstBanTeamId ?? "");
-                  setFirstPick(appliedOrders.firstPickTeamId ?? "");
-                }}
-              >
-                {tr("Discard unsaved order")}
-              </button>
-              {dirtyOrder && (
-                <span className="small muted">
-                  {tr("Order preview — not saved")}
-                </span>
-              )}
+                  {tr("Discard unsaved order")}
+                </button>
+                {dirtyOrder && (
+                  <span className="small muted">
+                    {tr("Order preview — not saved")}
+                  </span>
+                )}
+              </div>
             </div>
             {conflicts.length > 0 && (
               <p role="status">
@@ -1135,70 +1220,92 @@ export function RefereePanel({
                           <div
                             className={styles.poolRow}
                             key={m.id}
+                            tabIndex={used ? 0 : undefined}
                             data-selected={ircSelection?.entryId === m.id}
                           >
-                            <div>
+                            <div
+                              className={styles.poolTitle}
+                              title={m.metadata.title}
+                            >
                               <strong className={styles.mapCode}>
                                 {m.category}
                                 {m.position}
                               </strong>{" "}
-                              <span>{m.metadata.title}</span>
-                              <small>
+                              {m.metadata.title}
+                            </div>
+                            <div className={styles.poolDetail}>
+                              <small
+                                title={`${m.metadata.artist} · ${m.metadata.difficulty}`}
+                              >
                                 {m.metadata.artist} · {m.metadata.difficulty}
                               </small>
-                            </div>
-                            {used ? (
-                              <span className="badge">
-                                {teamName(used.teamId)} ·{" "}
-                                {used.kind.toUpperCase()}
-                              </span>
-                            ) : m.category === "TB" ||
-                              state.nextStep?.kind === "tb" ? (
-                              <div
-                                className={`${styles.poolActions} ${styles.neutralActions}`}
-                              >
-                                <button
-                                  type="button"
-                                  className="secondary"
-                                  disabled={
-                                    disabled || stale || dirtyOrder || !allowed
-                                  }
-                                  data-entry-id={m.id}
-                                  onClick={recordPoolSelection}
+                              {used ? (
+                                <span
+                                  className={`${styles.poolContext} ${styles.teamInk}`}
+                                  data-team={refereeTeamSide(
+                                    data.fixture,
+                                    used.teamId,
+                                  )}
                                 >
-                                  {tr("referee_neutral_pick")}
-                                </button>
-                              </div>
-                            ) : (
-                              <div className={styles.poolActions}>
-                                {mapActions.flatMap((kind) =>
-                                  teamsBySide.map(({ team, side }) => (
-                                    <button
-                                      key={`${kind}-${team.id}`}
-                                      type="button"
-                                      className="secondary"
-                                      data-team={side}
-                                      disabled={
-                                        disabled ||
-                                        stale ||
-                                        dirtyOrder ||
-                                        !allowed ||
-                                        state.nextStep?.kind !== kind ||
-                                        (state.nextStep?.teamId !== null &&
-                                          state.nextStep?.teamId !== team.id)
-                                      }
-                                      data-entry-id={m.id}
-                                      onClick={recordPoolSelection}
-                                    >
-                                      {side === "red"
-                                        ? tr("Red team")
-                                        : tr("Blue team")}{" "}
-                                      {kind.toUpperCase()}
-                                    </button>
-                                  )),
-                                )}
-                              </div>
-                            )}
+                                  {teamName(used.teamId)} ·{" "}
+                                  {used.kind.toUpperCase()}
+                                </span>
+                              ) : m.category === "TB" ||
+                                state.nextStep?.kind === "tb" ? (
+                                <div className={styles.poolActions}>
+                                  <button
+                                    type="button"
+                                    className="secondary"
+                                    disabled={
+                                      disabled ||
+                                      stale ||
+                                      dirtyOrder ||
+                                      !allowed
+                                    }
+                                    data-entry-id={m.id}
+                                    onClick={recordPoolSelection}
+                                  >
+                                    <SheetIcon kind="check" />
+                                    {tr("referee_neutral_pick")}
+                                  </button>
+                                </div>
+                              ) : (
+                                <div className={styles.poolActions}>
+                                  {mapActions.flatMap((kind) =>
+                                    teamsBySide.map(({ team, side }) => (
+                                      <button
+                                        key={`${kind}-${team.id}`}
+                                        type="button"
+                                        className="secondary"
+                                        data-team={side}
+                                        aria-label={`${tr(side === "red" ? "Red team" : "Blue team")} ${kind.toUpperCase()}`}
+                                        title={`${tr(side === "red" ? "Red team" : "Blue team")} ${kind.toUpperCase()}`}
+                                        disabled={
+                                          disabled ||
+                                          stale ||
+                                          dirtyOrder ||
+                                          !allowed ||
+                                          state.nextStep?.kind !== kind ||
+                                          (state.nextStep?.teamId !== null &&
+                                            state.nextStep?.teamId !== team.id)
+                                        }
+                                        data-entry-id={m.id}
+                                        onClick={recordPoolSelection}
+                                      >
+                                        <span aria-hidden="true">
+                                          {side === "red" ? "R" : "B"}
+                                        </span>
+                                        <SheetIcon
+                                          kind={
+                                            kind === "ban" ? "ban" : "check"
+                                          }
+                                        />
+                                      </button>
+                                    )),
+                                  )}
+                                </div>
+                              )}
+                            </div>
                           </div>
                         );
                       })}
@@ -1222,140 +1329,65 @@ export function RefereePanel({
               {!state.activeSelections.length && (
                 <p className="muted">{tr("No Ban or Pick recorded yet.")}</p>
               )}
-              {records.map((s) => {
+              {state.activeSelections.map((s) => {
+                const side = refereeTeamSide(data.fixture, s.teamId);
                 const attempt = s.attempts.at(-1);
-                const last = s.id === state.lastSelectionId;
+                const active = attemptOpen && s.id === currentPick?.id;
                 return (
                   <article
                     key={s.id}
                     className={styles.record}
-                    data-current={last && !!attempt ? "" : undefined}
+                    data-current={active ? "" : undefined}
                   >
-                    <div className={styles.recordSummary}>
-                      <h3>
-                        <span>
-                          {s.stepIndex + 1}. {s.kind.toUpperCase()} ·{" "}
+                    <h3 className={styles.recordHeading}>
+                      <span>{s.stepIndex + 1}.</span>{" "}
+                      {s.teamId && (
+                        <span className={styles.teamInk} data-team={side}>
+                          {side === "red"
+                            ? tr("Red team")
+                            : side === "blue"
+                              ? tr("Blue team")
+                              : teamName(s.teamId)}
                         </span>
+                      )}{" "}
+                      <span>{s.kind.toUpperCase()}</span>{" "}
+                      <strong>
                         {s.category}
-                        {data.maps.find((m) => m.id === s.entryId)?.position ??
-                          ""}
-                      </h3>
-                      <p className={styles.recordMeta}>
-                        <span>
-                          {tr("Selected by {team}", {
-                            team: teamName(s.teamId),
-                          })}
-                        </span>
-                        <span className={styles.recordId}>{s.beatmapId}</span>
-                        {attempt && (
-                          <span>
-                            {s.exMode ? tr("EX mode") : tr("Normal mode")}
-                          </span>
-                        )}
-                        {attempt &&
-                          basis.policy?.maxReplaysPerMap !== undefined && (
-                            <span>
-                              {tr("Replays used: {used} / {limit}", {
-                                used: s.attempts.length - 1,
-                                limit: basis.policy.maxReplaysPerMap,
-                              })}
-                            </span>
-                          )}
-                      </p>
+                        {data.maps.find((m) => m.id === s.entryId)?.position}
+                      </strong>{" "}
                       {attempt && (
-                        <p className={styles.recordResult}>
-                          {attemptSummary(attempt)}
-                        </p>
+                        <span className={styles.recordContext}>
+                          {s.exMode ? tr("EX mode") : tr("Normal mode")}
+                        </span>
                       )}
-                    </div>
+                    </h3>
+                    {attempt && (
+                      <p className={styles.recordResult}>
+                        {attemptSummary(attempt)}
+                      </p>
+                    )}
                     {s.attempts.slice(0, -1).map((previous) => (
                       <p className={styles.recordPrevious} key={previous.id}>
                         {attemptSummary(previous, true)}
                       </p>
                     ))}
-                    {last && attempt && (
-                      <div className={styles.recordActions}>
-                        {attempt.status === "pending" && (
-                          <button
-                            type="button"
-                            className="secondary"
-                            disabled={disabled || stale}
-                            onClick={() =>
-                              send({ action: "start_attempt", pickId: s.id })
-                            }
-                          >
-                            {tr("Record actual start")}
-                          </button>
-                        )}
-                        {data.teams.map((t) => (
-                          <button
-                            type="button"
-                            key={t.id}
-                            disabled={disabled || stale}
-                            onClick={() =>
-                              send({
-                                action: "resolve_attempt",
-                                pickId: s.id,
-                                status: "completed",
-                                winnerTeamId: t.id,
-                              })
-                            }
-                          >
-                            {tr("Record win: {team}", { team: t.name })}
-                          </button>
-                        ))}
-                        <button
-                          type="button"
-                          className="secondary"
-                          disabled={disabled || stale}
-                          onClick={() =>
-                            send({
-                              action: "resolve_attempt",
-                              pickId: s.id,
-                              status: "tied",
-                              winnerTeamId: null,
-                            })
-                          }
-                        >
-                          {tr("Record tie")}
-                        </button>
-                        <button
-                          type="button"
-                          className="secondary"
-                          disabled={disabled || stale}
-                          onClick={() =>
-                            send({
-                              action: "resolve_attempt",
-                              pickId: s.id,
-                              status: "aborted",
-                              winnerTeamId: null,
-                            })
-                          }
-                        >
-                          {tr("Record abort")}
-                        </button>
-                        <button
-                          type="button"
-                          className="secondary"
-                          disabled={
-                            disabled ||
-                            stale ||
-                            ["pending", "playing"].includes(attempt.status) ||
-                            (basis.policy?.maxReplaysPerMap !== undefined &&
-                              s.attempts.length - 1 >=
-                                basis.policy.maxReplaysPerMap)
-                          }
-                          onClick={() =>
-                            send({ action: "replay_attempt", pickId: s.id })
-                          }
-                        >
-                          {tr("Record replay")}
-                        </button>
-                      </div>
-                    )}
+                    {active && resultActions}
                   </article>
                 );
               })}
+              {resultActions &&
+                !attemptOpen &&
+                data.canRecord &&
+                !readOnly &&
+                !stale && (
+                  <details
+                    key={data.session?.revision ?? model.events.length}
+                    className={styles.recordHistory}
+                  >
+                    <summary>{tr("Edit")}</summary>
+                    {resultActions}
+                  </details>
+                )}
               <details className={styles.recordHistory}>
                 <summary>{tr("Full correction history")}</summary>
                 <ol className={styles.history}>

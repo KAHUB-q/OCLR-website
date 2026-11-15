@@ -274,6 +274,10 @@ test.describe("referee command workspace", () => {
       "1",
     );
     await page
+      .locator("#referee-record-editor")
+      .getByText("Edit", { exact: true })
+      .click();
+    await page
       .getByRole("button", { name: "Record replay", exact: true })
       .click();
     await expect

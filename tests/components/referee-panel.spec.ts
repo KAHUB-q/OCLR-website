@@ -994,21 +994,52 @@ test(`records with localized feedback in ${locale} at the workflow viewport`, as
       () => document.documentElement.scrollWidth <= innerWidth,
     ),
   ).toBe(true);
-  await maps
+  const selectedContext = maps.getByText("Red · BAN", { exact: true });
+  const firstPick = maps
     .getByRole("button", { name: `${text("Red team")} PICK`, exact: true })
-    .first()
-    .click();
+    .first();
+  if (!isMobile) {
+    await page.mouse.move(0, 0);
+    await expect(selectedContext).toHaveCSS("opacity", "0");
+    const selectedRow = selectedContext.locator("xpath=../..");
+    await selectedRow.hover();
+    await expect(selectedContext).toHaveCSS("opacity", "1");
+    await page.mouse.move(0, 0);
+    await selectedRow.focus();
+    await expect(selectedContext).toHaveCSS("opacity", "1");
+    await firstPick.focus();
+    await expect(firstPick.locator("..")).toHaveCSS("opacity", "1");
+  } else {
+    await expect(selectedContext).toHaveCSS("opacity", "1");
+  }
+  await firstPick.click();
   const outcomes = page.getByRole("region", {
     name: text("Record and correct outcomes"),
     exact: true,
   });
-  await expect(outcomes.locator("article").first()).toContainText("PICK · NM2");
+  await expect(outcomes.getByRole("heading", { level: 3 })).toHaveText([
+    /1\.\s*Red team\s*BAN\s*NM1/,
+    /2\.\s*Red team\s*PICK\s*NM2\s*Normal mode/,
+  ]);
+  const redWin = outcomes.getByRole("button", {
+    name: "Record win: Red",
+    exact: true,
+  });
   await page
     .getByRole("button", {
       name: text("Record win: {team}").replace("{team}", "Red"),
       exact: true,
     })
     .click();
+  await expect(redWin).toBeHidden();
+  await expect(outcomes.locator("article[data-current]")).toHaveCount(0);
+  await outcomes.getByText("Edit", { exact: true }).click();
+  await expect(redWin).toBeVisible();
+  await outcomes.getByText("Edit", { exact: true }).click();
+  await expect(score.getByLabel("Map outcomes")).toHaveText("NM2 · Red");
+  await expect(
+    score.getByLabel("Map outcomes").getByText("Red", { exact: true }),
+  ).toHaveCSS("color", "rgb(185, 28, 28)");
   await maps
     .getByRole("button", { name: `${text("Blue team")} BAN`, exact: true })
     .first()
@@ -1320,7 +1351,14 @@ test("bound MP sync updates the red-left scoreboard, fences stale IRC reads and 
   await page
     .getByRole("link", { name: "Review referee records", exact: true })
     .click();
-  await expect(
-    page.getByRole("button", { name: "Record win: Red", exact: true }),
-  ).toBeVisible();
+  const recordEditor = page.getByRole("region", {
+    name: "Record and correct outcomes",
+  });
+  const win = recordEditor.getByRole("button", {
+    name: "Record win: Red",
+    exact: true,
+  });
+  await expect(win).toBeHidden();
+  await recordEditor.getByText("Edit", { exact: true }).click();
+  await expect(win).toBeVisible();
 });

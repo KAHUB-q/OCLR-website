@@ -10,6 +10,7 @@ export function SheetIcon({
     | "help"
     | "expand"
     | "check"
+    | "ban"
     | "copy";
 }) {
   return (
@@ -49,6 +50,11 @@ export function SheetIcon({
         </>
       ) : kind === "check" ? (
         <path d="m5 12 4 4L19 6" />
+      ) : kind === "ban" ? (
+        <>
+          <circle cx="12" cy="12" r="8" />
+          <path d="m6.3 6.3 11.4 11.4" />
+        </>
       ) : kind === "copy" ? (
         <>
           <rect x="9" y="9" width="12" height="12" rx="2" />

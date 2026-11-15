@@ -1022,15 +1022,17 @@ test(`records with localized feedback in ${locale} at the workflow viewport`, as
     /2\.\s*Red team\s*PICK\s*NM2\s*Normal mode/,
   ]);
   const redWin = outcomes.getByRole("button", {
-    name: "Record win: Red",
+    name: "Record win: Red team",
     exact: true,
   });
-  await page
-    .getByRole("button", {
-      name: text("Record win: {team}").replace("{team}", "Red"),
+  await expect(redWin).toHaveCSS("background-color", "rgb(185, 28, 28)");
+  await expect(
+    outcomes.getByRole("button", {
+      name: "Record win: Blue team",
       exact: true,
-    })
-    .click();
+    }),
+  ).toHaveCSS("background-color", "rgb(29, 78, 216)");
+  await redWin.click();
   await expect(redWin).toBeHidden();
   await expect(outcomes.locator("article[data-current]")).toHaveCount(0);
   await outcomes.getByText("Edit", { exact: true }).click();
@@ -1050,7 +1052,7 @@ test(`records with localized feedback in ${locale} at the workflow viewport`, as
     .click();
   await page
     .getByRole("button", {
-      name: text("Record win: {team}").replace("{team}", "Blue"),
+      name: text("Record win: {team}").replace("{team}", text("Blue team")),
       exact: true,
     })
     .click();
@@ -1355,7 +1357,7 @@ test("bound MP sync updates the red-left scoreboard, fences stale IRC reads and 
     name: "Record and correct outcomes",
   });
   const win = recordEditor.getByRole("button", {
-    name: "Record win: Red",
+    name: "Record win: Red team",
     exact: true,
   });
   await expect(win).toBeHidden();

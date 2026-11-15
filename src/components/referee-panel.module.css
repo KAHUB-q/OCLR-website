@@ -225,6 +225,20 @@
   font-size: var(--text-label);
   box-shadow: none;
 }
+.workspace .recordActions button[data-winner-side] {
+  color: #fff;
+  background: var(--referee-winner-background);
+  border-color: var(--referee-winner-background);
+}
+.recordActions [data-winner-side="red"] {
+  --referee-winner-background: #b91c1c;
+}
+.recordActions [data-winner-side="blue"] {
+  --referee-winner-background: #1d4ed8;
+}
+.workspace .recordActions button[data-winner-side]:hover:not(:disabled) {
+  filter: brightness(0.9);
+}
 .recordHistory {
   padding-top: 0.5rem;
   font-size: var(--text-small);

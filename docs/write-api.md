@@ -19,8 +19,11 @@ separate read-only channel.
 
 The referee IRC relay documents the desktop Bearer `referee:relay` scope,
 versioned response envelope and optional capability flags. Sync requests from
-older clients can omit `bpSync`, `scoreNotices` and receipt reasons. The [referee integration
-guide](referee-panel-integration.md) describes the wider desktop workflow.
+older clients can omit `bpSync`, `scoreNotices` and receipt reasons. Bind
+advertises `namedScoreNotices` for clients that can display team names in score
+notices. Sync requests with that capability receive `Team A 1 - 0 Team B`,
+and other score-capable clients receive `RED 1 - 0 BLUE`. The [referee
+integration guide](referee-panel-integration.md) describes the desktop workflow.
 
 The streaming token routes document browser-session creation and revocation,
 including the one-time token on creation and repeated revoke behavior. The

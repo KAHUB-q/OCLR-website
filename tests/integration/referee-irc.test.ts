@@ -76,6 +76,7 @@ describe.skipIf(!url)("IRC relay persistence and confirmation", () => {
   let fixtureId: string, connectionId: string, seq: number;
   let bpSync = false;
   let scoreNotices = false;
+  let namedScoreNotices = false;
   const actor = { ...referee, sessionId: randomUUID() };
   const sync = (receipts: unknown[] = [], messages: unknown[] = []) =>
     refereeIrcRelay(actor, fixtureId, {
@@ -84,6 +85,7 @@ describe.skipIf(!url)("IRC relay persistence and confirmation", () => {
       sequence: ++seq,
       ...(bpSync ? { bpSync: true as const } : {}),
       ...(scoreNotices ? { scoreNotices: true as const } : {}),
+      ...(namedScoreNotices ? { namedScoreNotices: true as const } : {}),
       projection: { status: "connected", messages },
       receipts,
     });
@@ -113,9 +115,11 @@ describe.skipIf(!url)("IRC relay persistence and confirmation", () => {
       ircUsername: referee.username.replace(/ /g, "_"),
     });
     connectionId = bind.connectionId;
+    expect(bind.namedScoreNotices).toBe(true);
     seq = 0;
     bpSync = false;
     scoreNotices = false;
+    namedScoreNotices = false;
     await sync();
   });
   afterAll(async () => {
@@ -306,49 +310,55 @@ describe.skipIf(!url)("IRC relay persistence and confirmation", () => {
     await refereeIrcBrowserCommand(referee, "test-cup", fixtureId, request);
     return { picked, request };
   }
-  it("sends a saved score once to a compatible relay and skips superseded outcomes", async () => {
-    bpSync = true;
-    await sync();
-    await saveSelection();
-    const { workspace: picked } = await saveSelection();
-    const selection = picked.projection.activeSelections.at(-1)!;
-    const input = {
-      action: "resolve_attempt",
-      pickId: selection.id,
-      status: "completed",
-      winnerTeamId: picked.teams[1].id,
-      expectedRevision: picked.session!.revision,
-      dependencyFingerprint: picked.dependencyFingerprint,
-      requestKey: randomUUID(),
-    };
-    const save = (command: typeof input) =>
-      refereeCommand(referee, "test-cup", fixtureId, command);
-    const result = await save(input);
-    await save(input);
-    expect((await sync()).command).toBeNull();
-    await save({
-      ...input,
-      expectedRevision: result.receipt.revision,
-      winnerTeamId: picked.teams[0].id,
-      requestKey: randomUUID(),
-    });
+  it.each([false, true])(
+    "sends a saved score once and skips superseded outcomes (named: %s)",
+    async (named) => {
+      bpSync = true;
+      await sync();
+      await saveSelection();
+      const { workspace: picked } = await saveSelection();
+      const selection = picked.projection.activeSelections.at(-1)!;
+      const input = {
+        action: "resolve_attempt",
+        pickId: selection.id,
+        status: "completed",
+        winnerTeamId: picked.teams[1].id,
+        expectedRevision: picked.session!.revision,
+        dependencyFingerprint: picked.dependencyFingerprint,
+        requestKey: randomUUID(),
+      };
+      const save = (command: typeof input) =>
+        refereeCommand(referee, "test-cup", fixtureId, command);
+      const result = await save(input);
+      await save(input);
+      expect((await sync()).command).toBeNull();
+      await save({
+        ...input,
+        expectedRevision: result.receipt.revision,
+        winnerTeamId: picked.teams[0].id,
+        requestKey: randomUUID(),
+      });
 
-    scoreNotices = true;
-    expect((await sync()).command).toBeNull();
-    const notice = (await sync()).command!;
-    expect(notice.target).toBe("#mp_123");
-    expect(notice.text).toMatch(
-      /\| RED 1 - 0 BLUE \| Next: BAN BLUE /,
-    );
-    expect(
-      (await sync([{ commandId: notice.id, status: "notified" }])).command,
-    ).toBeNull();
-    expect(
-      (await refereeIrcView(referee, "test-cup", fixtureId)).commands.map(
-        (c) => c.status,
-      ),
-    ).toEqual(["failed", "notified"]);
-  });
+      scoreNotices = true;
+      namedScoreNotices = named;
+      expect((await sync()).command).toBeNull();
+      const notice = (await sync()).command!;
+      expect(notice.target).toBe("#mp_123");
+      const red = named ? picked.teams[0].name : "RED";
+      const blue = named ? picked.teams[1].name : "BLUE";
+      expect(notice.text).toContain(
+        `| ${red} 1 - 0 ${blue} | Next: BAN BLUE ${picked.teams[1].name}`,
+      );
+      expect(
+        (await sync([{ commandId: notice.id, status: "notified" }])).command,
+      ).toBeNull();
+      expect(
+        (await refereeIrcView(referee, "test-cup", fixtureId)).commands.map(
+          (c) => c.status,
+        ),
+      ).toEqual(["failed", "notified"]);
+    },
+  );
   it("queues one ordered notice/map/Mods plan per saved Pick and never records BP twice", async () => {
     const { picked, request } = await autoPick();
     const replay = await parseIrcResponse(await post(fixtureId, request));

@@ -1,6 +1,8 @@
 {
   "ui": {
     "referee_neutral_pick": "Pick",
+    "referee_pool_red_short": "R",
+    "referee_pool_blue_short": "B",
     "m513501254919": "Applicable matches",
     "m7fdd3be56e77": "Unknown mappool matches",
     "mafec993e7160": "Pick coverage",

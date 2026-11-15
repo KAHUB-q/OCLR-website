@@ -1281,6 +1281,7 @@ export function RefereePanel({
                                         type="button"
                                         className="secondary"
                                         data-team={side}
+                                        data-action={kind}
                                         aria-label={`${tr(side === "red" ? "Red team" : "Blue team")} ${kind.toUpperCase()}`}
                                         title={`${tr(side === "red" ? "Red team" : "Blue team")} ${kind.toUpperCase()}`}
                                         disabled={
@@ -1295,7 +1296,11 @@ export function RefereePanel({
                                         data-entry-id={m.id}
                                         onClick={recordPoolSelection}
                                       >
-                                        {side === "red" ? "R" : "B"}{" "}
+                                        {tr(
+                                          side === "red"
+                                            ? "referee_pool_red_short"
+                                            : "referee_pool_blue_short",
+                                        )}{" "}
                                         {kind.toUpperCase()}
                                       </button>
                                     )),

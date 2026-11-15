@@ -1,6 +1,8 @@
 {
   "ui": {
     "referee_neutral_pick": "Pick",
+    "referee_pool_red_short": "紅",
+    "referee_pool_blue_short": "藍",
     "m513501254919": "適用比賽數",
     "m7fdd3be56e77": "圖池未知的比賽數",
     "mafec993e7160": "選取紀錄覆蓋",

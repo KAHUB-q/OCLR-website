@@ -402,6 +402,13 @@ test.describe("referee command workspace", () => {
       name: "Round mappool",
       exact: true,
     });
+    const map = seeded.workspace.maps.find((entry) => entry.category !== "TB")!;
+    await pool
+      .getByRole("button", {
+        name: `${map.category}${map.position}`,
+        exact: true,
+      })
+      .click();
     await pool
       .getByRole("button", { name: "Red team BAN", exact: true })
       .first()

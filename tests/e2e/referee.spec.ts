@@ -261,7 +261,9 @@ test.describe("referee command workspace", () => {
     await expect(
       summary.getByRole("button", { name: "Automatic sync", exact: true }),
     ).toBeDisabled();
-    await page
+    const records = page.locator("#referee-record-editor");
+    await records.getByRole("button", { name: /PICK NM2/ }).click();
+    await records
       .getByRole("button", { name: "Record win: Blue team", exact: true })
       .click();
     await expect
@@ -273,10 +275,6 @@ test.describe("referee command workspace", () => {
     await expect(summary.locator('[data-team="blue"] > strong')).toHaveText(
       "1",
     );
-    await page
-      .locator("#referee-record-editor")
-      .getByText("Edit", { exact: true })
-      .click();
     await page
       .getByRole("button", { name: "Record replay", exact: true })
       .click();

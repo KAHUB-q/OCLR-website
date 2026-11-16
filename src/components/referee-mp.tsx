@@ -4,12 +4,21 @@ import {
   useEffect,
   useRef,
   useState,
+  type Dispatch,
   type ReactNode,
+  type SetStateAction,
 } from "react";
+import { refereeMpIssueLabel } from "@/i18n/referee";
 import { useAppTranslations } from "@/i18n/shared";
 import type { RefereeWorkspace } from "@/lib/referee-workspace";
 import type { RefereeMpView } from "@/lib/referee-mp";
 import styles from "./referee-panel.module.css";
+
+export type RefereeMpStatus = Pick<RefereeMpView, "binding"> & {
+  outcomeSources?: RefereeMpView["outcomeSources"];
+  sourceRevision?: number;
+  error: boolean;
+};
 
 async function request(
   endpoint: string,
@@ -31,19 +40,22 @@ export function RefereeMp({
   endpoint,
   disabled,
   roomId,
+  status,
+  setStatus,
   onWorkspace,
   children,
 }: {
   endpoint: string;
   disabled: boolean;
   roomId: number | null;
+  status: RefereeMpStatus;
+  setStatus: Dispatch<SetStateAction<RefereeMpStatus>>;
   onWorkspace: (w: RefereeWorkspace) => void;
   children: (control: ReactNode, feedback: ReactNode) => ReactNode;
 }) {
   const tr = useAppTranslations();
-  const [binding, setBinding] = useState<RefereeMpView["binding"]>(null);
+  const { binding, error } = status;
   const [busy, setBusy] = useState(false);
-  const [error, setError] = useState(false);
   const current = useRef({ onWorkspace, disabled });
   const flight = useRef(false);
   const manual = useRef(false);
@@ -110,8 +122,14 @@ export function RefereeMp({
           );
         }
         if (stopped || run !== generation.current) return;
-        setBinding(result.binding);
-        setError(false);
+        setStatus({
+          binding: result.binding,
+          outcomeSources: result.outcomeSources,
+          sourceRevision: result.outcomeSources
+            ? (result.workspace.session?.revision ?? 0)
+            : undefined,
+          error: false,
+        });
         current.current.onWorkspace(result.workspace);
         if (result.binding?.enabled)
           delay = Math.max(
@@ -120,7 +138,7 @@ export function RefereeMp({
           );
       } catch {
         if (!stopped && run === generation.current) {
-          setError(true);
+          setStatus((previous) => ({ ...previous, error: true }));
           delay = 60000;
         }
       } finally {
@@ -139,7 +157,7 @@ export function RefereeMp({
       controller.abort();
       clearTimeout(timer);
     };
-  }, [endpoint, refresh, roomId, invalidate]);
+  }, [endpoint, refresh, roomId, invalidate, setStatus]);
   async function change() {
     if (manual.current || disabled) return;
     const enable = !binding?.enabled;
@@ -147,7 +165,7 @@ export function RefereeMp({
     manual.current = true;
     const run = invalidate();
     setBusy(true);
-    setError(false);
+    setStatus((previous) => ({ ...previous, error: false }));
     try {
       let result = await request(endpoint, { action: "status" });
       // A room change cancels starting an obsolete room, but an explicit stop
@@ -171,12 +189,19 @@ export function RefereeMp({
         });
       }
       if (run !== generation.current) return;
-      setBinding(result.binding);
+      setStatus({
+        binding: result.binding,
+        outcomeSources: result.outcomeSources,
+        sourceRevision: result.outcomeSources
+          ? (result.workspace.session?.revision ?? 0)
+          : undefined,
+        error: false,
+      });
       current.current.onWorkspace(result.workspace);
       setRefresh((n) => n + 1);
     } catch {
       if (run === generation.current) {
-        setError(true);
+        setStatus((previous) => ({ ...previous, error: true }));
         setRefresh((n) => n + 1);
       }
     } finally {
@@ -260,15 +285,7 @@ export function RefereeMp({
               count: binding.issueCount,
             })}
           </summary>
-          <a
-            href="#referee-record-editor"
-            onClick={() => {
-              const records = document.getElementById("referee-record-editor");
-              if (records instanceof HTMLDetailsElement) records.open = true;
-            }}
-          >
-            {tr("Review referee records")}
-          </a>
+          <a href="#referee-record-editor">{tr("Review referee records")}</a>
           <ul
             tabIndex={0}
             aria-label={tr("Manual review required: {count}", {
@@ -279,19 +296,7 @@ export function RefereeMp({
               <li key={index}>
                 {issue.gameId ? `Game ${issue.gameId}` : "MP"}
                 {issue.beatmapId ? ` · BID ${issue.beatmapId}` : ""} ·{" "}
-                {issue.reason === "replay"
-                  ? tr("Replay or repeated beatmap")
-                  : issue.reason === "source_changed"
-                    ? tr("Source changed; automatic point withdrawn")
-                    : issue.reason === "unmatched"
-                      ? tr("No matching recorded pick")
-                      : issue.reason === "incomplete"
-                        ? tr("Incomplete MP data")
-                        : issue.reason === "already_used"
-                          ? tr("This MP game is already counted")
-                          : tr(
-                              "Check the map, rosters, Mods and scoring rules",
-                            )}
+                {refereeMpIssueLabel(tr, issue.reason)}
               </li>
             ))}
           </ul>

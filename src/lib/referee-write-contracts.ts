@@ -146,6 +146,7 @@ export const refereeMpBindingResponse = z
       z.object({
         gameId: nullableId,
         beatmapId: nullableId,
+        attemptId: z.uuid().optional(),
         reason: z.enum([
           "replay",
           "unmatched",
@@ -163,6 +164,10 @@ export const refereeMpBindingResponse = z
   })
   .nullable();
 
+const refereeMpOutcomeSources = z.array(
+  z.object({ eventId: z.uuid(), review: z.boolean() }),
+);
+
 export type RefereeCommandResult = {
   receipt: z.output<typeof refereeEventReceipt>;
   workspace: ExplicitReadData<"refereeWorkspace">;
@@ -174,6 +179,7 @@ export type RefereeReconciliationResult = {
 export type RefereeMpView = {
   workspace: ExplicitReadData<"refereeWorkspace">;
   binding: z.output<typeof refereeMpBindingResponse>;
+  outcomeSources: z.output<typeof refereeMpOutcomeSources>;
 };
 
 const base = "/api/admin/tournaments/{edition}/matches/{fixtureId}/referee";
@@ -225,11 +231,13 @@ export const changeRefereeMpWrite = {
   summary: "Bind, inspect or synchronize a referee multiplayer source",
   description:
     "Requires a direct browser session and fixture access. Status does not poll the provider. Bind and bind_room check the binding and session revisions and dependency fingerprint. Sync checks the current binding and optional IRC room, observes cooldown and lease rules, and records only provisional scores. Provider failures during sync are recorded in binding.error.",
-  successDescription: "Current referee workspace and nullable MP binding.",
+  successDescription:
+    "Current referee workspace, nullable MP binding and sources for MP-recorded outcomes.",
   response: {
     properties: {
       workspace: { readResource: "refereeWorkspace" },
       binding: refereeMpBindingResponse,
+      outcomeSources: refereeMpOutcomeSources,
     },
   },
   errors: {

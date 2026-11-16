@@ -1,4 +1,25 @@
 import type { AppTranslator } from "./translate";
+import type { MpIssue } from "@/lib/referee-mp-model";
+
+export function refereeMpIssueLabel(
+  tr: AppTranslator,
+  reason: MpIssue["reason"],
+) {
+  switch (reason) {
+    case "replay":
+      return tr("Replay or repeated beatmap");
+    case "source_changed":
+      return tr("Source changed; automatic point withdrawn");
+    case "unmatched":
+      return tr("No matching recorded pick");
+    case "incomplete":
+      return tr("Incomplete MP data");
+    case "already_used":
+      return tr("This MP game is already counted");
+    default:
+      return tr("Check the map, rosters, Mods and scoring rules");
+  }
+}
 
 /** Only interface messages are translated; map, team and identity text stays literal. */
 export function refereeMessage(tr: AppTranslator, message: string): string {

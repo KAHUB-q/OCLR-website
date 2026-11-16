@@ -70,8 +70,20 @@ async function view(
 ): Promise<RefereeMpView> {
   const workspace = await readRefereeWorkspace(tx, actor, slug, fixtureId);
   const binding = await bindingFor(tx, fixtureId);
+  const outcomeSources = binding
+    ? await tx
+        .select({
+          eventId: refereeMpScores.eventId,
+          review: refereeMpScores.review,
+        })
+        .from(refereeMpScores)
+        .where(eq(refereeMpScores.fixtureId, fixtureId))
+    : [];
   return {
     workspace,
+    outcomeSources: outcomeSources.flatMap(({ eventId, review }) =>
+      eventId ? [{ eventId, review }] : [],
+    ),
     binding: binding
       ? {
           matchId: binding.matchId,

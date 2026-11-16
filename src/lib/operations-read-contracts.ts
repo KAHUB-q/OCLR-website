@@ -1,5 +1,6 @@
 import { fixtureStatuses } from "./fixture-status";
 import { z } from "zod";
+import { matchVodUrl } from "./match-vod";
 import { profileSnapshotReadContract } from "./profile-read-contract";
 
 const text = z.string();
@@ -60,6 +61,8 @@ export const operationsReadContracts = {
         completed: flag,
         version: number,
         streamRevision: number,
+        vodUrl: matchVodUrl.nullable().optional(),
+        canEditVod: flag.optional(),
         home: side,
         away: side,
         conflicts: z.array(fixtureLabel),

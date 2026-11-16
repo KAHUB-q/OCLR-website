@@ -78,6 +78,16 @@ export function MatchCard({
           tr("Match time TBA")
         )}
       </p>
+      {f.result?.vodUrl && (
+        <a
+          className="text-link"
+          href={f.result.vodUrl}
+          target="_blank"
+          rel="noreferrer"
+        >
+          {tr("Watch match recording")}
+        </a>
+      )}
       <details className="match-public-details">
         <summary>{tr("Match details")}</summary>
         <div>

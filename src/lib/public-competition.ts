@@ -1,6 +1,7 @@
 import { db } from "@/db";
 import {
   captains,
+  fixtureRecordings,
   fixtures,
   mappoolEntries,
   mappools,
@@ -106,6 +107,7 @@ async function databasePublicCompetition(
         revision: resultRevisions.revision,
         resultPublishedAt: matchResults.publishedAt,
         mpId: matchImports.externalMatchId,
+        vodUrl: fixtureRecordings.vodUrl,
         publicPoolId: mappools.id,
         publicPoolName: mappools.name,
       })
@@ -124,6 +126,7 @@ async function databasePublicCompetition(
           isNotNull(mappools.publishedAt),
         ),
       )
+      .leftJoin(fixtureRecordings, eq(fixtureRecordings.fixtureId, fixtures.id))
       .leftJoin(
         matchResults,
         and(
@@ -267,6 +270,7 @@ async function databasePublicCompetition(
                 tied: g.tied,
               })),
               mpId: row.mpId,
+              ...(row.vodUrl ? { vodUrl: row.vodUrl } : {}),
               mpUrl: row.mpId
                 ? `https://osu.ppy.sh/community/matches/${row.mpId}`
                 : null,

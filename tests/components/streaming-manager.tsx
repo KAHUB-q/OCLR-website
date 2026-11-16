@@ -54,6 +54,7 @@ const data: StreamingWorkspace = {
       completed: false,
       version: 4,
       streamRevision: 8,
+      canEditVod: params.has("vod"),
       home: { name: "Alpha", source: null, outcome: null },
       away: { name: "Beta", source: null, outcome: null },
       conflicts: warnings ? [{ id: "other", label: "Simultaneous Match" }] : [],

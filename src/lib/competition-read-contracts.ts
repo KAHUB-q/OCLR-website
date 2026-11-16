@@ -1,5 +1,6 @@
 import { fixtureStatuses } from "./fixture-status";
 import { z } from "zod";
+import { matchVodUrl } from "./match-vod";
 
 const text = z.string();
 const number = z.number();
@@ -48,6 +49,7 @@ const publicMatchResult = z.strictObject({
   ),
   mpId: nullableNumber,
   mpUrl: nullableString,
+  vodUrl: matchVodUrl.nullable().optional(),
   refereeGames: z
     .array(
       z.strictObject({

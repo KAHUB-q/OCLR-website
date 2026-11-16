@@ -27,6 +27,15 @@ export async function POST(request: Request, context: Context) {
     const { streamingCommand } = await import("@/lib/streaming");
     const saved = await streamingCommand(actor, edition, fixtureId, input);
     revalidateCommittedPath(`/admin/tournaments/${edition}`, "layout");
+    if (
+      input &&
+      typeof input === "object" &&
+      "action" in input &&
+      input.action === "set_vod"
+    ) {
+      revalidateCommittedPath(`/tournaments/${edition}/results`);
+      revalidateCommittedPath(`/tournaments/${edition}/matches/${fixtureId}`);
+    }
     return NextResponse.json(saved, {
       headers: { "Cache-Control": "no-store" },
     });

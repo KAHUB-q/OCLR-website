@@ -323,3 +323,46 @@ test("fits long task labels at the workflow viewport", async ({
     ).violations,
   ).toEqual([]);
 });
+
+test("adds a valid recording from the confirmation dialog and refreshes the task link", async ({
+  page,
+}) => {
+  const vod = "https://video.example.test/watch?v=synthetic";
+  let fixture: { streamRevision: number; vodUrl: string | null } = {
+    streamRevision: 8,
+    vodUrl: null,
+  };
+  const writes: Record<string, unknown>[] = [];
+  await page.route("**/synthetic-streaming-state", (route) =>
+    route.fulfill({ json: fixture }),
+  );
+  await page.route(
+    "**/api/admin/tournaments/synthetic/streaming/*",
+    async (route) => {
+      writes.push(route.request().postDataJSON());
+      fixture = { streamRevision: 9, vodUrl: vod };
+      await route.fulfill({ json: { saved: true } });
+    },
+  );
+  await page.goto("/streaming-manager?vod&refresh");
+  await page.getByRole("button", { name: "Add match recording" }).click();
+  const dialog = page.getByRole("dialog", { name: "Add match recording" });
+  const field = dialog.getByLabel("Recording URL");
+  const save = dialog.getByRole("button", { name: "Save", exact: true });
+  await expect(dialog).toContainText("Synthetic Broadcast Test");
+  await field.fill("javascript:alert(1)");
+  await expect(save).toBeDisabled();
+  await field.fill(vod);
+  await save.click();
+  await expect(dialog).toBeHidden();
+  await expect(
+    page.getByRole("link", { name: "Watch match recording" }),
+  ).toHaveAttribute("href", vod);
+  expect(writes).toEqual([
+    expect.objectContaining({
+      action: "set_vod",
+      vodUrl: vod,
+      expectedRevision: 8,
+    }),
+  ]);
+});

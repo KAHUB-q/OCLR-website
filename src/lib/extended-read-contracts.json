@@ -1113,6 +1113,9 @@
       ],
       "additionalProperties": false
     },
+    "Read364cecf375d1": {
+      "anyOf": [{ "type": "null" }, { "$ref": "#/$defs/Readf512f318d061" }]
+    },
     "Read38888921c9c6": {
       "type": "object",
       "properties": {
@@ -1930,37 +1933,6 @@
     "Read6a5dae9e50e6": {
       "type": "array",
       "items": { "$ref": "#/$defs/Readb0180d5c6b73" }
-    },
-    "Read6a69822babb4": {
-      "type": "object",
-      "properties": {
-        "revision": { "type": "number" },
-        "homeWins": { "type": "number" },
-        "awayWins": { "type": "number" },
-        "tiedMaps": { "type": "number" },
-        "winnerTeamId": { "anyOf": [{ "type": "null" }, { "type": "string" }] },
-        "draw": { "type": "boolean" },
-        "games": { "$ref": "#/$defs/Read4697a90c29d0" },
-        "mpId": { "anyOf": [{ "type": "null" }, { "type": "number" }] },
-        "mpUrl": { "anyOf": [{ "type": "null" }, { "type": "string" }] },
-        "publicNote": { "type": "string" },
-        "updatedAt": { "type": "string" },
-        "refereeGames": { "$ref": "#/$defs/Readfa7797ef07ed" }
-      },
-      "required": [
-        "revision",
-        "homeWins",
-        "awayWins",
-        "tiedMaps",
-        "winnerTeamId",
-        "draw",
-        "games",
-        "mpId",
-        "mpUrl",
-        "publicNote",
-        "updatedAt"
-      ],
-      "additionalProperties": false
     },
     "Read6a97c56944ea": {
       "type": "object",
@@ -2867,9 +2839,6 @@
       },
       "required": ["id", "name", "captain"],
       "additionalProperties": false
-    },
-    "Readab62e71d1aae": {
-      "anyOf": [{ "type": "null" }, { "$ref": "#/$defs/Read6a69822babb4" }]
     },
     "Readab8799e08222": {
       "type": "array",
@@ -4212,6 +4181,44 @@
       "required": ["type", "options", "id", "label", "required"],
       "additionalProperties": false
     },
+    "Readf512f318d061": {
+      "type": "object",
+      "properties": {
+        "revision": { "type": "number" },
+        "homeWins": { "type": "number" },
+        "awayWins": { "type": "number" },
+        "tiedMaps": { "type": "number" },
+        "winnerTeamId": { "anyOf": [{ "type": "null" }, { "type": "string" }] },
+        "draw": { "type": "boolean" },
+        "games": { "$ref": "#/$defs/Read4697a90c29d0" },
+        "mpId": { "anyOf": [{ "type": "null" }, { "type": "number" }] },
+        "mpUrl": { "anyOf": [{ "type": "null" }, { "type": "string" }] },
+        "publicNote": { "type": "string" },
+        "updatedAt": { "type": "string" },
+        "vodUrl": {
+          "anyOf": [
+            { "type": "null", "x-oclr-undefined": true },
+            { "type": "null" },
+            { "type": "string" }
+          ]
+        },
+        "refereeGames": { "$ref": "#/$defs/Readfa7797ef07ed" }
+      },
+      "required": [
+        "revision",
+        "homeWins",
+        "awayWins",
+        "tiedMaps",
+        "winnerTeamId",
+        "draw",
+        "games",
+        "mpId",
+        "mpUrl",
+        "publicNote",
+        "updatedAt"
+      ],
+      "additionalProperties": false
+    },
     "Readf72073071c18": {
       "anyOf": [{ "type": "null" }, { "$ref": "#/$defs/Readd5a1fcb00767" }]
     },
@@ -4469,6 +4476,17 @@
                           },
                           "mpUrl": {
                             "anyOf": [{ "type": "null" }, { "type": "string" }]
+                          },
+                          "vodUrl": {
+                            "anyOf": [
+                              { "type": "null", "x-oclr-undefined": true },
+                              {
+                                "type": "string",
+                                "maxLength": 2048,
+                                "pattern": "^https:\\/\\/[^/?#@\\\\]+(?:[/?#]|$)"
+                              },
+                              { "type": "null" }
+                            ]
                           },
                           "refereeGames": {
                             "$ref": "#/$defs/Readfa7797ef07ed"
@@ -5343,7 +5361,7 @@
                 { "type": "string", "const": "ended" }
               ]
             },
-            "result": { "$ref": "#/$defs/Readab62e71d1aae" },
+            "result": { "$ref": "#/$defs/Read364cecf375d1" },
             "updatedAt": { "type": "string" },
             "details": {
               "anyOf": [
@@ -6906,6 +6924,23 @@
               "completed": { "type": "boolean" },
               "version": { "type": "number" },
               "streamRevision": { "type": "number" },
+              "vodUrl": {
+                "anyOf": [
+                  { "type": "null", "x-oclr-undefined": true },
+                  {
+                    "type": "string",
+                    "maxLength": 2048,
+                    "pattern": "^https:\\/\\/[^/?#@\\\\]+(?:[/?#]|$)"
+                  },
+                  { "type": "null" }
+                ]
+              },
+              "canEditVod": {
+                "anyOf": [
+                  { "type": "null", "x-oclr-undefined": true },
+                  { "type": "boolean" }
+                ]
+              },
               "home": { "$ref": "#/$defs/Read89a66b51d3eb" },
               "away": { "$ref": "#/$defs/Read89a66b51d3eb" },
               "conflicts": {
@@ -9505,7 +9540,7 @@
                     { "type": "string", "const": "ended" }
                   ]
                 },
-                "result": { "$ref": "#/$defs/Readab62e71d1aae" },
+                "result": { "$ref": "#/$defs/Read364cecf375d1" },
                 "updatedAt": { "type": "string" }
               },
               "required": [

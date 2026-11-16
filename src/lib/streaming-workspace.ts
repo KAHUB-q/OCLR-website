@@ -6,6 +6,7 @@ import {
   editionEvents,
   fixtureCommentators,
   fixtureStreams,
+  fixtureRecordings,
   fixtures,
   resultRevisions,
   teams,
@@ -72,6 +73,7 @@ async function databaseStreamingWorkspace(
           status: fixtures.status,
           version: fixtures.version,
           streamRevision: fixtures.streamRevision,
+          vodUrl: fixtureRecordings.vodUrl,
           exhibitionSides: fixtures.exhibitionSides,
           homeTeamId: fixtures.homeTeamId,
           awayTeamId: fixtures.awayTeamId,
@@ -85,6 +87,7 @@ async function databaseStreamingWorkspace(
         .from(fixtures)
         .innerJoin(tournamentRounds, eq(tournamentRounds.id, fixtures.roundId))
         .leftJoin(fixtureStreams, eq(fixtureStreams.fixtureId, fixtures.id))
+        .leftJoin(fixtureRecordings, eq(fixtureRecordings.fixtureId, fixtures.id))
         .where(eq(fixtures.editionSlug, slug))
         .orderBy(fixtures.scheduledAt, fixtures.position);
       const teamRows = await tx
@@ -137,6 +140,13 @@ async function databaseStreamingWorkspace(
           };
         };
         const task = f.assignment;
+        const canEditVod =
+          !state.hasArchive &&
+          f.status !== "cancelled" &&
+          (permits(grants, "manage_streaming", slug) ||
+            (task?.userId === actor.osuId &&
+              permits(grants, "select_streaming", slug) &&
+              candidates.some((user) => user.osuId === actor.osuId)));
         const done =
           f.status === "ended" || completed.some((r) => r.id === f.id);
         const otherBookings = f.scheduledAt
@@ -188,6 +198,8 @@ async function databaseStreamingWorkspace(
           completed: done,
           version: f.version,
           streamRevision: f.streamRevision,
+          vodUrl: canEditVod ? f.vodUrl : null,
+          canEditVod,
           home: slot("home"),
           away: slot("away"),
           conflicts: task ? conflictsFor(task.userId) : [],

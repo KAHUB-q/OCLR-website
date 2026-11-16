@@ -121,6 +121,7 @@ export function workspace(events?: RefereeEvent[]): RefereeWorkspace {
   const settings = {
     ...emptyRefereeSettings,
     roomName: "OCLR S11: Synthetic",
+    streamerUsername: "Synthetic Streamer",
     roomSize: 8,
     timerSeconds: 120,
     startSeconds: 5,

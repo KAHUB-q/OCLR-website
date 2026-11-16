@@ -257,6 +257,7 @@
   border-radius: 0.375rem;
   background: transparent;
   box-shadow: none;
+  transform: none;
   color: var(--site-foreground);
   text-align: start;
   white-space: normal;
@@ -266,7 +267,8 @@
   button.recordRow:is(:hover, [aria-expanded="true"], [data-current]) {
   background: var(--site-tint);
 }
-.recordRow:focus-visible {
+.workspace .recordControls button.recordRow:focus-visible {
+  outline: 2px solid var(--site-accent-strong);
   outline-offset: -2px;
 }
 .recordStep {

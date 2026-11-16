@@ -248,17 +248,18 @@ describe("official MP history normalization", () => {
   );
 
   it("keeps the open-room warning when the latest event does not confirm closure", async () => {
-    const page = syntheticPage([
-      { ...syntheticEvent(1), detail: { type: "match-abandoned" } },
-      {
-        ...syntheticEvent(2),
-        user_id: 1001,
-        detail: { type: "other", text: "ABANDON" },
-      },
-    ]);
+    const page = syntheticPage([syntheticEvent(1), syntheticEvent(2)]);
     vi.mocked(osuApi).mockResolvedValue({
       ...page,
       match: { ...page.match, end_time: null },
+      events: [
+        { ...syntheticEvent(1), detail: { type: "match-abandoned" } },
+        {
+          ...syntheticEvent(2),
+          user_id: 1001,
+          detail: { type: "other", text: "ABANDON" },
+        },
+      ],
     });
     expect((await fetchMatchSource(syntheticMatchId)).warnings).toContain(
       OPEN_MATCH_WARNING,

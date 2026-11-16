@@ -33,6 +33,7 @@ import { MappoolBatch } from "./mappool-batch";
 import { BeatmapPreview } from "./beatmap-preview";
 import { MappoolReplays } from "./mappool-replays";
 import { MappoolActionIcon } from "./mappool-action-icon";
+import showcaseStyles from "./mappool-showcase-access.module.css";
 type Pool = MappoolWorkspace["pools"][number];
 type Entry = MappoolWorkspace["entries"][number];
 type Change = { url: string };
@@ -466,34 +467,40 @@ function ShowcasePoolAccess({
   );
   const target = available.find(({ osuId }) => String(osuId) === selected);
   return (
-    <details>
-      <summary>
-        {tr("Showcase access")} · {grants.length}
+    <details className={showcaseStyles.panel}>
+      <summary className={showcaseStyles.summary}>
+        <span>{tr("Showcase access")}</span>
+        <span className="badge">{grants.length}</span>
       </summary>
-      <div className="form-stack">
-        {grants.map((grant) => (
-          <div className="actions" key={grant.osuId}>
-            <span>{grant.username}</span>
-            <ConfirmMutation
-              label={tr("Withdraw Showcase access")}
-              title={tr("Withdraw Showcase access")}
-              description={grant.username}
-              url={url}
-              loadingFeedback="button"
-              payload={{
-                action: "pool_showcase",
-                poolId: pool.id,
-                expectedVersion: pool.version,
-                userId: grant.osuId,
-                enabled: false,
-                confirmed: true,
-              }}
-            />
-          </div>
-        ))}
+      <div className={showcaseStyles.body}>
+        {grants.length > 0 && (
+          <ul className={showcaseStyles.grants} role="list">
+            {grants.map((grant) => (
+              <li className={showcaseStyles.grant} key={grant.osuId}>
+                <span>{grant.username}</span>
+                <ConfirmMutation
+                  className={`secondary ${showcaseStyles.action}`}
+                  label={tr("Withdraw Showcase access")}
+                  title={tr("Withdraw Showcase access")}
+                  description={grant.username}
+                  url={url}
+                  loadingFeedback="button"
+                  payload={{
+                    action: "pool_showcase",
+                    poolId: pool.id,
+                    expectedVersion: pool.version,
+                    userId: grant.osuId,
+                    enabled: false,
+                    confirmed: true,
+                  }}
+                />
+              </li>
+            ))}
+          </ul>
+        )}
         {available.length ? (
-          <div className="actions">
-            <label className="field">
+          <div className={showcaseStyles.controls}>
+            <label className={`field ${showcaseStyles.field}`}>
               <span>{tr("Streamer")}</span>
               <select
                 value={target ? selected : ""}
@@ -508,6 +515,7 @@ function ShowcasePoolAccess({
               </select>
             </label>
             <ConfirmMutation
+              className={showcaseStyles.action}
               label={tr("Allow Showcase access")}
               title={tr("Allow Showcase access")}
               description={target?.username}
@@ -525,7 +533,9 @@ function ShowcasePoolAccess({
             />
           </div>
         ) : (
-          <p className="small muted">{tr("No other eligible Streamers.")}</p>
+          <p className={`small muted ${showcaseStyles.empty}`}>
+            {tr("No other eligible Streamers.")}
+          </p>
         )}
       </div>
     </details>

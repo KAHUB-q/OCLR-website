@@ -217,7 +217,7 @@ test("keeps Showcase access separate from publication and targets one Streamer",
       await route.fulfill({ json: {} });
     },
   );
-  await page.goto("/mappool-actions?showcase&locked");
+  await page.goto("/mappool-actions?showcase&locked&showcase-grant");
   const heading = page.locator(".mappool-pool-heading");
   await expect(
     heading.getByRole("switch", { name: "Publish pool" }),
@@ -225,12 +225,31 @@ test("keeps Showcase access separate from publication and targets one Streamer",
   await expect(
     heading.getByRole("switch", { name: "Lock map selection" }),
   ).toBeChecked();
-  await page.getByText("Showcase access · 0", { exact: true }).click();
-  const grant = page.getByRole("button", { name: "Allow Showcase access" });
+  const summary = page
+    .locator("summary")
+    .filter({ hasText: "Showcase access" });
+  await expect(summary).toHaveText(/Showcase access\s*1/);
+  await summary.focus();
+  await page.keyboard.press("Enter");
+  const panel = page.locator("details").filter({ has: summary });
+  const row = panel
+    .getByRole("listitem")
+    .filter({ hasText: "Existing Streamer" });
+  await expect(
+    row.getByRole("button", { name: "Withdraw Showcase access" }),
+  ).toBeVisible();
+  const grant = panel.getByRole("button", { name: "Allow Showcase access" });
+  const streamer = panel.getByRole("combobox", {
+    name: "Streamer",
+    exact: true,
+  });
   await expect(grant).toBeDisabled();
-  await page
-    .getByRole("combobox", { name: "Streamer", exact: true })
-    .selectOption("1100");
+  expect(
+    await panel.evaluate(
+      (element) => element.scrollWidth <= element.clientWidth,
+    ),
+  ).toBe(true);
+  await streamer.selectOption("1100");
   await grant.click();
   const confirm = page.getByRole("dialog", { name: "Allow Showcase access" });
   await expect(

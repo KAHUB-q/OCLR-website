@@ -1,0 +1,97 @@
+.panel {
+  margin-block: 0.25rem 0.75rem;
+  min-inline-size: 0;
+  max-inline-size: 42rem;
+  background: var(--site-surface, var(--color-surface));
+  border: 1px solid var(--site-border, var(--color-border));
+  border-radius: var(--radius-panel);
+}
+
+.summary {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  min-block-size: var(--button-height);
+  padding: 0.5rem 0.875rem;
+  border-radius: inherit;
+  font-size: var(--text-small);
+  font-weight: 700;
+  list-style: none;
+  cursor: pointer;
+}
+
+.summary::-webkit-details-marker {
+  display: none;
+}
+
+.summary:focus-visible {
+  outline-offset: -3px;
+}
+
+.summary::after {
+  content: "";
+  flex: 0 0 auto;
+  inline-size: 0.5rem;
+  block-size: 0.5rem;
+  margin-inline: auto 0.25rem;
+  border: solid var(--site-muted, var(--color-muted));
+  border-width: 0 2px 2px 0;
+  transform: rotate(-45deg);
+}
+
+.panel[open] > .summary::after {
+  transform: translateY(-0.125rem) rotate(45deg);
+}
+
+.body,
+.grant + .grant,
+.grants + :is(.controls, .empty) {
+  border-block-start: 1px solid var(--site-border, var(--color-border));
+}
+
+.grants {
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.grant,
+.controls {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.5rem 0.75rem;
+  padding: 0.75rem 0.875rem;
+  min-inline-size: 0;
+}
+
+.grant {
+  align-items: center;
+  justify-content: space-between;
+}
+
+.grant > span {
+  min-inline-size: 0;
+  font-size: var(--text-small);
+  font-weight: 600;
+  overflow-wrap: anywhere;
+}
+
+.controls {
+  align-items: end;
+}
+
+.field {
+  flex: 1 1 12rem;
+  min-inline-size: min(100%, 12rem);
+}
+
+.action {
+  max-inline-size: 100%;
+  white-space: normal;
+  overflow-wrap: anywhere;
+}
+
+.empty {
+  margin: 0;
+  padding: 0.75rem 0.875rem;
+}

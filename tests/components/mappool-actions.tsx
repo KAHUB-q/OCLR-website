@@ -46,6 +46,9 @@ const data: MappoolWorkspace = {
       lockedAt: params.has("completed") ? date : null,
       selectionLockedAt: params.has("locked") ? date : null,
       showcaseAt: null,
+      showcaseGrants: params.has("showcase-grant")
+        ? [{ osuId: 1101, username: "Existing Streamer" }]
+        : undefined,
       updatedAt: date,
     },
   ],

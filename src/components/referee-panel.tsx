@@ -1345,11 +1345,7 @@ export function RefereePanel({
                       <span>{s.stepIndex + 1}.</span>{" "}
                       {s.teamId && (
                         <span className={styles.teamInk} data-team={side}>
-                          {side === "red"
-                            ? tr("Red team")
-                            : side === "blue"
-                              ? tr("Blue team")
-                              : teamName(s.teamId)}
+                          {teamName(s.teamId, false)}
                         </span>
                       )}{" "}
                       <span>{s.kind.toUpperCase()}</span>{" "}

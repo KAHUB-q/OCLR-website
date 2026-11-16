@@ -1019,10 +1019,15 @@ test(`records with localized feedback in ${locale} at the workflow viewport`, as
     name: text("Record and correct outcomes"),
     exact: true,
   });
-  await expect(outcomes.getByRole("heading", { level: 3 })).toHaveText([
-    /1\.\s*Red team\s*BAN\s*NM1/,
-    /2\.\s*Red team\s*PICK\s*NM2\s*Normal mode/,
+  const headings = outcomes.getByRole("heading", { level: 3 });
+  await expect(headings).toHaveText([
+    /1\.\s*Red\s*BAN\s*NM1/,
+    /2\.\s*Red\s*PICK\s*NM2\s*Normal mode/,
   ]);
+  await expect(headings.nth(1).getByText("Red", { exact: true })).toHaveCSS(
+    "color",
+    "rgb(185, 28, 28)",
+  );
   const redWin = outcomes.getByRole("button", {
     name: "Record win: Red team",
     exact: true,
@@ -1052,6 +1057,11 @@ test(`records with localized feedback in ${locale} at the workflow viewport`, as
     .getByRole("button", { name: `${text("Blue team")} PICK`, exact: true })
     .first()
     .click();
+  await expect(headings.nth(3)).toHaveText(/4\.\s*Blue\s*PICK\s*NM4/);
+  await expect(headings.nth(3).getByText("Blue", { exact: true })).toHaveCSS(
+    "color",
+    "rgb(29, 78, 216)",
+  );
   await page
     .getByRole("button", {
       name: text("Record win: {team}").replace("{team}", text("Blue team")),

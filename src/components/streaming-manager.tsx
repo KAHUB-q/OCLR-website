@@ -4,6 +4,7 @@ import Link from "next/link";
 import { useState } from "react";
 import { useAppTranslations } from "@/i18n/shared";
 import type { StreamingWorkspace } from "@/lib/streaming-workspace";
+import { matchVodUrl } from "@/lib/match-vod";
 import { formatDate } from "@/lib/editions";
 import { ConfirmMutation } from "./confirm-mutation";
 import { ReadOnlyFields } from "./staff-read-only";
@@ -221,6 +222,7 @@ function BroadcastBookings({
             ? tr("Confirm commentary task change?")
             : tr("Confirm streaming task change?")
         }
+        description={f.label}
         url={`/api/admin/tournaments/${slug}/streaming/${f.id}`}
         payload={{
           action,
@@ -352,6 +354,73 @@ function BroadcastBookings({
     </section>
   );
 }
+function MatchRecording({ slug, fixture }: { slug: string; fixture: Fixture }) {
+  const tr = useAppTranslations();
+  const [url, setUrl] = useState(fixture.vodUrl ?? "");
+  const normalized = matchVodUrl.safeParse(url);
+  const canClear = Boolean(fixture.vodUrl && !url.trim());
+  return (
+    <div className={styles.recording}>
+      {fixture.vodUrl && (
+        <a
+          className="text-link"
+          href={fixture.vodUrl}
+          target="_blank"
+          rel="noreferrer"
+        >
+          {tr("Watch match recording")}
+        </a>
+      )}
+      <StreamingMutation
+        label={
+          fixture.vodUrl
+            ? tr("Edit match recording")
+            : tr("Add match recording")
+        }
+        title={
+          fixture.vodUrl
+            ? tr("Edit match recording")
+            : tr("Add match recording")
+        }
+        confirmLabel={tr("Save")}
+        description={fixture.label}
+        url={`/api/admin/tournaments/${slug}/streaming/${fixture.id}`}
+        payload={{
+          action: "set_vod",
+          vodUrl: normalized.success ? normalized.data : null,
+          expectedRevision: fixture.streamRevision,
+          expectedFixtureVersion: fixture.version,
+          confirmed: true,
+        }}
+        canConfirm={
+          canClear || (normalized.success && normalized.data !== fixture.vodUrl)
+        }
+      >
+        <label className="field">
+          <span>{tr("Recording URL")}</span>
+          <input
+            type="url"
+            value={url}
+            maxLength={2048}
+            placeholder="https://"
+            onChange={(event) => setUrl(event.target.value)}
+          />
+        </label>
+        {url.trim() && !normalized.success && (
+          <p className="small muted">
+            {tr("Enter a valid HTTPS recording URL.")}
+          </p>
+        )}
+        {canClear && (
+          <p className="small muted">
+            {tr("Saving will remove the recording link.")}
+          </p>
+        )}
+      </StreamingMutation>
+    </div>
+  );
+}
+
 function StreamingTask({
   slug,
   fixture: f,
@@ -410,6 +479,13 @@ function StreamingTask({
         />
         <BroadcastBookings slug={slug} fixture={f} data={data} commentary />
       </div>
+      {f.canEditVod && (
+        <MatchRecording
+          key={`${f.streamRevision}:${f.version}`}
+          slug={slug}
+          fixture={f}
+        />
+      )}
     </article>
   );
 }

@@ -7,6 +7,7 @@ import {
   editionState,
   fixtureCommentators,
   fixtureStreams,
+  fixtureRecordings,
   fixtures,
   matchResults,
   resultRevisions,
@@ -37,15 +38,21 @@ export async function streamingCommand(
   if (!parsed.success || !z.uuid().safeParse(fixtureId).success)
     throw new HttpError(400, "Confirm a valid streaming task change.");
   const c = parsed.data;
-  const commentaryTask = c.task === "commentary";
+  const recording = c.action === "set_vod";
+  const eventKind = recording ? "streaming_vod" : "streaming_task";
+  const commentaryTask = !recording && c.task === "commentary";
   const table = commentaryTask ? fixtureCommentators : fixtureStreams;
   if (
-    (c.action === "assign" && c.userId === undefined && !c.userIds) ||
-    (c.userIds !== undefined &&
-      (c.action !== "assign" || !commentaryTask || c.userId !== undefined)) ||
-    (c.userId !== undefined &&
-      c.action !== "assign" &&
-      !(commentaryTask && (c.action === "cancel" || c.action === "reconfirm")))
+    !recording &&
+    ((c.action === "assign" && c.userId === undefined && !c.userIds) ||
+      (c.userIds !== undefined &&
+        (c.action !== "assign" || !commentaryTask || c.userId !== undefined)) ||
+      (c.userId !== undefined &&
+        c.action !== "assign" &&
+        !(
+          commentaryTask &&
+          (c.action === "cancel" || c.action === "reconfirm")
+        )))
   )
     throw new HttpError(
       400,
@@ -87,7 +94,7 @@ export async function streamingCommand(
       .where(eq(editionEvents.id, c.requestKey));
     if (prior) {
       if (
-        prior.kind !== "streaming_task" ||
+        prior.kind !== eventKind ||
         prior.actorId !== actor.osuId ||
         prior.editionSlug !== slug ||
         !isDeepStrictEqual(prior.detail.command, command)
@@ -111,7 +118,7 @@ export async function streamingCommand(
       .where(
         and(
           eq(table.fixtureId, fixtureId),
-          commentaryTask
+          !recording && commentaryTask
             ? c.userIds
               ? inArray(table.userId, c.userIds)
               : eq(table.userId, c.userId ?? actor.osuId)
@@ -121,7 +128,10 @@ export async function streamingCommand(
     const before = beforeRows[0];
     const grants = await staffAccess(actor, tx);
     const manager = permits(grants, "manage_streaming", slug);
-    if ((c.action === "cancel" || c.action === "reconfirm") && !manager) {
+    if (
+      (recording || c.action === "cancel" || c.action === "reconfirm") &&
+      !manager
+    ) {
       await assertCapability(actor, "select_streaming", slug, tx);
       const eligible = await eligibleBroadcastStaff(
         tx,
@@ -145,6 +155,49 @@ export async function streamingCommand(
         409,
         "The fixture or streaming task changed. Refresh before continuing.",
       );
+    if (recording) {
+      if (fixture.status === "cancelled")
+        throw new HttpError(
+          409,
+          "Cancelled fixtures cannot accept a recording.",
+        );
+      const [previous] = await tx
+        .select()
+        .from(fixtureRecordings)
+        .where(eq(fixtureRecordings.fixtureId, fixtureId));
+      if (c.vodUrl === null) {
+        await tx
+          .delete(fixtureRecordings)
+          .where(eq(fixtureRecordings.fixtureId, fixtureId));
+      } else {
+        await tx
+          .insert(fixtureRecordings)
+          .values({ fixtureId, vodUrl: c.vodUrl })
+          .onConflictDoUpdate({
+            target: fixtureRecordings.fixtureId,
+            set: { vodUrl: c.vodUrl },
+          });
+      }
+      await tx
+        .update(fixtures)
+        .set({ streamRevision: fixture.streamRevision + 1 })
+        .where(eq(fixtures.id, fixtureId));
+      await tx.insert(editionEvents).values({
+        id: c.requestKey,
+        editionSlug: slug,
+        actorId: actor.osuId,
+        kind: eventKind,
+        detail: {
+          entity: { type: "fixture", id: fixtureId },
+          fixtureId,
+          command,
+          before: { vodUrl: previous?.vodUrl ?? null },
+          after: { vodUrl: c.vodUrl },
+          revision: fixture.streamRevision + 1,
+        },
+      });
+      return { saved: true, replayed: false };
+    }
     if (c.action !== "cancel") {
       const [approved] = await tx
         .select({ id: resultRevisions.fixtureId })

@@ -11,6 +11,7 @@ import { LoadingRegion } from "./loading-region";
 import { Spinner } from "./spinner";
 import { PublicationSwitch } from "./publication-switch";
 import { PendingButtonLabel } from "./pending-button-label";
+import styles from "./confirm-mutation.module.css";
 export function ConfirmMutation({
   label,
   className = "secondary",
@@ -22,6 +23,7 @@ export function ConfirmMutation({
   onError,
   requireConfirmation = true,
   canConfirm = true,
+  confirmLabel,
   disabled = false,
   loadingFeedback = "region",
   icon,
@@ -39,6 +41,7 @@ export function ConfirmMutation({
   onError?: (message: string) => void;
   requireConfirmation?: boolean;
   canConfirm?: boolean;
+  confirmLabel?: string;
   disabled?: boolean;
   loadingFeedback?: "region" | "button";
   icon?: ReactNode;
@@ -142,6 +145,7 @@ export function ConfirmMutation({
       {requireConfirmation && (
         <dialog
           ref={dialog}
+          className={styles.dialog}
           aria-labelledby={`${id}-title`}
           aria-describedby={description ? `${id}-description` : undefined}
           onCancel={(event) => {
@@ -149,34 +153,42 @@ export function ConfirmMutation({
           }}
         >
           {(requestPending || (refreshing && !!error)) && <LoadingRegion />}
-          <h2 id={`${id}-title`}>{tr(title)}</h2>
-          {description && (
-            <p id={`${id}-description`} className="muted">
-              {tr(description)}
-            </p>
+          <header className={styles.heading}>
+            <h2 id={`${id}-title`}>{tr(title)}</h2>
+            {description && (
+              <p id={`${id}-description`} className="muted">
+                {tr(description)}
+              </p>
+            )}
+          </header>
+          {(children || error) && (
+            <div className={styles.content}>
+              {children}
+              {error && (
+                <p role="alert" className="notice error-text">
+                  {tr(error)}
+                </p>
+              )}
+            </div>
           )}
-          {children}
-          {error && (
-            <p role="alert" className="notice error-text">
-              {tr(error)}
-            </p>
-          )}
-          <div className="actions">
+          <footer className={`actions ${styles.footer}`}>
             <button
-              aria-busy={pending}
-              disabled={readOnly || disabled || pending || !canConfirm}
-              onClick={confirm}
-            >
-              {tr("Confirm")}
-            </button>
-            <button
+              type="button"
               className="secondary"
               disabled={pending}
               onClick={() => dialog.current?.close()}
             >
               {tr("Cancel")}
             </button>
-          </div>
+            <button
+              type="button"
+              aria-busy={pending}
+              disabled={readOnly || disabled || pending || !canConfirm}
+              onClick={confirm}
+            >
+              {confirmLabel ?? tr("Confirm")}
+            </button>
+          </footer>
         </dialog>
       )}
     </>

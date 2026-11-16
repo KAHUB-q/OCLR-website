@@ -502,6 +502,72 @@ describe.skipIf(!url)("authoritative edition streaming tasks", () => {
       streamingCommand(streamer, slug, secondId, command()),
     ).rejects.toMatchObject({ status: 409 });
   });
+  it("authorizes VOD edits for the assigned streamer and keeps links private before publication", async () => {
+    const vodUrl = "https://video.example.test/watch?v=synthetic";
+    await streamingCommand(streamer, slug, id, command());
+    await db()
+      .update(fixtures)
+      .set({ status: "ended", publishedAt: new Date() })
+      .where(eq(fixtures.id, id));
+    const recording = command("set_vod", 1, { vodUrl });
+    for (const actor of [other, commentator, developer]) {
+      await expect(
+        streamingCommand(actor, slug, id, recording),
+      ).rejects.toMatchObject({ status: 403 });
+    }
+    await expect(
+      streamingCommand(streamer, slug, id, {
+        ...recording,
+        vodUrl: "https://user:pass@video.example.test/watch",
+      }),
+    ).rejects.toMatchObject({ status: 400 });
+
+    await expect(
+      streamingCommand(streamer, slug, id, recording),
+    ).resolves.toEqual({
+      saved: true,
+      replayed: false,
+    });
+    await expect(
+      streamingCommand(streamer, slug, id, recording),
+    ).resolves.toEqual({
+      saved: true,
+      replayed: true,
+    });
+    expect(
+      (await streamingWorkspace(streamer, slug, {}, id)).fixtures[0],
+    ).toMatchObject({ canEditVod: true, vodUrl, streamRevision: 2 });
+    expect(
+      (await streamingWorkspace(other, slug, {}, id)).fixtures[0],
+    ).toMatchObject({ canEditVod: false, vodUrl: null });
+    expect(JSON.stringify(await publicFixture(slug, id))).not.toContain(vodUrl);
+    await expect(
+      streamingCommand(
+        admin,
+        slug,
+        id,
+        command("set_vod", 1, {
+          vodUrl: null,
+        }),
+      ),
+    ).rejects.toMatchObject({ status: 409 });
+    await streamingCommand(
+      admin,
+      slug,
+      id,
+      command("set_vod", 2, {
+        vodUrl: null,
+      }),
+    );
+    const history = await db()
+      .select()
+      .from(editionEvents)
+      .where(eq(editionEvents.kind, "streaming_vod"));
+    expect(history).toHaveLength(2);
+    expect(
+      (await streamingWorkspace(admin, slug, {}, id)).fixtures[0].vodUrl,
+    ).toBeNull();
+  });
   it("protects booked deletion, preserves task audit after deletion and keeps public schedules unchanged", async () => {
     await db()
       .update(fixtures)

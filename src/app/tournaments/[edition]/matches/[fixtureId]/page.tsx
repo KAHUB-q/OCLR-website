@@ -135,6 +135,16 @@ async function Issue271Page({
                 {result.mpId} ↗
               </a>
             )}
+            {result.vodUrl && (
+              <a
+                className="text-link"
+                href={result.vodUrl}
+                target="_blank"
+                rel="noreferrer"
+              >
+                {tr("Watch match recording")}
+              </a>
+            )}
             {result.refereeGames && (
               <section>
                 <h2>{tr("Referee-recorded map outcomes")}</h2>

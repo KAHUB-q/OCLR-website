@@ -662,7 +662,8 @@
           "select",
           "assign",
           "cancel",
-          "reconfirm"
+          "reconfirm",
+          "set_vod"
         ],
         "consumers": [
           "src/components/streaming-manager.tsx"

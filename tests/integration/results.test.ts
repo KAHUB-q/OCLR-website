@@ -29,6 +29,7 @@ import {
   resultRevisions,
   staffRoles,
   users,
+  fixtureRecordings,
   fixtures,
   tournamentStages,
   teams,
@@ -323,6 +324,11 @@ describe.skipIf(!url)(
         await resultCommand(referee, "test-cup", fixtureId, submission(view))
       ).review;
       await published(await approved(view));
+      const vodUrl = "https://video.example.test/synthetic-approved-match";
+      await db().insert(fixtureRecordings).values({ fixtureId, vodUrl });
+      expect((await publicFixture("test-cup", fixtureId))?.result?.vodUrl).toBe(
+        vodUrl,
+      );
       const before = (await publicFixture("test-cup", fixtureId))!;
       const uid = source.games[0].scores[0].osuId!;
       const participation = await publicPlayer(uid);

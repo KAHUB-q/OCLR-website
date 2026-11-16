@@ -1155,6 +1155,13 @@ export const fixtures = pgTable(
     ),
   ],
 );
+export const fixtureRecordings = pgTable("fixture_recordings", {
+  fixtureId: uuid("fixture_id")
+    .primaryKey()
+    .references(() => fixtures.id, { onDelete: "cascade" }),
+  vodUrl: text("vod_url").notNull(),
+});
+
 export const fixtureReferees = pgTable(
   "fixture_referees",
   {

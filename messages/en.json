@@ -4177,6 +4177,13 @@
     "m1d45d8927ac5": "Recorded by referee",
     "md81f9d7d414c": "Ban / Pick order",
     "mce1147843153": "Ban / Pick team",
-    "md6be3a5dcbf8": "Action / Beatmap"
+    "md6be3a5dcbf8": "Action / Beatmap",
+    "m6e2e48e161b2": "Watch match recording",
+    "m1ceeb785cfab": "Edit match recording",
+    "me90ae7e535c0": "Add match recording",
+    "m8e5a9b32c101": "Recording URL",
+    "m968622102e54": "Enter a valid HTTPS recording URL.",
+    "m79578142fd3b": "Saving will remove the recording link.",
+    "mffbe1c32e6a9": "Cancelled fixtures cannot accept a recording."
   }
 }

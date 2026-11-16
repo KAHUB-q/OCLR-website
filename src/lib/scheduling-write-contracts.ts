@@ -1,5 +1,6 @@
 import { z } from "zod";
 import { defaultJsonBodyLimit } from "./request-body-limits";
+import { matchVodUrl } from "./match-vod";
 import { availabilitySchema } from "./schedule-model";
 import type { WriteApiOperation } from "./write-api-contract";
 
@@ -64,33 +65,43 @@ export const scheduleRequestWrite = {
 } as const satisfies WriteApiOperation;
 
 const userId = z.number().int().positive().max(Number.MAX_SAFE_INTEGER);
+const streamingRevision = {
+  requestKey: z.uuid(),
+  expectedRevision: z.number().int().nonnegative(),
+  expectedFixtureVersion: z.number().int().nonnegative(),
+  confirmed: z.literal(true),
+};
 export const streamingTaskWrite = {
   ...browserPost,
   id: "changeStreamingTask",
   path: "/api/admin/tournaments/{edition}/streaming/{fixtureId}",
   parameters: { fixtureId: z.uuid() },
-  request: z.strictObject({
-    action: z.enum(["select", "assign", "cancel", "reconfirm"]),
-    task: z.literal("commentary").optional(),
-    userId: userId.optional(),
-    userIds: z
-      .array(userId)
-      .min(1)
-      .max(100)
-      .refine((ids) => new Set(ids).size === ids.length)
-      .meta({ uniqueItems: true })
-      .optional(),
-    requestKey: z.uuid(),
-    expectedRevision: z.number().int().nonnegative(),
-    expectedFixtureVersion: z.number().int().nonnegative(),
-    confirmed: z.literal(true),
-  }),
-  summary: "Change a streaming or commentary assignment",
+  request: z.union([
+    z.strictObject({
+      action: z.enum(["select", "assign", "cancel", "reconfirm"]),
+      task: z.literal("commentary").optional(),
+      userId: userId.optional(),
+      userIds: z
+        .array(userId)
+        .min(1)
+        .max(100)
+        .refine((ids) => new Set(ids).size === ids.length)
+        .meta({ uniqueItems: true })
+        .optional(),
+      ...streamingRevision,
+    }),
+    z.strictObject({
+      action: z.literal("set_vod"),
+      vodUrl: matchVodUrl.nullable(),
+      ...streamingRevision,
+    }),
+  ]),
+  summary: "Change a broadcast assignment or match recording",
   description:
-    "Omitting task selects the streaming slot. Staff assignment requires a target user or, for commentary only, a list of distinct target users. Commentary cancellation and reconfirmation can target an individual. The server checks role eligibility, ownership, and task and fixture revisions. A matching request key and payload returns replayed=true without writing another event.",
+    "Omitting task selects the streaming slot. Staff assignment requires a target user or, for commentary only, a list of distinct target users. Commentary cancellation and reconfirmation can target an individual. The assigned Streamer or streaming manager can save or clear an HTTPS recording link. The server checks roles, ownership and revisions, and replays identical request keys without another write.",
   successStatus: 200,
   successDescription:
-    "The assignment command was saved, with its replay indicator.",
+    "The streaming command was saved, with its replay indicator.",
   response: z.object({ saved: z.literal(true), replayed: z.boolean() }),
   errors: {
     ...commonErrors,

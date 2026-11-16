@@ -190,37 +190,41 @@ function SourceReview({
         )}
         {source.games.length > 0 && (
           <div className={styles.batch}>
-            <label className="check-label">
-              <input
-                type="checkbox"
-                checked={allSelected}
-                ref={(input) => {
-                  if (input)
-                    input.indeterminate = !allSelected && selected.length > 0;
-                }}
-                onChange={() =>
-                  setSelected(allSelected ? [] : source.games.map((g) => g.id))
-                }
-              />
-              {tr("Select all games")}
-            </label>
-            <span className="small muted" role="status">
-              {tr("Selected: {value0}", { value0: selected.length })}
-            </span>
-            <button
-              className="button secondary"
-              type="button"
-              disabled={!eligible.length}
-              onClick={() => applySelected(true)}
-            >
-              {exhibition
-                ? tr("Include eligible games ({value0})", {
-                    value0: eligible.length,
-                  })
-                : tr("Include eligible games and confirm rules ({value0})", {
-                    value0: eligible.length,
-                  })}
-            </button>
+            <div className={styles.batchSelection}>
+              <label className="check-label">
+                <input
+                  type="checkbox"
+                  checked={allSelected}
+                  ref={(input) => {
+                    if (input)
+                      input.indeterminate = !allSelected && selected.length > 0;
+                  }}
+                  onChange={() =>
+                    setSelected(
+                      allSelected ? [] : source.games.map((g) => g.id),
+                    )
+                  }
+                />
+                {tr("Select all games")}
+              </label>
+              <span className="small muted" role="status">
+                {tr("Selected: {value0}", { value0: selected.length })}
+              </span>
+              <button
+                className="button secondary"
+                type="button"
+                disabled={!eligible.length}
+                onClick={() => applySelected(true)}
+              >
+                {exhibition
+                  ? tr("Include eligible games ({value0})", {
+                      value0: eligible.length,
+                    })
+                  : tr("Include eligible games and confirm rules ({value0})", {
+                      value0: eligible.length,
+                    })}
+              </button>
+            </div>
             <div className={styles.batchExclusion}>
               <label className="field">
                 <span>{tr("Shared exclusion reason")}</span>
@@ -272,7 +276,7 @@ function SourceReview({
                 </label>
                 <details className={styles.gameDetails}>
                   <summary>
-                    <strong>
+                    <strong className={styles.gameTitle}>
                       {tr("Game ")}
                       {i + 1} ·{" "}
                       {g.game.beatmap?.title ??
@@ -280,26 +284,31 @@ function SourceReview({
                           ? tr("Beatmap {value0}", { value0: g.game.beatmapId })
                           : tr("Unavailable beatmap"))}
                     </strong>
-                    <span className={styles.gameMeta}>
-                      {g.exMode && (
-                        <span className="badge">{tr("EX mode")}</span>
-                      )}
-                      <span className={styles.score}>
-                        {g.homeScore ?? "—"} : {g.awayScore ?? "—"}
-                      </span>
-                      <span className="muted">
-                        {decision
-                          ? decision.included
-                            ? tr("Included")
-                            : tr("Excluded")
-                          : tr("Unreviewed")}
-                      </span>
-                      {Boolean(
-                        g.problems.length || (!exhibition && g.warnings.length),
-                      ) && (
-                        <span className="badge">{tr("Needs attention")}</span>
-                      )}
+                    <span className={styles.score}>
+                      {g.homeScore ?? "—"} : {g.awayScore ?? "—"}
                     </span>
+                    <span className={`${styles.gameDecision} muted`}>
+                      {decision
+                        ? decision.included
+                          ? tr("Included")
+                          : tr("Excluded")
+                        : tr("Unreviewed")}
+                    </span>
+                    {(g.exMode ||
+                      g.problems.length > 0 ||
+                      (!exhibition && g.warnings.length > 0)) && (
+                      <span className={styles.gameFlags}>
+                        {g.exMode && (
+                          <span className="badge">{tr("EX mode")}</span>
+                        )}
+                        {Boolean(
+                          g.problems.length ||
+                          (!exhibition && g.warnings.length),
+                        ) && (
+                          <span className="badge">{tr("Needs attention")}</span>
+                        )}
+                      </span>
+                    )}
                   </summary>
                   <div className={styles.gameContent}>
                     <p className="muted">

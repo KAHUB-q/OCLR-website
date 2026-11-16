@@ -298,19 +298,24 @@
 .recordOutcome[data-review] {
   color: var(--site-warning);
 }
-.recordInspector:not([hidden]) {
+.recordEx {
+  padding-inline: 0.25rem;
+  border-radius: 0.25rem;
+  background: var(--site-tint);
+  color: var(--site-accent-strong);
+}
+.recordDetails:not([hidden]) {
   display: grid;
   gap: 0.25rem;
-  margin-top: 0.5rem;
+  margin-block: 0.25rem 0.5rem;
   padding: 0.625rem;
   border: 1px solid var(--site-border);
   border-radius: 0.5rem;
   background: var(--site-tint);
   overflow-wrap: anywhere;
-  scroll-margin-top: var(--referee-anchor-offset);
   font-size: var(--text-label);
 }
-.recordInspector > p {
+.recordDetails > p {
   margin: 0;
 }
 .recordHeading,

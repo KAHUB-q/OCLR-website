@@ -896,7 +896,7 @@ test("simulation records on click and simulated sending does not record twice", 
   page,
 }) => {
   const state = await setup(page);
-  await page.goto("/referee-panel?simulation");
+  await page.goto("/referee-panel?simulation&ex");
   await poolTile(page, "NM1").click();
   await pool(page)
     .getByRole("button", { name: "Red team BAN", exact: true })
@@ -913,11 +913,22 @@ test("simulation records on click and simulated sending does not record twice", 
   ).toBeVisible();
   await expect(records(page)).toContainText("BAN NM1");
   await poolTile(page, "NM2").click();
-  await expect(
-    pool(page)
-      .getByRole("button", { name: "Red team PICK", exact: true })
-      .first(),
-  ).toBeEnabled();
+  const pick = pool(page).getByRole("button", {
+    name: "Red team PICK",
+    exact: true,
+  });
+  await expect(pick).toBeEnabled();
+  await pick.click();
+  await records(page).getByRole("button", { name: "Declare EX" }).click();
+  const editor = page.getByRole("region", { name: "Record and correct outcomes" });
+  const row = editor.getByRole("button", { name: /PICK NM2/ });
+  await expect(row.getByText("EX", { exact: true })).toBeVisible();
+  await row.click();
+  const details = editor.getByRole("region", { name: "NM2 · Synthetic 2" });
+  await expect(details).toContainText("EX mode");
+  await records(page).getByRole("button", { name: "Cancel EX" }).click();
+  await expect(row.getByText("EX", { exact: true })).toHaveCount(0);
+  await expect(details).toContainText("Normal mode");
   expect(state.writes).toHaveLength(0);
   expect(state.queues).toHaveLength(0);
 });
@@ -1053,11 +1064,20 @@ test(`records with localized feedback in ${locale} at the workflow viewport`, as
     exact: true,
   });
   await expect(redWin).toBeHidden();
-  await rows.nth(1).click();
+  const pickRow = rows.nth(1);
+  await pickRow.evaluate((row) => row.scrollIntoView({ block: "center" }));
+  await pickRow.focus();
+  const scrollBefore = await page.evaluate(() => scrollY);
+  await pickRow.press("Enter");
   const recordDetails = outcomes.getByRole("region", {
     name: "NM2 · Synthetic 2",
   });
-  await expect(recordDetails).toBeFocused();
+  await expect(pickRow).toBeFocused();
+  await expect(recordDetails).toBeVisible();
+  expect(await page.evaluate(() => scrollY)).toBe(scrollBefore);
+  expect(
+    await pickRow.evaluate((row) => row.nextElementSibling?.id),
+  ).toBe(await pickRow.getAttribute("aria-controls"));
   await expect(recordDetails).toContainText("Normal mode");
   await expect(redWin).toHaveCSS("background-color", "rgb(185, 28, 28)");
   await expect(
@@ -1067,15 +1087,19 @@ test(`records with localized feedback in ${locale} at the workflow viewport`, as
     }),
   ).toHaveCSS("background-color", "rgb(29, 78, 216)");
   await redWin.click();
-  await expect(rows.nth(1)).toContainText("NM2 Winner Red");
-  await recordDetails.press("Escape");
-  await expect(rows.nth(1)).toBeFocused();
-  await expect(redWin).toBeHidden();
+  await expect(pickRow).toContainText("NM2 Winner Red");
   await expect(outcomes.locator("button[data-current]")).toHaveCount(0);
-  await rows.nth(1).click();
-  await expect(redWin).toBeVisible();
   await rows.nth(0).click();
+  const banDetails = outcomes.getByRole("region", { name: "NM1 · Synthetic 1" });
+  await expect(banDetails).toBeVisible();
+  await expect(redWin).toBeVisible();
+  await expect(banDetails.getByRole("button")).toHaveCount(0);
+  await redWin.press("Escape");
+  await expect(pickRow).toBeFocused();
   await expect(redWin).toBeHidden();
+  await expect(banDetails).toBeVisible();
+  await rows.nth(0).click();
+  await expect(banDetails).toBeHidden();
   await expect(score.getByLabel("Map outcomes")).toHaveText("NM2 · Red");
   await expect(
     score.getByLabel("Map outcomes").getByText("Red", { exact: true }),

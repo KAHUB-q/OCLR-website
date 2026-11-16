@@ -49,7 +49,10 @@ const data: MappoolWorkspace = {
       updatedAt: date,
     },
   ],
-  entries: [1, 2].map((position) => ({
+  entries: Array.from(
+    { length: params.has("large-pool") ? 51 : 2 },
+    (_, index) => index + 1,
+  ).map((position) => ({
     id: `entry-${position}`,
     poolId: "pool",
     category: "NM",

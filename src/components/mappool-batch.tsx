@@ -9,7 +9,8 @@ import { useEffect, useRef, useState } from "react";
 import type { MappoolBatchPreview } from "@/lib/mappool-write-contracts";
 import type { MappoolWorkspace } from "@/lib/mappool-reads";
 import {
-  categories,
+  mappoolBatchSelectionLimit,
+  mappoolEditorCategories,
   slotLabel,
   formatBeatmapDuration,
   formatBeatmapNumber,
@@ -88,13 +89,27 @@ export function MappoolBatch({
     preview.version === pool.version &&
     preview.rows.length > 0 &&
     preview.rows.every((r) => !r.error && r.snapshot);
+  const orderedEntries =
+    mode === "batch"
+      ? entries.toSorted(
+          (a, b) =>
+            mappoolEditorCategories.indexOf(a.category) -
+              mappoolEditorCategories.indexOf(b.category) ||
+            a.position - b.position,
+        )
+      : [];
+  const selectedEntryIds = orderedEntries
+    .filter((entry) => selected.includes(entry.id))
+    .map((entry) => entry.id);
+  const selectionSize = Math.min(entries.length, mappoolBatchSelectionLimit);
+  const selectionFull = selected.length >= selectionSize;
   let movePreview: typeof entries = [],
     moveError = "";
   if (selected.length) {
     try {
       movePreview = moveMappoolEntries(
         entries,
-        entries.filter((e) => selected.includes(e.id)).map((e) => e.id),
+        selectedEntryIds,
         category,
         Number(position),
       );
@@ -128,7 +143,7 @@ export function MappoolBatch({
                   setCategory(event.target.value as MappoolCategory);
                 }}
               >
-                {categories.map((c) => (
+                {mappoolEditorCategories.map((c) => (
                   <option key={c}>{c}</option>
                 ))}
               </select>
@@ -309,6 +324,51 @@ export function MappoolBatch({
                   )}
                 </p>
               </InfoNote>
+              <div className="actions">
+                <button
+                  type="button"
+                  className="secondary"
+                  disabled={selectionFull}
+                  onClick={() =>
+                    setSelected((current) =>
+                      [
+                        ...new Set([
+                          ...current,
+                          ...orderedEntries.map((entry) => entry.id),
+                        ]),
+                      ].slice(0, selectionSize),
+                    )
+                  }
+                >
+                  {entries.length > mappoolBatchSelectionLimit
+                    ? tr("Select up to {count} maps", {
+                        count: mappoolBatchSelectionLimit,
+                      })
+                    : tr("Select all visible maps")}
+                </button>
+                <button
+                  type="button"
+                  className="secondary"
+                  disabled={!selected.length}
+                  onClick={() => setSelected([])}
+                >
+                  {tr("Clear selection")}
+                </button>
+                <span className="muted small" role="status">
+                  {tr("{count} maps selected", { count: selected.length })}
+                </span>
+              </div>
+              {entries.length > mappoolBatchSelectionLimit && (
+                <p className="muted small">
+                  {tr(
+                    "This pool has {total} maps. Bulk selection keeps your current selection and adds maps from the top of the list until {limit} are selected.",
+                    {
+                      total: entries.length,
+                      limit: mappoolBatchSelectionLimit,
+                    },
+                  )}
+                </p>
+              )}
               <div className="table-scroll">
                 <table>
                   <caption>{tr("Saved map selection")}</caption>
@@ -320,7 +380,7 @@ export function MappoolBatch({
                     </tr>
                   </thead>
                   <tbody>
-                    {entries.map((e) => (
+                    {orderedEntries.map((e) => (
                       <tr key={e.id}>
                         <td>
                           <input
@@ -329,13 +389,15 @@ export function MappoolBatch({
                               value0: slotLabel(e.category, e.position),
                             })}
                             checked={selected.includes(e.id)}
-                            onChange={(event) =>
-                              setSelected(
-                                event.target.checked
-                                  ? [...selected, e.id]
-                                  : selected.filter((id) => id !== e.id),
-                              )
-                            }
+                            disabled={selectionFull && !selected.includes(e.id)}
+                            onChange={(event) => {
+                              const checked = event.target.checked;
+                              setSelected((current) =>
+                                checked
+                                  ? [...current, e.id].slice(0, selectionSize)
+                                  : current.filter((id) => id !== e.id),
+                              );
+                            }}
                           />
                         </td>
                         <th scope="row">{slotLabel(e.category, e.position)}</th>
@@ -348,9 +410,6 @@ export function MappoolBatch({
                   </tbody>
                 </table>
               </div>
-              <p className="muted small">
-                {selected.length} {tr(" selected")}
-              </p>
               <div className="filters">
                 <label className="field">
                   <span>{tr("Move to category")}</span>
@@ -361,7 +420,7 @@ export function MappoolBatch({
                       setCategory(e.target.value as MappoolCategory)
                     }
                   >
-                    {categories.map((c) => (
+                    {mappoolEditorCategories.map((c) => (
                       <option key={c}>{c}</option>
                     ))}
                   </select>
@@ -406,15 +465,11 @@ export function MappoolBatch({
                     "Insert the selected maps and renumber the destination category.",
                   )}
                   url={url}
-                  disabled={
-                    !selected.length || selected.length > 50 || !!moveError
-                  }
+                  disabled={!selected.length || !!moveError}
                   payload={{
                     ...base,
                     action: "batch_move",
-                    entryIds: entries
-                      .filter((e) => selected.includes(e.id))
-                      .map((e) => e.id),
+                    entryIds: selectedEntryIds,
                     category,
                     position: Number(position),
                   }}
@@ -428,7 +483,7 @@ export function MappoolBatch({
                     "Retrieve official metadata for every selected map; any failure leaves all saved maps unchanged.",
                   )}
                   url={url}
-                  disabled={!selected.length || selected.length > 50}
+                  disabled={!selected.length}
                   payload={{
                     ...base,
                     action: "batch_refresh",
@@ -444,7 +499,7 @@ export function MappoolBatch({
                     { value0: selected.length },
                   )}
                   url={url}
-                  disabled={!selected.length || selected.length > 50}
+                  disabled={!selected.length}
                   payload={{
                     ...base,
                     action: "batch_remove",

@@ -1,5 +1,14 @@
 export const categories = ["NM", "HD", "DT", "HR", "FM", "TB"] as const;
 export type MappoolCategory = (typeof categories)[number];
+export const mappoolEditorCategories = [
+  "NM",
+  "HD",
+  "HR",
+  "DT",
+  "FM",
+  "TB",
+] as const satisfies readonly MappoolCategory[];
+export const mappoolBatchSelectionLimit = 50;
 // osu! mod names are fixed game terminology in every interface locale.
 export const categoryNames = {
   NM: "No Mod",

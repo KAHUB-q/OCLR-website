@@ -4200,6 +4200,8 @@
     "m70dd80060aad": "Lock the unpublished pool before granting Showcase access.",
     "mba5255dda92b": "Only non-participating Streamers for this edition can receive Showcase access.",
     "m0f813e683b0d": "Showcase access is unavailable for this account.",
-    "md070437a0116": "Showcase artwork is temporarily unavailable."
+    "md070437a0116": "Showcase artwork is temporarily unavailable.",
+    "m8c13f8cdd419": "Select up to {count} maps",
+    "m4a7f2c289cec": "This pool has {total} maps. Bulk selection keeps your current selection and adds maps from the top of the list until {limit} are selected."
   }
 }

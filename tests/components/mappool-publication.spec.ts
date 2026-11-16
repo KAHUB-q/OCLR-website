@@ -205,3 +205,47 @@ test("published switch fits three locales and both themes", async ({
     ),
   ).toBe(true);
 });
+
+test("keeps Showcase access separate from publication and targets one Streamer", async ({
+  page,
+}) => {
+  const writes: unknown[] = [];
+  await page.route(
+    "**/api/admin/tournaments/synthetic/mappools",
+    async (route) => {
+      writes.push(route.request().postDataJSON());
+      await route.fulfill({ json: {} });
+    },
+  );
+  await page.goto("/mappool-actions?showcase&locked");
+  const heading = page.locator(".mappool-pool-heading");
+  await expect(
+    heading.getByRole("switch", { name: "Publish pool" }),
+  ).not.toBeChecked();
+  await expect(
+    heading.getByRole("switch", { name: "Lock map selection" }),
+  ).toBeChecked();
+  await page.getByText("Showcase access · 0", { exact: true }).click();
+  const grant = page.getByRole("button", { name: "Allow Showcase access" });
+  await expect(grant).toBeDisabled();
+  await page
+    .getByRole("combobox", { name: "Streamer", exact: true })
+    .selectOption("1100");
+  await grant.click();
+  const confirm = page.getByRole("dialog", { name: "Allow Showcase access" });
+  await expect(
+    confirm.getByText("Synthetic Streamer", { exact: true }),
+  ).toBeVisible();
+  await confirm.getByRole("button", { name: "Confirm", exact: true }).click();
+  await expect(confirm).not.toBeVisible();
+  expect(writes).toEqual([
+    {
+      action: "pool_showcase",
+      poolId: "pool",
+      expectedVersion: 7,
+      userId: 1100,
+      enabled: true,
+      confirmed: true,
+    },
+  ]);
+});

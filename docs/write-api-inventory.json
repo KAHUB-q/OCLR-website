@@ -281,6 +281,8 @@
           "pool_create",
           "pool_settings",
           "pool_publish",
+          "pool_selection_lock",
+          "pool_showcase",
           "entry_save",
           "entry_remove",
           "entry_refresh",
@@ -1119,6 +1121,60 @@
   {
     "route": "/api/v1/streaming/tournaments/{edition}/next",
     "source": "src/app/api/v1/streaming/tournaments/[edition]/next/route.ts",
+    "methods": {
+      "POST": {
+        "status": "read-only"
+      },
+      "PUT": {
+        "status": "read-only"
+      },
+      "PATCH": {
+        "status": "read-only"
+      },
+      "DELETE": {
+        "status": "read-only"
+      }
+    }
+  },
+  {
+    "route": "/api/v1/streaming/tournaments/{edition}/showcase/pools/{poolId}/covers/{entryId}",
+    "source": "src/app/api/v1/streaming/tournaments/[edition]/showcase/pools/[poolId]/covers/[entryId]/route.ts",
+    "methods": {
+      "POST": {
+        "status": "read-only"
+      },
+      "PUT": {
+        "status": "read-only"
+      },
+      "PATCH": {
+        "status": "read-only"
+      },
+      "DELETE": {
+        "status": "read-only"
+      }
+    }
+  },
+  {
+    "route": "/api/v1/streaming/tournaments/{edition}/showcase/pools/{poolId}",
+    "source": "src/app/api/v1/streaming/tournaments/[edition]/showcase/pools/[poolId]/route.ts",
+    "methods": {
+      "POST": {
+        "status": "read-only"
+      },
+      "PUT": {
+        "status": "read-only"
+      },
+      "PATCH": {
+        "status": "read-only"
+      },
+      "DELETE": {
+        "status": "read-only"
+      }
+    }
+  },
+  {
+    "route": "/api/v1/streaming/tournaments/{edition}/showcase/pools",
+    "source": "src/app/api/v1/streaming/tournaments/[edition]/showcase/pools/route.ts",
     "methods": {
       "POST": {
         "status": "read-only"

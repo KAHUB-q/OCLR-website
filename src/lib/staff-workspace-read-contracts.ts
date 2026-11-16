@@ -112,6 +112,7 @@ type DraftRecords = {
 export type StaffWorkspaceReadContracts = {
   mappoolWorkspace: {
     refereeRules?: RoundRefereeRule[];
+    showcaseStreamers?: Identity[];
     rounds: (RoundSummary & { version: number })[];
     pools: (LabelledId & { roundId: string } & PoolRules & {
         version: number;
@@ -119,6 +120,7 @@ export type StaffWorkspaceReadContracts = {
         lockedAt: Date | null;
         selectionLockedAt: Date | null;
         showcaseAt: Date | null;
+        showcaseGrants?: Identity[];
         updatedAt: Date;
       })[];
     entries: (CompetitionDetailReadContracts["publicMappools"][number]["entries"][number] & {

@@ -4184,6 +4184,22 @@
     "m8e5a9b32c101": "Recording URL",
     "m968622102e54": "Enter a valid HTTPS recording URL.",
     "m79578142fd3b": "Saving will remove the recording link.",
-    "mffbe1c32e6a9": "Cancelled fixtures cannot accept a recording."
+    "mffbe1c32e6a9": "Cancelled fixtures cannot accept a recording.",
+    "mbd6e4f1aa4b5": "Withdraw Showcase access",
+    "m7b84dad77e79": "Allow Showcase access",
+    "m56ae66bb9648": "This Showcase source is not available.",
+    "m6c08bfdbfc34": "Choose a valid Showcase pool version.",
+    "m8fb17e72243e": "Refresh the Showcase pool list before importing.",
+    "m7e1ac1435d67": "Showcase access",
+    "me9a68933399e": "Choose a Streamer",
+    "mf064e1f5ecf0": "No other eligible Streamers.",
+    "m96466e6d3428": "Unlock map selection",
+    "ma2eb6ed1647b": "Unlocking withdraws Showcase access.",
+    "m1b1657fefc49": "Lock the saved slots before granting Showcase access. The pool stays unpublished.",
+    "m1bd532a5c54a": "Only unpublished pools outside approved fixtures can change selection lock.",
+    "m70dd80060aad": "Lock the unpublished pool before granting Showcase access.",
+    "mba5255dda92b": "Only non-participating Streamers for this edition can receive Showcase access.",
+    "m0f813e683b0d": "Showcase access is unavailable for this account.",
+    "md070437a0116": "Showcase artwork is temporarily unavailable."
   }
 }

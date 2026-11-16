@@ -1629,6 +1629,48 @@
       "requiredVerification": "Backend contract/CORS and local frontend 403 without database/provider access"
     },
     {
+      "file": "src/app/api/v1/streaming/tournaments/[edition]/showcase/pools/[poolId]/covers/[entryId]/route.ts",
+      "kind": "read-route",
+      "authority": "backend-only",
+      "operations": ["ALL_REGISTERED_READS"],
+      "commands": "Denied in remote mode; connection management and preference cookies remain separate",
+      "metadata": "Inherited or static",
+      "services": ["src/lib/read-api.ts#readApiRoute"],
+      "test": "integration/read-api.test.ts + integration/extended-read.test.ts + e2e/read-api.spec.ts + remote-e2e/interactions.spec.ts",
+      "authorization": "Authoritative backend public/Bearer checks; local remote frontend rejects these URLs with 403",
+      "adapter": "Backend registry; frontend uses its legacy reads/local BFF instead of hosting another v1 backend",
+      "media": "Existing public assets",
+      "requiredVerification": "Backend contract/CORS and local frontend 403 without database/provider access"
+    },
+    {
+      "file": "src/app/api/v1/streaming/tournaments/[edition]/showcase/pools/[poolId]/route.ts",
+      "kind": "read-route",
+      "authority": "backend-only",
+      "operations": ["ALL_REGISTERED_READS"],
+      "commands": "Denied in remote mode; connection management and preference cookies remain separate",
+      "metadata": "Inherited or static",
+      "services": ["src/lib/read-api.ts#readApiRoute"],
+      "test": "integration/read-api.test.ts + integration/extended-read.test.ts + e2e/read-api.spec.ts + remote-e2e/interactions.spec.ts",
+      "authorization": "Authoritative backend public/Bearer checks; local remote frontend rejects these URLs with 403",
+      "adapter": "Backend registry; frontend uses its legacy reads/local BFF instead of hosting another v1 backend",
+      "media": "Existing public assets",
+      "requiredVerification": "Backend contract/CORS and local frontend 403 without database/provider access"
+    },
+    {
+      "file": "src/app/api/v1/streaming/tournaments/[edition]/showcase/pools/route.ts",
+      "kind": "read-route",
+      "authority": "backend-only",
+      "operations": ["ALL_REGISTERED_READS"],
+      "commands": "Denied in remote mode; connection management and preference cookies remain separate",
+      "metadata": "Inherited or static",
+      "services": ["src/lib/read-api.ts#readApiRoute"],
+      "test": "integration/read-api.test.ts + integration/extended-read.test.ts + e2e/read-api.spec.ts + remote-e2e/interactions.spec.ts",
+      "authorization": "Authoritative backend public/Bearer checks; local remote frontend rejects these URLs with 403",
+      "adapter": "Backend registry; frontend uses its legacy reads/local BFF instead of hosting another v1 backend",
+      "media": "Existing public assets",
+      "requiredVerification": "Backend contract/CORS and local frontend 403 without database/provider access"
+    },
+    {
       "file": "src/app/auth/osu/callback/route.ts",
       "kind": "read-route",
       "authority": "denied",

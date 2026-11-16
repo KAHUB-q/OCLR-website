@@ -190,6 +190,18 @@ const readOnlyAliases = new Map([
   ["src/app/api/v1/[...path]/route.ts", "readApiRoute"],
   ["src/app/api/v1/me/route.ts", "readApiRoute"],
   ["src/app/api/v1/streaming/tournaments/[edition]/next/route.ts", "handle"],
+  [
+    "src/app/api/v1/streaming/tournaments/[edition]/showcase/pools/route.ts",
+    "handle",
+  ],
+  [
+    "src/app/api/v1/streaming/tournaments/[edition]/showcase/pools/[poolId]/route.ts",
+    "handle",
+  ],
+  [
+    "src/app/api/v1/streaming/tournaments/[edition]/showcase/pools/[poolId]/covers/[entryId]/route.ts",
+    "handle",
+  ],
 ]);
 
 function exportedNames(file: string) {
@@ -493,9 +505,15 @@ function openapiOperation(operation: WriteApiOperation) {
               ? {
                   headers: {
                     ...requestIdHeader,
-                    "Cache-Control": { schema: { type: "string", const: "no-store" } },
+                    "Cache-Control": {
+                      schema: { type: "string", const: "no-store" },
+                    },
                     ...(status === "429"
-                      ? { "Retry-After": { schema: { type: "string", const: "60" } } }
+                      ? {
+                          "Retry-After": {
+                            schema: { type: "string", const: "60" },
+                          },
+                        }
                       : {}),
                   },
                 }
@@ -503,7 +521,9 @@ function openapiOperation(operation: WriteApiOperation) {
                 ? { headers: requestId }
                 : operation.errorHeaders?.[Number(status)]
                   ? {
-                      headers: headerSchemas(operation.errorHeaders[Number(status)]),
+                      headers: headerSchemas(
+                        operation.errorHeaders[Number(status)],
+                      ),
                     }
                   : {}),
             content: {

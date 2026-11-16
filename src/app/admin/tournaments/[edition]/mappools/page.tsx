@@ -34,6 +34,11 @@ async function Issue271Page({
           readOnlyMaps={
             !(await hasCapability(actor, "manage_mappools", edition))
           }
+          canConfigureShowcase={await hasCapability(
+            actor,
+            "configure_tournament",
+            edition,
+          )}
           canManageReplays={await hasCapability(
             actor,
             "manage_replays",

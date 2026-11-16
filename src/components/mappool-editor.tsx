@@ -449,16 +449,101 @@ function EntryEditor({
   );
 }
 type Task = "maps" | "import" | "batch" | "settings";
+function ShowcasePoolAccess({
+  pool,
+  streamers,
+  url,
+}: {
+  pool: MappoolWorkspace["pools"][number];
+  streamers: NonNullable<MappoolWorkspace["showcaseStreamers"]>;
+  url: string;
+}) {
+  const tr = useAppTranslations();
+  const [selected, setSelected] = useState("");
+  const grants = pool.showcaseGrants ?? [];
+  const available = streamers.filter(
+    ({ osuId }) => !grants.some((grant) => grant.osuId === osuId),
+  );
+  const target = available.find(({ osuId }) => String(osuId) === selected);
+  return (
+    <details>
+      <summary>
+        {tr("Showcase access")} · {grants.length}
+      </summary>
+      <div className="form-stack">
+        {grants.map((grant) => (
+          <div className="actions" key={grant.osuId}>
+            <span>{grant.username}</span>
+            <ConfirmMutation
+              label={tr("Withdraw Showcase access")}
+              title={tr("Withdraw Showcase access")}
+              description={grant.username}
+              url={url}
+              loadingFeedback="button"
+              payload={{
+                action: "pool_showcase",
+                poolId: pool.id,
+                expectedVersion: pool.version,
+                userId: grant.osuId,
+                enabled: false,
+                confirmed: true,
+              }}
+            />
+          </div>
+        ))}
+        {available.length ? (
+          <div className="actions">
+            <label className="field">
+              <span>{tr("Streamer")}</span>
+              <select
+                value={target ? selected : ""}
+                onChange={(event) => setSelected(event.target.value)}
+              >
+                <option value="">{tr("Choose a Streamer")}</option>
+                {available.map((user) => (
+                  <option key={user.osuId} value={user.osuId}>
+                    {user.username}
+                  </option>
+                ))}
+              </select>
+            </label>
+            <ConfirmMutation
+              label={tr("Allow Showcase access")}
+              title={tr("Allow Showcase access")}
+              description={target?.username}
+              disabled={!target}
+              url={url}
+              loadingFeedback="button"
+              payload={{
+                action: "pool_showcase",
+                poolId: pool.id,
+                expectedVersion: pool.version,
+                userId: target?.osuId,
+                enabled: true,
+                confirmed: true,
+              }}
+            />
+          </div>
+        ) : (
+          <p className="small muted">{tr("No other eligible Streamers.")}</p>
+        )}
+      </div>
+    </details>
+  );
+}
+
 export function MappoolEditor({
   slug,
   data,
   readOnlyMaps = false,
   canManageReplays = false,
+  canConfigureShowcase = false,
 }: {
   slug: string;
   data: MappoolWorkspace;
   readOnlyMaps?: boolean;
   canManageReplays?: boolean;
+  canConfigureShowcase?: boolean;
 }) {
   const readOnly = useStaffReadOnly() || readOnlyMaps;
   return (
@@ -467,6 +552,7 @@ export function MappoolEditor({
         slug={slug}
         data={data}
         canManageReplays={canManageReplays}
+        canConfigureShowcase={canConfigureShowcase}
       />
     </StaffReadOnlyContext>
   );
@@ -475,10 +561,12 @@ function MappoolEditorContent({
   slug,
   data,
   canManageReplays,
+  canConfigureShowcase,
 }: {
   slug: string;
   data: MappoolWorkspace;
   canManageReplays: boolean;
+  canConfigureShowcase: boolean;
 }) {
   const readOnly = useStaffReadOnly();
   const tr = useAppTranslations();
@@ -673,6 +761,33 @@ function MappoolEditorContent({
               />
             )}
             <div className="actions mappool-pool-actions">
+              {canConfigureShowcase && !pool.publishedAt && !pool.lockedAt && (
+                <ConfirmMutation
+                  loadingFeedback="button"
+                  url={change.url}
+                  label={tr("Lock map selection")}
+                  switchChecked={Boolean(pool.selectionLockedAt)}
+                  title={
+                    pool.selectionLockedAt
+                      ? tr("Unlock map selection")
+                      : tr("Lock map selection")
+                  }
+                  description={
+                    pool.selectionLockedAt
+                      ? tr("Unlocking withdraws Showcase access.")
+                      : tr(
+                          "Lock the saved slots before granting Showcase access. The pool stays unpublished.",
+                        )
+                  }
+                  payload={{
+                    action: "pool_selection_lock",
+                    poolId: pool.id,
+                    expectedVersion: pool.version,
+                    locked: !pool.selectionLockedAt,
+                    confirmed: true,
+                  }}
+                />
+              )}
               {!pool.lockedAt && (
                 <ConfirmMutation
                   loadingFeedback="button"
@@ -702,6 +817,17 @@ function MappoolEditorContent({
               )}
             </div>
           </div>
+          {canConfigureShowcase &&
+            pool.selectionLockedAt &&
+            !pool.publishedAt &&
+            data.showcaseStreamers && (
+              <ShowcasePoolAccess
+                key={`${pool.id}:${pool.version}`}
+                pool={pool}
+                streamers={data.showcaseStreamers}
+                url={change.url}
+              />
+            )}
           {pool.lockedAt ? (
             <p className="notice">
               {tr(

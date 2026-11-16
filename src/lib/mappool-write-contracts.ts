@@ -3,6 +3,7 @@ import { downloadMirrorSchema } from "./mappool-download";
 import {
   categories,
   difficultyConfigurations,
+  mappoolBatchSelectionLimit,
   type BeatmapMetadata,
 } from "./mappool-model";
 import { skillsetTags } from "./mappool-skillsets";
@@ -26,7 +27,7 @@ const position = z.number().int().min(1).max(999);
 const batchIds = z
   .array(z.uuid())
   .min(1)
-  .max(50)
+  .max(mappoolBatchSelectionLimit)
   .refine((ids) => new Set(ids).size === ids.length);
 export const mappoolBatchRow = z
   .object({

@@ -246,3 +246,78 @@ test("replay dialog keeps the map row compact and restores focus", async ({
   await expect(dialog).not.toBeVisible();
   await expect(trigger).toBeFocused();
 });
+
+test("orders Mod tabs and selects or clears all saved maps", async ({
+  page,
+}) => {
+  await page.goto("/mappool-actions");
+  const tabs = page.getByRole("tablist", { name: "Mod categories" });
+  await expect(tabs.getByRole("tab")).toHaveText([
+    "NM (2)",
+    "HD (0)",
+    "HR (0)",
+    "DT (0)",
+    "FM (0)",
+    "TB (0)",
+  ]);
+
+  await page.getByRole("tab", { name: "Batch edit" }).click();
+  const table = page.getByRole("table", { name: "Saved map selection" });
+  const selectAll = page.getByRole("button", {
+    name: "Select all visible maps",
+  });
+  const clear = page.getByRole("button", { name: "Clear selection" });
+  await selectAll.click();
+  await expect(table.getByRole("checkbox", { checked: true })).toHaveCount(2);
+  await expect(
+    page.getByText("2 maps selected", { exact: true }),
+  ).toBeVisible();
+  await expect(selectAll).toBeDisabled();
+
+  await clear.click();
+  await expect(table.getByRole("checkbox", { checked: true })).toHaveCount(0);
+  await expect(
+    page.getByText("0 maps selected", { exact: true }),
+  ).toBeVisible();
+  await expect(selectAll).toBeEnabled();
+  await expect(clear).toBeDisabled();
+});
+
+test("bulk selection keeps checked maps and caps selection at 50", async ({
+  page,
+}) => {
+  await page.goto("/mappool-actions?large-pool");
+  await page.getByRole("tab", { name: "Batch edit" }).click();
+  const table = page.getByRole("table", { name: "Saved map selection" });
+  const first = table.getByRole("checkbox", {
+    name: "Select NM1",
+    exact: true,
+  });
+  const next = table.getByRole("checkbox", {
+    name: "Select NM50",
+    exact: true,
+  });
+  const last = table.getByRole("checkbox", {
+    name: "Select NM51",
+    exact: true,
+  });
+  await expect(page.getByText(/This pool has 51 maps/)).toBeVisible();
+  await last.check();
+  await page.getByRole("button", { name: "Select up to 50 maps" }).click();
+
+  await expect(table.getByRole("checkbox", { checked: true })).toHaveCount(50);
+  await expect(
+    page.getByText("50 maps selected", { exact: true }),
+  ).toBeVisible();
+  await expect(last).toBeChecked();
+  await expect(next).not.toBeChecked();
+  await expect(next).toBeDisabled();
+
+  await first.uncheck();
+  await expect(next).toBeEnabled();
+  await next.check();
+  await expect(table.getByRole("checkbox", { checked: true })).toHaveCount(50);
+  await expect(
+    page.getByText("50 maps selected", { exact: true }),
+  ).toBeVisible();
+});

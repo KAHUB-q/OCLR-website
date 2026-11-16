@@ -18,7 +18,7 @@ import { WorkspaceTabs } from "./workspace-tabs";
 import { useEffect, useId, useRef, useState, type ReactNode } from "react";
 import type { MappoolWorkspace } from "@/lib/mappool-reads";
 import {
-  categories,
+  mappoolEditorCategories,
   difficultyConfigurations,
   type DifficultyConfiguration,
   categoryNames,
@@ -300,7 +300,7 @@ export function EntryForm({
               if (!entry) setPosition(nextPosition(e.target.value));
             }}
           >
-            {categories.map((c) => (
+            {mappoolEditorCategories.map((c) => (
               <option key={c} value={c}>
                 {c} — {categoryNames[c]}
               </option>
@@ -575,7 +575,8 @@ function MappoolEditorContent({
   const [stage, setStage] = useState(data.rounds[0]?.stage ?? "group");
   const [roundId, setRoundId] = useState("");
   const [poolId, setPoolId] = useState("");
-  const [category, setCategory] = useState<(typeof categories)[number]>("NM");
+  const [category, setCategory] =
+    useState<(typeof mappoolEditorCategories)[number]>("NM");
   const [task, setTask] = useState<Task>("maps");
   const [creatingPool, setCreatingPool] = useState(false);
   const [editingEntry, setEditingEntry] = useState<string | null>(null);
@@ -876,7 +877,7 @@ function MappoolEditorContent({
                 appearance="line"
                 value={category}
                 onChange={setCategory}
-                items={categories.map((c) => ({
+                items={mappoolEditorCategories.map((c) => ({
                   value: c,
                   label: `${c} (${poolEntries.filter((e) => e.category === c).length})`,
                 }))}
@@ -887,7 +888,7 @@ function MappoolEditorContent({
                 aria-labelledby={`${id}-mods-${category}`}
                 tabIndex={0}
               >
-                {categories.map((mod) => {
+                {mappoolEditorCategories.map((mod) => {
                   const entries = poolEntries
                     .filter((e) => e.category === mod)
                     .sort((a, b) => a.position - b.position);

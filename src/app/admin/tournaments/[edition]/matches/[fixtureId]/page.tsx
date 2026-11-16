@@ -123,7 +123,7 @@ async function Issue271Page({
           title={data.fixture.label}
         >
           {data.teams.map((t) => t.name).join(" vs ")} ·{" "}
-          {tr(data.fixture.status)}
+          {data.fixture.status === "ended" ? tr("Ended") : tr(data.fixture.status)}
         </PageHeading>
         <div className={`panel ${styles.overview}`}>
           <div className={styles.layout}>

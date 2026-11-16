@@ -1,0 +1,37 @@
+dialog.dialog[open] {
+  display: grid;
+  gap: 1rem;
+  width: min(29rem, calc(100% - 2rem));
+  padding: clamp(1rem, 4vw, 1.5rem);
+}
+
+.heading,
+.content {
+  display: grid;
+  gap: 0.5rem;
+  min-width: 0;
+  overflow-wrap: anywhere;
+}
+
+.heading > :is(h2, p),
+.content > p {
+  margin: 0;
+}
+
+.heading h2 {
+  font-size: var(--text-heading);
+  line-height: 1.3;
+}
+
+.dialog .footer {
+  justify-content: flex-end;
+  gap: 0.5rem;
+  margin: 0;
+  padding-block-start: 0.75rem;
+  border-block-start: 1px solid var(--site-border, currentColor);
+}
+
+.dialog .footer > button {
+  min-height: 2.75rem;
+  padding-inline: 0.875rem;
+}

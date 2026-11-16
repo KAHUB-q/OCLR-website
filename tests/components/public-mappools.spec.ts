@@ -9,6 +9,36 @@ test.beforeEach(async ({ page }) => {
   );
 });
 
+test("pool fragments restore the selected public pool across navigation", async ({
+  page,
+}) => {
+  const overview = "/public-mappools?duplicates";
+  const finalPool = `${overview}#pool-pool-2`;
+  const groupMap = page.locator("#map-entry-0-0");
+  const finalMap = page.locator("#map-entry-1-0");
+
+  await page.goto(overview);
+  await expect(groupMap).toBeVisible();
+  await page.getByRole("tab", { name: /Final round/ }).click();
+  await expect(page).toHaveURL(finalPool);
+  await expect(finalMap).toBeVisible();
+
+  await page.goBack();
+  await expect(groupMap).toBeVisible();
+  await page.goForward();
+  await expect(finalMap).toBeVisible();
+  await page.reload();
+  await expect(page.getByRole("tab", { name: /Final round/ })).toHaveAttribute(
+    "aria-selected",
+    "true",
+  );
+  await expect(finalMap).toBeVisible();
+
+  await page.goto("/public-mappools?single#pool-pool-2");
+  await expect(groupMap).toBeVisible();
+  await expect(finalMap).toHaveCount(0);
+});
+
 test("mirror dropdown fits the compact list and Escape dismisses it inside Details", async ({
   page,
 }, info) => {

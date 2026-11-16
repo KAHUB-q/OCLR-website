@@ -284,7 +284,9 @@ export function RefereeCommands({
                           <CommandLine
                             key={`${command.id}:${command.text}`}
                             command={command}
-                            onPrepare={onPrepare}
+                            onPrepare={
+                              command.kind === "invite" ? onPrepare : undefined
+                            }
                             sent={
                               !!command.text &&
                               sentCommands.includes(command.text)

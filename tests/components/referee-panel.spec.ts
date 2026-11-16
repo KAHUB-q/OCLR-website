@@ -1018,6 +1018,16 @@ test(`records with localized feedback in ${locale} at the workflow viewport`, as
   await expect(firstTile).toBeFocused();
   await expect(firstTile).toHaveAttribute("aria-expanded", "false");
   await expect(inspector).toBeHidden();
+  const bp = page.locator("#referee-bp");
+  const banOrder = bp.getByLabel("First Ban team", { exact: true });
+  const orderToggle = bp.getByRole("button", { name: "Edit", exact: true });
+  await expect(orderToggle).toHaveAttribute("aria-expanded", "false");
+  await expect(banOrder).toBeHidden();
+  await orderToggle.click();
+  await expect(banOrder).toHaveValue(id(10));
+  await bp.getByRole("button", { name: "Close", exact: true }).click();
+  await expect(banOrder).toBeHidden();
+
   await poolTile(page, "NM2").click();
   const firstPick = maps.getByRole("button", {
     name: `${text("Red team")} PICK`,
@@ -1031,8 +1041,8 @@ test(`records with localized feedback in ${locale} at the workflow viewport`, as
   });
   const rows = outcomes.locator("ul > li > button");
   await expect(rows).toHaveText([
-    /1\.\s*Red\s*BAN\s*NM1\s*Banned/,
-    /2\.\s*Red\s*PICK\s*NM2\s*Pending/,
+    /1\.\s*Red\s*BAN\s*NM1\s*Status\s*Banned/,
+    /2\.\s*Red\s*PICK\s*NM2\s*Status\s*Pending/,
   ]);
   await expect(rows.nth(1).getByText("Red", { exact: true })).toHaveCSS(
     "color",
@@ -1057,7 +1067,7 @@ test(`records with localized feedback in ${locale} at the workflow viewport`, as
     }),
   ).toHaveCSS("background-color", "rgb(29, 78, 216)");
   await redWin.click();
-  await expect(rows.nth(1)).toContainText("NM2 Red");
+  await expect(rows.nth(1)).toContainText("NM2 Winner Red");
   await recordDetails.press("Escape");
   await expect(rows.nth(1)).toBeFocused();
   await expect(redWin).toBeHidden();
@@ -1153,7 +1163,7 @@ test("BP columns keep the IRC log and composer visible while navigating", async 
   isMobile,
 }) => {
   if (!isMobile) await page.setViewportSize({ width: 1024, height: 800 });
-  await setup(page, {
+  const state = await setup(page, {
     connected: true,
     messages: Array.from({ length: 20 }, (_, index) => ({
       id: String(index),
@@ -1162,7 +1172,19 @@ test("BP columns keep the IRC log and composer visible while navigating", async 
       at: new Date().toISOString(),
     })),
   });
-  await page.goto("/referee-panel");
+  state.current().defaultSettings.streamerUsername = "Synthetic Streamer";
+  await page.addInitScript(() => {
+    Object.defineProperty(navigator, "clipboard", {
+      configurable: true,
+      value: {
+        writeText: async (command: string) => {
+          (window as Window & { copiedCommand?: string }).copiedCommand =
+            command;
+        },
+      },
+    });
+  });
+  await page.goto("/referee-panel?streamer");
   const stages = page.getByRole("navigation", { name: "Referee stages" });
   const preparation = page.locator("#referee-preparation");
   const irc = page.getByRole("complementary", { name: "IRC console" });
@@ -1176,10 +1198,21 @@ test("BP columns keep the IRC log and composer visible while navigating", async 
   expect(await log.evaluate((node) => node.scrollTop)).toBeGreaterThan(0);
   await expect(send).toBeInViewport();
 
-  await preparation
-    .getByRole("button", { name: "Prepare Room rules in IRC" })
-    .click();
-  await expect(irc.getByLabel("IRC command")).toHaveValue(/^!mp set /);
+  for (const [label, command] of [
+    ["Create room", "!mp make OCLR S11: Synthetic"],
+    ["Room rules", "!mp set 2 3 8"],
+    ["Add Streamer to room", "!mp addref Synthetic_Streamer"],
+  ]) {
+    const copy = preparation.getByRole("button", { name: `Copy ${label}` });
+    await copy.click();
+    await expect(copy).toHaveAttribute("data-copied", "true");
+    expect(
+      await page.evaluate(
+        () => (window as Window & { copiedCommand?: string }).copiedCommand,
+      ),
+    ).toBe(command);
+  }
+  await expect(irc.getByLabel("IRC command")).toHaveValue("");
   await stages.getByRole("link", { name: "BP stage" }).click();
   await expect(page.locator("#referee-bp-title")).toBeInViewport();
   const maps = (await pool(page).boundingBox())!;
@@ -1271,6 +1304,10 @@ test("bound MP sync updates the red-left scoreboard, fences stale IRC reads and 
   page,
 }) => {
   const state = await setup(page, { roomId: 880001 });
+  const redName = "Red Team · 超長隊伍名稱ABCDEFGHIJKLMNOPQRSTUVWXYZ";
+  const blueName = "Blue Team · 超長隊伍名稱ABCDEFGHIJKLMNOPQRSTUVWXYZ";
+  state.current().teams[0].name = redName;
+  state.current().teams[1].name = blueName;
   let binding: null | {
     matchId: number;
     revision: number;
@@ -1345,6 +1382,8 @@ test("bound MP sync updates the red-left scoreboard, fences stale IRC reads and 
             ]
           : []),
       ]);
+      synced.teams[0].name = redName;
+      synced.teams[1].name = blueName;
       outcomeSources = [
         { eventId: syncs > 2 ? id(7001) : win.id, review: syncs > 2 },
       ];
@@ -1359,7 +1398,7 @@ test("bound MP sync updates the red-left scoreboard, fences stale IRC reads and 
       json: { binding, workspace: synced ?? state.current(), outcomeSources },
     });
   });
-  await page.goto("/referee-panel");
+  await page.goto("/referee-panel?longnames");
   await recordPoolMap(page, "NM1", "Red team BAN");
   await recordPoolMap(page, "NM2", "Red team PICK");
   await records(page)
@@ -1372,12 +1411,22 @@ test("bound MP sync updates the red-left scoreboard, fences stale IRC reads and 
   await expect(row).toContainText("Awaiting MP");
   await expect.poll(() => syncs).toBeGreaterThan(1);
   await expect(records(page).locator('div[data-team="red"] > span')).toHaveText(
-    "Red",
+    redName,
   );
   await expect(
     records(page).locator('div[data-team="blue"] > span'),
-  ).toHaveText("Blue");
+  ).toHaveText(blueName);
   await expect(records(page).locator("strong")).toHaveText(["1", "0"]);
+  await expect(
+    recordEditor.getByText("Ban / Pick team", { exact: true }),
+  ).toBeVisible();
+  const winnerLabel = row.getByText("Winner", { exact: true });
+  await expect(winnerLabel).toBeVisible();
+  const winner = winnerLabel.locator("..").getByText(redName, { exact: true });
+  await expect(winner).toBeVisible();
+  expect(
+    await winner.evaluate((node) => node.scrollWidth <= node.clientWidth),
+  ).toBe(true);
   await row.click();
   await expect(
     recordEditor.getByText("Scored by MP", { exact: true }),

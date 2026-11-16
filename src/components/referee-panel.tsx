@@ -61,6 +61,7 @@ export function RefereePanel({
   const [firstPick, setFirstPick] = useState(
     initial.session?.firstPickTeamId ?? "",
   );
+  const [orderEditorOpen, setOrderEditorOpen] = useState<boolean | null>(null);
   const [draftSkipBans, setDraftSkipBans] = useState<boolean | null>(null);
   const [activeStage, setActiveStage] = useState<string>(stageIds[0]);
   const workspace = useRef<HTMLDivElement>(null);
@@ -449,6 +450,15 @@ export function RefereePanel({
     (appliedSkipBans ||
       (data.policy?.steps.some((step) => step.kind === "ban") &&
         data.policy.steps.some((step) => step.kind !== "ban")));
+  const canEditOrder = data.canRecord && !readOnly && !stale;
+  const showOrderEditor =
+    canEditOrder &&
+    (dirtyOrder || (orderEditorOpen ?? state.activeSelections.length === 0));
+  const orderEditorId = `${controlId}-order-editor`;
+  const previewSkipsBans = showOrderEditor ? skipBans : appliedSkipBans;
+  const previewOrders = showOrderEditor
+    ? { firstBanTeamId: banTeamId, firstPickTeamId: firstPick || null }
+    : appliedOrders;
   const redTeam = data.teams.find(
     (team) => team.id === data.fixture.homeTeamId,
   );
@@ -1104,36 +1114,109 @@ export function RefereePanel({
                 ))}
               </ul>
             )}
-            <div className={styles.orderBar}>
-              {showSkipBans && (
-                <label className="check-label">
-                  <input
-                    type="checkbox"
-                    checked={skipBans}
-                    disabled={
-                      disabled || stale || state.activeSelections.length > 0
-                    }
-                    onChange={(e) => {
-                      setDraftSkipBans(e.target.checked);
-                      setIrcSelection(null);
-                    }}
-                  />
-                  {tr("Skip bans")}
-                </label>
+            <div className={styles.orderHeader}>
+              <h3>{tr("Ban / Pick order")}</h3>
+              {!showOrderEditor && (
+                <dl className={styles.appliedOrder}>
+                  <div>
+                    <dt>{tr("First Ban team")}</dt>
+                    <dd
+                      className={styles.teamInk}
+                      data-team={refereeTeamSide(
+                        data.fixture,
+                        appliedSkipBans ? null : appliedOrders.firstBanTeamId,
+                      )}
+                    >
+                      {appliedSkipBans
+                        ? tr("Skip bans")
+                        : teamName(appliedOrders.firstBanTeamId, false)}
+                    </dd>
+                  </div>
+                  <div>
+                    <dt>{tr("First Pick team")}</dt>
+                    <dd
+                      className={styles.teamInk}
+                      data-team={refereeTeamSide(
+                        data.fixture,
+                        appliedOrders.firstPickTeamId,
+                      )}
+                    >
+                      {teamName(appliedOrders.firstPickTeamId, false)}
+                    </dd>
+                  </div>
+                </dl>
               )}
-              <div className={styles.orders}>
-                {!skipBans && (
-                  <label className="field" htmlFor={`${controlId}-first-ban`}>
-                    <span id={`${controlId}-first-ban-label`}>
-                      {tr("First Ban team")}
+              {canEditOrder && (
+                <button
+                  type="button"
+                  className={`secondary ${styles.orderToggle}`}
+                  aria-expanded={showOrderEditor}
+                  aria-controls={orderEditorId}
+                  disabled={busy || dirtyOrder}
+                  onClick={() => setOrderEditorOpen(!showOrderEditor)}
+                >
+                  {showOrderEditor ? tr("Close") : tr("Edit")}
+                </button>
+              )}
+            </div>
+            <div
+              id={orderEditorId}
+              className={styles.orderEditor}
+              hidden={!showOrderEditor}
+            >
+              <div className={styles.orderBar}>
+                {showSkipBans && (
+                  <label className="check-label">
+                    <input
+                      type="checkbox"
+                      checked={skipBans}
+                      disabled={
+                        disabled || stale || state.activeSelections.length > 0
+                      }
+                      onChange={(e) => {
+                        setDraftSkipBans(e.target.checked);
+                        setIrcSelection(null);
+                      }}
+                    />
+                    {tr("Skip bans")}
+                  </label>
+                )}
+                <div className={styles.orders}>
+                  {!skipBans && (
+                    <label className="field" htmlFor={`${controlId}-first-ban`}>
+                      <span id={`${controlId}-first-ban-label`}>
+                        {tr("First Ban team")}
+                      </span>
+                      <select
+                        id={`${controlId}-first-ban`}
+                        aria-labelledby={`${controlId}-first-ban-label`}
+                        value={firstBan}
+                        disabled={disabled || stale}
+                        onChange={(e) => {
+                          setFirstBan(e.target.value);
+                          setIrcSelection(null);
+                        }}
+                      >
+                        <option value="">{tr("Not set")}</option>
+                        {data.teams.map((t) => (
+                          <option key={t.id} value={t.id}>
+                            {t.name}
+                          </option>
+                        ))}
+                      </select>
+                    </label>
+                  )}
+                  <label className="field" htmlFor={`${controlId}-first-pick`}>
+                    <span id={`${controlId}-first-pick-label`}>
+                      {tr("First Pick team")}
                     </span>
                     <select
-                      id={`${controlId}-first-ban`}
-                      aria-labelledby={`${controlId}-first-ban-label`}
-                      value={firstBan}
+                      id={`${controlId}-first-pick`}
+                      aria-labelledby={`${controlId}-first-pick-label`}
+                      value={firstPick}
                       disabled={disabled || stale}
                       onChange={(e) => {
-                        setFirstBan(e.target.value);
+                        setFirstPick(e.target.value);
                         setIrcSelection(null);
                       }}
                     >
@@ -1145,31 +1228,9 @@ export function RefereePanel({
                       ))}
                     </select>
                   </label>
-                )}
-                <label className="field" htmlFor={`${controlId}-first-pick`}>
-                  <span id={`${controlId}-first-pick-label`}>
-                    {tr("First Pick team")}
-                  </span>
-                  <select
-                    id={`${controlId}-first-pick`}
-                    aria-labelledby={`${controlId}-first-pick-label`}
-                    value={firstPick}
-                    disabled={disabled || stale}
-                    onChange={(e) => {
-                      setFirstPick(e.target.value);
-                      setIrcSelection(null);
-                    }}
-                  >
-                    <option value="">{tr("Not set")}</option>
-                    {data.teams.map((t) => (
-                      <option key={t.id} value={t.id}>
-                        {t.name}
-                      </option>
-                    ))}
-                  </select>
-                </label>
+                </div>
               </div>
-              <div className="actions">
+              <div className={styles.orderActions}>
                 <button
                   type="button"
                   disabled={
@@ -1192,32 +1253,34 @@ export function RefereePanel({
                 >
                   {tr("Apply order")}
                 </button>
-                <button
-                  type="button"
-                  className="secondary"
-                  disabled={busy || !dirtyOrder}
-                  onClick={() => {
-                    setDraftSkipBans(null);
-                    setFirstBan(appliedOrders.firstBanTeamId ?? "");
-                    setFirstPick(appliedOrders.firstPickTeamId ?? "");
-                  }}
-                >
-                  {tr("Discard unsaved order")}
-                </button>
                 {dirtyOrder && (
-                  <span className="small muted">
-                    {tr("Order preview — not saved")}
-                  </span>
+                  <>
+                    <button
+                      type="button"
+                      className="secondary"
+                      disabled={busy}
+                      onClick={() => {
+                        setDraftSkipBans(null);
+                        setFirstBan(appliedOrders.firstBanTeamId ?? "");
+                        setFirstPick(appliedOrders.firstPickTeamId ?? "");
+                      }}
+                    >
+                      {tr("Discard unsaved order")}
+                    </button>
+                    <span className="small muted">
+                      {tr("Order preview — not saved")}
+                    </span>
+                  </>
                 )}
               </div>
+              {conflicts.length > 0 && (
+                <p role="status">
+                  {tr("Withdraw conflicting steps in reverse order: {steps}", {
+                    steps: conflicts.join(", "),
+                  })}
+                </p>
+              )}
             </div>
-            {conflicts.length > 0 && (
-              <p role="status">
-                {tr("Withdraw conflicting steps in reverse order: {steps}", {
-                  steps: conflicts.join(", "),
-                })}
-              </p>
-            )}
             {data.policy && (
               <details className={styles.sequencePreview}>
                 <summary>{tr("Preview Ban / Pick sequence")}</summary>
@@ -1227,13 +1290,10 @@ export function RefereePanel({
                   aria-label={tr("Preview Ban / Pick sequence")}
                 >
                   {data.policy.steps.map((step, index) => {
-                    if (skipBans && step.kind === "ban") return null;
+                    if (previewSkipsBans && step.kind === "ban") return null;
                     const actor = resolveRefereeActor(
                       step.actor,
-                      {
-                        firstBanTeamId: banTeamId,
-                        firstPickTeamId: firstPick || null,
-                      },
+                      previewOrders,
                       data.teams.map((t) => t.id),
                     );
                     const side = refereeTeamSide(data.fixture, actor);
@@ -1473,7 +1533,15 @@ export function RefereePanel({
               <h2 id="referee-record-title">
                 {tr("Record and correct outcomes")}
               </h2>
-              {!state.activeSelections.length && (
+              {recordItems.length ? (
+                <div className={styles.recordColumns} aria-hidden="true">
+                  <span>#</span>
+                  <span>{tr("Ban / Pick team")}</span>
+                  <span className={styles.recordMap}>
+                    {tr("Action / Beatmap")}
+                  </span>
+                </div>
+              ) : (
                 <p className="muted">{tr("No Ban or Pick recorded yet.")}</p>
               )}
               <ul className={styles.recordList}>
@@ -1483,8 +1551,9 @@ export function RefereePanel({
                     const team = selection.teamId
                       ? teamName(selection.teamId, false)
                       : "";
-                    const winner = attempt?.winnerTeamId
-                      ? teamName(attempt.winnerTeamId, false)
+                    const winningTeamId = status ? null : attempt?.winnerTeamId;
+                    const winner = winningTeamId
+                      ? teamName(winningTeamId, false)
                       : null;
                     const side = refereeTeamSide(
                       data.fixture,
@@ -1519,7 +1588,6 @@ export function RefereePanel({
                           <span
                             className={`${styles.recordTeam} ${styles.teamInk}`}
                             data-team={side}
-                            title={team || undefined}
                           >
                             {team}
                           </span>{" "}
@@ -1533,21 +1601,27 @@ export function RefereePanel({
                               <span className={styles.recordContext}>EX</span>
                             )}
                           </span>{" "}
-                          <span
-                            aria-live={
-                              selection.id === currentPick?.id
-                                ? "polite"
-                                : undefined
-                            }
-                            className={`${styles.recordOutcome} ${styles.teamInk}`}
-                            data-team={refereeTeamSide(
-                              data.fixture,
-                              attempt?.winnerTeamId,
-                            )}
-                            data-review={review ? "" : undefined}
-                            title={outcome}
-                          >
-                            {outcome}
+                          <span className={styles.recordOutcomeLine}>
+                            <span className={styles.recordOutcomeLabel}>
+                              {winner ? tr("Winner") : tr("Status")}
+                            </span>{" "}
+                            <span
+                              aria-live={
+                                selection.id === currentPick?.id
+                                  ? "polite"
+                                  : undefined
+                              }
+                              className={`${styles.recordOutcome} ${styles.teamInk}`}
+                              data-team={refereeTeamSide(
+                                data.fixture,
+                                winner && !status
+                                  ? attempt?.winnerTeamId
+                                  : null,
+                              )}
+                              data-review={review ? "" : undefined}
+                            >
+                              {outcome}
+                            </span>
                           </span>
                         </button>
                       </li>

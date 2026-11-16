@@ -1059,6 +1059,15 @@ test(`records with localized feedback in ${locale} at the workflow viewport`, as
     "color",
     "rgb(185, 28, 28)",
   );
+  if (!isMobile) {
+    const banRow = rows.nth(0);
+    await banRow.evaluate((row) => row.scrollIntoView({ block: "center" }));
+    const before = await banRow.boundingBox();
+    await banRow.hover();
+    await expect(banRow).toHaveCSS("transform", "none");
+    await expect(banRow).toHaveCSS("box-shadow", "none");
+    expect(await banRow.boundingBox()).toEqual(before);
+  }
   const redWin = outcomes.getByRole("button", {
     name: "Record win: Red team",
     exact: true,

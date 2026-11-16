@@ -116,6 +116,18 @@ describe("published schedule semantics", () => {
       );
     },
   );
+  it("links a published recording in the match information table", async () => {
+    const match = fixture();
+    const vod = "https://video.example.test/recording";
+    match.result!.vodUrl = vod;
+    vi.mocked(publicCompetition).mockResolvedValue(
+      competition([match], policy),
+    );
+
+    expect(await render()).toContain(
+      `<td><a href="${vod}" target="_blank" rel="noreferrer">Recording`,
+    );
+  });
   it("retains pending ranks instead of inferring ranks from wins", async () => {
     vi.mocked(publicCompetition).mockResolvedValue(
       competition([fixture()], null),

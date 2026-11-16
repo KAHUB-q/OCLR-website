@@ -56,6 +56,7 @@ async function Issue271Page({
       : null,
     status: f.status,
     mp: f.result?.mpUrl ?? undefined,
+    vod: f.result?.vodUrl ?? undefined,
     sourceRed: f.home.sourceId ?? undefined,
     sourceBlue: f.away.sourceId ?? undefined,
     href: `/tournaments/${slug}/matches/${f.id}`,

@@ -23,6 +23,7 @@ import { refereeCommands } from "@/lib/referee-commands";
 import { RefereeIrc } from "./referee-irc";
 import { RefereeCommands } from "./referee-commands";
 import { RefereeReconciliation } from "./referee-reconciliation";
+import { PublicationSwitch } from "./publication-switch";
 import styles from "./referee-panel.module.css";
 
 const stageIds = [
@@ -1168,48 +1169,47 @@ export function RefereePanel({
               className={styles.orderEditor}
               hidden={!showOrderEditor}
             >
-              <div className={styles.orderBar}>
-                {showSkipBans && (
-                  <label className="check-label">
-                    <input
-                      type="checkbox"
+              <div className={styles.orders}>
+                <div className={styles.orderColumn}>
+                  <label className="field" htmlFor={`${controlId}-first-ban`}>
+                    <span id={`${controlId}-first-ban-label`}>
+                      {tr("First Ban team")}
+                    </span>
+                    <select
+                      id={`${controlId}-first-ban`}
+                      aria-labelledby={`${controlId}-first-ban-label`}
+                      value={skipBans ? "" : firstBan}
+                      disabled={disabled || stale || skipBans}
+                      onChange={(e) => {
+                        setFirstBan(e.target.value);
+                        setIrcSelection(null);
+                      }}
+                    >
+                      <option value="">
+                        {skipBans ? tr("Bans skipped") : tr("Not set")}
+                      </option>
+                      {data.teams.map((t) => (
+                        <option key={t.id} value={t.id}>
+                          {t.name}
+                        </option>
+                      ))}
+                    </select>
+                  </label>
+                  {showSkipBans && (
+                    <PublicationSwitch
+                      label={tr("Skip bans")}
                       checked={skipBans}
                       disabled={
                         disabled || stale || state.activeSelections.length > 0
                       }
-                      onChange={(e) => {
-                        setDraftSkipBans(e.target.checked);
+                      onChange={(checked) => {
+                        setDraftSkipBans(checked);
                         setIrcSelection(null);
                       }}
                     />
-                    {tr("Skip bans")}
-                  </label>
-                )}
-                <div className={styles.orders}>
-                  {!skipBans && (
-                    <label className="field" htmlFor={`${controlId}-first-ban`}>
-                      <span id={`${controlId}-first-ban-label`}>
-                        {tr("First Ban team")}
-                      </span>
-                      <select
-                        id={`${controlId}-first-ban`}
-                        aria-labelledby={`${controlId}-first-ban-label`}
-                        value={firstBan}
-                        disabled={disabled || stale}
-                        onChange={(e) => {
-                          setFirstBan(e.target.value);
-                          setIrcSelection(null);
-                        }}
-                      >
-                        <option value="">{tr("Not set")}</option>
-                        {data.teams.map((t) => (
-                          <option key={t.id} value={t.id}>
-                            {t.name}
-                          </option>
-                        ))}
-                      </select>
-                    </label>
                   )}
+                </div>
+                <div className={styles.orderColumn}>
                   <label className="field" htmlFor={`${controlId}-first-pick`}>
                     <span id={`${controlId}-first-pick-label`}>
                       {tr("First Pick team")}

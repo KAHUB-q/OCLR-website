@@ -1,9 +1,9 @@
 "use client";
-import { RefereeMp } from "./referee-mp";
+import { RefereeMp, type RefereeMpStatus } from "./referee-mp";
 import { useSnapshotUpdates } from "./use-poll";
 import { useStaffReadOnly } from "./staff-read-only";
 import Link from "next/link";
-import { refereeMessage } from "@/i18n/referee";
+import { refereeMessage, refereeMpIssueLabel } from "@/i18n/referee";
 import { useEffect, useId, useRef, useState, type ReactNode } from "react";
 import { useAppTranslations } from "@/i18n/shared";
 import type { RefereeWorkspace } from "@/lib/referee-workspace";
@@ -111,10 +111,19 @@ export function RefereePanel({
   }, [accessLost]);
   const [selected, setSelected] = useState("");
   const [inspectedMapId, setInspectedMapId] = useState<string | null>(null);
+  const [recordDetailsId, setRecordDetailsId] = useState<string | null>(null);
+  const [mpStatus, setMpStatus] = useState<RefereeMpStatus>({
+    binding: null,
+    error: false,
+  });
+  const recordDetails = useRef<HTMLElement>(null);
   const mapInspector = useRef<HTMLDivElement>(null);
   useEffect(() => {
     if (inspectedMapId) mapInspector.current?.focus();
   }, [inspectedMapId]);
+  useEffect(() => {
+    if (recordDetailsId) recordDetails.current?.focus();
+  }, [recordDetailsId]);
   const [simulationEpoch, setSimulationEpoch] = useState(0);
   const [simulationEvents, setSimulationEvents] = useState<RefereeEvent[]>([]);
   const [simulationOrders, setSimulationOrders] = useState({
@@ -265,6 +274,7 @@ export function RefereePanel({
       setSentCommands([]);
       setSyncEvents([]);
       setInspectedMapId(null);
+      setRecordDetailsId(null);
       setError("");
       setSimulationEpoch((v) => v + 1);
       return;
@@ -564,13 +574,72 @@ export function RefereePanel({
         </button>
       </div>
     ) : null;
-  function attemptSummary(attempt: RefereeAttempt, superseded = false) {
+  const mpBinding = mpStatus.binding;
+  const activeMp =
+    !simulation &&
+    !readOnly &&
+    data.canRecord &&
+    mpBinding?.enabled &&
+    mpBinding.matchId === ircRoomId
+      ? mpBinding
+      : null;
+  const mpOutcomes = new Map(
+    mpStatus.outcomeSources?.map((source) => [source.eventId, source]),
+  );
+  const recordItems = state.activeSelections.map((selection) => {
+    const attempt = selection.attempts.at(-1);
+    const outcome =
+      attempt &&
+      model.events.findLast(
+        ({ payload }) =>
+          payload.type === "attempt_resolved" &&
+          payload.attemptId === attempt.id,
+      );
+    const source = outcome && mpOutcomes.get(outcome.id);
+    const unresolved =
+      attempt?.status === "pending" || attempt?.status === "playing";
+    const issue =
+      attempt &&
+      activeMp?.issues.find((item) => {
+        if (item.attemptId) return item.attemptId === attempt.id;
+        return (
+          item.reason !== "unmatched" &&
+          item.beatmapId === selection.beatmapId &&
+          state.activeSelections.filter(
+            (other) =>
+              other.kind !== "ban" && other.beatmapId === item.beatmapId,
+          ).length === 1
+        );
+      });
+    const review =
+      !!source?.review ||
+      (unresolved &&
+        (!!issue || (!!activeMp && selection.attempts.length > 1)));
+    const waiting =
+      unresolved && !!activeMp && !mpStatus.error && !activeMp.error;
+    const status = review
+      ? tr("Manual review")
+      : waiting
+        ? tr("Awaiting MP")
+        : null;
+    const map = data.maps.find((entry) => entry.id === selection.entryId);
+    return { selection, attempt, outcome, source, issue, review, status, map };
+  });
+  const inspectedRecord = recordItems.find(
+    ({ selection }) => selection.id === recordDetailsId,
+  );
+  const recordInspectorId = `${controlId}-record-details`;
+  function attemptSummary(
+    attempt: RefereeAttempt,
+    superseded = false,
+    status = refereeMessage(tr, attempt.status),
+  ) {
     return (
       <>
         <span className={styles.recordContext}>
           {tr("Attempt {number}", { number: attempt.number })}
         </span>
-        <span>{refereeMessage(tr, attempt.status)}</span>
+        <span>{status}</span>
         {attempt.winnerTeamId && (
           <strong
             data-team={refereeTeamSide(data.fixture, attempt.winnerTeamId)}
@@ -583,6 +652,64 @@ export function RefereePanel({
             {tr("Superseded by replay")}
           </span>
         )}
+      </>
+    );
+  }
+  function renderRecordDetails(item: (typeof recordItems)[number]) {
+    const { selection, attempt, outcome, source, issue, review, status, map } =
+      item;
+    return (
+      <>
+        <h3 id={`${recordInspectorId}-title`} className={styles.recordHeading}>
+          {selection.category}
+          {map?.position}
+          {" · "}
+          {map?.metadata.title || selection.kind.toUpperCase()}
+        </h3>
+        <p className={styles.recordContext}>
+          {selection.teamId && (
+            <span
+              className={styles.teamInk}
+              data-team={refereeTeamSide(data.fixture, selection.teamId)}
+            >
+              {teamName(selection.teamId, false)} ·{" "}
+            </span>
+          )}
+          {selection.kind.toUpperCase()}
+          {attempt && (
+            <> · {selection.exMode ? tr("EX mode") : tr("Normal mode")}</>
+          )}
+        </p>
+        {attempt && (
+          <p className={styles.recordResult}>
+            {attemptSummary(attempt, false, status ?? undefined)}
+          </p>
+        )}
+        {outcome &&
+          !review &&
+          (source || (mpStatus.sourceRevision ?? -1) >= outcome.ordinal) && (
+            <p className={styles.recordContext}>
+              {source ? tr("Scored by MP") : tr("Recorded by referee")}
+            </p>
+          )}
+        {review && (
+          <p className={styles.recordContext}>
+            {refereeMpIssueLabel(
+              tr,
+              issue?.reason ?? (source?.review ? "source_changed" : "replay"),
+            )}
+          </p>
+        )}
+        {selection.attempts.slice(0, -1).map((previous) => (
+          <p className={styles.recordPrevious} key={previous.id}>
+            {attemptSummary(previous, true)}
+          </p>
+        ))}
+        {selection.id === currentPick?.id &&
+          data.canRecord &&
+          !readOnly &&
+          !stale &&
+          resultActions}
       </>
     );
   }
@@ -1165,6 +1292,8 @@ export function RefereePanel({
               endpoint={`${endpoint}/mp`}
               disabled={disabled}
               roomId={ircRoomId}
+              status={mpStatus}
+              setStatus={setMpStatus}
               onWorkspace={(next) => accept(next, true)}
             >
               {renderSummary}
@@ -1347,61 +1476,105 @@ export function RefereePanel({
               {!state.activeSelections.length && (
                 <p className="muted">{tr("No Ban or Pick recorded yet.")}</p>
               )}
-              {state.activeSelections.map((s) => {
-                const side = refereeTeamSide(data.fixture, s.teamId);
-                const attempt = s.attempts.at(-1);
-                const active = attemptOpen && s.id === currentPick?.id;
-                return (
-                  <article
-                    key={s.id}
-                    className={styles.record}
-                    data-current={active ? "" : undefined}
-                  >
-                    <h3 className={styles.recordHeading}>
-                      <span>{s.stepIndex + 1}.</span>{" "}
-                      {s.teamId && (
-                        <span className={styles.teamInk} data-team={side}>
-                          {teamName(s.teamId, false)}
-                        </span>
-                      )}{" "}
-                      <span>{s.kind.toUpperCase()}</span>{" "}
-                      <strong>
-                        {s.category}
-                        {data.maps.find((m) => m.id === s.entryId)?.position}
-                      </strong>{" "}
-                      {attempt && (
-                        <span className={styles.recordContext}>
-                          {s.exMode ? tr("EX mode") : tr("Normal mode")}
-                        </span>
-                      )}
-                    </h3>
-                    {attempt && (
-                      <p className={styles.recordResult}>
-                        {attemptSummary(attempt)}
-                      </p>
-                    )}
-                    {s.attempts.slice(0, -1).map((previous) => (
-                      <p className={styles.recordPrevious} key={previous.id}>
-                        {attemptSummary(previous, true)}
-                      </p>
-                    ))}
-                    {active && resultActions}
-                  </article>
-                );
-              })}
-              {resultActions &&
-                !attemptOpen &&
-                data.canRecord &&
-                !readOnly &&
-                !stale && (
-                  <details
-                    key={data.session?.revision ?? model.events.length}
-                    className={styles.recordHistory}
-                  >
-                    <summary>{tr("Edit")}</summary>
-                    {resultActions}
-                  </details>
+              <ul className={styles.recordList}>
+                {recordItems.map(
+                  ({ selection, attempt, status, review, map }) => {
+                    const open = inspectedRecord?.selection.id === selection.id;
+                    const team = selection.teamId
+                      ? teamName(selection.teamId, false)
+                      : "";
+                    const winner = attempt?.winnerTeamId
+                      ? teamName(attempt.winnerTeamId, false)
+                      : null;
+                    const side = refereeTeamSide(
+                      data.fixture,
+                      selection.teamId,
+                    );
+                    const outcome =
+                      status ??
+                      winner ??
+                      (attempt
+                        ? refereeMessage(tr, attempt.status)
+                        : tr("Banned"));
+                    return (
+                      <li key={selection.id}>
+                        <button
+                          id={`${controlId}-record-${selection.id}`}
+                          type="button"
+                          className={styles.recordRow}
+                          aria-expanded={open}
+                          aria-controls={recordInspectorId}
+                          data-current={
+                            attemptOpen && selection.id === currentPick?.id
+                              ? ""
+                              : undefined
+                          }
+                          onClick={() =>
+                            setRecordDetailsId(open ? null : selection.id)
+                          }
+                        >
+                          <span className={styles.recordStep}>
+                            {selection.stepIndex + 1}.
+                          </span>{" "}
+                          <span
+                            className={`${styles.recordTeam} ${styles.teamInk}`}
+                            data-team={side}
+                            title={team || undefined}
+                          >
+                            {team}
+                          </span>{" "}
+                          <span className={styles.recordMap}>
+                            {selection.kind.toUpperCase()}{" "}
+                            <strong>
+                              {selection.category}
+                              {map?.position}
+                            </strong>{" "}
+                            {selection.exMode && (
+                              <span className={styles.recordContext}>EX</span>
+                            )}
+                          </span>{" "}
+                          <span
+                            aria-live={
+                              selection.id === currentPick?.id
+                                ? "polite"
+                                : undefined
+                            }
+                            className={`${styles.recordOutcome} ${styles.teamInk}`}
+                            data-team={refereeTeamSide(
+                              data.fixture,
+                              attempt?.winnerTeamId,
+                            )}
+                            data-review={review ? "" : undefined}
+                            title={outcome}
+                          >
+                            {outcome}
+                          </span>
+                        </button>
+                      </li>
+                    );
+                  },
                 )}
+              </ul>
+              <section
+                id={recordInspectorId}
+                className={styles.recordInspector}
+                ref={recordDetails}
+                tabIndex={-1}
+                aria-labelledby={`${recordInspectorId}-title`}
+                hidden={!inspectedRecord}
+                onKeyDown={(event) => {
+                  if (event.key !== "Escape" || !inspectedRecord) return;
+                  event.preventDefault();
+                  document
+                    .getElementById(
+                      `${controlId}-record-${inspectedRecord.selection.id}`,
+                    )
+                    ?.focus();
+                  setRecordDetailsId(null);
+                }}
+              >
+                {inspectedRecord && renderRecordDetails(inspectedRecord)}
+              </section>
               <details className={styles.recordHistory}>
                 <summary>{tr("Full correction history")}</summary>
                 <ol className={styles.history}>

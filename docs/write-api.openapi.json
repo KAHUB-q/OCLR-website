@@ -30035,7 +30035,7 @@
         },
         "responses": {
           "200": {
-            "description": "Current referee workspace and nullable MP binding.",
+            "description": "Current referee workspace, nullable MP binding and sources for MP-recorded outcomes.",
             "content": {
               "application/json": {
                 "schema": {
@@ -30114,6 +30114,11 @@
                                       }
                                     ]
                                   },
+                                  "attemptId": {
+                                    "type": "string",
+                                    "format": "uuid",
+                                    "pattern": "^([0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[1-8][0-9a-fA-F]{3}-[89abAB][0-9a-fA-F]{3}-[0-9a-fA-F]{12}|00000000-0000-0000-0000-000000000000|ffffffff-ffff-ffff-ffff-ffffffffffff)$"
+                                  },
                                   "reason": {
                                     "type": "string",
                                     "enum": [
@@ -30162,11 +30167,33 @@
                           "type": "null"
                         }
                       ]
+                    },
+                    "outcomeSources": {
+                      "type": "array",
+                      "items": {
+                        "type": "object",
+                        "properties": {
+                          "eventId": {
+                            "type": "string",
+                            "format": "uuid",
+                            "pattern": "^([0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[1-8][0-9a-fA-F]{3}-[89abAB][0-9a-fA-F]{3}-[0-9a-fA-F]{12}|00000000-0000-0000-0000-000000000000|ffffffff-ffff-ffff-ffff-ffffffffffff)$"
+                          },
+                          "review": {
+                            "type": "boolean"
+                          }
+                        },
+                        "required": [
+                          "eventId",
+                          "review"
+                        ],
+                        "additionalProperties": false
+                      }
                     }
                   },
                   "required": [
                     "workspace",
-                    "binding"
+                    "binding",
+                    "outcomeSources"
                   ],
                   "additionalProperties": false
                 }

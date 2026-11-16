@@ -291,6 +291,9 @@ describe.skipIf(!url)("MP binding and atomic provisional scores", () => {
     expect(refereeMpBindingResponse.parse(snapshot.binding)).toEqual(
       snapshot.binding,
     );
+    expect(snapshot.outcomeSources).toEqual([
+      { eventId: score.eventId, review: false },
+    ]);
     expect(snapshot.workspace.projection.score[w.teams[0].id]).toBe(1);
     expect(vi.mocked(fetchMatchSource)).toHaveBeenCalledTimes(calls);
     expect((await db().select().from(matchResults))[0]).toEqual(before);
@@ -311,7 +314,13 @@ describe.skipIf(!url)("MP binding and atomic provisional scores", () => {
     vi.mocked(fetchMatchSource).mockResolvedValue(fingerprint(changed));
     const review = await sync();
     expect(review.workspace.projection.score[w.teams[0].id]).toBe(0);
-    expect(review.binding!.issues[0].reason).toBe("replay");
+    expect(review.binding!.issues[0]).toMatchObject({
+      reason: "replay",
+      attemptId: review.workspace.projection.activeSelections.at(-1)?.attempts.at(-1)?.id,
+    });
+    expect(review.outcomeSources).toEqual([
+      { eventId: review.workspace.events.at(-1)?.id, review: true },
+    ]);
     vi.mocked(fetchMatchSource).mockResolvedValue(mpSource(w));
     expect((await sync()).workspace.projection.score[w.teams[0].id]).toBe(0);
     w = review.workspace;

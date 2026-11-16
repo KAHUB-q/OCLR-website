@@ -11,6 +11,7 @@ import { refereeCommands } from "./referee-commands";
 export type MpIssue = {
   gameId: number | null;
   beatmapId: number | null;
+  attemptId?: string;
   reason:
     | "replay"
     | "unmatched"
@@ -86,6 +87,7 @@ export function planMpResults(
       issues.push({
         gameId: receipt.gameId,
         beatmapId: selection.beatmapId,
+        attemptId: attempt.id,
         reason: "incomplete",
       });
       continue;
@@ -168,6 +170,7 @@ export function planMpResults(
       issues.push({
         gameId: game?.id ?? receipt?.gameId ?? null,
         beatmapId: selection.beatmapId,
+        attemptId: attempt.id,
         reason,
       });
       if (receipt && !receipt.review && outcome?.id === receipt.eventId)
@@ -186,6 +189,7 @@ export function planMpResults(
       issues.push({
         gameId: game.id,
         beatmapId: game.beatmapId,
+        attemptId: attempt.id,
         reason: "already_used",
       });
       continue;

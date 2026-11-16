@@ -4169,6 +4169,11 @@
     "md7f2b2ba87d0": "Beatmap ID is unavailable.",
     "m0b9a7bedbabb": "Game mod data is unavailable.",
     "m4bd030013432": "Game score records are missing or unsupported.",
-    "mf9ab1ca17983": "Beatmap metadata identifies another beatmap."
+    "mf9ab1ca17983": "Beatmap metadata identifies another beatmap.",
+    "m73159f6e4745": "Manual review",
+    "m9d9f50e4b977": "Awaiting MP",
+    "m05eb210744d1": "Banned",
+    "md1938c7df40e": "Scored by MP",
+    "m1d45d8927ac5": "Recorded by referee"
   }
 }

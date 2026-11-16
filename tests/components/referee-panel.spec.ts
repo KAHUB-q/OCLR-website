@@ -434,7 +434,9 @@ async function setupMp(page: Page, roomId = 880001) {
         enabled: false,
       };
     }
-    await route.fulfill({ json: { binding, workspace: state.current() } });
+    await route.fulfill({
+      json: { binding, workspace: state.current(), outcomeSources: [] },
+    });
   });
   return {
     room,
@@ -1027,12 +1029,12 @@ test(`records with localized feedback in ${locale} at the workflow viewport`, as
     name: text("Record and correct outcomes"),
     exact: true,
   });
-  const headings = outcomes.getByRole("heading", { level: 3 });
-  await expect(headings).toHaveText([
-    /1\.\s*Red\s*BAN\s*NM1/,
-    /2\.\s*Red\s*PICK\s*NM2\s*Normal mode/,
+  const rows = outcomes.locator("ul > li > button");
+  await expect(rows).toHaveText([
+    /1\.\s*Red\s*BAN\s*NM1\s*Banned/,
+    /2\.\s*Red\s*PICK\s*NM2\s*Pending/,
   ]);
-  await expect(headings.nth(1).getByText("Red", { exact: true })).toHaveCSS(
+  await expect(rows.nth(1).getByText("Red", { exact: true })).toHaveCSS(
     "color",
     "rgb(185, 28, 28)",
   );
@@ -1040,6 +1042,13 @@ test(`records with localized feedback in ${locale} at the workflow viewport`, as
     name: "Record win: Red team",
     exact: true,
   });
+  await expect(redWin).toBeHidden();
+  await rows.nth(1).click();
+  const recordDetails = outcomes.getByRole("region", {
+    name: "NM2 · Synthetic 2",
+  });
+  await expect(recordDetails).toBeFocused();
+  await expect(recordDetails).toContainText("Normal mode");
   await expect(redWin).toHaveCSS("background-color", "rgb(185, 28, 28)");
   await expect(
     outcomes.getByRole("button", {
@@ -1048,22 +1057,27 @@ test(`records with localized feedback in ${locale} at the workflow viewport`, as
     }),
   ).toHaveCSS("background-color", "rgb(29, 78, 216)");
   await redWin.click();
+  await expect(rows.nth(1)).toContainText("NM2 Red");
+  await recordDetails.press("Escape");
+  await expect(rows.nth(1)).toBeFocused();
   await expect(redWin).toBeHidden();
-  await expect(outcomes.locator("article[data-current]")).toHaveCount(0);
-  await outcomes.getByText("Edit", { exact: true }).click();
+  await expect(outcomes.locator("button[data-current]")).toHaveCount(0);
+  await rows.nth(1).click();
   await expect(redWin).toBeVisible();
-  await outcomes.getByText("Edit", { exact: true }).click();
+  await rows.nth(0).click();
+  await expect(redWin).toBeHidden();
   await expect(score.getByLabel("Map outcomes")).toHaveText("NM2 · Red");
   await expect(
     score.getByLabel("Map outcomes").getByText("Red", { exact: true }),
   ).toHaveCSS("color", "rgb(185, 28, 28)");
   await recordPoolMap(page, "NM3", `${text("Blue team")} BAN`);
   await recordPoolMap(page, "NM4", `${text("Blue team")} PICK`);
-  await expect(headings.nth(3)).toHaveText(/4\.\s*Blue\s*PICK\s*NM4/);
-  await expect(headings.nth(3).getByText("Blue", { exact: true })).toHaveCSS(
+  await expect(rows.nth(3)).toHaveText(/4\.\s*Blue\s*PICK\s*NM4/);
+  await expect(rows.nth(3).getByText("Blue", { exact: true })).toHaveCSS(
     "color",
     "rgb(29, 78, 216)",
   );
+  await rows.nth(3).click();
   await page
     .getByRole("button", {
       name: text("Record win: {team}").replace("{team}", text("Blue team")),
@@ -1271,6 +1285,7 @@ test("bound MP sync updates the red-left scoreboard, fences stale IRC reads and 
   let synced: ReturnType<typeof workspace> | null = null,
     syncs = 0,
     ircReads = 0;
+  let outcomeSources: RefereeMpView["outcomeSources"] = [];
   page.on("response", (response) => {
     if (response.url().endsWith("/irc")) ircReads++;
   });
@@ -1293,6 +1308,8 @@ test("bound MP sync updates the red-left scoreboard, fences stale IRC reads and 
     }
     if (c.action === "sync") {
       syncs++;
+    }
+    if (c.action === "sync" && syncs > 1) {
       const before = state.current(),
         pick = before.projection.activeSelections.find(
           (s) => s.kind !== "ban",
@@ -1313,7 +1330,7 @@ test("bound MP sync updates the red-left scoreboard, fences stale IRC reads and 
       synced = workspace([
         ...before.events,
         win,
-        ...(syncs > 1
+        ...(syncs > 2
           ? [
               {
                 ...win,
@@ -1328,7 +1345,10 @@ test("bound MP sync updates the red-left scoreboard, fences stale IRC reads and 
             ]
           : []),
       ]);
-      if (syncs > 1) {
+      outcomeSources = [
+        { eventId: syncs > 2 ? id(7001) : win.id, review: syncs > 2 },
+      ];
+      if (syncs > 2) {
         binding!.issues = [
           { gameId: 880001, beatmapId: pick.beatmapId, reason: "replay" },
         ];
@@ -1336,7 +1356,7 @@ test("bound MP sync updates the red-left scoreboard, fences stale IRC reads and 
       }
     }
     await r.fulfill({
-      json: { binding, workspace: synced ?? state.current() },
+      json: { binding, workspace: synced ?? state.current(), outcomeSources },
     });
   });
   await page.goto("/referee-panel");
@@ -1345,17 +1365,27 @@ test("bound MP sync updates the red-left scoreboard, fences stale IRC reads and 
   await records(page)
     .getByRole("button", { name: "Automatic sync", exact: true })
     .click();
-  await expect.poll(() => syncs).toBeGreaterThan(0);
-  await expect(
-    records(page).locator('div[data-team="red"] > span'),
-  ).toHaveText("Red");
+  const recordEditor = page.getByRole("region", {
+    name: "Record and correct outcomes",
+  });
+  const row = recordEditor.getByRole("button", { name: /PICK NM2/ });
+  await expect(row).toContainText("Awaiting MP");
+  await expect.poll(() => syncs).toBeGreaterThan(1);
+  await expect(records(page).locator('div[data-team="red"] > span')).toHaveText(
+    "Red",
+  );
   await expect(
     records(page).locator('div[data-team="blue"] > span'),
   ).toHaveText("Blue");
   await expect(records(page).locator("strong")).toHaveText(["1", "0"]);
+  await row.click();
+  await expect(
+    recordEditor.getByText("Scored by MP", { exact: true }),
+  ).toBeVisible();
+  await row.click();
   const count = ircReads;
   await expect.poll(() => ircReads).toBeGreaterThan(count);
-  if (syncs < 2)
+  if (syncs < 3)
     await expect(records(page).locator("strong")).toHaveText(["1", "0"]);
   await expect(
     page.getByText("Replay or repeated beatmap", { exact: true }),
@@ -1371,14 +1401,12 @@ test("bound MP sync updates the red-left scoreboard, fences stale IRC reads and 
   await page
     .getByRole("link", { name: "Review referee records", exact: true })
     .click();
-  const recordEditor = page.getByRole("region", {
-    name: "Record and correct outcomes",
-  });
+  await expect(row).toContainText("Manual review");
   const win = recordEditor.getByRole("button", {
     name: "Record win: Red team",
     exact: true,
   });
   await expect(win).toBeHidden();
-  await recordEditor.getByText("Edit", { exact: true }).click();
+  await row.click();
   await expect(win).toBeVisible();
 });

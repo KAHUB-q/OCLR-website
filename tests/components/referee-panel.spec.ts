@@ -1163,7 +1163,7 @@ test("BP columns keep the IRC log and composer visible while navigating", async 
   isMobile,
 }) => {
   if (!isMobile) await page.setViewportSize({ width: 1024, height: 800 });
-  await setup(page, {
+  const state = await setup(page, {
     connected: true,
     messages: Array.from({ length: 20 }, (_, index) => ({
       id: String(index),
@@ -1172,6 +1172,7 @@ test("BP columns keep the IRC log and composer visible while navigating", async 
       at: new Date().toISOString(),
     })),
   });
+  state.current().defaultSettings.streamerUsername = "Synthetic Streamer";
   await page.addInitScript(() => {
     Object.defineProperty(navigator, "clipboard", {
       configurable: true,
@@ -1183,7 +1184,7 @@ test("BP columns keep the IRC log and composer visible while navigating", async 
       },
     });
   });
-  await page.goto("/referee-panel");
+  await page.goto("/referee-panel?streamer");
   const stages = page.getByRole("navigation", { name: "Referee stages" });
   const preparation = page.locator("#referee-preparation");
   const irc = page.getByRole("complementary", { name: "IRC console" });

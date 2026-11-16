@@ -18,6 +18,9 @@ if (params.has("longnames")) {
   data.teams[0].name = "Red Team · 超長隊伍名稱ABCDEFGHIJKLMNOPQRSTUVWXYZ";
   data.teams[1].name = "Blue Team · 超長隊伍名稱ABCDEFGHIJKLMNOPQRSTUVWXYZ";
 }
+if (params.has("streamer")) {
+  data.defaultSettings.streamerUsername = "Synthetic Streamer";
+}
 data.canRecord = !params.has("readonly");
 createRoot(document.getElementById("root")!).render(
   <NextIntlClientProvider

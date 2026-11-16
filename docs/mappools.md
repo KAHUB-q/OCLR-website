@@ -89,6 +89,12 @@ Preview and Save share the existing server-side [official osu! API](https://osu.
 
 Browser tests launch a guarded, test-only transport fixture through `tests/fixtures/osu-provider.ts`; it requires an isolated test database and the loopback browser server, and supplies synthetic public beatmap responses only. Application code has no provider-mocking switch or authentication bypass. A live server-side client-credentials request on 2026-10-20 also successfully retrieved official beatmap 75. A read-only live check on 2026-10-20 additionally retrieved BID 4184799 using the official batch endpoint and its DT attributes. No tournament records were created. These checks verify metadata/attribute transport, not full user OAuth consent or deployment.
 
+For a pre-release [Showcase](streaming-api.md#showcase-pools-1115), an edition
+Admin can lock the selected saved slots and grant access to individual
+non-participating Streamers. The selection lock freezes slot edits and leaves
+publication separate. Unlocking clears the grant and permits editing again for
+an unpublished pool outside approved fixtures.
+
 Only released pools are returned by public pages/APIs, including direct UUID requests. Unlocked public pools can be edited directly; full revisions remain in private audit history. A completed-fixture lock permanently prevents map/settings/round-label changes, even after unpublishing. Create a new pool rather than rewriting historical competition maps; the results service sets this lock atomically when a fixture is approved. Locked pools reject ordinary publication/content changes; create a replacement pool for new competition content.
 
 ## Internal replay workflow (#185, updated by #692)

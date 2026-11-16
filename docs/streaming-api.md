@@ -45,8 +45,8 @@ per subject; reads use the existing process-local 120/minute credential budget.
 
 `GET /api/v1/streaming/tournaments/{edition}/next?afterFixtureId={uuid}`
 
-Requires `Authorization: Bearer <credential>`. The response uses saved-read
-contract **1.4.0**, `X-OCLR-Read-Contract`, `Cache-Control: no-store` and the existing
+Requires `Authorization: Bearer <credential>`. The endpoint is available from saved-read
+contract **1.4.0** onwards and uses `X-OCLR-Read-Contract`, `Cache-Control: no-store` and the existing
 `{ data, meta: { apiVersion: "1", requestId } }` envelope. HEAD has the same checks
 and no body; OPTIONS is read-only preflight. Writes return 405 `READ_ONLY`.
 
@@ -92,6 +92,68 @@ public pool does not suppress an otherwise visible fixture. The three projection
 are read in one read-only repeatable-read transaction, using the existing services.
 Only credential lease bookkeeping writes after a successful response is prepared;
 no business record, provider cache or published result is modified by this API.
+
+## Showcase pools (#1115)
+
+The Streaming bearer contract adds the following routes in **1.37.0**:
+
+| GET path, under `/api/v1/streaming/tournaments/{edition}/showcase/pools` | Response |
+| --- | --- |
+| Collection root | `data.pools`, with the versions granted to the caller. |
+| `/{poolId}?version={version}` | `data.pool` and the complete `data.entries`. Pass the selected version when importing. The query is optional here. |
+| `/{poolId}/covers/{entryId}?version={version}` | Private image bytes. Use the exact relative URL from the detail response, including its mandatory version query. |
+
+Each request checks the edition-bound Streaming bearer credential, a live Streamer
+role in that edition, and current non-participant status. Pending, deferred and
+accepted registrations, captain appointments, active team captains and roster
+members, and active draft picks block early access. Private records count in these
+checks. Streamer, Admin and Developer roles cannot override this Showcase check.
+A non-archived upcoming or live edition must be published. Fixture assignments
+are unnecessary.
+
+In **Mappool management**, an Admin can lock selection for an unpublished saved
+pool and use **Showcase access** to grant or withdraw access for an individual
+eligible Streamer. The official selection lock uses `mappools.selection_locked_at`
+and freezes saved map slots and pool edits. It is separate from `published_at`
+(public release), `showcase_at` (legacy timing), and `locked_at` (approved-fixture
+protection). Unlocking clears the Showcase grants and creates a new version.
+The grant binds one Streamer to that exact locked revision. Publishing a pool
+ends its early Showcase access, and it becomes readable through ordinary public
+rules. Migration `0100_mappool_showcase_access` starts with zero grants.
+
+The list and detail each use one saved read snapshot. A pool reports its saved
+UUID, name, version, UTC update time, stage UUID and kind, round UUID, name and
+position, and entry count. Entries are sorted by category and position and
+include `slot` (for example `NM1`), `category`, `position`, `beatmapId`,
+`title`, `difficulty` and nullable `coverUrl`. An empty list means no pools are
+available to the caller. An approved empty pool returns count 0 and
+`entries: []`. Preview the detail and import only after operator confirmation.
+Use `beatmapId` to match the ordinary osu! client difficulty.
+
+The cover route rechecks the same gates before fetching artwork and again
+before returning bytes. It only reads bounded JPEG, PNG or WebP from the
+official osu! CDN, using the entry's saved beatmapset ID. The API returns no
+upstream artwork URL, replay, beatmap download, mirror, candidate or private
+management metadata. Existing public map and staff replay routes retain their
+separate access rules. In the Overlay Node service, resolve `coverUrl` against
+the trusted OCLR backend and send the bearer only to that origin. Keep
+artwork and pool data out of shared caches. The API uses `private, no-store`
+and `CDN-Cache-Control: no-store` even for errors. Use a placeholder when
+artwork is absent. Clear protected previews when access fails, and apply a
+new version only after the operator confirms.
+
+A missing, foreign, withdrawn, unlocked or superseded pool or entry returns 404
+with a generic error. A currently approved pool with a mismatched requested
+version returns 409 `SHOWCASE_VERSION_CHANGED`. Refresh the list in either case.
+Malformed or duplicate query parameters return 400. Role or participant blocks
+return 403, and expired/revoked tokens return 401. Artwork failure can return
+502. The 2 MiB cap, HEAD, OPTIONS and CORS follow the existing Streaming
+channel. Successful JSON GETs renew the idle lease. Artwork requests and denied
+reads do not renew it.
+
+The companion selection/import workflow and the real Windows
+osu! → tosu → OBS check are tracked in
+[Overlay #51](https://github.com/OCLR-dev/OCLR-stream-overlay/issues/51).
 
 ## Transport and future Overlay adapter
 

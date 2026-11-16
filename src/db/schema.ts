@@ -993,6 +993,21 @@ export const mappools = pgTable(
     index("pool_public_edition_idx").on(t.editionSlug, t.publishedAt),
   ],
 );
+export const mappoolShowcaseAccess = pgTable(
+  "mappool_showcase_access",
+  {
+    poolId: uuid("pool_id")
+      .notNull()
+      .references(() => mappools.id, { onDelete: "cascade" }),
+    userId: bigint("user_id", { mode: "number" })
+      .notNull()
+      .references(() => users.osuId, { onDelete: "cascade" }),
+    approvedVersion: integer("approved_version").notNull(),
+    approvedLockAt: timestamp("approved_lock_at", { withTimezone: true })
+      .notNull(),
+  },
+  (t) => [primaryKey({ columns: [t.poolId, t.userId] })],
+);
 export const mappoolEntries = pgTable(
   "mappool_entries",
   {

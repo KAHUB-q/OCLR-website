@@ -3,9 +3,20 @@ import { readContractVersion } from "./read-api-version";
 import { z } from "zod";
 import contracts from "./extended-read-contracts.json" with { type: "json" };
 import { readOperations, readSchemas } from "./read-api-operations";
+import {
+  showcasePath,
+  showcasePoolSchema,
+  showcasePoolsSchema,
+  showcaseReadMaxBytes,
+  showcaseVersionQuery,
+} from "./streaming-showcase-contract";
 export function readApiSpecification() {
   const components = Object.fromEntries(
-    Object.entries(readSchemas)
+    Object.entries({
+      ...readSchemas,
+      showcasePools: showcasePoolsSchema,
+      showcasePool: showcasePoolSchema,
+    })
       .filter(([name]) => !(name in contracts.resources))
       .map(([name, schema]) => {
         const { $schema, ...definition } = z.toJSONSchema(schema);
@@ -197,13 +208,126 @@ export function readApiSpecification() {
       },
     ]),
   );
+  const responses = shared.get.responses as Record<
+    string,
+    Record<string, unknown>
+  >;
+  const [editionParameter] = shared.get.parameters as unknown[];
+  const idParameter = (name: string) => ({
+    in: "path",
+    name,
+    required: true,
+    schema: { type: "string", format: "uuid" },
+  });
+  for (const operationId of [
+    "showcasePools",
+    "showcasePool",
+    "showcaseCover",
+  ]) {
+    const detail = operationId !== "showcasePools";
+    const cover = operationId === "showcaseCover";
+    const parameters = [editionParameter];
+    if (detail) parameters.push(idParameter("poolId"));
+    if (cover) parameters.push(idParameter("entryId"));
+    if (detail)
+      parameters.push({
+        in: "query",
+        name: "version",
+        required: cover,
+        schema: {
+          type: "string",
+          pattern: showcaseVersionQuery.toJSONSchema().pattern,
+        },
+        description:
+          "Use the selected pool version. Refresh the list after a 404 or 409.",
+      });
+    const security = [{ StreamingBearer: [] }];
+    const description = cover
+      ? "Read an authenticated cover for an entry in the currently locked, approved pool."
+      : detail
+        ? "Read all saved entries of the assigned Showcase pool version in one snapshot."
+        : "List the current locked and unpublished pool versions granted to this Streamer.";
+    paths[
+      showcasePath +
+        (detail ? "/{poolId}" : "") +
+        (cover ? "/covers/{entryId}" : "")
+    ] = {
+      get: {
+        operationId,
+        description,
+        "x-oclr-issues": [1115],
+        "x-oclr-scopes": ["streaming:read"],
+        "x-oclr-read-only": true,
+        "x-response-size-limit": showcaseReadMaxBytes,
+        security,
+        parameters,
+        responses: {
+          ...responses,
+          ...(cover
+            ? {
+                "502": {
+                  ...responses["503"],
+                  description: "Artwork unavailable",
+                },
+              }
+            : {}),
+          "200": {
+            ...responses["200"],
+            description,
+            headers: {
+              ...(responses["200"].headers as Record<string, unknown>),
+              "Cache-Control": {
+                schema: { type: "string", const: "private, no-store" },
+              },
+              "CDN-Cache-Control": {
+                schema: { type: "string", const: "no-store" },
+              },
+            },
+            content: cover
+              ? Object.fromEntries(
+                  ["image/jpeg", "image/png", "image/webp"].map((type) => [
+                    type,
+                    { schema: { type: "string", format: "binary" } },
+                  ]),
+                )
+              : {
+                  "application/json": {
+                    schema: {
+                      type: "object",
+                      required: ["data", "meta"],
+                      additionalProperties: false,
+                      properties: {
+                        data: { $ref: `#/components/schemas/${operationId}` },
+                        meta: { $ref: "#/components/schemas/ReadMeta" },
+                      },
+                    },
+                  },
+                },
+          },
+        },
+      },
+      head: {
+        ...shared.head,
+        operationId: `${operationId}Head`,
+        "x-oclr-issues": [1115],
+        security,
+        parameters,
+      },
+      options: {
+        ...shared.options,
+        operationId: `${operationId}Preflight`,
+        "x-oclr-issues": [1115],
+        parameters,
+      },
+    };
+  }
   return {
     openapi: "3.1.0",
     info: {
       title: "OCLR Read API",
       version: readContractVersion,
       description:
-        "Versioned saved reads (#269–#272). Public projections remain public-only even with a token. Explicit invalid Authorization never falls back to anonymous/cookies. Reads never fetch providers or mutate business data. Later collection pages require version and restart on 409.",
+        "Versioned saved reads (#269–#272). Public projections remain public-only even with a token. Explicit invalid Authorization never falls back to anonymous/cookies. Saved-data reads do no provider work or business writes. Authenticated Showcase artwork can load an official image. Later collection pages require version and restart on 409.",
     },
     servers: [{ url: "/" }],
     paths,

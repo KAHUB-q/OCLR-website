@@ -22,6 +22,9 @@ document.documentElement.dataset.appearance =
   params.get("appearance") ?? "default";
 const date = new Date("2026-01-01T00:00:00Z");
 const data: MappoolWorkspace = {
+  showcaseStreamers: params.has("showcase")
+    ? [{ osuId: 1100, username: "Synthetic Streamer" }]
+    : undefined,
   rounds: [
     {
       id: "round",
@@ -120,6 +123,7 @@ function Fixture() {
             data={workspace}
             readOnlyMaps={params.has("readonly")}
             canManageReplays={params.has("manage")}
+            canConfigureShowcase={params.has("showcase")}
           />
         </main>
       </NextIntlClientProvider>

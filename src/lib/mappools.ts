@@ -5,6 +5,7 @@ import {
   mappoolEntries,
   mappoolEvents,
   mappoolReplays,
+  mappoolShowcaseAccess,
   mappools,
   resultRevisions,
   refereeRoundPolicies,
@@ -19,6 +20,8 @@ import { assertCapability } from "./auth/staff";
 import { getEdition } from "./content";
 import { resolveHistoricalPool } from "./exhibition-pools";
 import { HttpError } from "./http-error";
+import { hasStreamingAccess } from "./streaming-api";
+import { isShowcaseParticipant } from "./streaming-showcase-access";
 import {
   categories,
   moveMappoolEntries,
@@ -476,6 +479,101 @@ export async function mappoolCommand(
           409,
           "This pool changed. Refresh before confirming.",
         );
+      if (c.action === "pool_selection_lock") {
+        await assertCapability(actor, "configure_tournament", slug, tx);
+        if (pool.publishedAt || pool.lockedAt)
+          throw new HttpError(
+            409,
+            "Only unpublished pools outside approved fixtures can change selection lock.",
+          );
+        if (Boolean(pool.selectionLockedAt) === c.locked) return;
+        const [after] = await tx
+          .update(mappools)
+          .set({
+            selectionLockedAt: c.locked ? new Date() : null,
+            version: pool.version + 1,
+            updatedAt: new Date(),
+          })
+          .where(eq(mappools.id, pool.id))
+          .returning();
+        await tx
+          .delete(mappoolShowcaseAccess)
+          .where(eq(mappoolShowcaseAccess.poolId, pool.id));
+        await tx.insert(mappoolEvents).values({
+          editionSlug: slug,
+          poolId: pool.id,
+          actorId: actor.osuId,
+          action: c.action,
+          before: pool,
+          after,
+        });
+        return;
+      }
+      if (c.action === "pool_showcase") {
+        await assertCapability(actor, "configure_tournament", slug, tx);
+        const grant = and(
+          eq(mappoolShowcaseAccess.poolId, pool.id),
+          eq(mappoolShowcaseAccess.userId, c.userId),
+        );
+        const [previous] = await tx
+          .select()
+          .from(mappoolShowcaseAccess)
+          .where(grant);
+        let approval: { approvedVersion: number; approvedLockAt: Date } | null =
+          null;
+        if (c.enabled) {
+          if (!pool.selectionLockedAt || pool.publishedAt)
+            throw new HttpError(
+              409,
+              "Lock the unpublished pool before granting Showcase access.",
+            );
+          if (
+            !(await hasStreamingAccess(c.userId, slug, tx)) ||
+            (await isShowcaseParticipant(tx, slug, c.userId))
+          )
+            throw new HttpError(
+              403,
+              "Only non-participating Streamers for this edition can receive Showcase access.",
+            );
+          if (
+            previous?.approvedVersion === pool.version &&
+            previous.approvedLockAt.getTime() ===
+              pool.selectionLockedAt.getTime()
+          )
+            return;
+          approval = {
+            approvedVersion: pool.version,
+            approvedLockAt: pool.selectionLockedAt,
+          };
+          await tx
+            .insert(mappoolShowcaseAccess)
+            .values({ poolId: pool.id, userId: c.userId, ...approval })
+            .onConflictDoUpdate({
+              target: [
+                mappoolShowcaseAccess.poolId,
+                mappoolShowcaseAccess.userId,
+              ],
+              set: approval,
+            });
+        } else {
+          if (!previous) return;
+          await tx.delete(mappoolShowcaseAccess).where(grant);
+        }
+        await tx.insert(mappoolEvents).values({
+          editionSlug: slug,
+          poolId: pool.id,
+          actorId: actor.osuId,
+          action: c.action,
+          before: previous ?? null,
+          after: {
+            poolId: pool.id,
+            userId: c.userId,
+            approvedVersion: approval?.approvedVersion ?? null,
+            approvedLockAt: approval?.approvedLockAt ?? null,
+          },
+        });
+        return;
+      }
       if (pool.lockedAt)
         throw new HttpError(
           409,

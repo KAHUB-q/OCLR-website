@@ -1,22 +1,29 @@
 import { db } from "@/db";
 import {
   mappoolEntries,
+  mappoolShowcaseAccess,
   mappools,
   refereeRoundPolicies,
   tournamentRounds,
   tournamentStages,
+  users,
 } from "@/db/schema";
 import { and, eq, inArray, isNotNull } from "drizzle-orm";
 import { z } from "zod";
 import type { User } from "./auth/sessions";
-import { assertReadCapability } from "./auth/staff";
+import { assertReadCapability, hasCapability } from "./auth/staff";
 import type { HistoricalMapSource } from "./competition-detail-read-contracts";
 import { getEdition, getPublicEdition } from "./content";
 import { remoteMode } from "./data-source";
 import { previewConfigurations } from "./difficulty-display";
 import { assertRemoteSubject, frontendResource } from "./frontend-resource";
 import { HttpError } from "./http-error";
-import { loadSavedDifficulties, selectSavedDifficulty } from "./saved-difficulty";
+import {
+  loadSavedDifficulties,
+  selectSavedDifficulty,
+} from "./saved-difficulty";
+import { eligibleBroadcastStaff } from "./streaming-staff";
+import { showcaseParticipantIds } from "./streaming-showcase-access";
 import type { RoundRefereeRule } from "./staff-workspace-read-contracts";
 
 /** Older saved-read backends omit this additive field. Current DB rows retain null. */
@@ -76,6 +83,44 @@ async function databaseMappoolWorkspace(
         .from(mappools)
         .where(eq(mappools.editionSlug, slug))
         .orderBy(mappools.name);
+      const canConfigureShowcase = await hasCapability(
+        actor,
+        "configure_tournament",
+        slug,
+        tx,
+      );
+      const streamers = canConfigureShowcase
+        ? await eligibleBroadcastStaff(tx, slug, "streamer")
+        : [];
+      const participants = await showcaseParticipantIds(
+        tx,
+        slug,
+        streamers.map((user) => user.osuId),
+      );
+      const grants =
+        canConfigureShowcase && pools.length
+          ? await tx
+              .select({
+                poolId: mappoolShowcaseAccess.poolId,
+                osuId: users.osuId,
+                username: users.username,
+              })
+              .from(mappoolShowcaseAccess)
+              .innerJoin(
+                mappools,
+                and(
+                  eq(mappools.id, mappoolShowcaseAccess.poolId),
+                  eq(mappools.version, mappoolShowcaseAccess.approvedVersion),
+                  eq(
+                    mappools.selectionLockedAt,
+                    mappoolShowcaseAccess.approvedLockAt,
+                  ),
+                ),
+              )
+              .innerJoin(users, eq(users.osuId, mappoolShowcaseAccess.userId))
+              .where(eq(mappools.editionSlug, slug))
+              .orderBy(users.username, users.osuId)
+          : [];
       const entries = pools.length
         ? await tx
             .select()
@@ -103,7 +148,23 @@ async function databaseMappoolWorkspace(
         .where(eq(tournamentRounds.editionSlug, slug));
       return {
         rounds,
-        pools,
+        pools: pools.map((pool) => ({
+          ...pool,
+          ...(canConfigureShowcase
+            ? {
+                showcaseGrants: grants
+                  .filter(({ poolId }) => poolId === pool.id)
+                  .map(({ osuId, username }) => ({ osuId, username })),
+              }
+            : {}),
+        })),
+        ...(canConfigureShowcase
+          ? {
+              showcaseStreamers: streamers.filter(
+                (user) => !participants.has(user.osuId),
+              ),
+            }
+          : {}),
         entries: entries.map(historicalSourceRead),
         ...({
           refereeRules: refereeRules.map(

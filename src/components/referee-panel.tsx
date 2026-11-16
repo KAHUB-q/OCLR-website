@@ -4,14 +4,7 @@ import { useSnapshotUpdates } from "./use-poll";
 import { useStaffReadOnly } from "./staff-read-only";
 import Link from "next/link";
 import { refereeMessage } from "@/i18n/referee";
-import {
-  useEffect,
-  useId,
-  useRef,
-  useState,
-  type MouseEvent,
-  type ReactNode,
-} from "react";
+import { useEffect, useId, useRef, useState, type ReactNode } from "react";
 import { useAppTranslations } from "@/i18n/shared";
 import type { RefereeWorkspace } from "@/lib/referee-workspace";
 import type { RefereeCommand } from "@/lib/referee-write-contracts";
@@ -117,6 +110,11 @@ export function RefereePanel({
     };
   }, [accessLost]);
   const [selected, setSelected] = useState("");
+  const [inspectedMapId, setInspectedMapId] = useState<string | null>(null);
+  const mapInspector = useRef<HTMLDivElement>(null);
+  useEffect(() => {
+    if (inspectedMapId) mapInspector.current?.focus();
+  }, [inspectedMapId]);
   const [simulationEpoch, setSimulationEpoch] = useState(0);
   const [simulationEvents, setSimulationEvents] = useState<RefereeEvent[]>([]);
   const [simulationOrders, setSimulationOrders] = useState({
@@ -266,6 +264,7 @@ export function RefereePanel({
       setIrcSelection(null);
       setSentCommands([]);
       setSyncEvents([]);
+      setInspectedMapId(null);
       setError("");
       setSimulationEpoch((v) => v + 1);
       return;
@@ -440,9 +439,6 @@ export function RefereePanel({
     (appliedSkipBans ||
       (data.policy?.steps.some((step) => step.kind === "ban") &&
         data.policy.steps.some((step) => step.kind !== "ban")));
-  const mapActions = appliedSkipBans
-    ? (["pick"] as const)
-    : (["ban", "pick"] as const);
   const redTeam = data.teams.find(
     (team) => team.id === data.fixture.homeTeamId,
   );
@@ -454,9 +450,28 @@ export function RefereePanel({
     ...(blueTeam ? [{ team: blueTeam, side: "blue" as const }] : []),
   ];
   const nextTeamSide = refereeTeamSide(data.fixture, state.nextStep?.teamId);
-  function recordPoolSelection(event: MouseEvent<HTMLButtonElement>) {
-    const { entryId } = event.currentTarget.dataset;
-    if (entryId) void send({ action: "record_selection", entryId });
+  const poolSelections = new Map(
+    state.activeSelections.map((selection) => [selection.entryId, selection]),
+  );
+  const inspectedMap = data.maps.find((entry) => entry.id === inspectedMapId);
+  const inspectedSelection =
+    inspectedMap && poolSelections.get(inspectedMap.id);
+  const mapAction = state.nextStep?.kind;
+  const neutralPick = mapAction === "tb" || inspectedMap?.category === "TB";
+  const inspectorId = `${controlId}-map-inspector`;
+  let mapActionDisabled = disabled || stale || dirtyOrder;
+  let mapActionError: string | undefined;
+  if (inspectedMap && !inspectedSelection && mapAction && !mapActionDisabled) {
+    try {
+      validateRefereeAction(model, {
+        action: "record_selection",
+        entryId: inspectedMap.id,
+      });
+    } catch (error) {
+      mapActionDisabled = true;
+      if (error instanceof Error)
+        mapActionError = refereeMessage(tr, error.message);
+    }
   }
   const exPick = state.activeSelections.find(
     (s) => s.id === state.lastSelectionId,
@@ -1183,137 +1198,138 @@ export function RefereePanel({
                     })
                   : tr("No further configured step")}
               </p>
-              {Array.from(new Set(data.maps.map((m) => m.category))).map(
-                (category) => (
+              <div className={styles.poolGrid}>
+                {Array.from(
+                  new Set(data.maps.map((entry) => entry.category)),
+                ).map((category) => (
                   <section
                     className={styles.poolGroup}
                     key={category}
                     aria-label={category}
                     data-mod={category}
                   >
-                    <h3>
-                      {(
-                        {
-                          NM: "No Mod",
-                          HD: "Hidden",
-                          HR: "Hard Rock",
-                          DT: "Double Time",
-                          FM: "Free Mod",
-                          TB: "Tiebreaker",
-                        } as Record<string, string>
-                      )[category] ?? category}
-                    </h3>
                     {data.maps
-                      .filter((m) => m.category === category)
-                      .map((m) => {
-                        const used = state.activeSelections.find(
-                          (s) => s.entryId === m.id,
-                        );
-                        const usedSide = used
-                          ? refereeTeamSide(data.fixture, used.teamId)
-                          : undefined;
-                        let allowed = true;
-                        try {
-                          validateRefereeAction(model, {
-                            action: "record_selection",
-                            entryId: m.id,
-                          });
-                        } catch {
-                          allowed = false;
-                        }
+                      .filter((entry) => entry.category === category)
+                      .map((entry) => {
+                        const used = poolSelections.get(entry.id);
+                        const open = inspectedMapId === entry.id;
+                          const tileId = `${controlId}-map-${entry.id}`;
+                          const code = `${entry.category}${entry.position}`;
                         return (
-                          <div
-                            className={styles.poolRow}
-                            key={m.id}
-                            tabIndex={used ? 0 : undefined}
-                            data-selected={ircSelection?.entryId === m.id}
+                          <button
+                              id={tileId}
+                            className={`secondary ${styles.poolTile}`}
+                            key={entry.id}
+                            type="button"
+                              aria-label={code}
+                            aria-expanded={open}
+                            aria-controls={inspectorId}
+                              aria-describedby={used ? `${tileId}-status` : undefined}
                             data-selection={used?.kind}
-                            data-team={usedSide}
+                            data-team={
+                              used && refereeTeamSide(data.fixture, used.teamId)
+                            }
+                            onClick={() =>
+                              setInspectedMapId(open ? null : entry.id)
+                            }
                           >
-                            <div
-                              className={styles.poolTitle}
-                              title={m.metadata.title}
-                            >
-                              <strong className={styles.mapCode}>
-                                {m.category}
-                                {m.position}
-                              </strong>{" "}
-                              {m.metadata.title}
-                            </div>
-                            <div className={styles.poolDetail}>
-                              <small
-                                title={`${m.metadata.artist} · ${m.metadata.difficulty}`}
-                              >
-                                {m.metadata.artist} · {m.metadata.difficulty}
-                              </small>
-                              {used ? (
-                                <span
-                                  className={`${styles.poolContext} ${styles.teamInk}`}
-                                  data-team={usedSide}
-                                >
-                                  {teamName(used.teamId)} ·{" "}
-                                  {used.kind.toUpperCase()}
+                              {code}
+                              {used && (
+                                <span id={`${tileId}-status`} hidden>
+                                  {teamName(used.teamId, used.kind === "tb")} · {used.kind.toUpperCase()}
                                 </span>
-                              ) : m.category === "TB" ||
-                                state.nextStep?.kind === "tb" ? (
-                                <div className={styles.poolActions}>
-                                  <button
-                                    type="button"
-                                    className="secondary"
-                                    disabled={
-                                      disabled ||
-                                      stale ||
-                                      dirtyOrder ||
-                                      !allowed
-                                    }
-                                    data-entry-id={m.id}
-                                    onClick={recordPoolSelection}
-                                  >
-                                    {tr("referee_neutral_pick")}
-                                  </button>
-                                </div>
-                              ) : (
-                                <div className={styles.poolActions}>
-                                  {mapActions.flatMap((kind) =>
-                                    teamsBySide.map(({ team, side }) => (
-                                      <button
-                                        key={`${kind}-${team.id}`}
-                                        type="button"
-                                        className="secondary"
-                                        data-team={side}
-                                        data-action={kind}
-                                        aria-label={`${tr(side === "red" ? "Red team" : "Blue team")} ${kind.toUpperCase()}`}
-                                        title={`${tr(side === "red" ? "Red team" : "Blue team")} ${kind.toUpperCase()}`}
-                                        disabled={
-                                          disabled ||
-                                          stale ||
-                                          dirtyOrder ||
-                                          !allowed ||
-                                          state.nextStep?.kind !== kind ||
-                                          (state.nextStep?.teamId !== null &&
-                                            state.nextStep?.teamId !== team.id)
-                                        }
-                                        data-entry-id={m.id}
-                                        onClick={recordPoolSelection}
-                                      >
-                                        {tr(
-                                          side === "red"
-                                            ? "referee_pool_red_short"
-                                            : "referee_pool_blue_short",
-                                        )}{" "}
-                                        {kind.toUpperCase()}
-                                      </button>
-                                    )),
-                                  )}
-                                </div>
                               )}
-                            </div>
-                          </div>
+                          </button>
                         );
                       })}
                   </section>
-                ),
-              )}
+                ))}
+              </div>
+              <div
+                id={inspectorId}
+                className={styles.poolDetail}
+                ref={mapInspector}
+                tabIndex={-1}
+                role="group"
+                aria-labelledby={`${inspectorId}-title`}
+                hidden={!inspectedMap}
+                onKeyDown={(event) => {
+                  if (event.key !== "Escape" || !inspectedMap) return;
+                  event.preventDefault();
+                  document
+                    .getElementById(`${controlId}-map-${inspectedMap.id}`)
+                    ?.focus();
+                  setInspectedMapId(null);
+                }}
+              >
+                {inspectedMap && (
+                  <>
+                    <strong id={`${inspectorId}-title`}>
+                      {inspectedMap.category}
+                      {inspectedMap.position} · {inspectedMap.metadata.title}
+                    </strong>
+                    <small>
+                      {inspectedMap.metadata.artist} ·{" "}
+                      {inspectedMap.metadata.difficulty}
+                    </small>
+                    {inspectedSelection ? (
+                      <span
+                        className={`${styles.poolContext} ${styles.teamInk}`}
+                        data-team={refereeTeamSide(
+                          data.fixture,
+                          inspectedSelection.teamId,
+                        )}
+                      >
+                        {teamName(
+                          inspectedSelection.teamId,
+                          inspectedSelection.kind === "tb",
+                        )}{" "}
+                        · {inspectedSelection.kind.toUpperCase()}
+                      </span>
+                    ) : (
+                      mapAction &&
+                      (neutralPick || nextTeamSide !== "neutral") && (
+                        <button
+                          type="button"
+                          className={`secondary ${styles.poolAction}`}
+                          data-team={neutralPick ? undefined : nextTeamSide}
+                          aria-label={
+                            neutralPick
+                              ? undefined
+                              : `${tr(nextTeamSide === "red" ? "Red team" : "Blue team")} ${mapAction.toUpperCase()}`
+                          }
+                          disabled={mapActionDisabled}
+                          onClick={() => {
+                            document
+                              .getElementById(
+                                `${controlId}-map-${inspectedMap.id}`,
+                              )
+                              ?.focus({ preventScroll: true });
+                            void send({
+                              action: "record_selection",
+                              entryId: inspectedMap.id,
+                            });
+                          }}
+                        >
+                          {neutralPick ? (
+                            tr("referee_neutral_pick")
+                          ) : (
+                            <>
+                              {tr(
+                                nextTeamSide === "red"
+                                  ? "referee_pool_red_short"
+                                  : "referee_pool_blue_short",
+                              )}{" "}
+                              {mapAction.toUpperCase()}
+                            </>
+                          )}
+                        </button>
+                      )
+                    )}
+                    {mapActionError && <small>{mapActionError}</small>}
+                  </>
+                )}
+              </div>
               {state.issues.map((message, i) => (
                 <p className="small muted" key={i}>
                   {refereeMessage(tr, message)}

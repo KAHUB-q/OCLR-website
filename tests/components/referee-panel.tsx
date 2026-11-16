@@ -24,6 +24,7 @@ if (params.has("streamer")) {
 if (params.has("ex") && data.rules) {
   data.rules.exPlayersPerTeam = 1;
 }
+if (params.has("exhibition")) data.round.exhibition = true;
 data.canRecord = !params.has("readonly");
 createRoot(document.getElementById("root")!).render(
   <NextIntlClientProvider

@@ -1492,3 +1492,52 @@ test("bound MP sync updates the red-left scoreboard, fences stale IRC reads and 
   await row.click();
   await expect(win).toBeVisible();
 });
+
+test("keeps Ban and Pick aligned when the exhibition skip switch changes", async ({
+  page,
+  isMobile,
+}) => {
+  await page.goto(
+    `/referee-panel?simulation&exhibition&longnames&theme=${isMobile ? "light" : "dark"}`,
+  );
+  const editor = page.locator("#referee-bp");
+  const ban = editor.getByRole("combobox", { name: "First Ban team" });
+  const pick = editor.getByRole("combobox", { name: "First Pick team" });
+  const skip = editor.getByRole("switch", { name: "Skip bans" });
+  const apply = editor.getByRole("button", { name: "Apply order" });
+  await expect(ban).toHaveValue(id(10));
+  await expect(skip).not.toBeChecked();
+  const left = (await ban.boundingBox())!;
+  const right = (await pick.boundingBox())!;
+  expect(Math.abs(left.width - right.width)).toBeLessThan(1);
+  expect(Math.abs(left.y - right.y)).toBeLessThan(1);
+  expect(left.x + left.width).toBeLessThan(right.x);
+
+  if (isMobile) await skip.tap();
+  else await skip.press("Space");
+  await expect(skip).toBeChecked();
+  await expect(ban).toBeDisabled();
+  await expect(ban.locator("option:checked")).toHaveText("Bans skipped");
+  await expect(pick).toBeEnabled();
+  expect((await ban.boundingBox())?.width).toBe(left.width);
+  expect((await pick.boundingBox())?.x).toBe(right.x);
+  await expect(apply).toBeEnabled();
+  await editor.getByRole("button", { name: "Discard unsaved order" }).click();
+  await expect(skip).not.toBeChecked();
+  await expect(ban).toHaveValue(id(10));
+  await expect(apply).toBeDisabled();
+
+  await skip.click();
+  await apply.click();
+  await expect(skip).toBeChecked();
+  await expect(apply).toBeDisabled();
+  await editor.getByText("Preview Ban / Pick sequence", { exact: true }).click();
+  await expect(
+    editor
+      .getByRole("list", { name: "Preview Ban / Pick sequence" })
+      .getByText("BAN", { exact: true }),
+  ).toHaveCount(0);
+  expect(
+    await page.evaluate(() => document.documentElement.scrollWidth <= innerWidth),
+  ).toBe(true);
+});

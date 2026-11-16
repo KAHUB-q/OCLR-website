@@ -21,6 +21,9 @@ if (params.has("longnames")) {
 if (params.has("streamer")) {
   data.defaultSettings.streamerUsername = "Synthetic Streamer";
 }
+if (params.has("ex") && data.rules) {
+  data.rules.exPlayersPerTeam = 1;
+}
 data.canRecord = !params.has("readonly");
 createRoot(document.getElementById("root")!).render(
   <NextIntlClientProvider

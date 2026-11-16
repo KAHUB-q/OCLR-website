@@ -112,19 +112,17 @@ export function RefereePanel({
   }, [accessLost]);
   const [selected, setSelected] = useState("");
   const [inspectedMapId, setInspectedMapId] = useState<string | null>(null);
-  const [recordDetailsId, setRecordDetailsId] = useState<string | null>(null);
+  const [openRecordIds, setOpenRecordIds] = useState<ReadonlySet<string>>(
+    () => new Set(),
+  );
   const [mpStatus, setMpStatus] = useState<RefereeMpStatus>({
     binding: null,
     error: false,
   });
-  const recordDetails = useRef<HTMLElement>(null);
   const mapInspector = useRef<HTMLDivElement>(null);
   useEffect(() => {
     if (inspectedMapId) mapInspector.current?.focus();
   }, [inspectedMapId]);
-  useEffect(() => {
-    if (recordDetailsId) recordDetails.current?.focus();
-  }, [recordDetailsId]);
   const [simulationEpoch, setSimulationEpoch] = useState(0);
   const [simulationEvents, setSimulationEvents] = useState<RefereeEvent[]>([]);
   const [simulationOrders, setSimulationOrders] = useState({
@@ -275,7 +273,7 @@ export function RefereePanel({
       setSentCommands([]);
       setSyncEvents([]);
       setInspectedMapId(null);
-      setRecordDetailsId(null);
+      setOpenRecordIds(new Set());
       setError("");
       setSimulationEpoch((v) => v + 1);
       return;
@@ -635,10 +633,13 @@ export function RefereePanel({
     const map = data.maps.find((entry) => entry.id === selection.entryId);
     return { selection, attempt, outcome, source, issue, review, status, map };
   });
-  const inspectedRecord = recordItems.find(
-    ({ selection }) => selection.id === recordDetailsId,
-  );
-  const recordInspectorId = `${controlId}-record-details`;
+  function toggleRecordDetails(id: string) {
+    setOpenRecordIds((current) => {
+      const next = new Set(current);
+      if (!next.delete(id)) next.add(id);
+      return next;
+    });
+  }
   function attemptSummary(
     attempt: RefereeAttempt,
     superseded = false,
@@ -665,12 +666,15 @@ export function RefereePanel({
       </>
     );
   }
-  function renderRecordDetails(item: (typeof recordItems)[number]) {
+  function renderRecordDetails(
+    item: (typeof recordItems)[number],
+    titleId: string,
+  ) {
     const { selection, attempt, outcome, source, issue, review, status, map } =
       item;
     return (
       <>
-        <h3 id={`${recordInspectorId}-title`} className={styles.recordHeading}>
+        <h3 id={titleId} className={styles.recordHeading}>
           {selection.category}
           {map?.position}
           {" · "}
@@ -1546,8 +1550,12 @@ export function RefereePanel({
               )}
               <ul className={styles.recordList}>
                 {recordItems.map(
-                  ({ selection, attempt, status, review, map }) => {
-                    const open = inspectedRecord?.selection.id === selection.id;
+                  (item) => {
+                    const { selection, attempt, status, review, map } = item;
+                    const open = openRecordIds.has(selection.id);
+                    const rowId = `${controlId}-record-${selection.id}`;
+                    const detailsId = `${rowId}-details`;
+                    const titleId = `${detailsId}-title`;
                     const team = selection.teamId
                       ? teamName(selection.teamId, false)
                       : "";
@@ -1566,21 +1574,29 @@ export function RefereePanel({
                         ? refereeMessage(tr, attempt.status)
                         : tr("Banned"));
                     return (
-                      <li key={selection.id}>
+                      <li
+                        key={selection.id}
+                        onKeyDown={(event) => {
+                          if (event.key !== "Escape" || !open) return;
+                          event.preventDefault();
+                          document
+                            .getElementById(rowId)
+                            ?.focus({ preventScroll: true });
+                          toggleRecordDetails(selection.id);
+                        }}
+                      >
                         <button
-                          id={`${controlId}-record-${selection.id}`}
+                          id={rowId}
                           type="button"
                           className={styles.recordRow}
                           aria-expanded={open}
-                          aria-controls={recordInspectorId}
+                          aria-controls={detailsId}
                           data-current={
                             attemptOpen && selection.id === currentPick?.id
                               ? ""
                               : undefined
                           }
-                          onClick={() =>
-                            setRecordDetailsId(open ? null : selection.id)
-                          }
+                          onClick={() => toggleRecordDetails(selection.id)}
                         >
                           <span className={styles.recordStep}>
                             {selection.stepIndex + 1}.
@@ -1598,7 +1614,12 @@ export function RefereePanel({
                               {map?.position}
                             </strong>{" "}
                             {selection.exMode && (
-                              <span className={styles.recordContext}>EX</span>
+                              <span
+                                className={styles.recordEx}
+                                title={tr("EX mode")}
+                              >
+                                EX
+                              </span>
                             )}
                           </span>{" "}
                           <span className={styles.recordOutcomeLine}>
@@ -1624,31 +1645,19 @@ export function RefereePanel({
                             </span>
                           </span>
                         </button>
+                        <section
+                          id={detailsId}
+                          className={styles.recordDetails}
+                          aria-labelledby={open ? titleId : undefined}
+                          hidden={!open}
+                        >
+                          {open && renderRecordDetails(item, titleId)}
+                        </section>
                       </li>
                     );
                   },
                 )}
               </ul>
-              <section
-                id={recordInspectorId}
-                className={styles.recordInspector}
-                ref={recordDetails}
-                tabIndex={-1}
-                aria-labelledby={`${recordInspectorId}-title`}
-                hidden={!inspectedRecord}
-                onKeyDown={(event) => {
-                  if (event.key !== "Escape" || !inspectedRecord) return;
-                  event.preventDefault();
-                  document
-                    .getElementById(
-                      `${controlId}-record-${inspectedRecord.selection.id}`,
-                    )
-                    ?.focus();
-                  setRecordDetailsId(null);
-                }}
-              >
-                {inspectedRecord && renderRecordDetails(inspectedRecord)}
-              </section>
               <details className={styles.recordHistory}>
                 <summary>{tr("Full correction history")}</summary>
                 <ol className={styles.history}>

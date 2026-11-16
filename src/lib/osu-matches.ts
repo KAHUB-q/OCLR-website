@@ -4,6 +4,7 @@ import { z } from "zod";
 import { osuApi } from "./osu-api";
 import { HttpError } from "./http-error";
 import {
+  hasMatchClosureEvent,
   matchSourceSchema,
   OPEN_MATCH_WARNING,
   type MatchGame,
@@ -341,10 +342,20 @@ export async function fetchMatchSource(matchId: number): Promise<MatchSource> {
         }
         games.set(g.id, g);
       }
+      const detail = object(e.detail);
+      // Unmapped legacy MP events are returned as `other` with their original text.
+      const abandoned =
+        detail.type === "other" &&
+        e.user_id === null &&
+        e.game == null &&
+        typeof detail.text === "string" &&
+        /^(?:ABANDON|Match abandoned\.?)$/i.test(detail.text.trim());
       const event = {
         id,
         at: timestamp(e.timestamp),
-        type: text(object(e.detail).type, 80) ?? "unknown",
+        type: abandoned
+          ? "match-abandoned"
+          : (text(detail.type, 80) ?? "unknown"),
         actorOsuId: number(e.user_id, 1),
         gameId: g?.id ?? null,
       };
@@ -391,7 +402,13 @@ export async function fetchMatchSource(matchId: number): Promise<MatchSource> {
     complete = false;
     warnings.add("The current game is missing from the retrieved history.");
   }
-  if (!first.match.end_time || first.current_game_id)
+  if (
+    (!first.match.end_time || first.current_game_id) &&
+    !hasMatchClosureEvent({
+      events: orderedEvents,
+      latestEventId: first.latest_event_id,
+    })
+  )
     warnings.add(OPEN_MATCH_WARNING);
   const scoredIds = new Set(
     [...games.values()].flatMap((game) =>

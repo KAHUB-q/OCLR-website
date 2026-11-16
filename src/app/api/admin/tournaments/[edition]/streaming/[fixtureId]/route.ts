@@ -34,6 +34,7 @@ export async function POST(request: Request, context: Context) {
       input.action === "set_vod"
     ) {
       revalidateCommittedPath(`/tournaments/${edition}/results`);
+      revalidateCommittedPath(`/tournaments/${edition}/schedule`);
       revalidateCommittedPath(`/tournaments/${edition}/matches/${fixtureId}`);
     }
     return NextResponse.json(saved, {

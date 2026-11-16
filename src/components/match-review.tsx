@@ -15,7 +15,11 @@ import { formatDate } from "@/lib/editions";
 import Link from "next/link";
 import { useState } from "react";
 import type { MatchReview } from "@/lib/result-review";
-import type { GameDecision } from "@/lib/match-model";
+import {
+  hasMatchClosureEvent,
+  OPEN_MATCH_WARNING,
+  type GameDecision,
+} from "@/lib/match-model";
 import { previewMatch } from "@/lib/match-scoring";
 import { ConfirmMutation } from "./confirm-mutation";
 import styles from "./match-review.module.css";
@@ -105,6 +109,9 @@ function SourceReview({
   const tr = useAppTranslations();
 
   const source = data.source!;
+  const warnings = hasMatchClosureEvent(source)
+    ? source.warnings.filter((warning) => warning !== OPEN_MATCH_WARNING)
+    : source.warnings;
   const exhibition = data.context.round.stage === "exhibition";
   const [decisions, setDecisions] = useState<Record<number, GameDecision>>({});
   const [selected, setSelected] = useState<number[]>([]);
@@ -161,9 +168,9 @@ function SourceReview({
     <ReadOnlyFields>
       <section className={styles.reviewSection} aria-labelledby="games-heading">
         <h2 id="games-heading">{tr("Review MP games")}</h2>
-        {!!source.warnings.length && (
+        {!!warnings.length && (
           <ul className={`notice ${styles.messages}`}>
-            {source.warnings.map((warning, index) => (
+            {warnings.map((warning, index) => (
               <li key={index}>{matchReviewMessage(tr, warning)}</li>
             ))}
           </ul>

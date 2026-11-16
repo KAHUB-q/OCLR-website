@@ -102,6 +102,20 @@ export const matchSourceSchema = z
   })
   .strict();
 export type MatchSource = z.infer<typeof matchSourceSchema>;
+
+export function hasMatchClosureEvent({
+  events,
+  latestEventId,
+}: Pick<MatchSource, "events" | "latestEventId">) {
+  return events.some(
+    (event) =>
+      event.id === latestEventId &&
+      event.actorOsuId === null &&
+      event.gameId === null &&
+      (event.type === "match-disbanded" || event.type === "match-abandoned"),
+  );
+}
+
 export type MatchGame = z.infer<typeof matchGameSchema>;
 export type MatchScore = z.infer<typeof matchScoreSchema>;
 export const gameDecisionSchema = z

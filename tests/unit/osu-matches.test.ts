@@ -2,6 +2,7 @@ import { beforeEach, describe, expect, it, vi } from "vitest";
 import { osuApi } from "../../src/lib/osu-api";
 import { fetchMatchSource, parseMatchId } from "../../src/lib/osu-matches";
 import { compareMatchSources } from "../../src/lib/match-source";
+import { OPEN_MATCH_WARNING } from "../../src/lib/match-model";
 import { HttpError } from "../../src/lib/http";
 import {
   syntheticApiGame,
@@ -219,6 +220,51 @@ describe("official MP history normalization", () => {
     expect(changing.complete).toBe(false);
     expect(changing.warnings.join(" ")).toContain("changed");
   });
+  it.each([
+    { type: "match-abandoned" },
+    { type: "other", text: "Match abandoned." },
+    { type: "match-disbanded" },
+  ])(
+    "recognizes $type as a terminal room event without finishing its game",
+    async (detail) => {
+      const unfinishedGame = { ...syntheticApiGame(1), end_time: null };
+      const page = syntheticPage([
+        syntheticEvent(1, unfinishedGame),
+        { ...syntheticEvent(2), detail },
+      ]);
+      vi.mocked(osuApi).mockResolvedValue({
+        ...page,
+        match: { ...page.match, end_time: null },
+        current_game_id: unfinishedGame.id,
+      });
+
+      const source = await fetchMatchSource(syntheticMatchId);
+      expect(source.complete).toBe(true);
+      expect(source.warnings).not.toContain(OPEN_MATCH_WARNING);
+      expect(source.currentGameId).toBe(unfinishedGame.id);
+      expect(source.games[0].endTime).toBeNull();
+      expect(source.match.endTime).toBeNull();
+    },
+  );
+
+  it("keeps the open-room warning when the latest event does not confirm closure", async () => {
+    const page = syntheticPage([
+      { ...syntheticEvent(1), detail: { type: "match-abandoned" } },
+      {
+        ...syntheticEvent(2),
+        user_id: 1001,
+        detail: { type: "other", text: "ABANDON" },
+      },
+    ]);
+    vi.mocked(osuApi).mockResolvedValue({
+      ...page,
+      match: { ...page.match, end_time: null },
+    });
+    expect((await fetchMatchSource(syntheticMatchId)).warnings).toContain(
+      OPEN_MATCH_WARNING,
+    );
+  });
+
   it("preserves incomplete games, missing metadata and upstream differences for explicit review", async () => {
     const game = syntheticApiGame(1);
     const raw = { ...game, end_time: null, beatmap: null };

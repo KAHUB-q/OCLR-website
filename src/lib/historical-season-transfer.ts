@@ -87,7 +87,10 @@ function sortNameEvidence(names: HistoricalNameEvidence[]) {
 }
 
 async function readNameEvidence(reader: Reader, slug: string) {
-  const utc = (column: typeof playerNames.firstObservedAt) =>
+  const utc = (
+    column:
+      typeof playerNames.firstObservedAt | typeof playerNames.lastObservedAt,
+  ) =>
     sql<
       string | null
     >`to_char(${column} AT TIME ZONE 'UTC', 'YYYY-MM-DD"T"HH24:MI:SS.US"Z"')`;

@@ -123,7 +123,7 @@ describe("Liru Wiki article (#334, #442, #536)", () => {
   );
 });
 
-it("links the Liru gallery and serves all seven portraits at both sizes", () => {
+it("links the Liru gallery and includes every portrait at both sizes", () => {
   const native = createTranslator({ locale: "en", messages: en.ui });
   const tr = appTranslator(
     (key, values) => native(key as keyof typeof en.ui, values),
@@ -133,8 +133,8 @@ it("links the Liru gallery and serves all seven portraits at both sizes", () => 
   const profile = articles.find((article) => article.slug === "liru")!;
   const gallery = articles.find((article) => article.slug === "liru-gallery")!;
   expect(wikiHref(profile.related!.slug)).toBe(wikiHref(gallery.slug));
-  expect(gallery.gallery).toHaveLength(7);
-  expect(new Set(gallery.gallery!.map((figure) => figure.src)).size).toBe(7);
+  expect(gallery.gallery).toHaveLength(12);
+  expect(new Set(gallery.gallery!.map((figure) => figure.src)).size).toBe(12);
   for (const figure of gallery.gallery!) {
     expect(webpSize(`public${figure.src}`)).toEqual({
       width: 1024,

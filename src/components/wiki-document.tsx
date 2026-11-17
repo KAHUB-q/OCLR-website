@@ -1,12 +1,17 @@
+import { randomInt } from "node:crypto";
 import Image from "next/image";
 import Link from "next/link";
 import { getAppTranslations } from "@/i18n/server";
+import { currentUser } from "@/lib/auth/user";
+import { remoteMode } from "@/lib/data-source";
 import {
   wikiArticles,
   wikiHref,
   type WikiArticle,
   type WikiText,
 } from "@/lib/wiki-articles";
+import { WikiGallery } from "./wiki-gallery";
+import { SignedMessageBoard } from "./player-message-board";
 
 function WikiTextContent({ text }: { text: WikiText }) {
   return typeof text === "string"
@@ -24,6 +29,11 @@ function WikiTextContent({ text }: { text: WikiText }) {
 
 export async function WikiDocument({ article }: { article: WikiArticle }) {
   const tr = await getAppTranslations();
+  const remote = remoteMode();
+  const viewer =
+    article.gallery?.length && !remote
+      ? await currentUser().catch(() => null)
+      : null;
   return (
     <div className="container page wiki-page information-page">
       <nav className="wiki-articles" aria-label={tr("Wiki articles")}>
@@ -48,7 +58,9 @@ export async function WikiDocument({ article }: { article: WikiArticle }) {
             </p>
             <h1 id="wiki-title">{article.title}</h1>
           </header>
-          <p className="information-intro">{article.intro}</p>
+          {article.intro && (
+            <p className="information-intro">{article.intro}</p>
+          )}
           {article.related && (
             <p>
               <Link href={wikiHref(article.related.slug)}>
@@ -56,24 +68,27 @@ export async function WikiDocument({ article }: { article: WikiArticle }) {
               </Link>
             </p>
           )}
-          {article.gallery && (
-            <div className="wiki-gallery">
-              {article.gallery.map((figure, index) => (
-                <figure key={figure.src}>
-                  <a href={figure.src} target="_blank" rel="noreferrer">
-                    <Image
-                      src={figure.previewSrc}
-                      alt={figure.alt}
-                      width={figure.width}
-                      height={figure.height}
-                      loading={index < 3 ? "eager" : "lazy"}
-                      unoptimized
-                    />
-                  </a>
-                  <figcaption>{figure.caption}</figcaption>
-                </figure>
-              ))}
-            </div>
+          {!!article.gallery?.length && (
+            <>
+              <WikiGallery
+                figures={article.gallery}
+                initialIndex={randomInt(article.gallery.length)}
+                showAnotherLabel={tr("Show another look")}
+              />
+              <section
+                className="wiki-gallery-comments"
+                aria-labelledby="wiki-gallery-comments"
+              >
+                <h2 id="wiki-gallery-comments">{tr("Message board")}</h2>
+                <SignedMessageBoard
+                  endpoint="/api/wiki/liru-gallery/messages"
+                  name={article.title}
+                  signedIn={!!viewer}
+                  viewerId={viewer?.osuId}
+                  readOnly={remote}
+                />
+              </section>
+            </>
           )}
           {article.sections.map((section) => (
             <section key={section.id} id={section.id}>

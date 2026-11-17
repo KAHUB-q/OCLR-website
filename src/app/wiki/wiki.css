@@ -80,13 +80,79 @@
 }
 .wiki-gallery {
   display: grid;
-  grid-template-columns: repeat(3, minmax(0, 1fr));
-  gap: clamp(1.5rem, 3vw, 2.75rem) clamp(0.75rem, 2vw, 1.5rem);
-  margin-block-start: clamp(1.5rem, 4vw, 3rem);
+  grid-template-columns: minmax(0, 23rem) minmax(0, 18rem);
+  align-items: center;
+  gap: clamp(1.5rem, 5vw, 4.5rem);
+  max-width: 52rem;
+  margin-inline: auto;
+}
+.themed-site button.wiki-gallery-shuffle {
+  --shuffle-accent: color-mix(
+    in srgb,
+    var(--site-primary) 82%,
+    var(--site-accent)
+  );
+  inline-size: clamp(7rem, 11vw, 8rem);
+  aspect-ratio: 1;
+  flex-direction: column;
+  gap: 0.45rem;
+  padding: 0.75rem;
+  border-radius: 50%;
+  border-color: color-mix(in srgb, var(--site-accent) 70%, var(--site-primary));
+  background: linear-gradient(
+    140deg,
+    var(--shuffle-accent),
+    var(--site-primary)
+  );
+  box-shadow: 0 5px 16px
+    color-mix(in srgb, var(--site-primary) 28%, transparent);
+  font-size: 1rem;
+  line-height: 1.2;
+}
+.themed-site button.wiki-gallery-shuffle:hover {
+  background: linear-gradient(
+    140deg,
+    var(--shuffle-accent),
+    var(--site-primary-hover)
+  );
+}
+.wiki-gallery-shuffle svg {
+  flex: none;
+}
+.wiki-gallery-shuffle:focus-visible {
+  outline-offset: 4px;
+}
+.themed-site .wiki-page .information-document > .wiki-gallery-comments {
+  width: 100%;
+  margin: clamp(2.5rem, 6vw, 4rem) 0 0;
+  padding-block-start: 1.25rem;
+  border-top: 1px solid var(--site-border);
+}
+.themed-site .wiki-page .information-document .wiki-gallery-comments h2 {
+  --document-font-size: var(--text-heading);
+  --document-line-height: 1.4;
+}
+.wiki-gallery-comments time {
+  margin-inline-start: 0.5rem;
+}
+.wiki-gallery-comments textarea {
+  display: block;
+  width: 100%;
 }
 .wiki-gallery figure {
   min-width: 0;
   margin: 0;
+}
+.wiki-gallery figcaption {
+  margin-block-start: 0.75rem;
+  font-size: clamp(1.125rem, 2.5vw, 1.5rem);
+  font-weight: 700;
+  line-height: 1.4;
+  text-align: center;
+}
+.wiki-gallery figcaption .player-reactions {
+  justify-content: center;
+  margin-block-start: 0.65rem;
 }
 .wiki-gallery a {
   display: block;
@@ -100,12 +166,6 @@
   display: block;
   width: 100%;
   height: auto;
-}
-.wiki-gallery figcaption {
-  margin-top: 0.65rem;
-  font-size: var(--text-support);
-  font-weight: 650;
-  overflow-wrap: anywhere;
 }
 @media (hover: hover) and (prefers-reduced-motion: no-preference) {
   .wiki-gallery img {
@@ -127,7 +187,12 @@
 }
 @media (max-width: 760px) {
   .wiki-gallery {
-    grid-template-columns: repeat(2, minmax(0, 1fr));
+    grid-template-columns: minmax(0, 23rem);
+    justify-content: center;
+    gap: 1rem;
+  }
+  .wiki-gallery-controls {
+    text-align: center;
   }
   .wiki-page {
     padding-block: 1.5rem 3rem;

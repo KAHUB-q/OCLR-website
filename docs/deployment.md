@@ -6,6 +6,46 @@ For official osu! v2 difficulty snapshots, see the [background mappool difficult
 
 The deployment target is a Rocky Linux 10 Node.js application host, an existing separate PostgreSQL server and an existing separate Nginx proxy. CI verifies Node.js 24 and PostgreSQL 17; the actual external database version, permissions and networking must be rehearsed before launch. No deployment, domain, DNS or OAuth application has been provisioned by this repository. The local isolated tests are not a production launch.
 
+## Daily o!TR refresh
+
+The [o!TR service](systemd/oclr-otr-ratings.service) and
+[timer](systemd/oclr-otr-ratings.timer) refresh the shared PostgreSQL rating
+cache (migration `0097_otr_rating_cache`) at **03:00 Asia/Taipei** every day.
+If the host misses the scheduled run, systemd catches up once when the timer
+starts. The public profile and S11 player directory only read the cache.
+
+The worker uses public native and historical player listings, skips `dev-`
+preview editions and deduplicates by osu! UID. It sends requests one at a time,
+at least a second apart. A PostgreSQL advisory lock prevents overlapping
+workers using the same database. Run a single timer per o!TR key across
+independent databases. A player is attempted at most once per Taipei calendar
+day. Provider failures preserve the previous rating; HTTP 429 or an invalid
+key stops the run. The worker logs only status and counts. It does not retry
+automatically before the next scheduled run.
+
+Set `OTR_API_KEY` in the protected `/etc/oclr/runtime.env`. Without the key,
+the worker reports `disabled`; pages can still display cached values. The
+existing runtime database role needs read access to the public player sources
+and SELECT, INSERT and UPDATE on `otr_rating_cache`. With the approved operator
+environment already exported, `npm run db:refresh-otr-ratings -- --dry-run`
+shows candidate counts without writing or contacting o!TR. Use `--apply` to
+run once from the same reviewed release. New players appear after the next
+successful refresh.
+
+After a reviewed release is installed, an authorized operator can enable the
+timer. Keep the installed units root-owned. Check the Node path, service
+account and release paths before installation, as for the leaderboard timer.
+
+```sh
+sudo install -o root -g root -m 0644 docs/systemd/oclr-otr-ratings.service /etc/systemd/system/oclr-otr-ratings.service
+sudo install -o root -g root -m 0644 docs/systemd/oclr-otr-ratings.timer /etc/systemd/system/oclr-otr-ratings.timer
+sudo systemd-analyze verify /etc/systemd/system/oclr-otr-ratings.service /etc/systemd/system/oclr-otr-ratings.timer
+sudo systemctl daemon-reload
+sudo systemctl enable --now oclr-otr-ratings.timer
+sudo systemctl list-timers oclr-otr-ratings.timer
+sudo journalctl -u oclr-otr-ratings.service -n 20 --no-pager
+```
+
 ## Recorded release evidence — 2026-10-23
 
 The organizer confirmed the real multi-account captain/staff draft rehearsal passed, in response to the checklist covering captain-direct/staff-on-behalf picks, concurrent conflicts, pause/reconnect and spectator/OBS synchronization. Earlier organizer confirmations cover live OAuth/API access, Rocky/Nginx HTTPS deploy/update, two persisted staging upgrades (one with a migration), backup restore and the designated privacy contact. These are organizer attestations, not production checks performed by the coding agent.

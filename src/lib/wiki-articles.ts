@@ -672,6 +672,20 @@ function liruGallery(tr: AppTranslator): WikiArticle {
         "Liru wears a navy blazer with lavender piping, a matching bow and a purple plaid skirt.",
       ),
     ],
+    [
+      "sprout-fantasy-traveler",
+      tr("Sprout and lavender fantasy traveler"),
+      tr(
+        "Liru wears a green cape embroidered with leaves and a layered purple skirt, with a brown satchel and lace-up boots.",
+      ),
+    ],
+    [
+      "spring-garden-dress",
+      tr("Spring garden dress"),
+      tr(
+        "Liru carries a wicker basket in a cream dress with petal sleeves, a green sash and purple floral embroidery.",
+      ),
+    ],
   ];
   return {
     slug: "liru-gallery",

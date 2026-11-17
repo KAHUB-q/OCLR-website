@@ -21,11 +21,13 @@ async function publicPlayerIds() {
     for (const { archive } of editions) {
       for (const player of archive?.players ?? []) ids.add(player.osuId);
       for (const replacement of archive?.rosterReplacements ?? []) {
-        for (const player of replacement.people) ids.add(player.osuId);
+        for (const player of replacement.people) {
+          if (player.osuId !== null) ids.add(player.osuId);
+        }
       }
     }
     return [...ids]
-      .filter((id): id is number => Number.isSafeInteger(id) && Number(id) > 0)
+      .filter((id) => Number.isSafeInteger(id) && id > 0)
       .sort((a, b) => a - b);
   });
 }

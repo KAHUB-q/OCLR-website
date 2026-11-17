@@ -56,7 +56,8 @@
     "prebuild": "node --import tsx scripts/build-appearance-styles.ts",
     "db:refresh-player-leaderboard": "tsx scripts/refresh-player-leaderboard.ts",
     "db:refresh-beatmap-difficulties": "tsx scripts/refresh-beatmap-difficulties.ts",
-    "db:refresh-otr-ratings": "node --import tsx scripts/refresh-otr-ratings.ts"
+    "db:refresh-otr-ratings": "node --import tsx scripts/refresh-otr-ratings.ts",
+    "db:refresh-etx-ratings": "tsx scripts/refresh-etx-ratings.ts"
   },
   "dependencies": {
     "@cm3tahkuh/react-tournament-brackets": "^1.1.6",

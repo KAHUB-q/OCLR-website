@@ -842,6 +842,111 @@ function liruGallery(tr: AppTranslator): WikiArticle {
         "Liru wears a blue dress with a white lace apron, holds a small brass key, and has a pocket watch at her waist.",
       ),
     ],
+    [
+      "rose-cookie-tea-party",
+      tr("Rose cookie tea party"),
+      tr(
+        "Liru wears a dusty rose dress with cream trim and holds a round cookie tin decorated with a rose.",
+      ),
+    ],
+    [
+      "sea-salt-sailor-dress",
+      tr("Sea salt sailor dress"),
+      tr(
+        "Liru wears a cream sailor dress with light blue trim and mint green tights, and carries a shell-shaped bag.",
+      ),
+    ],
+    [
+      "apricot-traveler",
+      tr("Apricot traveler"),
+      tr(
+        "Liru waves in an apricot jacket with a paper plane patch and carries a small suitcase decorated with a purple flower.",
+      ),
+    ],
+    [
+      "peach-soda-dress",
+      tr("Peach soda dress"),
+      tr(
+        "Liru holds a bottle of peach soda and wears a peach-pink dress with a cream bow and dusty blue tights.",
+      ),
+    ],
+    [
+      "matcha-bear-outfit",
+      tr("Matcha bear outfit"),
+      tr(
+        "Liru hugs a teddy bear while wearing a matcha green toggle jacket, a cream skirt, and cocoa brown tights.",
+      ),
+    ],
+    [
+      "blueberry-cream-outfit",
+      tr("Blueberry cream outfit"),
+      tr(
+        "Liru carries a jar with a blueberry motif that matches her cream blouse and wears a blue-violet skirt.",
+      ),
+    ],
+    [
+      "berry-tulip-bouquet",
+      tr("Berry cardigan and tulips"),
+      tr(
+        "Liru wears a berry-purple cardigan over a cream pinafore and holds a bouquet of pink and purple tulips.",
+      ),
+    ],
+    [
+      "starry-dream-dress",
+      tr("Starry dream dress"),
+      tr(
+        "Liru waves in a pale blue dress with stars along the hem and holds a crescent-shaped purse.",
+      ),
+    ],
+    [
+      "caramel-pudding-cook",
+      tr("Caramel pudding cook"),
+      tr(
+        "Liru wears a caramel-colored apron and holds up a wooden spoon and a plate of caramel pudding.",
+      ),
+    ],
+    [
+      "lavender-library-outfit",
+      tr("Lavender library outfit"),
+      tr(
+        "Liru wears a lavender sweater with a book emblem and a plaid skirt, and holds a book with a flower on the cover.",
+      ),
+    ],
+    [
+      "moon-cat-cape",
+      tr("Moon cat cape"),
+      tr(
+        "Liru holds a sleeping white cat and wears a lavender cape with a crescent clasp and a skirt with a moon and cat motif.",
+      ),
+    ],
+    [
+      "berry-chocolate-outfit",
+      tr("Berry chocolate outfit"),
+      tr(
+        "Liru waves in a berry-red cardigan with heart-shaped buttons and a chocolate brown pleated skirt.",
+      ),
+    ],
+    [
+      "peach-bow-outfit",
+      tr("Peach bow outfit"),
+      tr(
+        "Liru wears a peach-pink jacket over a cream pleated skirt with a large two-tone bow at the waist.",
+      ),
+    ],
+    [
+      "star-candy-mage",
+      tr("Star candy mage"),
+      tr(
+        "Liru wears a lilac cape with star charms and carries a star-tipped wand and a spellbook.",
+      ),
+    ],
+    [
+      "mint-lily-of-the-valley-dress",
+      tr("Mint lily of the valley dress"),
+      tr(
+        "Liru wears a sleeveless mint green dress with a scalloped hem and holds a bouquet of white lily of the valley flowers.",
+      ),
+    ],
   ];
   return {
     slug: "liru-gallery",

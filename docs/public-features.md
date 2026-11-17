@@ -85,7 +85,7 @@ Page URL state uses `q`, `team`, `role`, `sort`, `group`, `rankMin`, `rankMax`, 
 
 The removed `ranked` and `hasPp` presence filters are ignored in old links and cleared on the next filter update. Advanced rank/PP ranges are grouped in a shared collapsible panel.
 
-The S11 directory also shows the current osu!standard o!TR rating from the same lookup used by the OCLR player profile. It loads ratings for the complete public roster using the server's `OTR_API_KEY`. When ratings are available, visitors can sort by highest or lowest (`otr-desc` or `otr-asc`) and set inclusive decimal bounds (`otrMin` and `otrMax`) under Advanced filters. Players without a rating appear last in either sort direction and are excluded from rating ranges. Saved remote mode and synthetic previews skip these live lookups.
+The S11 directory also shows the current osu!standard o!TR rating from the same PostgreSQL cache used by the OCLR player profile. It reads ratings for the complete public roster in one query. When ratings are available, visitors can sort by highest or lowest (`otr-desc` or `otr-asc`) and set inclusive decimal bounds (`otrMin` and `otrMax`) under Advanced filters. Players without a rating appear last in either sort direction and are excluded from rating ranges. Saved remote mode does not include o!TR ratings, and the worker skips synthetic preview editions.
 
 S11 Admins import SIP and ETX from **Registrations → Import SIP or ETX ratings**. The SkillIssue export matches a unique current username without regard to case. The Elitebotix export matches osu! ID. The import reports unmatched rows and blank scores, updates matched accepted players and preserves saved ratings omitted from a later export. ETX retains provisional and outdated flags. The directory shows the totals and supports ascending or descending sort and inclusive SIP and ETX bounds under Advanced filters. Saved remote reads display these values when the backend provides them.
 
@@ -106,15 +106,14 @@ Published directory and team entries link to `/players/[osuId]`; `?edition=<slug
 Snapshots expire after **30 minutes** and are labeled with their source, ruleset and last successful update. The PostgreSQL cache holds at most **1,000 ID/ruleset keys**, evicting oldest attempts. In-process coalescing and database refresh claims deduplicate requests across instances; late claims cannot overwrite newer work. Refresh attempts are spaced by at least one minute per key, with five-minute backoff after failure. Temporary failures retain the last good snapshot with a stale notice; closed/deleted profiles are unavailable while their previous snapshot remains stored. Per-process provider pacing/queue limits still apply; account for aggregate traffic when scaling processes.
 
 The player profile summary can also show the current osu!standard tournament
-rating from [o!TR](https://otr.stagec.net). Set `OTR_API_KEY` in the server's
-runtime environment to enable lookups for publicly listed players. The note
-links to the provider profile and shows when the rating was fetched. The
-player profile and S11 directory share a PostgreSQL cache keyed by osu! UID.
-The server refreshes a saved rating after 24 hours and checks again after one
-hour when o!TR confirms a player has no rating. On a temporary API failure, it
-serves the last saved rating and backs off for five minutes. The column shows
-“No rating data” when the key or rating is unavailable, including in saved
-remote development mode.
+rating from [o!TR](https://otr.stagec.net). The note links to the provider
+profile and shows when the rating was fetched. The player profile and S11
+directory share a PostgreSQL cache keyed by osu! UID. A background worker
+refreshes it once a day; visiting or prefetching either page does not contact
+o!TR. Temporary failures keep the last saved rating. A confirmed missing rating
+clears the saved value, and a player with no cached rating shows “No rating
+data” until a successful lookup. See [daily o!TR refresh](deployment.md#daily-otr-refresh)
+for the timer and key configuration.
 
 Profile lookup is API-only: the protected `POST /api/admin/profiles` supplies in-context Captain identity enrichment and throttled refresh for Admins with registration permissions. There is no standalone Profile or Beatmap lookup page; beatmap previews and bulk lookup stay in the Mappool workflow. Mappoolers, Referees, captains and ordinary accounts have no lookup privilege through those roles. Lookup never creates a user, publishes participation, changes eligibility or approves a registration. Use the organizer regression input `https://osu.ppy.sh/users/651307/osu` after configuring real API credentials. Automated fixtures are synthetic; the unauthenticated official request returned HTTP 403, so that player's current statistics remain unverified.
 

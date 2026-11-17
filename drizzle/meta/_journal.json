@@ -708,6 +708,13 @@
       "when": 1794813675162,
       "tag": "0100_mappool_showcase_access",
       "breakpoints": true
+    },
+    {
+      "idx": 101,
+      "version": "7",
+      "when": 1794882541418,
+      "tag": "0101_historical_statistics_transfer_evidence",
+      "breakpoints": true
     }
   ]
 }

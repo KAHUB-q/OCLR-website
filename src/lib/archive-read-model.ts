@@ -43,7 +43,7 @@ export type ArchiveReadData = {
 };
 
 /** JSONB object key order is insignificant; array order and null/absent are not. */
-export function archiveContentHash(input: unknown): string {
+export function canonicalArchiveJson(input: unknown): string {
   const canonical = (value: unknown): unknown => {
     if (Array.isArray(value)) return value.map(canonical);
     if (value instanceof Date) return value.toISOString();
@@ -56,10 +56,13 @@ export function archiveContentHash(input: unknown): string {
       );
     return value;
   };
-  return createHash("sha256")
-    .update(JSON.stringify(canonical(input)))
-    .digest("hex");
+  return JSON.stringify(canonical(input));
 }
+
+export function archiveContentHash(input: unknown): string {
+  return createHash("sha256").update(canonicalArchiveJson(input)).digest("hex");
+}
+
 export function archiveSourceHash(state: ArchiveState, rows: StatisticsRow[]) {
   return archiveContentHash({
     archive: state.configuration?.archive,

@@ -15,3 +15,7 @@ export const MANUAL_BATCH_TEXT_LIMIT = 8192;
 export const TEAM_IMAGE_MAX_BYTES = 5 * 1024 * 1024;
 
 export const reconciliationBatchLimit = 100;
+
+// Season transfers can contain many MP rooms and both draft and release evidence.
+export const historicalSeasonJsonLimit = 64 * 1024 * 1024;
+export const historicalSeasonGzipLimit = 8 * 1024 * 1024;

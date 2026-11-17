@@ -45,6 +45,8 @@ real grants/OAuth/deployment and new Chinese wording acceptance remain separate.
 
 ## Historical source preparation
 
+- [Historical season JSON transfer](historical-season-json.md) — shared schema, saved field inventory, private transfer, and compatibility with the original source files.
+
 - [OCLR β (S5) sources](s5-archive.md) — MainSheet-authoritative rosters,
   separate draft screenshot, 34 recorded source scores and four mappools;
   preparation only, with identity/date/rule uncertainties tracked (#288).

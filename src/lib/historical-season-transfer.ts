@@ -7,12 +7,13 @@ import {
   historicalBracketAdvancements,
   historicalBracketMatches,
   historicalBrackets,
+  playerNames,
   registrations,
   teams,
   tournamentStages,
   transferredHistoricalStatisticsReleases,
 } from "@/db/schema";
-import { eq } from "drizzle-orm";
+import { and, eq, inArray, sql } from "drizzle-orm";
 import { readSavedArchiveProgression } from "./archive-progression";
 import { archiveContentHash } from "./archive-read-model";
 import {
@@ -29,9 +30,12 @@ import { editionSchema } from "./editions";
 import { archiveCounts } from "./historical-archive";
 import {
   archiveFromSeason,
+  archiveNameSources,
   historicalSeasonJsonSchema,
+  nameEvidenceKey,
   portableEdition,
   seasonJsonFromArchive,
+  type HistoricalNameEvidence,
   type HistoricalSeasonJson,
 } from "./historical-season-json";
 import { correctS2PoolArchive } from "./archive-pool-correction-model";
@@ -72,6 +76,58 @@ async function readBracket(reader: Reader, slug: string): Promise<Bracket> {
       ),
     }
   );
+}
+
+function sortNameEvidence(names: HistoricalNameEvidence[]) {
+  return names.sort((a, b) => {
+    const left = nameEvidenceKey(a);
+    const right = nameEvidenceKey(b);
+    return left < right ? -1 : left > right ? 1 : 0;
+  });
+}
+
+async function readNameEvidence(reader: Reader, slug: string) {
+  const utc = (column: typeof playerNames.firstObservedAt) =>
+    sql<
+      string | null
+    >`to_char(${column} AT TIME ZONE 'UTC', 'YYYY-MM-DD"T"HH24:MI:SS.US"Z"')`;
+  const rows = await reader
+    .select({
+      osuId: playerNames.osuId,
+      username: playerNames.username,
+      source: sql<HistoricalNameEvidence["source"]>`${playerNames.source}`,
+      reference: playerNames.reference,
+      firstObservedAt: utc(playerNames.firstObservedAt),
+      lastObservedAt: utc(playerNames.lastObservedAt),
+      published: playerNames.published,
+    })
+    .from(playerNames)
+    .where(
+      and(
+        eq(playerNames.editionSlug, slug),
+        inArray(playerNames.source, archiveNameSources),
+      ),
+    );
+  return sortNameEvidence(rows);
+}
+
+async function insertNameEvidence(
+  tx: Transaction,
+  slug: string,
+  names: HistoricalNameEvidence[],
+) {
+  // Explicit casts keep the source microseconds instead of passing through Date.
+  const timestamp = (value: string | null) => sql`${value}::timestamptz`;
+  for (let offset = 0; offset < names.length; offset += 500) {
+    await tx.insert(playerNames).values(
+      names.slice(offset, offset + 500).map((row) => ({
+        ...row,
+        editionSlug: slug,
+        firstObservedAt: timestamp(row.firstObservedAt),
+        lastObservedAt: timestamp(row.lastObservedAt),
+      })),
+    );
+  }
 }
 
 async function savedSeason(reader: Reader, slug: string) {
@@ -128,12 +184,14 @@ export async function exportHistoricalSeason(actor: User, slug: string) {
       const { saved, bracket, statistics } = await savedSeason(tx, slug);
       if (!saved.edition.archive)
         throw new HttpError(404, "Saved historical archive is required.");
+      const names = await readNameEvidence(tx, slug);
       const result = historicalSeasonJsonSchema.safeParse(
         seasonJsonFromArchive(
           portableEdition(saved.edition),
           saved.edition.archive,
           bracket,
           statistics,
+          names,
         ),
       );
       if (!result.success) {
@@ -220,11 +278,31 @@ async function planImport(
   const newStatistics = input.statistics.filter(
     (row) => !currentStats.has(row.mpId),
   );
+  const requestedNames = input.provenance.playerNames;
+  const savedNames = requestedNames
+    ? await readNameEvidence(reader, slug)
+    : undefined;
+  const currentNamesByKey = new Map(
+    savedNames?.map((row) => [nameEvidenceKey(row), row]),
+  );
+  const incomingNames = new Map(
+    requestedNames?.map((row) => [nameEvidenceKey(row), row]),
+  );
+  for (const [key, row] of currentNamesByKey)
+    if (hash(row) !== hash(incomingNames.get(key) ?? null))
+      throw new HttpError(
+        409,
+        "The package conflicts with saved historical name evidence.",
+      );
+  const newNames = requestedNames?.filter(
+    (row) => !currentNamesByKey.has(nameEvidenceKey(row)),
+  );
   return {
     saved,
     edition,
     newBracket: bracket ? null : newBracket,
     newStatistics,
+    newNames,
     preview: {
       previewToken: hash({
         input,
@@ -233,6 +311,7 @@ async function planImport(
         target: saved.edition,
         bracket,
         statistics,
+        savedNames,
         versions: rows
           .map(({ mpId, version }) => [mpId, version])
           .sort((a, b) => a[0] - b[0]),
@@ -247,7 +326,8 @@ async function planImport(
       changed:
         hash(edition) !== hash(saved.edition) ||
         (!bracket && Boolean(newBracket)) ||
-        newStatistics.length > 0,
+        newStatistics.length > 0 ||
+        Boolean(newNames?.length),
     },
   };
 }
@@ -289,6 +369,8 @@ export async function transferHistoricalSeason(
   const input = parseSeason(raw);
   // Database ordering is independent of source array order inside each snapshot.
   input.statistics.sort((a, b) => a.mpId - b.mpId);
+  if (input.provenance.playerNames)
+    sortNameEvidence(input.provenance.playerNames);
   if (input.competition.bracket)
     sortAdvancements(input.competition.bracket.advancements);
   return db().transaction(
@@ -316,6 +398,10 @@ export async function transferHistoricalSeason(
       await tx
         .insert(editionRevisions)
         .values({ editionSlug: slug, version: revision, configuration });
+      if (plan.newNames)
+        await tx.execute(
+          sql`SELECT set_config('oclr.historical_name_transfer', ${slug}, true)`,
+        );
       await tx
         .update(editionState)
         .set({
@@ -324,6 +410,12 @@ export async function transferHistoricalSeason(
           configurationUpdatedAt: new Date(),
         })
         .where(eq(editionState.slug, slug));
+      if (plan.newNames) {
+        await tx.execute(
+          sql`SELECT set_config('oclr.historical_name_transfer', '', true)`,
+        );
+        await insertNameEvidence(tx, slug, plan.newNames);
+      }
       await syncArchiveRelations(tx, slug, false, configuration.archive);
       if (plan.newBracket) await insertBracket(tx, slug, plan.newBracket);
       for (const row of plan.newStatistics) {
@@ -353,6 +445,7 @@ export async function transferHistoricalSeason(
             revision,
             bracketMatchesAdded: plan.newBracket?.matches.length ?? 0,
             mpRoomsAdded: plan.newStatistics.map((row) => row.mpId),
+            nameEvidenceAdded: plan.newNames?.length ?? 0,
           },
         },
       });

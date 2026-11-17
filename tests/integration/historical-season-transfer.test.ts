@@ -10,6 +10,7 @@ import {
   historicalBrackets,
   historicalBracketMatches,
   historicalBracketAdvancements,
+  playerNames,
   staffRoles,
   users,
   transferredHistoricalStatisticsReleases,
@@ -26,6 +27,7 @@ import {
 } from "../../src/lib/historical-season-json";
 import { historicalArchiveSchema } from "../../src/lib/historical-archive";
 import { readArchiveProgression } from "../../src/lib/archive-progression";
+import { visiblePlayerNames } from "../../src/lib/player-identity";
 import { statisticsArchiveKey } from "../../src/lib/archive-statistics-key";
 import { statisticsSource } from "../fixtures/archive-statistics";
 import { completeArchive } from "../fixtures/archive-relations";
@@ -121,6 +123,7 @@ describe.skipIf(!url)("database historical season JSON", () => {
     vi.stubEnv("ADMIN_OSU_IDS", [admin.osuId, missingActor.osuId].join(","));
     vi.stubEnv("APP_URL", origin);
     await clearSyntheticBracket();
+    await db().delete(playerNames).where(eq(playerNames.editionSlug, slug));
     await db().execute(sql`TRUNCATE edition_state, users CASCADE`);
     await db().insert(users).values([admin, other]);
     await seedEditions([target, { ...target, slug: "different-archive" }]);
@@ -134,6 +137,7 @@ describe.skipIf(!url)("database historical season JSON", () => {
 
   afterAll(async () => {
     await clearSyntheticBracket();
+    await db().delete(playerNames).where(eq(playerNames.editionSlug, slug));
     await closeDb();
     vi.unstubAllEnvs();
   });
@@ -235,14 +239,57 @@ describe.skipIf(!url)("database historical season JSON", () => {
         publishedAt: new Date(room.releaseEvidence!.publishedAt!),
       });
 
+    const person = source.roster.players[0];
+    const historicalNames = [
+      {
+        osuId: person.osuId,
+        username: "Synthetic older username",
+        source: "archive_player",
+        reference: person.source,
+        firstObservedAt: "2020-05-01T06:07:08.123456Z",
+        lastObservedAt: "2021-06-02T03:04:05.987654Z",
+        published: true,
+      },
+      ...["Synthetic old roster note", "Synthetic old correction"].map(
+        (reference, i) => ({
+          osuId: person.osuId,
+          username: person.username,
+          source: "archive_player",
+          reference,
+          firstObservedAt: null,
+          lastObservedAt: i === 0 ? null : "2021-06-02T03:04:05.000001Z",
+          published: false,
+        }),
+      ),
+    ];
+    await db()
+      .insert(playerNames)
+      .values(
+        historicalNames.map((name) => ({
+          ...name,
+          editionSlug: slug,
+          firstObservedAt: sql`${name.firstObservedAt}::timestamptz`,
+          lastObservedAt: sql`${name.lastObservedAt}::timestamptz`,
+        })),
+      );
+
     const context = { params: Promise.resolve({ edition: slug }) };
     const path = `${origin}/api/admin/tournaments/${slug}/archive-json`;
     const initial = await GET(new Request(path), context);
     expect(initial.status).toBe(200);
     const exported = await initial.text();
     const input = JSON.parse(exported);
-    expect(input).toEqual(JSON.parse(JSON.stringify(source)));
+    const { playerNames: exportedNames, ...exportedProvenance } =
+      input.provenance;
+    const { playerNames: _emptyNames, ...sourceProvenance } = source.provenance;
+    void _emptyNames;
+    expect({ ...input, provenance: exportedProvenance }).toEqual(
+      JSON.parse(JSON.stringify({ ...source, provenance: sourceProvenance })),
+    );
+    expect(exportedNames).toEqual(expect.arrayContaining(historicalNames));
+    expect(exportedNames.length).toBeGreaterThan(historicalNames.length);
 
+    await db().delete(playerNames).where(eq(playerNames.editionSlug, slug));
     await db()
       .delete(historicalStatistics)
       .where(eq(historicalStatistics.editionSlug, slug));
@@ -312,6 +359,12 @@ describe.skipIf(!url)("database historical season JSON", () => {
     expect(
       await db()
         .select()
+        .from(playerNames)
+        .where(eq(playerNames.editionSlug, slug)),
+    ).toEqual([]);
+    expect(
+      await db()
+        .select()
         .from(historicalStatistics)
         .where(eq(historicalStatistics.editionSlug, slug)),
     ).toEqual([]);
@@ -335,6 +388,24 @@ describe.skipIf(!url)("database historical season JSON", () => {
       `${slug}-historical-season.v1.json`,
     );
     expect(await downloaded.text()).toBe(exported);
+    const publicNames = await visiblePlayerNames([person.osuId]);
+    expect(publicNames.some((name) => name.editionSlug === slug)).toBe(false);
+    const savedNames = await visiblePlayerNames([person.osuId], person.osuId);
+    expect(savedNames.filter((name) => name.editionSlug === slug)).toEqual(
+      expect.arrayContaining(
+        historicalNames.map(({ firstObservedAt, lastObservedAt, ...name }) => {
+          void firstObservedAt;
+          void lastObservedAt;
+          return expect.objectContaining(name);
+        }),
+      ),
+    );
+    const changedEvidence = structuredClone(input);
+    changedEvidence.provenance.playerNames[0].published =
+      !changedEvidence.provenance.playerNames[0].published;
+    await expect(
+      transferHistoricalSeason(admin, slug, changedEvidence, 1),
+    ).rejects.toMatchObject({ status: 409 });
     const [stats] = await db()
       .select()
       .from(historicalStatistics)

@@ -73,6 +73,35 @@ const statisticsSchema = z.strictObject({
     .nullable(),
 });
 
+// PostgreSQL keeps microseconds. Fixed UTC strings also make ordering and
+// cross-environment comparisons independent of the machine time zone.
+const observationTime = z.iso
+  .datetime({ precision: 6 })
+  .refine(
+    (value) => !value.startsWith("0000-"),
+    "Use a positive calendar year.",
+  )
+  .nullable();
+export const archiveNameSources = [
+  "archive_player",
+  "archive_staff",
+  "archive_replacement",
+] as const;
+const nameEvidenceSchema = z.strictObject({
+  osuId: z.number().int().positive(),
+  username: z.string().min(1).max(300),
+  source: z.enum(archiveNameSources),
+  reference: z.string(),
+  firstObservedAt: observationTime,
+  lastObservedAt: observationTime,
+  published: z.boolean(),
+});
+export type HistoricalNameEvidence = z.output<typeof nameEvidenceSchema>;
+
+export function nameEvidenceKey(row: HistoricalNameEvidence) {
+  return JSON.stringify([row.osuId, row.username, row.source, row.reference]);
+}
+
 const sections = z.strictObject({
   format: z.literal(historicalSeasonFormat),
   version: z.literal(1),
@@ -84,6 +113,7 @@ const sections = z.strictObject({
     links: archive.links,
     sourceFacts: archive.sourceFacts,
     reviewTables: archive.reviewTables,
+    playerNames: z.array(nameEvidenceSchema).optional(),
   }),
   roster: z.strictObject({
     teams: archive.teams,
@@ -112,7 +142,9 @@ export type HistoricalSeasonJson = z.output<typeof sections>;
 export function archiveFromSeason(
   value: HistoricalSeasonJson,
 ): HistoricalArchive {
-  const { edition, provenance, roster, competition } = value;
+  const { edition, roster, competition } = value;
+  const { playerNames: _playerNames, ...provenance } = value.provenance;
+  void _playerNames;
   return {
     formatVersion: 2,
     editionSlug: edition.slug,
@@ -147,6 +179,7 @@ export function seasonJsonFromArchive(
   archive: HistoricalArchive,
   bracket: HistoricalSeasonJson["competition"]["bracket"],
   statistics: HistoricalSeasonJson["statistics"],
+  playerNames: HistoricalNameEvidence[] = [],
 ): HistoricalSeasonJson {
   return {
     format: historicalSeasonFormat,
@@ -159,6 +192,7 @@ export function seasonJsonFromArchive(
       links: archive.links,
       sourceFacts: archive.sourceFacts,
       reviewTables: archive.reviewTables,
+      playerNames,
     },
     roster: {
       teams: archive.teams,
@@ -188,6 +222,23 @@ export const historicalSeasonJsonSchema = sections.superRefine((value, ctx) => {
   if (!parsed.success)
     for (const problem of parsed.error.issues)
       issue(problem.path.map(String), problem.message);
+
+  const names = new Set<string>();
+  value.provenance.playerNames?.forEach((row, index) => {
+    const key = nameEvidenceKey(row);
+    const path = ["provenance", "playerNames", index];
+    if (names.has(key)) issue(path, "Duplicate historical name evidence.");
+    names.add(key);
+    if (
+      row.firstObservedAt &&
+      row.lastObservedAt &&
+      row.firstObservedAt > row.lastObservedAt
+    )
+      issue(
+        [...path, "lastObservedAt"],
+        "Last observation precedes first observation.",
+      );
+  });
 
   const fixtures = new Map(value.competition.fixtures.map((m) => [m.id, m]));
   const bracket = value.competition.bracket;

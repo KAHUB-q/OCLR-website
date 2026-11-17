@@ -4228,6 +4228,7 @@
     "m2634efdc9c2b": "The package conflicts with the saved historical bracket.",
     "mcf0d17b91d4b": "The archive preview changed. Validate the file again.",
     "m2efd15e94f11": "Use identity or gzip encoding.",
-    "m1f72d901971a": "Invalid historical archive transfer request."
+    "m1f72d901971a": "Invalid historical archive transfer request.",
+    "m4c27f08e8a85": "The package conflicts with saved historical name evidence."
   }
 }

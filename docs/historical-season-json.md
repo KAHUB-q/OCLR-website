@@ -11,6 +11,7 @@ S1–S10 使用同一份 [JSON Schema](historical-season.v1.schema.json)。`form
 | --- | --- | --- |
 | `edition_state.configuration` | 賽季標識、名稱及簡介、時區、品牌、外觀、選手與教練設定、EZ 倍率、資格與資格寬限、規則書及里程碑 | `edition` |
 | `archive_rel_archive_*`、歸檔當前指標及其來源 JSONB | 來源連結和擷取日期、原始附註、查核表及來源事實 | `provenance` |
+| `player_names` | 本季歷史選手、Staff 與替補的 UID、歷史名稱、來源與參照、首次及末次觀察時間、原發布標記 | `provenance.playerNames` |
 | 同一份歸檔文件的名單與選秀關聯 | 隊伍；已知與待核對身分、隊員、教練、Staff、替補歷程；依序保存的選秀或最終 Tier | `roster` |
 | 同一份歸檔文件的賽事與圖池關聯 | 競賽日期與精度、分組排名及最終名次、資格賽及逐圖成績、賽程與比賽比分、原始裁定與核對、MP／VOD、禁圖、各階段圖池與譜面資料 | `competition` |
 | `historical_brackets`、`historical_bracket_matches`、`historical_bracket_advancements` | 對陣來源、場次順序、勝敗組、種子及晉級連線 | `competition.bracket` |
@@ -74,7 +75,8 @@ ROLLBACK;
     "sourceUrl": "https://example.com/source",
     "capturedOn": "2026-01-01",
     "notes": [],
-    "links": []
+    "links": [],
+    "playerNames": []
   },
   "roster": {
     "teams": [{ "id": "alpha", "name": "Alpha", "source": "Synthetic" }],
@@ -101,6 +103,11 @@ ROLLBACK;
   `competition.bracket: null` 代表沒有可攜對陣圖。MP 的 `releaseEvidence: null` 代表該
   房間沒有可攜發布證據。舊歸檔自身的 1／2 版標籤由新的檔案版本取代，現有資料庫繼續
   以其支援的歸檔結構寫入。
+- 歷史名稱證據按 UID、名稱、來源及參照保存，涵蓋只存在於名稱歷程的舊名稱與舊來源。
+  觀察時間使用 UTC，保留 PostgreSQL 的微秒精度和 `null`。發布標記保留為來源證據，
+  目標站仍依既有賽季與名稱可見性規則顯示。匯入驗證既有名稱證據，遇到不同的同鍵記錄
+  或檔案缺少目標已有的證據時回報衝突。舊 v1 檔可省略 `playerNames`，繼續沿用原本的名稱
+  採集流程。
 - 匯出的 MP 證據優先取資料庫目前發布的快照。當目前沒有發布時，可帶回先前匯入的
   證據。檔案保留原審查資料供核對，目標賽季的統計草稿版本及發布狀態由目標站重新管理。
 - 此格式涵蓋一季目前的歸檔。報名及其答案、帳號、角色授權、稽核與歷史修訂、站點發布

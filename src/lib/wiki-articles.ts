@@ -571,14 +571,43 @@ function liruGallery(tr: AppTranslator): WikiArticle {
         "Liru holds out a long sleeve of her lavender wisteria-patterned kimono",
       ),
     ],
+    [
+      "cat-ear-dress",
+      tr("Black and purple cat-ear dress"),
+      tr(
+        "Liru wears cat ears and a black and purple dress, raising her paw mittens",
+      ),
+    ],
+    [
+      "lavender-swimwear",
+      tr("Lavender swimsuit"),
+      tr("Liru waves in a lavender swimsuit with ruffles, bows and green trim"),
+    ],
+    [
+      "lavender-lolita",
+      tr("Lavender Lolita dress"),
+      tr(
+        "Liru holds out a cream lace skirt trimmed with lavender ribbons and floral embroidery",
+      ),
+    ],
+    [
+      "nun-habit",
+      tr("Nun's habit"),
+      tr("Liru waves in a black and white nun's habit while holding a book"),
+    ],
+    [
+      "lavender-bridal",
+      tr("Lavender-accented wedding gown"),
+      tr(
+        "Liru holds a bouquet in a white lace wedding gown with a lavender sash",
+      ),
+    ],
   ];
   return {
     slug: "liru-gallery",
     title: tr("Liru Gallery"),
     category: tr("Community"),
-    intro: tr(
-      "Seven outfit illustrations of Liru. Select an image to see it full size.",
-    ),
+    intro: tr("Explore Liru's outfits. Select an image to see it full size."),
     sections: [],
     gallery: outfits.map(([id, caption, alt]) => ({
       src: `/mascot/liru/gallery/${id}.webp`,

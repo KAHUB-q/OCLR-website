@@ -16,14 +16,12 @@ Previous wordmark versions are superseded by this design. No database or applica
 
 ## Header aligned with the homepage — 2026-11-06
 
-At the organizer's request, `src/components/oclr-logo.tsx` now references the
-existing `home-s11/oclr-layer.svg` directly. Its `48 104 980 304` viewport shows
-only the angular gradient OCL and the outlined R with star control points,
-excluding the accuracy bar and English subtitle. The source paths and colours
-remain shared with the homepage. Existing responsive header widths apply. Light
-headers deepen the blue/purple colours with brightness and saturation filters,
-without a blurred shadow; dark headers retain the original pale colours and glow.
-The parent home link supplies the accessible name.
+`src/components/oclr-logo.tsx` uses `home-s11/header-wordmark-light.svg` or
+`home-s11/header-wordmark-dark.svg` according to the header background. Both
+files use the letter geometry from `home-s11/oclr-layer.svg` and the same
+`48 104 980 304` viewport. Each SVG defines its own palette, including the
+purple fill of the R and its star control points. The parent home link supplies
+the accessible name.
 
 ## S11 local visual integration
 

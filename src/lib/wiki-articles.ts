@@ -686,6 +686,55 @@ function liruGallery(tr: AppTranslator): WikiArticle {
         "Liru carries a wicker basket in a cream dress with petal sleeves, a green sash and purple floral embroidery.",
       ),
     ],
+    [
+      "starry-night-gown",
+      tr("Starry night gown"),
+      tr(
+        "Liru wears a deep purple gown with silver constellations and a cape fastened with a crescent moon.",
+      ),
+    ],
+    [
+      "light-armored-knight",
+      tr("Light-armored knight"),
+      tr(
+        "Liru wears white and gold armor with a lavender cape and holds a round shield marked with a sprout.",
+      ),
+    ],
+    [
+      "lavender-nautical-outfit",
+      tr("Lavender nautical outfit"),
+      tr(
+        "Liru waves in a white sailor-collar jacket and lavender skirt, wearing a compass pendant.",
+      ),
+    ],
+    [
+      "flower-mage",
+      tr("Flower mage"),
+      tr(
+        "Liru wears a green cape embroidered with flowers and holds a wooden staff topped with a purple crystal.",
+      ),
+    ],
+    [
+      "dreamy-wave-dress",
+      tr("Dreamy wave dress"),
+      tr(
+        "Liru wears a dress with layers of mint, blue and lavender ruffles and carries a shell-shaped bag.",
+      ),
+    ],
+    [
+      "butterfly-dream-fairy",
+      tr("Butterfly dream fairy"),
+      tr(
+        "Liru has translucent butterfly wings and wears a pastel dress decorated with pearls and butterfly clasps.",
+      ),
+    ],
+    [
+      "galaxy-dream",
+      tr("Galaxy dream"),
+      tr(
+        "Liru wears a star-embroidered gown with sheer lavender layers, with a small glowing star floating above her palm.",
+      ),
+    ],
   ];
   return {
     slug: "liru-gallery",

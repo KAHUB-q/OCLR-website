@@ -2213,7 +2213,18 @@ html[data-theme="dark"] .themed-site {
   height: auto;
   aspect-ratio: 980 / 304;
   flex-shrink: 0;
-  filter: brightness(0.55) saturate(1.9);
+}
+.oclr-wordmark-dark {
+  display: none;
+}
+/* These appearances have dark headers in both brightness modes. */
+html:is([data-theme="dark"], [data-appearance="retro-arcade"], [data-appearance="esports-broadcast"])
+  .oclr-wordmark-light {
+  display: none;
+}
+html:is([data-theme="dark"], [data-appearance="retro-arcade"], [data-appearance="esports-broadcast"])
+  .oclr-wordmark-dark {
+  display: inline;
 }
 html[data-theme="dark"] .brand .oclr-wordmark {
   filter: drop-shadow(0 0 2px #9b6cff55);

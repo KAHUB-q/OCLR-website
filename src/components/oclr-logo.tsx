@@ -1,4 +1,4 @@
-/** Reuse the homepage lettering, cropped to OCLR without the subtitle/bar. */
+/** Header wordmarks use the same letter shapes with colors for each surface. */
 export function OclrLogo() {
   return (
     <svg
@@ -11,11 +11,20 @@ export function OclrLogo() {
       focusable="false"
     >
       <image
-        href="/branding/home-s11/oclr-layer.svg"
-        x="40"
-        y="0"
-        width="1200"
-        height="490"
+        className="oclr-wordmark-light"
+        href="/branding/home-s11/header-wordmark-light.svg"
+        x="48"
+        y="104"
+        width="980"
+        height="304"
+      />
+      <image
+        className="oclr-wordmark-dark"
+        href="/branding/home-s11/header-wordmark-dark.svg"
+        x="48"
+        y="104"
+        width="980"
+        height="304"
       />
     </svg>
   );

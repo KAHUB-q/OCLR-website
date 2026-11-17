@@ -20,7 +20,14 @@ export async function readArchiveProgression(
   slug: string,
 ): Promise<HistoricalBracketPlan | null> {
   if (!supportsArchiveProgression(slug)) return null;
-  const rows = await db()
+  return readSavedArchiveProgression(db(), slug);
+}
+
+export async function readSavedArchiveProgression(
+  reader: Pick<ReturnType<typeof db>, "select">,
+  slug: string,
+): Promise<HistoricalBracketPlan | null> {
+  const rows = await reader
     .select({
       bracket: historicalBrackets,
       match: historicalBracketMatches,

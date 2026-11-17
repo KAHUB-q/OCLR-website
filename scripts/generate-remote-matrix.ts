@@ -186,6 +186,7 @@ const rows = files.map((file) => {
     file.includes("/matches/schedule-requests/") ||
     file.endsWith("/schedule-manager.tsx") ||
     file.includes("/admin/backups/") ||
+    file.endsWith("/archive-json/route.ts") ||
     file.endsWith("/backup-manager.tsx") ||
     file.includes("/api/streaming/") ||
     file.includes("/streaming/[edition]/") ||

@@ -91,6 +91,8 @@ snapshot in [`imports/s5-rulebook.json`](imports/s5-rulebook.json). Public reads
 use the edition's current saved version, not that offline snapshot. Deployment
 of the S5 source-pair reader is required for the historical page to display it.
 
+Edition Admins can download and import the [versioned historical season JSON](historical-season-json.md) from the archive screen.
+
 Completed historical editions can approve saved pending match scores from the
 archive screen with **Approve reviewed matches**. The review list and confirmation
 use the current configuration revision; server-side edition Admin authorization,

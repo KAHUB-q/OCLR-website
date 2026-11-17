@@ -38,6 +38,8 @@ import {
   editPlayerMessageWrite,
   postPlayerMessageWrite,
 } from "../src/lib/player-message-write-contract";
+import { historicalSeasonJsonSchema } from "../src/lib/historical-season-json";
+import { transferHistoricalSeasonWrite } from "../src/lib/historical-season-transfer-contract";
 import { lookupArchiveStaffWrite } from "../src/lib/archive-staff-write-contract";
 import {
   requestDesktopAuthWrite,
@@ -167,6 +169,7 @@ const operations: readonly WriteApiOperation[] = [
   changeRefereeIrcBrowserWrite,
   createTournamentWrite,
   changeTournamentWrite,
+  transferHistoricalSeasonWrite,
   deleteTournamentDraftWrite,
   postPlayerMessageWrite,
   editPlayerMessageWrite,
@@ -595,6 +598,7 @@ const openapi = {
 for (const [file, value] of Object.entries({
   "docs/write-api-inventory.json": routes,
   "docs/write-api.openapi.json": openapi,
+  "docs/historical-season.v1.schema.json": z.toJSONSchema(historicalSeasonJsonSchema, { reused: "ref" }),
 })) {
   const generated = `${JSON.stringify(value, null, 2)}\n`;
   if (process.argv.includes("--check")) {

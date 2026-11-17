@@ -95,6 +95,24 @@
     }
   },
   {
+    "route": "/api/admin/tournaments/{edition}/archive-json",
+    "source": "src/app/api/admin/tournaments/[edition]/archive-json/route.ts",
+    "methods": {
+      "POST": {
+        "status": "documented",
+        "operationId": "transferHistoricalSeason",
+        "access": "browser",
+        "actions": [
+          "preview",
+          "import"
+        ],
+        "consumers": [
+          "src/components/archive-importer.tsx"
+        ]
+      }
+    }
+  },
+  {
     "route": "/api/admin/tournaments/{edition}/archive-staff",
     "source": "src/app/api/admin/tournaments/[edition]/archive-staff/route.ts",
     "methods": {

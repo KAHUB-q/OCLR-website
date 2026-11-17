@@ -11,6 +11,7 @@ import { LoadingRegion } from "./loading-region";
 import { Spinner } from "./spinner";
 import { PublicationSwitch } from "./publication-switch";
 import { PendingButtonLabel } from "./pending-button-label";
+import { jsonMutationRequest } from "./json-mutation-request";
 import styles from "./confirm-mutation.module.css";
 export function ConfirmMutation({
   label,
@@ -19,6 +20,7 @@ export function ConfirmMutation({
   description,
   url,
   payload,
+  compressJson,
   onSuccess,
   onError,
   requireConfirmation = true,
@@ -37,6 +39,7 @@ export function ConfirmMutation({
   description?: string;
   url: string;
   payload: Record<string, unknown>;
+  compressJson?: boolean;
   onSuccess?: () => void | Promise<void>;
   onError?: (message: string) => void;
   requireConfirmation?: boolean;
@@ -68,11 +71,7 @@ export function ConfirmMutation({
     setPending(true);
     setError("");
     try {
-      const response = await fetch(url, {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify(payload),
-      });
+      const response = await jsonMutationRequest(url, payload, compressJson);
       if (!response.ok) {
         const result = await response.json();
         const message = result.error ?? "The action could not be completed.";

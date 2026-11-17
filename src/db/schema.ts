@@ -1468,6 +1468,27 @@ export const historicalStatistics = pgTable(
   ],
 );
 
+// Source publication evidence from a season transfer never activates a local release.
+export const transferredHistoricalStatisticsReleases = pgTable(
+  "transferred_historical_statistics_releases",
+  {
+    editionSlug: text("edition_slug").notNull(),
+    mpId: bigint("mp_id", { mode: "number" }).notNull(),
+    snapshot: jsonb("snapshot")
+      .$type<import("@/lib/statistics-snapshot").StatisticsSnapshot>()
+      .notNull(),
+    publishedAt: timestamp("published_at", { withTimezone: true }),
+  },
+  (t) => [
+    primaryKey({ columns: [t.editionSlug, t.mpId] }),
+    foreignKey({
+      columns: [t.editionSlug, t.mpId],
+      foreignColumns: [historicalStatistics.editionSlug, historicalStatistics.mpId],
+      name: "transferred_historical_statistics_release_source_fk",
+    }),
+  ],
+);
+
 // Immutable signed public messages; author and timestamp are the transactional write record.
 export const playerMessages = pgTable(
   "player_messages",

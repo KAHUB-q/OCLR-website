@@ -6,6 +6,7 @@ docs/ci.md
 docs/deployment.md
 docs/developer-api.md
 docs/examples
+docs/historical-season.v1.schema.json
 docs/imports
 docs/read-api.md
 docs/read-api.openapi.json

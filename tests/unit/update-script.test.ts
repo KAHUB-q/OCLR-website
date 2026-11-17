@@ -209,6 +209,7 @@ describe("Bash site updates", () => {
       "output/imagegen/source.png",
     ];
     const required = [
+      "docs/historical-season.v1.schema.json",
       "docs/imports/reviewed.json",
       "docs/read-api.openapi.json",
       "tests/fixtures/player-reaction-selection.json",
@@ -230,10 +231,19 @@ describe("Bash site updates", () => {
         excludes,
         readFileSync(join(source, "website-release-excludes.txt"), "utf8"),
       );
-      write(
-        includes,
-        "docs/imports\ndocs/read-api.openapi.json\ndrizzle\npublic\nscripts\ntests\n",
-      );
+      const fixturePaths = [...attachments, ...required, `scripts/${script}`];
+      const releasePaths = readFileSync(
+        join(source, "website-release-paths.txt"),
+        "utf8",
+      )
+        .trim()
+        .split("\n")
+        .filter((path) =>
+          fixturePaths.some(
+            (file) => file === path || file.startsWith(`${path}/`),
+          ),
+        );
+      write(includes, `${releasePaths.join("\n")}\n`);
       const selected = commit();
       // A different policy in the operator checkout must never change this archive.
       write(excludes, "public\n");

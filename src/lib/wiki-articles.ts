@@ -602,6 +602,90 @@ function liruGallery(tr: AppTranslator): WikiArticle {
         "Liru holds a bouquet in a white lace wedding gown with a lavender sash",
       ),
     ],
+    [
+      "black-rock",
+      tr("Black rock outfit"),
+      tr(
+        "Liru wears a black leather jacket and pleated skirt with purple-striped socks and lace-up boots.",
+      ),
+    ],
+    [
+      "cream-knit",
+      tr("Cream knit outfit"),
+      tr(
+        "Liru wears a cream cable-knit cardigan and sage green skirt, with a brown shoulder bag.",
+      ),
+    ],
+    [
+      "navy-academy",
+      tr("Navy academy uniform"),
+      tr(
+        "Liru wears a navy blazer with gold buttons, a plaid skirt and black over-the-knee socks.",
+      ),
+    ],
+    [
+      "forest-green-dress",
+      tr("Forest green dress"),
+      tr(
+        "Liru waves in a belted forest green dress with a cream lace collar and gold buttons.",
+      ),
+    ],
+    [
+      "citywear",
+      tr("City outfit"),
+      tr(
+        "Liru wears a charcoal jacket, cream turtleneck and gray skirt, with a taupe shoulder bag.",
+      ),
+    ],
+    [
+      "burgundy-academy",
+      tr("Burgundy academy outfit"),
+      tr(
+        "Liru wears a burgundy cardigan, plaid skirt and black tights, carrying a brown satchel.",
+      ),
+    ],
+    [
+      "lavender-knit",
+      tr("Lavender knit set"),
+      tr(
+        "Liru wears a lavender cable-knit cardigan and matching skirt, with white tights and a round bag.",
+      ),
+    ],
+    [
+      "cream-academy",
+      tr("Cream academy outfit"),
+      tr(
+        "Liru wears a cream blazer, green ribbon tie, pleated skirt and white tights.",
+      ),
+    ],
+    [
+      "powder-blue-cape",
+      tr("Powder blue cape dress"),
+      tr(
+        "Liru lifts the hem of a powder blue dress with a short cape and white scalloped trim.",
+      ),
+    ],
+    [
+      "lavender-bow-academy",
+      tr("Lavender bow academy outfit"),
+      tr(
+        "Liru wears a navy blazer with lavender piping, a matching bow and a purple plaid skirt.",
+      ),
+    ],
+    [
+      "sprout-fantasy-traveler",
+      tr("Sprout and lavender fantasy traveler"),
+      tr(
+        "Liru wears a green cape embroidered with leaves and a layered purple skirt, with a brown satchel and lace-up boots.",
+      ),
+    ],
+    [
+      "spring-garden-dress",
+      tr("Spring garden dress"),
+      tr(
+        "Liru carries a wicker basket in a cream dress with petal sleeves, a green sash and purple floral embroidery.",
+      ),
+    ],
   ];
   return {
     slug: "liru-gallery",

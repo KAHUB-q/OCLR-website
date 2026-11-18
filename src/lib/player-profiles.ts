@@ -43,6 +43,7 @@ export async function publishedPlayerProfile(
   savedOnly = false,
   authorizedEdition?: string,
   scheduleRefresh?: ProfileRefreshScheduler,
+  includeRatings = false,
 ) {
   const identity = parseOsuProfile(input, mode);
   if (
@@ -75,6 +76,12 @@ export async function publishedPlayerProfile(
     if (!(e instanceof HttpError)) throw e;
     error = { status: e.status, message: e.message };
   }
+  const ratings =
+    includeRatings && identity.mode === "osu" && participation.length
+      ? await (
+          await import("./published-profile-ratings")
+        ).readPublishedProfileRatings(identity.osuId, participation, edition)
+      : undefined;
   // Check again after provider I/O: publication may have been withdrawn meanwhile.
   // Self/account-only access has no public listing to withdraw, so only re-check
   // identities that were just read from public participation.
@@ -100,6 +107,7 @@ export async function publishedPlayerProfile(
   return {
     identity: { ...identity, ...player },
     participation,
+    ...(ratings && { ratings }),
     snapshot,
     error,
     bws,
@@ -111,6 +119,7 @@ export async function staffOclrPlayerProfile(
   input: string,
   mode: string | undefined,
   edition: string,
+  includeRatings = false,
 ) {
   await assertReadCapability(user, "manage_registrations", edition);
   const { db } = await import("@/db");
@@ -138,7 +147,16 @@ export async function staffOclrPlayerProfile(
     )
   )
     throw new HttpError(404, "Known player not found.");
-  return publishedPlayerProfile(input, mode, edition, undefined, true, edition);
+  return publishedPlayerProfile(
+    input,
+    mode,
+    edition,
+    undefined,
+    true,
+    edition,
+    undefined,
+    includeRatings,
+  );
 }
 export async function staffPlayerProfile(user: User, input: unknown) {
   // Operational lookup doesn't grant applicant, captain or draft access.

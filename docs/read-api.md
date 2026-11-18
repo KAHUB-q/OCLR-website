@@ -497,6 +497,13 @@ while retaining its exact prior statistics identity through `sourceTitle`;
 existing maps without these fields remain compatible. See
 [the S2 NM2 recovery](archive-map-metadata.md#s2-nm2-official-file-recovery-852).
 
+Contract 1.39.0 adds the optional `ratings=1` query to public, self and
+edition-scoped staff OCLR profile reads. The field is omitted by default.
+Published participation gates the saved o!TR and SkillIssue metrics.
+S11 CSV metrics additionally require a published S11 edition and an accepted
+registration for the same osu! UID. A missing observation is null. Times are
+OCLR fetch or import times. The read does not contact providers.
+
 Contract 1.37.0 adds [Showcase pools](streaming-api.md#showcase-pools-1115)
 to the edition-bound Streaming bearer channel. The staff mappool workspace
 adds optional Admin-only `showcaseStreamers` and `showcaseGrants` under the

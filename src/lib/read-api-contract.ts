@@ -2,6 +2,7 @@ import { archivePlacement, archiveSeason } from "./archive-metadata";
 import { z } from "zod";
 import { editionSchema } from "./editions";
 import { appearances } from "./preferences";
+import { profileRatingsSchema } from "./profile-ratings-model";
 import { profileMode } from "./osu-profile-model";
 
 const text = z.string();
@@ -522,6 +523,7 @@ export const oclrProfileSchema = z
   .object({
     identity: oclrIdentitySchema,
     participation: z.array(oclrParticipationSchema),
+    ratings: profileRatingsSchema.optional(),
     snapshot: z
       .object({
         profile: savedOsuProfileSchema,

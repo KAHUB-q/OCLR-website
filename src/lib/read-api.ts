@@ -210,6 +210,7 @@ export function readApiRoute(request: Request) {
               String(osuId(params.osuId)),
               "osu",
               edition(params.edition),
+              query.get("ratings") === "1",
             ),
           };
         case "getOclrProfile":
@@ -224,6 +225,9 @@ export function readApiRoute(request: Request) {
               query.get("edition") ?? undefined,
               own ? principal!.subject.osuId : undefined,
               true,
+              undefined,
+              undefined,
+              query.get("ratings") === "1",
             ),
           };
         }

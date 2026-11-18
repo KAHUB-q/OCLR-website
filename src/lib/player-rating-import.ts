@@ -5,7 +5,8 @@ import {
   importedPlayerRatings,
   registrations,
 } from "@/db/schema";
-import { and, eq, sql } from "drizzle-orm";
+import { and, eq, inArray, sql } from "drizzle-orm";
+import { etxMods, type EtxMods } from "./etx-rating-model";
 import { assertOperationalEdition } from "./archive-guard";
 import type { User } from "./auth/sessions";
 import { assertCapability } from "./auth/staff";
@@ -56,7 +57,7 @@ export async function importPlayerRatings(
     const ids = new Map(accepted.map(({ userId }) => [String(userId), userId]));
     const matched = new Map<
       number,
-      typeof importedPlayerRatings.$inferInsert
+      (typeof rows)[number] & { value: number }
     >();
     const unmatchedRows: number[] = [];
     let unmatched = 0;
@@ -69,26 +70,7 @@ export async function importPlayerRatings(
       } else if (row.value === null) {
         missing++;
       } else {
-        const rating = {
-          editionSlug: slug,
-          source,
-          userId,
-          value: row.value,
-          provisional: row.provisional,
-          outdated: row.outdated,
-        };
-        const previous = matched.get(userId);
-        if (
-          previous &&
-          (previous.value !== rating.value ||
-            previous.provisional !== rating.provisional ||
-            previous.outdated !== rating.outdated)
-        )
-          throw new HttpError(
-            400,
-            "The CSV contains conflicting ratings for the same player.",
-          );
-        matched.set(userId, rating);
+        matched.set(userId, { ...row, value: row.value });
       }
     }
     const saved = await tx
@@ -101,15 +83,55 @@ export async function importPlayerRatings(
         ),
       );
     const previous = new Map(saved.map((row) => [row.userId, row]));
-    const changed = [...matched.values()].filter((row) => {
-      const old = previous.get(row.userId);
-      return (
-        !old ||
-        old.value !== row.value ||
-        old.provisional !== row.provisional ||
-        old.outdated !== row.outdated
-      );
-    });
+    const importedAt = new Date();
+    const changed: (typeof importedPlayerRatings.$inferInsert)[] = [];
+    const confirmed: number[] = [];
+    for (const [userId, row] of matched) {
+      const old = previous.get(userId);
+      const mods: EtxMods = {};
+      for (const mod of etxMods) {
+        const patch = row.mods?.[mod];
+        const value = patch === undefined ? old?.etxMods?.[mod] : patch;
+        if (value != null) mods[mod] = value;
+      }
+      if (
+        old &&
+        old.value === row.value &&
+        old.provisional === row.provisional &&
+        old.outdated === row.outdated &&
+        etxMods.every((mod) => old.etxMods?.[mod] === mods[mod])
+      ) {
+        confirmed.push(userId);
+      } else {
+        changed.push({
+          editionSlug: slug,
+          source,
+          userId,
+          value: row.value,
+          provisional: row.provisional,
+          outdated: row.outdated,
+          etxMods: Object.keys(mods).length ? mods : null,
+          importedAt,
+        });
+      }
+    }
+    // Observation time advances for an identical matched row, but it is not a
+    // rating change. Absent, unmatched and missing-total rows are untouched.
+    for (let offset = 0; offset < confirmed.length; offset += 1000) {
+      await tx
+        .update(importedPlayerRatings)
+        .set({ importedAt })
+        .where(
+          and(
+            eq(importedPlayerRatings.editionSlug, slug),
+            eq(importedPlayerRatings.source, source),
+            inArray(
+              importedPlayerRatings.userId,
+              confirmed.slice(offset, offset + 1000),
+            ),
+          ),
+        );
+    }
     for (let offset = 0; offset < changed.length; offset += 1000) {
       await tx
         .insert(importedPlayerRatings)
@@ -124,6 +146,8 @@ export async function importPlayerRatings(
             value: sql`excluded.value`,
             provisional: sql`excluded.provisional`,
             outdated: sql`excluded.outdated`,
+            etxMods: sql`excluded.etx_mods`,
+            importedAt: sql`excluded.imported_at`,
           },
         });
     }

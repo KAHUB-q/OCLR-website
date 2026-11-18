@@ -5,7 +5,8 @@ import {
   sipRatingCache,
   users,
 } from "../../src/db/schema";
-import { sql } from "drizzle-orm";
+import { eq, sql } from "drizzle-orm";
+import { sipResponse } from "../fixtures/sip-response";
 import { afterAll, beforeAll, describe, expect, it, vi } from "vitest";
 import { publicPlayerDirectoryModel } from "../../src/lib/public-read-models";
 import { refreshSipRatings } from "../../src/lib/sip-rating-worker";
@@ -42,21 +43,27 @@ describe.skipIf(!url)("Daily S11 SIP cache", () => {
           answers: {},
         })),
       );
-    await db()
-      .insert(importedPlayerRatings)
-      .values({
-        editionSlug: slug,
-        userId: deferred,
-        source: "sip",
-        value: 9876,
-      });
+    await db().insert(importedPlayerRatings).values({
+      editionSlug: slug,
+      userId: deferred,
+      source: "sip",
+      value: 9876,
+    });
     await db()
       .insert(sipRatingCache)
-      .values({
-        osuId: failed,
-        value: 2920,
-        fetchedAt: new Date("2025-01-01"),
-      });
+      .values([
+        { osuId: failed, value: 2920, fetchedAt: new Date("2025-01-01") },
+        {
+          osuId: missing,
+          value: 0,
+          fetchedAt: new Date("2025-01-01"),
+          snapshot: {
+            rating: sipResponse(missing, 0).rating,
+            modifications: null,
+            skillsets: null,
+          },
+        },
+      ]);
   });
   afterAll(async () => {
     vi.unstubAllGlobals();
@@ -76,15 +83,10 @@ describe.skipIf(!url)("Daily S11 SIP cache", () => {
       expect(init.redirect).toBe("error");
       if (id === updated) {
         expect((await refreshSipRatings(true)).stopped).toBe("busy");
-        return Response.json({
-          playerId: id,
-          rating: { value: 4567, pp: 1111 },
-          skillsets: { aim: { value: 1234 } },
-        });
+        return Response.json(sipResponse(id, 4567));
       }
       if (id === missing) return new Response(null, { status: 404 });
-      if (id === failed)
-        return Response.json({ playerId: id + 1, rating: { value: 9999 } });
+      if (id === failed) return Response.json(sipResponse(id + 1, 9999));
       return new Response(null, { status: 429 });
     });
 
@@ -115,9 +117,32 @@ describe.skipIf(!url)("Daily S11 SIP cache", () => {
     expect(rows.find((row) => row.osuId === failed)?.importedRatings).toEqual({
       sip: 2920,
     });
-    expect(
-      rows.find((row) => row.osuId === missing)?.importedRatings,
-    ).toBeUndefined();
+    expect(rows.find((row) => row.osuId === missing)?.importedRatings).toEqual({
+      sip: 0,
+    });
+    const [retained] = await db()
+      .select()
+      .from(sipRatingCache)
+      .where(eq(sipRatingCache.osuId, missing));
+    expect(retained).toMatchObject({
+      value: 0,
+      fetchedAt: new Date("2025-01-01"),
+      notFoundAt: expect.any(Date),
+      snapshot: {
+        rating: sipResponse(missing, 0).rating,
+        modifications: null,
+        skillsets: null,
+      },
+    });
+    const [fresh] = await db()
+      .select()
+      .from(sipRatingCache)
+      .where(eq(sipRatingCache.osuId, updated));
+    expect(fresh.snapshot).toEqual({
+      rating: sipResponse(updated, 4567).rating,
+      modifications: sipResponse(updated, 4567).modifications,
+      skillsets: sipResponse(updated, 4567).skillsets,
+    });
     expect(
       rows.find((row) => row.osuId === deferred)?.importedRatings,
     ).toBeUndefined();

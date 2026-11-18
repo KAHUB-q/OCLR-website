@@ -2,17 +2,23 @@
 
 The S11 player directory and saved read API use the total `rating.value` from
 Skill Issue's `GET /ratings/{osuId}`. The worker checks the returned
-`playerId`, then stores only the osu! ID, the finite rating and the fetch time
-in PostgreSQL. It looks up accepted registrations in the published S11 edition.
-Page loads, filters and remote frontend reads make no requests to Skill Issue.
-Existing SIP CSV rows are retained for history; they no longer supply this score.
+`playerId`, then stores the total, projected overall/mod/skillset Rating fields
+and the OCLR fetch time by osu! ID in PostgreSQL. It looks up accepted
+registrations in the published S11 edition. Page loads, filters and remote
+frontend reads make no requests to Skill Issue. The directory still uses the
+cached total only. For profiles, a current public participant can have API
+details independently of an osu! snapshot. If the API total is unavailable,
+a still-public accepted S11 player can use their saved S11 CSV total. An old
+CSV row without an import time does not acquire a synthetic timestamp.
 
 The daily job sends requests serially, with at least one second of delay before
 each request. A PostgreSQL session lock prevents simultaneous jobs on the same
 database. Successful and missing ratings are checked at most once per UTC day;
 a manual rerun can finish players skipped after a failure. Timeouts, invalid
-payloads and other temporary errors preserve the last good rating. A 404 or a
-valid response with a null rating records a missing rating. A 401, 403 or 429
+payloads and other temporary errors preserve the last good rating. A 404
+counts as missing for this run and prevents a repeat lookup today, without
+changing any verified value, details or fetch time. A valid identity-matched
+response with a null overall rating saves a snapshot without a total. A 401, 403 or 429
 stops the run without retries. Run a single worker schedule for this token;
 independent databases using the same token do not share the lock.
 

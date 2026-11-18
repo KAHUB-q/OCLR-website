@@ -1,0 +1,36 @@
+.sources,
+.detailedMetrics,
+.compactMetrics {
+  display: grid;
+  gap: 0.65rem 1rem;
+}
+
+.sources {
+  grid-template-columns: repeat(auto-fit, minmax(min(100%, 19rem), 1fr));
+}
+
+.detailedMetrics,
+dl.compactMetrics {
+  grid-template-columns: repeat(auto-fit, minmax(min(100%, 7rem), 1fr));
+  margin-block: 0.75rem;
+}
+
+.sources section,
+.detailedMetrics div,
+.compactMetrics div {
+  min-width: 0;
+  overflow-wrap: anywhere;
+}
+
+.detailedMetrics dd,
+.compactMetrics dd {
+  margin-inline-start: 0;
+}
+
+.sources details {
+  margin-block: 0.4rem;
+}
+
+.sources summary {
+  cursor: pointer;
+}

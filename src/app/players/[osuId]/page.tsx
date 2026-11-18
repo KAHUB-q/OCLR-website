@@ -28,7 +28,6 @@ import { localBrowserUser } from "@/lib/auth/user";
 import { after } from "next/server";
 import { remoteMode } from "@/lib/data-source";
 import { profileBws, profileBwsMany } from "@/lib/bws";
-import { getOtrRating } from "@/lib/otr-rating";
 import { publicRoundRatings } from "@/lib/ratings";
 import { remotePage } from "@/lib/remote-page";
 import { notFound, redirect } from "next/navigation";
@@ -167,10 +166,6 @@ async function ProfileContent({
   )
     notFound();
 
-  const otrRating =
-    data.bws && participation.length && !remoteMode()
-      ? getOtrRating(data.identity.osuId)
-      : null;
   const [
     competition,
     mapPerformance,
@@ -309,7 +304,7 @@ async function ProfileContent({
         ) : null
       }
       bws={data.bws}
-      otrRating={await otrRating}
+      profileRatings={data.ratings}
       bwsByEdition={bwsByEdition}
       competition={competition}
       staffHistory={historicalStaffHistory(

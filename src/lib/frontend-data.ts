@@ -205,6 +205,27 @@ export const frontendPrivateTournament = cache(async (slug: string) => {
 export async function frontendViewer() {
   return (await frontendConnection()).identity?.user ?? null;
 }
+
+// Dashboard statistics retain their existing osu! provider/cache policy. This
+// secondary read never fetches an osu! snapshot locally or walks old v1 lists.
+export async function frontendDashboardRatings(
+  osuId: number,
+): Promise<OclrProfile["ratings"]> {
+  if (!remoteMode()) {
+    if (!process.env.DATABASE_URL) return undefined;
+    const { publicPlayer } = await import("./players");
+    const { readPublishedProfileRatings } =
+      await import("./published-profile-ratings");
+    return readPublishedProfileRatings(
+      osuId,
+      await publicPlayer(osuId, undefined),
+    );
+  }
+  const { supportsProfileRatings } = await import("./read-api-version");
+  if (!supportsProfileRatings((await frontendConnection()).contractVersion))
+    return undefined;
+  return (await frontendProfile(String(osuId))).ratings;
+}
 export async function frontendProfile(
   input: string,
   edition?: string,
@@ -219,6 +240,7 @@ export async function frontendProfile(
       false,
       undefined,
       options.scheduleRefresh,
+      true,
     );
   const viewer = await frontendViewer();
   const { parseOsuProfile } = await import("./osu-profile-model");
@@ -239,6 +261,8 @@ export async function frontendProfile(
   // Negotiate using the freshly verified header. Old v1 backends reject unknown
   // paths/queries with 400; never probe and silently downgrade authorization.
   const version = (await frontendConnection()).contractVersion;
+  const { supportsProfileRatings } = await import("./read-api-version");
+  if (supportsProfileRatings(version)) query.set("ratings", "1");
   if (Number(/^1\.(\d+)\./.exec(version ?? "")?.[1] ?? 0) >= 3) {
     try {
       return oclrProfileSchema.parse(

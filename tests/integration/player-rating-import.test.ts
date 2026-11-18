@@ -4,16 +4,21 @@ import {
   editionState,
   importedPlayerRatings,
   registrations,
+  sipRatingCache,
   users,
 } from "../../src/db/schema";
 import { eq, sql } from "drizzle-orm";
-import { afterAll, beforeAll, describe, expect, it, vi } from "vitest";
+import { afterAll, beforeEach, describe, expect, it, vi } from "vitest";
+import { publishedPlayerProfile } from "../../src/lib/player-profiles";
+import { oclrProfileSchema } from "../../src/lib/read-api-contract";
+import { readApiRoute } from "../../src/lib/read-api";
 import { importPlayerRatings } from "../../src/lib/player-rating-import";
 import { publicPlayerDirectoryModel } from "../../src/lib/public-read-models";
 import { assertTestDatabase } from "../database";
 import { edition } from "../fixtures/edition";
 import { seedEditions } from "../fixtures/editions";
 
+vi.mock("server-only", () => ({}));
 const url = process.env.TEST_DATABASE_URL;
 const admin = { osuId: 90201, username: "Synthetic Admin" };
 const player = { osuId: 90202, username: "Synthetic Player" };
@@ -22,9 +27,10 @@ const same = { osuId: 90204, username: "Synthetic Duplicate" };
 const slug = "s11";
 
 describe.skipIf(!url)("S11 imported player ratings", () => {
-  beforeAll(async () => {
+  beforeEach(async () => {
     assertTestDatabase(url);
     vi.stubEnv("DATABASE_URL", url!);
+    vi.stubEnv("APP_URL", "https://oclr.example.test");
     vi.stubEnv("ADMIN_OSU_IDS", String(admin.osuId));
     await db().execute(sql`TRUNCATE edition_state, users CASCADE`);
     await seedEditions([{ ...edition, slug }, edition]);
@@ -45,6 +51,145 @@ describe.skipIf(!url)("S11 imported player ratings", () => {
   afterAll(async () => {
     await closeDb();
     vi.unstubAllEnvs();
+  });
+
+  it("requires current public participation, and separately a published accepted S11 match for CSV", async () => {
+    const read = async (id: number, include = true) =>
+      oclrProfileSchema.parse(
+        await publishedPlayerProfile(
+          String(id),
+          "osu",
+          undefined,
+          id,
+          true,
+          undefined,
+          undefined,
+          include,
+        ),
+      );
+    for (const userId of [player.osuId, pending.osuId]) {
+      await db()
+        .insert(importedPlayerRatings)
+        .values([
+          { editionSlug: slug, userId, source: "sip", value: -31 },
+          {
+            editionSlug: slug,
+            userId,
+            source: "etx",
+            value: 0,
+            provisional: true,
+          },
+        ]);
+    }
+    const fetchedAt = new Date("2025-01-01T00:00:00.000Z");
+    await db()
+      .insert(sipRatingCache)
+      .values({ osuId: pending.osuId, value: 0, fetchedAt });
+    const published = await read(player.osuId);
+    expect(published.snapshot).toBeNull();
+    expect(published.ratings).toMatchObject({
+      sip: { api: null, csv: { value: -31, importedAt: null } },
+      etx: { value: 0, provisional: true, mods: null, importedAt: null },
+    });
+    const url = `https://oclr.example.test/api/v1/players/${player.osuId}/oclr-profile`;
+    const wire = await readApiRoute(new Request(url + "?ratings=1"));
+    expect(wire.status).toBe(200);
+    expect(oclrProfileSchema.parse((await wire.json()).data).ratings).toEqual(
+      published.ratings,
+    );
+    const legacy = await readApiRoute(new Request(url));
+    expect(legacy.status).toBe(200);
+    expect((await legacy.json()).data).not.toHaveProperty("ratings");
+    expect(
+      (await readApiRoute(new Request(url + "?ratings=invalid"))).status,
+    ).toBe(400);
+    expect(await read(player.osuId, false)).not.toHaveProperty("ratings");
+    expect(await read(pending.osuId)).not.toHaveProperty("ratings");
+    await db()
+      .insert(registrations)
+      .values(
+        [player, pending].map(({ osuId }) => ({
+          editionSlug: edition.slug,
+          userId: osuId,
+          status: "accepted" as const,
+          rulesVersion: "test-v1",
+          answers: {},
+        })),
+      );
+    // Public elsewhere: API data is a current player metric; the pending S11
+    // application and even already-existing S11 import rows grant nothing.
+    expect((await read(pending.osuId)).ratings).toMatchObject({
+      sip: {
+        api: { value: 0, fetchedAt: fetchedAt.toISOString(), snapshot: null },
+        csv: null,
+      },
+      etx: null,
+    });
+    await db()
+      .update(editionState)
+      .set({ configuration: { ...edition, published: false } })
+      .where(eq(editionState.slug, slug));
+    expect((await read(player.osuId)).ratings).toMatchObject({
+      sip: { api: null, csv: null },
+      etx: null,
+    });
+  });
+
+  it("merges only supplied mod columns and timestamps only observed ratings", async () => {
+    const load = (columns: string, line: string) =>
+      importPlayerRatings(admin, slug, {
+        source: "etx",
+        csv: `osuUserId,duelRating${columns}\n${player.osuId},${line}`,
+      });
+    const saved = async (userId: number) =>
+      (
+        await db()
+          .select()
+          .from(importedPlayerRatings)
+          .where(eq(importedPlayerRatings.userId, userId))
+      )[0];
+    await db().insert(importedPlayerRatings).values({
+      editionSlug: slug,
+      source: "etx",
+      userId: same.osuId,
+      value: 5,
+    });
+    const start = Date.now();
+    await load(
+      ",noModDuelStarRating,hiddenDuelStarRating,hardRockDuelStarRating,doubleTimeDuelStarRating,freeModDuelStarRating,duelProvisional,duelOutdated",
+      "6.123456789,0,2.5,3,4.5,5,true,false",
+    );
+    const mods = { NM: 0, HD: 2.5, HR: 3, DT: 4.5, FM: 5 };
+    expect(await saved(player.osuId)).toMatchObject({
+      value: 6.123456789,
+      etxMods: mods,
+      provisional: true,
+      outdated: false,
+    });
+    expect(
+      (await saved(player.osuId)).importedAt!.getTime(),
+    ).toBeGreaterThanOrEqual(start);
+    await load("", "6.2");
+    expect((await saved(player.osuId)).etxMods).toEqual(mods);
+    await load(",hiddenDuelStarRating,doubleTimeDuelStarRating", "6.2,,NaN");
+    const final = await saved(player.osuId);
+    expect(final.etxMods).toEqual({ NM: 0, HR: 3, FM: 5 });
+    await expect(
+      load(",freeModDuelStarRating", `6.2,0\n${player.osuId},6.2,`),
+    ).rejects.toMatchObject({ status: 400 });
+    await expect(
+      load(",freeModDuelStarRating", "6.2,-2"),
+    ).rejects.toMatchObject({ status: 400 });
+    await expect(load("", `NaN\n${player.osuId},5`)).rejects.toMatchObject({
+      status: 400,
+    });
+    await expect(load("", "6.2\n01,6")).rejects.toMatchObject({ status: 400 });
+    expect(await saved(player.osuId)).toEqual(final);
+    expect(await saved(same.osuId)).toMatchObject({
+      value: 5,
+      importedAt: null,
+      etxMods: null,
+    });
   });
 
   it("publishes only matched accepted player scores and audits changes atomically", async () => {

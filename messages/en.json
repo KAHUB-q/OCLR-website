@@ -4490,6 +4490,22 @@
     "m65a678649c36": "One ten-pull available.",
     "m9c8896a901a3": "The draw day has changed. Please try again.",
     "m1b62e5f4c7ef": "Check in before drawing cards.",
-    "mc42ef6989365": "Check in for one ten-pull to use that day. Resets daily at 00:00 (UTC+8)."
+    "mc42ef6989365": "Check in for one ten-pull to use that day. Resets daily at 00:00 (UTC+8).",
+    "m035ed6708a6d": "Tournament ratings",
+    "m1b9e157c019a": "SIP global rank",
+    "mc143f3f6d69a": "SIP country rank",
+    "m11eb9ea5cd4c": "Model accuracy share",
+    "mba3da3a4a02a": "Model combo share",
+    "m997e53e055f4": "S11 CSV · OCLR import time",
+    "m19f1e092cd12": "SkillIssue API · OCLR fetch time",
+    "m38cfc8fbb78b": "Overall SIP rating",
+    "md9e246bdf2e4": "Mod ratings",
+    "m514625c0ed2a": "Skillset ratings",
+    "m5feaa38315d0": "SIP",
+    "mec5e7a2ae020": "ETX",
+    "mb1a5ed76cac5": "SIP SR",
+    "m66ea2f6a5c16": "SIP PP",
+    "m4aadb94e1ae6": "SkillIssue (SIP)",
+    "m72467a2aa00b": "Elitebotix (ETX)"
   }
 }

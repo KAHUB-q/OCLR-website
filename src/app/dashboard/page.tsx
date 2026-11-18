@@ -2,6 +2,8 @@ import { Avatar } from "@/components/avatar";
 import { CountryFlag } from "@/components/country-flag";
 import { ConfirmMutation } from "@/components/confirm-mutation";
 import { PlayerHistory } from "@/components/player-history";
+import { CompactPlayerRatings } from "@/components/player-profile-ratings";
+import { frontendDashboardRatings } from "@/lib/frontend-data";
 import { HistoricalStaffHistory } from "@/components/historical-staff-history";
 import { historicalStaffHistory } from "@/lib/archive-staff-history";
 import { getPublicEditions } from "@/lib/content";
@@ -45,14 +47,16 @@ async function Issue271Page({
       throw error;
     return null;
   };
-  const [applications, snapshot, history, staffHistory] = await Promise.all([
-    playerApplications(user.osuId),
-    getOsuUserProfile(user.osuId, "osu").catch(() => null),
-    playerParticipationHistory(user.osuId).catch(unavailableHistory),
-    getPublicEditions()
-      .then((editions) => historicalStaffHistory(user.osuId, editions))
-      .catch(unavailableHistory),
-  ]);
+  const [applications, snapshot, history, staffHistory, ratings] =
+    await Promise.all([
+      playerApplications(user.osuId),
+      getOsuUserProfile(user.osuId, "osu").catch(() => null),
+      playerParticipationHistory(user.osuId).catch(unavailableHistory),
+      getPublicEditions()
+        .then((editions) => historicalStaffHistory(user.osuId, editions))
+        .catch(unavailableHistory),
+      frontendDashboardRatings(user.osuId).catch(unavailableHistory),
+    ]);
   const profile = snapshot?.profile;
   const country = profile?.countryCode;
   const stats = profile?.statistics;
@@ -154,6 +158,7 @@ async function Issue271Page({
                 </dd>
               </div>
             </dl>
+            <CompactPlayerRatings ratings={ratings} />
             <p className="muted small">
               {profile
                 ? tr("Updated {value0}{value1}", {

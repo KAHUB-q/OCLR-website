@@ -4490,6 +4490,22 @@
     "m65a678649c36": "可进行一次十连抽。",
     "m9c8896a901a3": "抽卡日期已更新，请重试。",
     "m1b62e5f4c7ef": "请先签到再抽卡。",
-    "mc42ef6989365": "签到可获得一次十连抽，限当天使用。每日 UTC+8 00:00 重置。"
+    "mc42ef6989365": "签到可获得一次十连抽，限当天使用。每日 UTC+8 00:00 重置。",
+    "m035ed6708a6d": "赛事评分",
+    "m1b9e157c019a": "SIP 全球排名",
+    "mc143f3f6d69a": "SIP 国内排名",
+    "m11eb9ea5cd4c": "模型准确率占比",
+    "mba3da3a4a02a": "模型连击占比",
+    "m997e53e055f4": "S11 CSV · OCLR 导入时间",
+    "m19f1e092cd12": "SkillIssue API · OCLR 获取时间",
+    "m38cfc8fbb78b": "SIP 总评分",
+    "md9e246bdf2e4": "Mod 分项评分",
+    "m514625c0ed2a": "能力分项评分",
+    "m5feaa38315d0": "SIP",
+    "mec5e7a2ae020": "ETX",
+    "mb1a5ed76cac5": "SIP 星级",
+    "m66ea2f6a5c16": "SIP PP",
+    "m4aadb94e1ae6": "SkillIssue（SIP）",
+    "m72467a2aa00b": "Elitebotix（ETX）"
   }
 }

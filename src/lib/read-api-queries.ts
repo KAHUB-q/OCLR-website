@@ -92,8 +92,11 @@ export function readQuerySchema(id: string, keys: readonly string[]) {
     return z
       .object({
         edition: editionSchema.shape.slug.optional(),
+        ratings: z.literal("1").optional(),
       })
       .strict();
+  if (id === "getStaffOclrProfile")
+    return z.strictObject({ ratings: z.literal("1").optional() });
   if (id === "nextStreamingRead")
     return z.object({ afterFixtureId: z.uuid().optional() }).strict();
   if (id === "getUsernamePlayer")

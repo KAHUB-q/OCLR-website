@@ -27,6 +27,8 @@ import {
   statisticsSource,
 } from "../fixtures/archive-statistics";
 import { statisticsArchiveKey } from "../../src/lib/archive-statistics-key";
+import { archiveSeasonSeries } from "../../src/lib/season-series-source";
+import { rateSeasonSeries } from "../../src/lib/season-series-model";
 import {
   publicArchiveStatistics,
   statisticsWorkspace,
@@ -47,6 +49,11 @@ import { playerCompetitionRecord } from "../../src/lib/player-competition";
 import { playerMapPerformance } from "../../src/lib/player-map-performance";
 
 const url = process.env.TEST_DATABASE_URL;
+async function historicalSeries() {
+  return rateSeasonSeries(
+    archiveSeasonSeries(await publicArchiveStatistics("s7")),
+  );
+}
 const savedArchive = {
   ...statisticsArchive,
   formatVersion: 2 as const,
@@ -123,6 +130,9 @@ describe.skipIf(!url)("versioned historical relational reads", () => {
     expect(before.tournament!.edition.archive!.sourceFacts).toEqual(
       savedArchive.sourceFacts,
     );
+    const initialSeries = await historicalSeries();
+    expect(initialSeries.gameCount).toBeGreaterThan(0);
+    expect(initialSeries.scoreCount).toBe(8);
     const sourceBefore = await db().select().from(historicalStatistics);
     expect(await backfillArchiveReads("s7")).toMatchObject({
       created: false,
@@ -136,6 +146,7 @@ describe.skipIf(!url)("versioned historical relational reads", () => {
     expect(concurrent.filter((r) => r.created)).toHaveLength(1);
     vi.stubEnv("OCLR_ARCHIVE_READ_MODEL", "");
     expect(await outputs()).toEqual(before);
+    expect(await historicalSeries()).toEqual(initialSeries);
     expect(await db().select().from(historicalStatistics)).toEqual(
       sourceBefore,
     );
@@ -179,6 +190,7 @@ describe.skipIf(!url)("versioned historical relational reads", () => {
       confirmed: true,
     });
     expect((await publicArchiveStatistics("s7")).plays).toEqual([]);
+    expect((await historicalSeries()).gameCount).toBe(0);
     await backfillArchiveReads("s7", true);
     const [state] = await db().select().from(editionState);
     await db()
@@ -224,7 +236,10 @@ describe.skipIf(!url)("versioned historical relational reads", () => {
       db()
         .select()
         .from(archiveRelationHeads)
-        .orderBy(archiveRelationHeads.editionSlug, archiveRelationHeads.documentKey);
+        .orderBy(
+          archiveRelationHeads.editionSlug,
+          archiveRelationHeads.documentKey,
+        );
     const heads = await readHeads();
     const documents = await db().$count(archiveRelationDocuments);
     await db().execute(

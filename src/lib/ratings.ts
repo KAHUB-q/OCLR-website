@@ -5,11 +5,14 @@ import { approvedRatingGames } from "./approved-rating-games";
 import type { User } from "./auth/sessions";
 import { assertReadCapability } from "./auth/staff";
 import { remoteMode } from "./data-source";
+import { RemoteDataError } from "./remote-errors";
 import type { ExplicitReadData } from "./explicit-read-contracts";
 import { assertRemoteSubject, frontendResource } from "./frontend-resource";
 import { HttpError } from "./http-error";
 import { publicCompetition } from "./public-competition";
-import { ratingIdentities } from "./rating-data";
+import { fixtureRatingIdentities, ratingIdentities } from "./rating-data";
+import { seasonSeriesBuilder } from "./season-series-source";
+import type { RatingGame } from "./yumu-rating";
 import { ratingSnapshot, type RatingSnapshot } from "./rating-snapshot";
 import { readTournament } from "./tournament-reads";
 
@@ -89,6 +92,114 @@ export async function publicMatchRating(
     });
   }
   return databasePublicMatchRating(slug, fixtureId);
+}
+
+type PublicSeasonSeries = ExplicitReadData<"publicSeasonSeries">;
+
+async function databasePublicSeasonSeries(
+  slug: string,
+): Promise<PublicSeasonSeries> {
+  if (!process.env.DATABASE_URL) return null;
+  return db().transaction(
+    async (tx) => {
+      if (!(await readTournament(slug, tx, true))) return null;
+      const competition = await publicCompetition(slug, tx);
+      if (!competition?.databaseAuthority) return null;
+      const fixtures = competition.fixtures.filter(
+        (f) => f.status !== "cancelled" && f.stage !== "exhibition",
+      );
+      const teams = new Map<string, string>();
+      for (const { result, home, away } of fixtures) {
+        if (!result || !home.team || !away.team) continue;
+        teams.set(home.team.id, home.team.name);
+        teams.set(away.team.id, away.team.name);
+      }
+      const { names, visible } = await fixtureRatingIdentities(slug, tx, [
+        ...teams.keys(),
+      ]);
+      const series = seasonSeriesBuilder(
+        fixtures.map((f) => ({
+          id: f.id,
+          roundId: f.roundId,
+          roundName: f.roundName,
+          complete: !!f.result?.games.length,
+        })),
+        names,
+        teams,
+      );
+      const byFixture = new Map<string, RatingGame[]>();
+      if (teams.size) {
+        for (const game of await approvedRatingGames(slug, tx)) {
+          const entries = byFixture.get(game.fixtureId);
+          if (entries) entries.push(game);
+          else byFixture.set(game.fixtureId, [game]);
+        }
+      }
+      for (const f of fixtures) {
+        const result = f.result;
+        if (!result) continue;
+        const sides = [f.home.team?.id, f.away.team?.id].filter(
+          (id): id is string => !!id,
+        );
+        const ids = new Set(result.games.map((g) => g.gameId));
+        const source = (byFixture.get(f.id) ?? []).filter(
+          (g) => g.revision === result.revision && ids.has(g.gameId),
+        );
+        const withheld =
+          sides.length !== 2 ||
+          sides[0] === sides[1] ||
+          source.some((g) => g.scores.some((s) => !visible(s.userId, sides)));
+        for (const published of result.games) {
+          const copies = source.filter((g) => g.gameId === published.gameId);
+          if (withheld || !copies.length) {
+            series.exclude(f.id, published.gameId);
+            continue;
+          }
+          for (const g of copies) {
+            if (
+              g.problem ||
+              g.roundId !== f.roundId ||
+              g.teamIds.length !== 2 ||
+              !sides.every((id) => g.teamIds.includes(id)) ||
+              g.winnerTeamId !== published.winnerTeamId ||
+              (g.beatmapId ?? null) !== published.beatmapId
+            ) {
+              series.exclude(f.id, g.gameId);
+              continue;
+            }
+            series.add({
+              fixtureId: f.id,
+              gameId: g.gameId,
+              slot: g.slot ?? null,
+              beatmapId: published.beatmapId,
+              teamIds: sides,
+              winnerTeamId: g.winnerTeamId,
+              scores: g.scores,
+            });
+          }
+        }
+      }
+      return series.finish();
+    },
+    { isolationLevel: "repeatable read", accessMode: "read only" },
+  );
+}
+
+export async function publicSeasonSeries(
+  slug: string,
+): Promise<PublicSeasonSeries> {
+  if (remoteMode()) {
+    try {
+      return await frontendResource<PublicSeasonSeries>("publicSeasonSeries", {
+        slug,
+      });
+    } catch (error) {
+      if (error instanceof RemoteDataError && error.code === "NOT_FOUND")
+        return null;
+      throw error;
+    }
+  }
+  return databasePublicSeasonSeries(slug);
 }
 
 /** Same population and approval gates as single fixtures, with raw-game reaggregation. */

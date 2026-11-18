@@ -59,6 +59,33 @@ const coverage = {
 } as unknown as NonNullable<Parameters<typeof EventStatistics>[0]["coverage"]>;
 createRoot(document.getElementById("root")!).render(
   <NextIntlClientProvider locale="en" messages={en} timeZone="UTC">
-    <EventStatistics scores={scores} coverage={coverage} />
+    <EventStatistics
+      scores={scores}
+      coverage={coverage}
+      series={{
+        fixtures: [
+          { id: "one", roundId: "Final", roundName: "Final", complete: true },
+        ],
+        teams: coverage.teams,
+        players: [
+          { userId: 11, username: "Same" },
+          { userId: 22, username: "Same" },
+        ],
+        games: [
+          {
+            fixtureId: "one",
+            gameId: 1,
+            slot: "NM1",
+            beatmapId: 1001,
+            teamIds: ["X", "Y"],
+            winnerTeamId: "X",
+            scores: [
+              { userId: 11, teamId: "X", total: 100 },
+              { userId: 22, teamId: "Y", total: 50 },
+            ],
+          },
+        ],
+      }}
+    />
   </NextIntlClientProvider>,
 );

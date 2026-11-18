@@ -90,6 +90,16 @@
     "scope": "tournaments:read"
   },
   {
+    "module": "ratings",
+    "fn": "publicSeasonSeries",
+    "id": "publicSeasonSeries",
+    "path": "/tournaments/{edition}/statistics/series",
+    "args": ["slug"],
+    "public": true,
+    "query": [],
+    "scope": "tournaments:read"
+  },
+  {
     "module": "award-reads",
     "fn": "publicAwards",
     "id": "publicAwards",

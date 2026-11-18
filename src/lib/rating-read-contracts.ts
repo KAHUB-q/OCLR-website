@@ -82,6 +82,43 @@ export const ratingReadContracts = {
   ]),
   matchRatingWorkspace: rating,
   publicMatchRating: z.union([z.null(), rating]),
+  publicSeasonSeries: z.union([
+    z.null(),
+    z.strictObject({
+      fixtures: z.array(
+        z.strictObject({
+          id: z.string(),
+          roundId: z.string(),
+          roundName: z.string(),
+          complete: z.boolean(),
+        }),
+      ),
+      teams: z.array(z.strictObject({ id: z.string(), name: z.string() })),
+      players: z.array(
+        z.strictObject({
+          userId: z.number().int().positive(),
+          username: z.string(),
+        }),
+      ),
+      games: z.array(
+        z.strictObject({
+          fixtureId: z.string(),
+          gameId: z.number().int().positive(),
+          slot: z.string().nullable(),
+          beatmapId: z.number().int().positive().nullable(),
+          teamIds: z.array(z.string()).length(2),
+          winnerTeamId: z.string().nullable(),
+          scores: z.array(
+            z.strictObject({
+              userId: z.number().int().positive(),
+              teamId: z.string(),
+              total: z.number().int().nonnegative(),
+            }),
+          ),
+        }),
+      ),
+    }),
+  ]),
   publicRoundRatings: z.array(
     z.strictObject({
       roundId: z.string(),

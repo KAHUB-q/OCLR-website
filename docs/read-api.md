@@ -497,6 +497,12 @@ while retaining its exact prior statistics identity through `sourceTitle`;
 existing maps without these fields remain compatible. See
 [the S2 NM2 recovery](archive-map-metadata.md#s2-nm2-official-file-recovery-852).
 
+Contract 1.38.0 adds the public saved read
+`/tournaments/{edition}/statistics/series` for live editions. It returns
+published fixtures, public identities and eligible game scores together.
+Historical Series use the same published archive statistics release as the
+other statistics views. See [YumuRating](yumu-rating.md).
+
 Contract 1.37.0 adds [Showcase pools](streaming-api.md#showcase-pools-1115)
 to the edition-bound Streaming bearer channel. The staff mappool workspace
 adds optional Admin-only `showcaseStreamers` and `showcaseGrants` under the

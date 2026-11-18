@@ -4490,6 +4490,12 @@
     "m65a678649c36": "One ten-pull available.",
     "m9c8896a901a3": "The draw day has changed. Please try again.",
     "m1b62e5f4c7ef": "Check in before drawing cards.",
-    "mc42ef6989365": "Check in for one ten-pull to use that day. Resets daily at 00:00 (UTC+8)."
+    "mc42ef6989365": "Check in for one ten-pull to use that day. Resets daily at 00:00 (UTC+8).",
+    "m505867b02eab": "YumuRating Series",
+    "m07514fa0ed11": "Round and map change the rating. Team and search only filter the ranked players.",
+    "me459795b34a0": "Fully rated public matches (before map filter)",
+    "m60fd12418e25": "Partial coverage",
+    "m414a8e721cd5": "No published games can be rated in this scope.",
+    "m3c3cb068aa9a": "No players match these filters."
   }
 }

@@ -17,6 +17,14 @@
   border-top: 1px solid var(--site-border, var(--color-border));
 }
 
+.staffRecord {
+  align-items: center;
+}
+
+.staffRecord h3 {
+  display: flex;
+}
+
 .record h3 {
   margin: 0;
   font-size: var(--text-body);

@@ -750,6 +750,13 @@
       "when": 1794979836516,
       "tag": "0106_liru_daily_gacha",
       "breakpoints": true
+    },
+    {
+      "idx": 107,
+      "version": "7",
+      "when": 1794995029505,
+      "tag": "0107_player_rating_details",
+      "breakpoints": true
     }
   ]
 }

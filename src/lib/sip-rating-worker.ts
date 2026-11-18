@@ -27,6 +27,10 @@ async function pendingPlayers() {
             isNull(sipRatingCache.fetchedAt),
             lt(sipRatingCache.fetchedAt, day),
           ),
+          or(
+            isNull(sipRatingCache.notFoundAt),
+            lt(sipRatingCache.notFoundAt, day),
+          ),
         ),
       )
       .orderBy(asc(registrations.userId));
@@ -78,11 +82,30 @@ export async function refreshSipRatings(apply: boolean) {
         summary.failed++;
         continue;
       }
+      if (rating.kind === "not-found") {
+        const notFoundAt = new Date();
+        // On a cache miss this is a negative-cache row, not a snapshot. On a
+        // hit, keep even a pre-breakdown total and its original fetch time.
+        await writer
+          .insert(sipRatingCache)
+          .values({ osuId, fetchedAt: notFoundAt, notFoundAt })
+          .onConflictDoUpdate({
+            target: sipRatingCache.osuId,
+            set: { notFoundAt },
+          });
+        summary.missing++;
+        continue;
+      }
       if (rating.kind !== "rating") {
         summary.stopped = rating.kind;
         break;
       }
-      const snapshot = { value: rating.value, fetchedAt: new Date() };
+      const snapshot = {
+        value: rating.value,
+        snapshot: rating.snapshot,
+        fetchedAt: new Date(),
+        notFoundAt: null,
+      };
       await writer
         .insert(sipRatingCache)
         .values({ osuId, ...snapshot })

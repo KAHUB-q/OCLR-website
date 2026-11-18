@@ -152,7 +152,11 @@ export const sipRatingCache = pgTable("sip_rating_cache", {
     .primaryKey()
     .references(() => users.osuId, { onDelete: "cascade" }),
   value: doublePrecision("value"),
+  snapshot:
+    jsonb("snapshot").$type<import("@/lib/sip-rating-model").SipSnapshot>(),
   fetchedAt: timestamp("fetched_at", { withTimezone: true }).notNull(),
+  // Negative-cache a 404 without advancing the time of a verified snapshot.
+  notFoundAt: timestamp("not_found_at", { withTimezone: true }),
 });
 export const sessions = pgTable(
   "sessions",
@@ -376,6 +380,9 @@ export const importedPlayerRatings = pgTable(
       .references(() => users.osuId, { onDelete: "cascade" }),
     source: text("source").$type<"sip" | "etx">().notNull(),
     value: doublePrecision("value").notNull(),
+    etxMods:
+      jsonb("etx_mods").$type<import("@/lib/etx-rating-model").EtxMods>(),
+    importedAt: timestamp("imported_at", { withTimezone: true }),
     provisional: boolean("provisional").notNull().default(false),
     outdated: boolean("outdated").notNull().default(false),
   },
@@ -1020,8 +1027,9 @@ export const mappoolShowcaseAccess = pgTable(
       .notNull()
       .references(() => users.osuId, { onDelete: "cascade" }),
     approvedVersion: integer("approved_version").notNull(),
-    approvedLockAt: timestamp("approved_lock_at", { withTimezone: true })
-      .notNull(),
+    approvedLockAt: timestamp("approved_lock_at", {
+      withTimezone: true,
+    }).notNull(),
   },
   (t) => [primaryKey({ columns: [t.poolId, t.userId] })],
 );
@@ -1500,7 +1508,10 @@ export const transferredHistoricalStatisticsReleases = pgTable(
     primaryKey({ columns: [t.editionSlug, t.mpId] }),
     foreignKey({
       columns: [t.editionSlug, t.mpId],
-      foreignColumns: [historicalStatistics.editionSlug, historicalStatistics.mpId],
+      foreignColumns: [
+        historicalStatistics.editionSlug,
+        historicalStatistics.mpId,
+      ],
       name: "transferred_historical_statistics_release_source_fk",
     }),
   ],
@@ -1553,7 +1564,8 @@ export const liruDailyGacha = pgTable(
       .notNull()
       .defaultNow(),
     drawnAt: timestamp("drawn_at", { withTimezone: true }),
-    cards: jsonb("cards").$type<import("@/lib/liru-gacha-model").LiruGachaCard[]>(),
+    cards:
+      jsonb("cards").$type<import("@/lib/liru-gacha-model").LiruGachaCard[]>(),
   },
   (t) => [
     primaryKey({ columns: [t.osuId, t.day] }),
@@ -2878,9 +2890,16 @@ export const rankingSnapshots = pgTable(
     result: jsonb("result").notNull(),
   },
   (t) => [
-    index("ranking_snapshots_source_idx").on(t.kind, t.sourceHash, t.calculatedAt),
+    index("ranking_snapshots_source_idx").on(
+      t.kind,
+      t.sourceHash,
+      t.calculatedAt,
+    ),
     check("ranking_snapshots_kind", sql`${t.kind} IN ('career', 'beatmap')`),
     check("ranking_snapshots_hash", sql`${t.sourceHash} ~ '^[a-f0-9]{64}$'`),
-    check("ranking_snapshots_result", sql`jsonb_typeof(${t.result}) = 'object'`),
+    check(
+      "ranking_snapshots_result",
+      sql`jsonb_typeof(${t.result}) = 'object'`,
+    ),
   ],
 );

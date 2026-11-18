@@ -1,4 +1,5 @@
 import { HttpError } from "./http-error";
+import { etxCsvColumns, etxMods, type EtxModPatch } from "./etx-rating-model";
 
 function invalidCsv(): never {
   throw new HttpError(
@@ -54,6 +55,28 @@ function flag(value: string) {
   return invalidCsv();
 }
 
+function stars(cell: string) {
+  const raw = cell.trim();
+  if (raw === "" || /^nan$/i.test(raw)) return null;
+  const value = Number(raw);
+  if (
+    !/^-?\d+(?:\.\d+)?(?:e[+-]?\d+)?$/i.test(raw) ||
+    !Number.isFinite(value) ||
+    value < 0
+  )
+    invalidCsv();
+  return value;
+}
+
+type RatingRow = {
+  identity: string;
+  row: number;
+  value: number | null;
+  provisional: boolean;
+  outdated: boolean;
+  mods?: EtxModPatch;
+};
+
 export function parsePlayerRatingCsv(contents: string) {
   const [first, ...rows] = csvRows(contents);
   if (!first) invalidCsv();
@@ -62,8 +85,19 @@ export function parsePlayerRatingCsv(contents: string) {
   const identityIndex = header.indexOf("osuuserid");
   const valueIndex = header.indexOf("duelrating");
   if (identityIndex < 0 || valueIndex < 0 || rows.length > 50_000) invalidCsv();
-  const flagIndex = (key: string) =>
-    header.includes(key) ? header.indexOf(key) : header.indexOf(`duel${key}`);
+  const flagIndex = (key: string) => {
+    const legacy = header.indexOf(key);
+    const current = header.indexOf(`duel${key}`);
+    if (legacy >= 0 && current >= 0) invalidCsv();
+    return current >= 0 ? current : legacy;
+  };
+  const columns = etxMods
+    .map((mod) => ({
+      mod,
+      index: header.indexOf(etxCsvColumns[mod].toLowerCase()),
+    }))
+    .filter((column) => column.index >= 0);
+  const seen = new Map<string, RatingRow>();
   const provisionalIndex = flagIndex("provisional");
   const outdatedIndex = flagIndex("outdated");
   return rows.flatMap((row, index) => {
@@ -72,23 +106,31 @@ export function parsePlayerRatingCsv(contents: string) {
     const identity = row[identityIndex].trim();
     if (!/^[1-9]\d*$/.test(identity) || !Number.isSafeInteger(Number(identity)))
       invalidCsv();
-    const raw = row[valueIndex].trim();
-    const value = raw === "" || /^nan$/i.test(raw) ? null : Number(raw);
+    const parsed: RatingRow = {
+      identity,
+      value: stars(row[valueIndex]),
+      row: index + 2,
+      provisional: flag(row[provisionalIndex] ?? ""),
+      outdated: flag(row[outdatedIndex] ?? ""),
+    };
+    if (columns.length) {
+      parsed.mods = {};
+      for (const column of columns)
+        parsed.mods[column.mod] = stars(row[column.index]);
+    }
+    const previous = seen.get(identity);
     if (
-      value !== null &&
-      (!/^-?\d+(?:\.\d+)?(?:e[+-]?\d+)?$/i.test(raw) ||
-        !Number.isFinite(value) ||
-        value < 0)
+      previous &&
+      (previous.value !== parsed.value ||
+        previous.provisional !== parsed.provisional ||
+        previous.outdated !== parsed.outdated ||
+        columns.some(({ mod }) => previous.mods?.[mod] !== parsed.mods?.[mod]))
     )
-      invalidCsv();
-    return [
-      {
-        identity,
-        value,
-        row: index + 2,
-        provisional: flag(row[provisionalIndex] ?? ""),
-        outdated: flag(row[outdatedIndex] ?? ""),
-      },
-    ];
+      throw new HttpError(
+        400,
+        "The CSV contains conflicting ratings for the same player.",
+      );
+    seen.set(identity, parsed);
+    return [parsed];
   });
 }

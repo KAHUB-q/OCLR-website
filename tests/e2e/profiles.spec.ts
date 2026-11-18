@@ -121,6 +121,16 @@ test.describe("published osu! profiles", () => {
       page.getByRole("link", { name: "← Tournament players", exact: true }),
     ).toHaveAttribute("href", "/tournaments/test-cup/players");
     await expect(page.getByRole("heading", { name: "Career" })).toBeVisible();
+    const seasonNotice = page.getByRole("link", {
+      name: "You’re viewing this player’s match data for a single season. Click here to view all data.",
+    });
+    await expect(seasonNotice).toHaveAttribute("href", `/players/${base}`);
+    await seasonNotice.click();
+    await expect(page).toHaveURL(new RegExp(`/players/${base}$`));
+    await expect(seasonNotice).toHaveCount(0);
+    await expect(
+      page.getByRole("link", { name: /^← (Tournament players|Tournaments)$/ }),
+    ).toHaveCount(0);
     const operator = await browser.newContext({
       storageState: englishStorage,
       baseURL: "http://127.0.0.1:3100",

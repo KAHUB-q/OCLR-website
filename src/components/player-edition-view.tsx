@@ -151,7 +151,7 @@ export function PlayerEditionView({
             }}
           >
             {tr(
-              "You are viewing this player's data for a single tournament. To view all data, click here.",
+              "You’re viewing this player’s match data for a single season. Click here to view all data.",
             )}
           </a>,
           header,

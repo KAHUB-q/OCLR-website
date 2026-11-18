@@ -16,6 +16,32 @@ import { seedSession } from "./session";
 test.describe("published osu! profiles", () => {
   test.skip(!process.env.TEST_DATABASE_URL, "Requires isolated PostgreSQL");
   test.afterAll(async () => closeDb());
+  test("returns from a season to the same player's full profile", async ({
+    page,
+    isMobile,
+  }) => {
+    const uid = isMobile ? 261501 : 261401;
+    await seedPublicDirectory(uid);
+    await page.goto(`/players/${uid}?edition=test-cup`);
+    const back = page.getByRole("link", {
+      name: "← Tournament players",
+      exact: true,
+    });
+    const notice = page.getByRole("link", {
+      name: "You’re viewing this player’s match data for a single season. Click here to view all data.",
+    });
+    await expect(back).toHaveAttribute("href", "/tournaments/test-cup/players");
+    await expect(notice).toHaveAttribute("href", `/players/${uid}`);
+    await notice.click();
+    await expect(page).toHaveURL(new RegExp(`/players/${uid}$`));
+    await expect(notice).toHaveCount(0);
+    await expect(back).toHaveCount(0);
+    await expect(
+      page.getByRole("link", { name: "← Tournaments", exact: true }),
+    ).toHaveCount(0);
+    await page.goBack();
+    await expect(back).toBeVisible();
+  });
   test("reads dated standard snapshots anonymously and enforces private lookup permissions", async ({
     page,
     context,
@@ -121,16 +147,6 @@ test.describe("published osu! profiles", () => {
       page.getByRole("link", { name: "← Tournament players", exact: true }),
     ).toHaveAttribute("href", "/tournaments/test-cup/players");
     await expect(page.getByRole("heading", { name: "Career" })).toBeVisible();
-    const seasonNotice = page.getByRole("link", {
-      name: "You’re viewing this player’s match data for a single season. Click here to view all data.",
-    });
-    await expect(seasonNotice).toHaveAttribute("href", `/players/${base}`);
-    await seasonNotice.click();
-    await expect(page).toHaveURL(new RegExp(`/players/${base}$`));
-    await expect(seasonNotice).toHaveCount(0);
-    await expect(
-      page.getByRole("link", { name: /^← (Tournament players|Tournaments)$/ }),
-    ).toHaveCount(0);
     const operator = await browser.newContext({
       storageState: englishStorage,
       baseURL: "http://127.0.0.1:3100",

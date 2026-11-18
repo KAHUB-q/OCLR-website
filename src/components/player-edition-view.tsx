@@ -151,7 +151,7 @@ export function PlayerEditionView({
             }}
           >
             {tr(
-              "You are viewing this player's data for a single tournament. To view all data, click here.",
+              "You’re viewing this player’s match data for a single season. Click here to view all data.",
             )}
           </a>,
           header,
@@ -161,16 +161,16 @@ export function PlayerEditionView({
           selected ? "public-tournament public-player-page" : "container page"
         } ${styles.playerPage}`}
       >
-        <div className={styles.pageHeader}>
-          <Link
-            className="context-link"
-            href={
-              selected ? `/tournaments/${selected}/players` : "/tournaments"
-            }
-          >
-            {selected ? tr("← Tournament players") : tr("← Tournaments")}
-          </Link>
-        </div>
+        {selected && (
+          <div className={styles.pageHeader}>
+            <Link
+              className="context-link"
+              href={`/tournaments/${selected}/players`}
+            >
+              {tr("← Tournament players")}
+            </Link>
+          </div>
+        )}
         {snapshot ? (
           <PlayerProfile
             heading={heading}

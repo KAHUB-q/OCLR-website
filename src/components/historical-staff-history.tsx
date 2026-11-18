@@ -38,7 +38,10 @@ export function HistoricalStaffHistory({
       ) : (
         <ul className={`panel ${styles.history}`}>
           {history.map((record) => (
-            <li className={styles.record} key={record.editionSlug}>
+            <li
+              className={`${styles.record} ${styles.staffRecord}`}
+              key={record.editionSlug}
+            >
               <h3>
                 <Link
                   href={`/tournaments/${record.editionSlug}/staff`}

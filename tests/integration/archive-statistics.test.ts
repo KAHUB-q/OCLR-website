@@ -38,6 +38,9 @@ import {
 import { POST as statisticsRoute } from "../../src/app/api/admin/tournaments/[edition]/statistics/route";
 import { changeHistoricalStatisticsWrite } from "../../src/lib/results-publication-write-contracts";
 import { extendedSchemas } from "../../src/lib/extended-read-resources";
+import { readApiRoute } from "../../src/lib/read-api";
+import { archiveSeasonSeries } from "../../src/lib/season-series-source";
+import { rateSeasonSeries } from "../../src/lib/season-series-model";
 const origin = "https://oclr.example.test";
 vi.mock("../../src/lib/auth/user", async (original) => ({
   ...(await original<typeof import("../../src/lib/auth/user")>()),
@@ -135,6 +138,32 @@ describe.skipIf(!url)("historical statistics transactions", () => {
   afterAll(async () => {
     await closeDb();
     vi.unstubAllEnvs();
+  });
+  it("rates the same published S8 release from the database and the public statistics endpoint", async () => {
+    await seedEditions([
+      {
+        ...edition,
+        slug: "s8",
+        status: "completed",
+        registration: null,
+        archive: { ...structuredClone(statisticsArchive), editionSlug: "s8" },
+      },
+    ]);
+    for (const command of [imported, reviewed, publish])
+      await statisticsCommand(admin, "s8", command);
+    const local = rateSeasonSeries(
+      archiveSeasonSeries(await publicArchiveStatistics("s8")),
+    );
+    const wire = await readApiRoute(
+      new Request(origin + "/api/v1/tournaments/s8/statistics"),
+    );
+    expect(wire.status).toBe(200);
+    const remote = rateSeasonSeries(
+      archiveSeasonSeries((await wire.json()).data),
+    );
+    expect(remote).toEqual(local);
+    expect(local).toMatchObject({ gameCount: 2, scoreCount: 8 });
+    expect(local.players.length).toBeGreaterThan(0);
   });
   it("recalculates published EZ statistics from unchanged MP snapshots after an audited settings save", async () => {
     const source = statisticsSource();

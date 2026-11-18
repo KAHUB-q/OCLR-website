@@ -4507,6 +4507,12 @@
     "mb1a5ed76cac5": "SIP SR",
     "m66ea2f6a5c16": "SIP PP",
     "m4aadb94e1ae6": "SkillIssue (SIP)",
-    "m72467a2aa00b": "Elitebotix (ETX)"
+    "m72467a2aa00b": "Elitebotix (ETX)",
+    "m505867b02eab": "YumuRating Series",
+    "m07514fa0ed11": "Round and map change the rating. Team and search only filter the ranked players.",
+    "me459795b34a0": "Fully rated public matches (before map filter)",
+    "m60fd12418e25": "Partial coverage",
+    "m414a8e721cd5": "No published games can be rated in this scope.",
+    "m3c3cb068aa9a": "No players match these filters."
   }
 }

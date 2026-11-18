@@ -12,6 +12,28 @@ import type { RatingReader } from "./approved-rating-games";
 import { ratingSnapshot } from "./rating-snapshot";
 import type { RatingGame } from "./yumu-rating";
 
+async function ratingMembers(
+  slug: string,
+  reader: RatingReader,
+  publicTeamIds: string[],
+) {
+  if (!publicTeamIds.length) return [];
+  return reader
+    .select({
+      userId: memberships.userId,
+      teamId: memberships.teamId,
+      username: users.username,
+    })
+    .from(memberships)
+    .innerJoin(users, eq(users.osuId, memberships.userId))
+    .where(
+      and(
+        eq(memberships.editionSlug, slug),
+        inArray(memberships.teamId, publicTeamIds),
+      ),
+    );
+}
+
 export async function ratingIdentities(
   slug: string,
   reader: RatingReader,
@@ -37,21 +59,32 @@ export async function ratingIdentities(
           and(eq(captains.editionSlug, slug), eq(captains.published, true)),
         )),
     );
-    if (publicTeamIds.length)
-      identities.push(
-        ...(await reader
-          .select({ userId: memberships.userId, username: users.username })
-          .from(memberships)
-          .innerJoin(users, eq(users.osuId, memberships.userId))
-          .where(
-            and(
-              eq(memberships.editionSlug, slug),
-              inArray(memberships.teamId, publicTeamIds),
-            ),
-          )),
-      );
+    identities.push(...(await ratingMembers(slug, reader, publicTeamIds)));
   }
   return new Map(identities.map((p) => [p.userId, p.username]));
+}
+
+/** Batch the match identity check without letting a third team's membership authorize a fixture. */
+export async function fixtureRatingIdentities(
+  slug: string,
+  reader: RatingReader,
+  publicTeamIds: string[],
+) {
+  const names = await ratingIdentities(slug, reader, []);
+  const publicPlayers = new Set(names.keys());
+  const members = new Map<string, Set<number>>();
+  for (const row of await ratingMembers(slug, reader, publicTeamIds)) {
+    names.set(row.userId, row.username);
+    const ids = members.get(row.teamId) ?? new Set<number>();
+    ids.add(row.userId);
+    members.set(row.teamId, ids);
+  }
+  return {
+    names,
+    visible: (userId: number, sides: string[]) =>
+      publicPlayers.has(userId) ||
+      sides.some((side) => members.get(side)?.has(userId)),
+  };
 }
 
 export async function staffRoundRatings(

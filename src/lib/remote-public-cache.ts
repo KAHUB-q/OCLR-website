@@ -12,7 +12,6 @@ const operations = new Set([
   "publicStaff",
   "publicNewsModel",
   "publicContributors",
-  "publicArchiveStatistics",
   "publicPlayerParticipation",
 ]);
 export function cachePublicOperation(operation: {

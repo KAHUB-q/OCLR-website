@@ -9983,6 +9983,12 @@
                       "policy": {
                         "$ref": "#/components/schemas/Readcae8aa1efc15"
                       },
+                      "teamIds": {
+                        "type": "array",
+                        "items": {
+                          "type": "string"
+                        }
+                      },
                       "series": {
                         "$ref": "#/components/schemas/Read9ee538274272"
                       },
@@ -10043,12 +10049,6 @@
                           }
                         ]
                       },
-                      "teamIds": {
-                        "type": "array",
-                        "items": {
-                          "type": "string"
-                        }
-                      },
                       "skipBans": {
                         "anyOf": [
                           {
@@ -10064,9 +10064,9 @@
                     },
                     "required": [
                       "policy",
+                      "teamIds",
                       "series",
-                      "maps",
-                      "teamIds"
+                      "maps"
                     ],
                     "additionalProperties": false
                   },

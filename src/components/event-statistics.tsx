@@ -1,6 +1,12 @@
 "use client";
 import { StatisticsNotice } from "./statistics-notice";
-import { useState } from "react";
+import { useMemo, useState } from "react";
+import {
+  rateSeasonSeries,
+  seasonSeriesOptions,
+  visibleSeriesPlayers,
+  type SeasonSeries,
+} from "@/lib/season-series-model";
 import Link from "./pending-link";
 import { useAppTranslations } from "@/i18n/shared";
 import type { PublicArchiveStatistics } from "@/lib/archive-statistics-reads";
@@ -20,25 +26,40 @@ const views = [
   "Team leaderboard",
   "Team placements",
   "Solo placements",
+  "YumuRating Series",
 ];
+const SERIES_VIEW = views.length - 1;
 export function EventStatistics({
   scores,
   coverage,
+  series = null,
+  edition,
 }: {
   scores: EventScore[];
   coverage?: PublicArchiveStatistics;
+  series?: SeasonSeries | null;
+  edition?: string;
 }) {
   const tr = useAppTranslations();
-  const [view, setView] = useState(0),
+  const [view, setView] = useState(!scores.length && series ? SERIES_VIEW : 0),
     [round, setRound] = useState(""),
     [team, setTeam] = useState(""),
     [slot, setSlot] = useState(""),
     [query, setQuery] = useState("");
-  const [sort, setSort] = useState("Average score"),
+  const showSeries = view === SERIES_VIEW;
+  const [sort, setSort] = useState(showSeries ? "MRA" : "Average score"),
     [descending, setDescending] = useState(true);
-  const eligible = scores.filter(
-    (s) => (!round || s.round === round) && (!slot || eventMapKey(s) === slot),
+  const seriesOptions = useMemo(() => seasonSeriesOptions(series), [series]);
+  const ranking = useMemo(
+    () => (showSeries ? rateSeasonSeries(series, round, slot) : null),
+    [showSeries, series, round, slot],
   );
+  const eligible = showSeries
+    ? []
+    : scores.filter(
+        (s) =>
+          (!round || s.round === round) && (!slot || eventMapKey(s) === slot),
+      );
   const plays = eligible.filter((s) => !team || s.teamId === team);
   const coverageFixtures = coverage?.fixtures.filter(
     (f) => !round || f.stage === round,
@@ -68,7 +89,12 @@ export function EventStatistics({
       [`${map.key}:score`, `${map.label} ${tr("Score")}`],
     ]),
   );
-  const poolLabels: Record<string, string> = {
+  const labels: Record<string, string> = {
+    MRA: "MRA",
+    ERA: "ERA",
+    DRA: "DRA",
+    RWS: "RWS",
+    Appearances: tr("Appearances"),
     "Raw MP score": tr("Raw MP score"),
     "Score multiplier": tr("Score multiplier"),
     "Applicable matches": tr("Applicable matches"),
@@ -241,6 +267,19 @@ export function EventStatistics({
         )
         .reduce((n, p) => n + p.score, 0),
     }));
+  } else if (ranking) {
+    columns = ["Player", "Team", "Appearances", "MRA", "ERA", "DRA", "RWS"];
+    rows = visibleSeriesPlayers(ranking.players, team, query).map((p) => ({
+      _rank: p.rank,
+      _osuId: p.userId,
+      Player: p.username,
+      Team: p.team,
+      Appearances: p.appearances,
+      MRA: p.mra,
+      ERA: p.era,
+      DRA: p.dra,
+      RWS: p.rws,
+    }));
   } else {
     columns = [
       view === 4 ? "Team" : "Player",
@@ -250,13 +289,15 @@ export function EventStatistics({
     ];
     rows = eventPlacementRows(eligible, view === 4 ? "team" : "player", team);
   }
-  rows = rows.filter((row) =>
-    columns.some((column) => {
-      const value = row[column];
-      return String(value ?? "")
-        .toLowerCase()
-        .includes(query.toLowerCase());
-    }),
+  rows = rows.filter(
+    (row) =>
+      showSeries ||
+      columns.some((column) => {
+        const value = row[column];
+        return String(value ?? "")
+          .toLowerCase()
+          .includes(query.toLowerCase());
+      }),
   );
   rows.sort((a, b) => {
     const x = a[sort],
@@ -272,11 +313,12 @@ export function EventStatistics({
   });
   function cell(key: string, value: Cell, row: Row) {
     if (value === null || value === undefined) return "—";
-    if ((key === "Player" || key === "Best player") && coverage) {
+    const playerEdition = coverage?.slug ?? (showSeries ? edition : undefined);
+    if ((key === "Player" || key === "Best player") && playerEdition) {
       const osuId = row[key === "Best player" ? "_bestOsuId" : "_osuId"];
       if (typeof osuId === "number")
         return (
-          <Link href={`/players/${osuId}?edition=${coverage.slug}`}>
+          <Link href={`/players/${osuId}?edition=${playerEdition}`}>
             {value}
           </Link>
         );
@@ -293,6 +335,8 @@ export function EventStatistics({
       );
     if (key === "Map ID" && typeof value === "number")
       return <a href={`https://osu.ppy.sh/b/${value}`}>{value} ↗</a>;
+    if (typeof value === "number" && ["MRA", "ERA", "DRA", "RWS"].includes(key))
+      return number(value, 4);
     if (typeof value === "number")
       return /accuracy|rate/i.test(key)
         ? `${number(value * 100, 2)}%`
@@ -302,10 +346,54 @@ export function EventStatistics({
           );
     return value;
   }
+  function filters(index: number) {
+    const isSeries = index === SERIES_VIEW;
+    return [
+      {
+        label: "Rounds",
+        value: round,
+        set: setRound,
+        options: isSeries
+          ? seriesOptions.rounds
+          : (coverage?.stages ?? [...new Set(scores.map((s) => s.round))]).map(
+              (value) => ({ value, label: value }),
+            ),
+      },
+      {
+        label: "Team",
+        value: team,
+        set: setTeam,
+        options: isSeries
+          ? seriesOptions.teams
+          : (coverage?.teams.map((t) => ({ value: t.id, label: t.name })) ?? [
+              ...new Map(
+                scores.map((s) => [
+                  s.teamId,
+                  { value: s.teamId, label: s.team },
+                ]),
+              ).values(),
+            ]),
+      },
+      {
+        label: "Map",
+        value: slot,
+        set: setSlot,
+        options: isSeries
+          ? seriesOptions.maps.filter((m) => !round || m.round === round)
+          : (index === 1
+              ? eventMappoolRows(scores, poolFixtures).map(({ key, map }) => ({
+                  key,
+                  label: `${map.round} · ${map.slot} · ${map.mapId ?? map.title}`,
+                }))
+              : groupEventMaps(scores)
+            ).map((m) => ({ value: m.key, label: m.label })),
+      },
+    ];
+  }
   return (
     <section className="event-statistics">
       <h1>{tr("Statistics")}</h1>
-      {coverage && (
+      {coverage && !showSeries && (
         <StatisticsNotice>
           <p className="muted">
             {view === 1
@@ -358,7 +446,7 @@ export function EventStatistics({
           )}
         </StatisticsNotice>
       )}
-      {coverage && (
+      {coverage && !showSeries && (
         <section aria-label={tr("Statistics coverage")}>
           <div className="statistics-summary">
             <div>
@@ -386,21 +474,23 @@ export function EventStatistics({
             aria-pressed={view === i}
             onClick={() => {
               setView(i);
-              if (
-                i !== 1 &&
-                slot &&
-                !scores.some((s) => eventMapKey(s) === slot)
-              )
-                setSlot("");
-              setSort(
-                i === 1
-                  ? "Map"
-                  : i === 2
-                    ? "Score"
-                    : i === 3
-                      ? "Team score"
-                      : "Average score",
-              );
+              for (const { value, set, options } of filters(i)) {
+                if (value && !options.some((o) => o.value === value)) set("");
+              }
+              if (i === SERIES_VIEW) {
+                setSort("MRA");
+                setDescending(true);
+              } else {
+                setSort(
+                  i === 1
+                    ? "Map"
+                    : i === 2
+                      ? "Score"
+                      : i === 3
+                        ? "Team score"
+                        : "Average score",
+                );
+              }
             }}
           >
             {tr(label)}
@@ -408,53 +498,26 @@ export function EventStatistics({
         ))}
       </div>
       <div className="event-tools">
-        {[
-          {
-            label: "Rounds",
-            value: round,
-            set: setRound,
-            options: (
-              coverage?.stages ?? [...new Set(scores.map((s) => s.round))]
-            ).map((value) => ({
-              value,
-              label: value,
-            })),
-          },
-          {
-            label: "Team",
-            value: team,
-            set: setTeam,
-            options: coverage?.teams.map((t) => ({
-              value: t.id,
-              label: t.name,
-            })) ?? [
-              ...new Map(
-                scores.map((s) => [
-                  s.teamId,
-                  { value: s.teamId, label: s.team },
-                ]),
-              ).values(),
-            ],
-          },
-          {
-            label: "Map",
-            value: slot,
-            set: setSlot,
-            options: (view === 1
-              ? eventMappoolRows(scores, poolFixtures).map(({ key, map }) => ({
-                  key,
-                  label: `${map.round} · ${map.slot} · ${map.mapId ?? map.title}`,
-                }))
-              : groupEventMaps(scores)
-            ).map((map) => ({
-              value: map.key,
-              label: map.label,
-            })),
-          },
-        ].map(({ label, value, set, options }) => (
+        {filters(view).map(({ label, value, set, options }) => (
           <label key={label}>
             {tr(label)}
-            <select value={value} onChange={(e) => set(e.target.value)}>
+            <select
+              value={value}
+              onChange={(e) => {
+                const next = e.target.value;
+                set(next);
+                if (
+                  showSeries &&
+                  label === "Rounds" &&
+                  next &&
+                  slot &&
+                  !seriesOptions.maps.some(
+                    (m) => m.round === next && m.value === slot,
+                  )
+                )
+                  setSlot("");
+              }}
+            >
               <option value="">{tr("All")}</option>
               {options.map((o) => (
                 <option key={o.value} value={o.value}>
@@ -470,6 +533,31 @@ export function EventStatistics({
         </label>
       </div>
       <h2>{tr(views[view])}</h2>
+      {ranking && (
+        <>
+          <p className="muted">
+            {tr(
+              "Round and map change the rating. Team and search only filter the ranked players.",
+            )}
+          </p>
+          <p className="muted">
+            {tr("Fully rated public matches (before map filter)")}:{" "}
+            {number(ranking.fullyRated)} / {number(ranking.publicFixtures)}
+            {" · "}
+            {tr("Scoring games")}: {number(ranking.gameCount)}
+            {" · "}
+            {tr("Appearances")}: {number(ranking.scoreCount)}
+            {ranking.fullyRated < ranking.publicFixtures && (
+              <> · {tr("Partial coverage")}</>
+            )}
+          </p>
+          {!ranking.gameCount ? (
+            <p>{tr("No published games can be rated in this scope.")}</p>
+          ) : (
+            !rows.length && <p>{tr("No players match these filters.")}</p>
+          )}
+        </>
+      )}
       <div
         className="event-table-scroll"
         tabIndex={0}
@@ -498,7 +586,7 @@ export function EventStatistics({
                       setDescending(sort === c ? !descending : true);
                     }}
                   >
-                    {placementLabels.get(c) ?? poolLabels[c] ?? tr(c)}{" "}
+                    {placementLabels.get(c) ?? labels[c] ?? tr(c)}{" "}
                     {sort === c ? (descending ? "↓" : "↑") : ""}
                   </button>
                 </th>
@@ -507,8 +595,8 @@ export function EventStatistics({
           </thead>
           <tbody>
             {rows.map((r, i) => (
-              <tr key={i}>
-                <td>{i + 1}</td>
+              <tr key={showSeries ? String(r._osuId) : i}>
+                <td>{r._rank ?? i + 1}</td>
                 {columns.map((c) => (
                   <td key={c}>{cell(c, r[c], r)}</td>
                 ))}

@@ -1,4 +1,5 @@
 import { publicFixture } from "../../src/lib/public-competition";
+import { readApiRoute } from "../../src/lib/read-api";
 import {
   beforeAll,
   beforeEach,
@@ -11,7 +12,13 @@ import {
 import { eq, sql } from "drizzle-orm";
 import { db, closeDb } from "../../src/db";
 import { users, fixtures, matchResults, teams } from "../../src/db/schema";
-import { publicMatchRating, matchRatingWorkspace } from "../../src/lib/ratings";
+import {
+  publicMatchRating,
+  matchRatingWorkspace,
+  publicSeasonSeries,
+} from "../../src/lib/ratings";
+import { ratingReadContracts } from "../../src/lib/rating-read-contracts";
+import { calculateRating } from "../../src/lib/yumu-rating";
 import { seedEditions } from "../fixtures/editions";
 import { seedAwardReview } from "../fixtures/awards";
 import { assertTestDatabase } from "../database";
@@ -21,6 +28,7 @@ describe.skipIf(!url)("approved fixture ratings", () => {
   beforeAll(() => {
     assertTestDatabase(url);
     vi.stubEnv("DATABASE_URL", url!);
+    vi.stubEnv("APP_URL", "https://oclr.example.test");
     vi.stubEnv("ADMIN_OSU_IDS", String(admin.osuId));
   });
   beforeEach(async () => {
@@ -40,6 +48,30 @@ describe.skipIf(!url)("approved fixture ratings", () => {
     expect(r?.gameCount).toBe(6);
     expect(r?.players).toHaveLength(4);
     expect(r?.issues).toEqual([]);
+    const series = ratingReadContracts.publicSeasonSeries.parse(
+      await publicSeasonSeries("test-cup"),
+    );
+    const games =
+      series?.games.filter((g) => g.fixtureId === s.fixtureId) ?? [];
+    expect(games).toHaveLength(6);
+    expect(
+      calculateRating(games).players.map((p) => [
+        p.userId,
+        p.appearances,
+        p.mra,
+        p.rws,
+      ]),
+    ).toEqual(r!.players.map((p) => [p.userId, p.appearances, p.mra, p.rws]));
+    expect(series?.fixtures.find((f) => f.id === s.fixtureId)?.complete).toBe(
+      true,
+    );
+    const wire = await readApiRoute(
+      new Request(
+        "https://oclr.example.test/api/v1/tournaments/test-cup/statistics/series",
+      ),
+    );
+    expect(wire.status).toBe(200);
+    expect((await wire.json()).data).toEqual(series);
     const fixture = await publicFixture("test-cup", s.fixtureId);
     expect(fixture?.details?.games).toHaveLength(6);
     expect(fixture?.details?.games[0].scores).toHaveLength(4);
@@ -58,11 +90,16 @@ describe.skipIf(!url)("approved fixture ratings", () => {
     expect(
       (await publicMatchRating("test-cup", s.fixtureId))?.fingerprint,
     ).toBe(r!.fingerprint);
+    expect(await publicSeasonSeries("test-cup")).toEqual(series);
+    expect(await publicSeasonSeries("private-test-cup")).toBeNull();
     expect(await publicMatchRating("private-test-cup", s.fixtureId)).toBeNull();
     await db()
       .update(matchResults)
       .set({ publishedRevision: null, publishedAt: null })
       .where(eq(matchResults.fixtureId, s.fixtureId));
+    const withdrawn = await publicSeasonSeries("test-cup");
+    expect(withdrawn?.games ?? []).toEqual([]);
+    expect(withdrawn?.players ?? []).toEqual([]);
     expect(await publicMatchRating("test-cup", s.fixtureId)).toBeNull();
     expect(
       (await publicFixture("test-cup", s.fixtureId))?.details ?? null,
@@ -81,6 +118,9 @@ describe.skipIf(!url)("approved fixture ratings", () => {
       .update(teams)
       .set({ rosterPublished: false })
       .where(eq(teams.id, s.home.teamId));
+    const hidden = await publicSeasonSeries("test-cup");
+    expect(hidden?.games ?? []).toEqual([]);
+    expect(hidden?.players ?? []).toEqual([]);
     expect(await publicMatchRating("test-cup", s.fixtureId)).toBeNull();
     expect(
       (await publicFixture("test-cup", s.fixtureId))?.details ?? null,

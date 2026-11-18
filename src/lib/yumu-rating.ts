@@ -89,9 +89,48 @@ function indices(
     start = end + 1;
   }
 }
-export function calculateRating(input: readonly RatingGame[]): RatingReport {
+type RatingSample = Pick<
+  RatingGame,
+  "gameId" | "teamIds" | "winnerTeamId" | "scores" | "problem"
+>;
+
+/** The same per-game eligibility check for official reports and public Series inputs. */
+export function ratingGameTotals(game: RatingSample) {
+  const sum = game.scores.reduce((n, s) => n + s.total, 0);
+  if (
+    game.problem ||
+    !Number.isSafeInteger(game.gameId) ||
+    game.gameId <= 0 ||
+    !game.scores.length ||
+    game.teamIds.length !== 2 ||
+    new Set(game.teamIds).size !== 2 ||
+    (game.winnerTeamId !== null && !game.teamIds.includes(game.winnerTeamId)) ||
+    new Set(game.scores.map((s) => s.userId)).size !== game.scores.length ||
+    game.scores.some(
+      (s) =>
+        !Number.isSafeInteger(s.userId) ||
+        s.userId <= 0 ||
+        !Number.isSafeInteger(s.total) ||
+        s.total < 0 ||
+        !game.teamIds.includes(s.teamId),
+    ) ||
+    !Number.isSafeInteger(sum) ||
+    sum <= 0
+  )
+    return game.problem || "unverified or incomparable scores";
+  const winningTotal = game.scores
+    .filter((s) => s.teamId === game.winnerTeamId)
+    .reduce((n, s) => n + s.total, 0);
+  if (game.winnerTeamId && winningTotal <= 0)
+    return "invalid winning team score";
+  return { sum, winningTotal };
+}
+
+export function calculateRating<T extends RatingSample>(
+  input: readonly T[],
+): RatingReport {
   const issues: string[] = [];
-  const games = new Map<number, RatingGame>();
+  const games = new Map<number, RatingSample>();
   for (const raw of input) {
     const game = {
       ...raw,
@@ -107,40 +146,12 @@ export function calculateRating(input: readonly RatingGame[]): RatingReport {
   let gameCount = 0,
     scoreCount = 0;
   for (const game of [...games.values()].sort((a, b) => a.gameId - b.gameId)) {
-    const sum = game.scores.reduce((n, s) => n + s.total, 0);
-    if (
-      game.problem ||
-      !Number.isSafeInteger(game.gameId) ||
-      game.gameId <= 0 ||
-      !game.scores.length ||
-      game.teamIds.length !== 2 ||
-      new Set(game.teamIds).size !== 2 ||
-      (game.winnerTeamId !== null &&
-        !game.teamIds.includes(game.winnerTeamId)) ||
-      new Set(game.scores.map((s) => s.userId)).size !== game.scores.length ||
-      game.scores.some(
-        (s) =>
-          !Number.isSafeInteger(s.userId) ||
-          s.userId <= 0 ||
-          !Number.isSafeInteger(s.total) ||
-          s.total < 0 ||
-          !game.teamIds.includes(s.teamId),
-      ) ||
-      !Number.isSafeInteger(sum) ||
-      sum <= 0
-    ) {
-      issues.push(
-        `Game ${game.gameId}: ${game.problem || "unverified or incomparable scores"}`,
-      );
+    const checked = ratingGameTotals(game);
+    if (typeof checked === "string") {
+      issues.push(`Game ${game.gameId}: ${checked}`);
       continue;
     }
-    const winningTotal = game.scores
-      .filter((s) => s.teamId === game.winnerTeamId)
-      .reduce((n, s) => n + s.total, 0);
-    if (game.winnerTeamId && winningTotal <= 0) {
-      issues.push(`Game ${game.gameId}: invalid winning team score`);
-      continue;
-    }
+    const { sum, winningTotal } = checked;
     gameCount++;
     scoreCount += game.scores.length;
     for (const score of game.scores) {

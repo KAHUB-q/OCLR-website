@@ -24,6 +24,8 @@ import {
   beatmapLeaderboard,
   careerLeaderboard,
 } from "../../src/lib/saved-rankings";
+import { publicSeasonSeries } from "../../src/lib/ratings";
+import { supportsProfileRatings } from "../../src/lib/read-api-version";
 describe("background ranking remote adapter", () => {
   beforeEach(() => {
     state.resource.mockReset();
@@ -85,6 +87,24 @@ describe("background ranking remote adapter", () => {
       ["careerLeaderboard"],
       ["beatmapLeaderboard"],
     ]);
+    expect(state.database).not.toHaveBeenCalled();
+  });
+  it("keeps profile ratings on 1.39 and requests season Series starting with 1.40", async () => {
+    state.version = "1.39.0";
+    expect(supportsProfileRatings(state.version)).toBe(true);
+    expect(await publicSeasonSeries("s8")).toBeNull();
+    expect(state.resource).not.toHaveBeenCalled();
+
+    state.version = "1.40.0";
+    const series = { fixtures: [], teams: [], players: [], games: [] };
+    state.resource.mockResolvedValueOnce(series);
+    expect(await publicSeasonSeries("s8")).toEqual(series);
+    expect(state.resource).toHaveBeenCalledExactlyOnceWith(
+      "publicSeasonSeries",
+      {
+        slug: "s8",
+      },
+    );
     expect(state.database).not.toHaveBeenCalled();
   });
   it("keeps the legacy public-score compatibility path for older v1 backends", async () => {

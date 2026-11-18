@@ -4507,6 +4507,12 @@
     "mb1a5ed76cac5": "SIP 星级",
     "m66ea2f6a5c16": "SIP PP",
     "m4aadb94e1ae6": "SkillIssue（SIP）",
-    "m72467a2aa00b": "Elitebotix（ETX）"
+    "m72467a2aa00b": "Elitebotix（ETX）",
+    "m505867b02eab": "YumuRating Series 汇总榜",
+    "m07514fa0ed11": "选择轮次或谱面会重新计算评分。队伍和搜索条件只筛选显示的选手，不改变名次。",
+    "me459795b34a0": "已完整计入评分的公开对局（筛选谱面前）",
+    "m60fd12418e25": "仅涵盖部分数据",
+    "m414a8e721cd5": "此范围内没有可计入评分的已发布单图成绩。",
+    "m3c3cb068aa9a": "没有符合筛选条件的选手。"
   }
 }

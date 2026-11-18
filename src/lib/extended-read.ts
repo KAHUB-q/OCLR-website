@@ -70,15 +70,16 @@ export async function extendedRead(
       return (await import("./draft-reads")).publicDraft(slug);
     case "publicBroadcastDraft":
       return (await import("./broadcast")).publicBroadcastDraft(slug);
+    case "publicSeasonSeries":
+      return (await import("./ratings")).publicSeasonSeries(slug);
     case "publicRoundRatings":
       return (await import("./ratings")).publicRoundRatings(slug);
     case "publicAwards":
       return (await import("./award-reads")).publicAwards(slug);
     case "publicArchiveStatistics":
-      return (await import("./archive-statistics-reads")).publicArchiveStatistics(
-        slug,
-        query.get("fixtureId") ?? undefined,
-      );
+      return (
+        await import("./archive-statistics-reads")
+      ).publicArchiveStatistics(slug, query.get("fixtureId") ?? undefined);
     case "publicFixture":
       return (await import("./public-competition")).publicFixture(slug, target);
     case "publicMatchRating":
@@ -93,7 +94,10 @@ export async function extendedRead(
         await import("./liru-gallery-messages")
       ).publicLiruGalleryMessages();
     case "tournamentForAdmin":
-      return (await import("./tournament-reads")).tournamentForAdmin(actor!, slug);
+      return (await import("./tournament-reads")).tournamentForAdmin(
+        actor!,
+        slug,
+      );
     case "captainSetup":
       return (await import("./captain-reads")).captainSetup(actor!, slug);
     case "staffTeams":
@@ -143,7 +147,11 @@ export async function extendedRead(
         target,
       );
     case "refereeWorkspace":
-      return (await import("./referee-workspace")).refereeWorkspace(actor!, slug, target);
+      return (await import("./referee-workspace")).refereeWorkspace(
+        actor!,
+        slug,
+        target,
+      );
     case "refereeReconciliation":
       return (await import("./referee-reconciliation")).refereeReconciliation(
         actor!,
@@ -151,7 +159,11 @@ export async function extendedRead(
         target,
       );
     case "matchReview":
-      return (await import("./result-review")).matchReview(actor!, slug, target);
+      return (await import("./result-review")).matchReview(
+        actor!,
+        slug,
+        target,
+      );
     case "replayList":
       return (await import("./mappool-replays")).replayList(
         actor!,
@@ -165,9 +177,15 @@ export async function extendedRead(
     case "siteSettingsForAdmin":
       return (await import("./site-settings")).siteSettingsForAdmin(actor!);
     case "listApplications":
-      return (await import("./staff-registration-reads")).listApplications(actor!, filters);
+      return (await import("./staff-registration-reads")).listApplications(
+        actor!,
+        filters,
+      );
     case "applicationDetails":
-      return (await import("./staff-registration-reads")).applicationDetails(actor!, target);
+      return (await import("./staff-registration-reads")).applicationDetails(
+        actor!,
+        target,
+      );
     case "auditLog":
       return (await import("./audit")).auditLog(actor!, filters);
     case "staffAccess":
@@ -175,7 +193,9 @@ export async function extendedRead(
     case "playerApplications":
       return (await import("./dashboard")).playerApplications(actor!.osuId);
     case "ownRegistrations":
-      return (await import("./registration-reads")).ownRegistrations(actor!.osuId);
+      return (await import("./registration-reads")).ownRegistrations(
+        actor!.osuId,
+      );
     case "ownTeam":
       return (await import("./team-reads")).ownTeam(actor!.osuId, slug);
     case "captainAppointment":

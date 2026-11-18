@@ -1,4 +1,25 @@
 import { expect, test } from "@playwright/test";
+test("Series keeps the full ranking when filtering a team or searching by UID", async ({
+  page,
+}) => {
+  await page.goto("/event-statistics");
+  await page
+    .getByRole("button", { name: "YumuRating Series", exact: true })
+    .click();
+  const rows = page.locator("tbody tr");
+  await expect(rows).toHaveCount(2);
+  await page
+    .getByRole("combobox", { name: "Team", exact: true })
+    .selectOption("Y");
+  await expect(rows).toHaveCount(1);
+  await expect(rows.locator("td").first()).toHaveText("2");
+  await expect(rows.getByRole("link")).toHaveAttribute(
+    "href",
+    "/players/22?edition=synthetic",
+  );
+  await page.getByRole("textbox", { name: "Search" }).fill("11");
+  await expect(page.getByText("No players match these filters.")).toBeVisible();
+});
 test("all six statistics views preserve identity and same-name team filters", async ({
   page,
 }) => {

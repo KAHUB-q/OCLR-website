@@ -7,7 +7,13 @@ import { getPublicEdition } from "@/lib/content";
 import { previewScores, type EventScore } from "@/lib/event-statistics";
 import { HttpError } from "@/lib/http";
 import { remotePage } from "@/lib/remote-page";
+import { remoteMode } from "@/lib/data-source";
+import { publicSeasonSeries } from "@/lib/ratings";
+import { archiveSeasonSeries } from "@/lib/season-series-source";
 import { notFound } from "next/navigation";
+
+export const dynamic = "force-dynamic";
+
 async function Issue271Page({
   params,
 }: {
@@ -16,7 +22,8 @@ async function Issue271Page({
   const { edition: slug } = await params;
   if (!(await getPublicEdition(slug))) notFound();
   const preview = previewScores(slug);
-  if (preview) return <EventStatistics scores={preview} />;
+  if (!remoteMode() && !process.env.DATABASE_URL)
+    return <EventStatistics edition={slug} scores={preview ?? []} />;
   let scores: EventScore[] = [];
   let coverage: PublicArchiveStatistics | undefined;
   try {
@@ -46,7 +53,19 @@ async function Issue271Page({
   } catch (error) {
     if (!(error instanceof HttpError && error.status === 404)) throw error;
   }
-  return <EventStatistics scores={scores} coverage={coverage} />;
+  // Use one archive release for both projections. A missing archive selects the live reader;
+  // an empty or partial release is not supplemented with games from another authority.
+  const series = coverage
+    ? archiveSeasonSeries(coverage)
+    : await publicSeasonSeries(slug);
+  return (
+    <EventStatistics
+      edition={slug}
+      scores={coverage ? scores : (preview ?? [])}
+      coverage={coverage}
+      series={series}
+    />
+  );
 }
 
 export default function Page(props: Parameters<typeof Issue271Page>[0]) {

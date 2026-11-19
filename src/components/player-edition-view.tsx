@@ -18,10 +18,7 @@ import { PlayerMapPerformance as PlayerMapPerformanceView } from "./player-map-p
 import { PlayerParticipatedTournaments } from "./player-participated-tournaments";
 import { PlayerProfile } from "./player-profile";
 import { CompactPlayerRatings } from "./player-profile-ratings";
-import {
-  profileSipTotal,
-  type ProfileRatings,
-} from "@/lib/profile-ratings-model";
+import type { ProfileRatings } from "@/lib/profile-ratings-model";
 import { HistoricalStaffHistory } from "./historical-staff-history";
 import type { HistoricalStaffHistory as StaffHistory } from "@/lib/archive-staff-history";
 import { PlayerTimeline as PlayerTimelineView } from "./player-timeline";
@@ -128,7 +125,8 @@ export function PlayerEditionView({
     (!snapshot || !selectedBws) &&
     profileRatings &&
     (profileRatings.otr ||
-      profileSipTotal(profileRatings) !== null ||
+      profileRatings.sip.api ||
+      profileRatings.sip.csv ||
       profileRatings.etx);
   const staffDuties = selected
     ? staffHistory.filter((record) => record.editionSlug === selected)
@@ -205,7 +203,11 @@ export function PlayerEditionView({
         </>
       )}
       {showRatingFallback && (
-        <CompactPlayerRatings ratings={profileRatings} etxFractionDigits={2} />
+        <CompactPlayerRatings
+          ratings={profileRatings}
+          etxFractionDigits={2}
+          showNotes
+        />
       )}
       {selected && ratings && <RoundRatings data={ratings} slug={selected} />}
       {(timeline.marks.length > 0 || timeline.spans.length > 0) && (

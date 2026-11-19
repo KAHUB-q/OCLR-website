@@ -3,6 +3,9 @@ import { NextIntlClientProvider } from "next-intl";
 import { PlayerIdBadge } from "../../src/components/player-id-badge";
 import { ProfileLevel } from "../../src/components/profile-level";
 import { BwsSummary } from "../../src/components/bws-summary";
+import { CompactPlayerRatings } from "../../src/components/player-profile-ratings";
+import type { ProfileRatings } from "../../src/lib/profile-ratings-model";
+import { sipResponse } from "../fixtures/sip-response";
 import { RankChart } from "../../src/components/rank-chart";
 import { PreviousUsernames } from "../../src/components/previous-usernames";
 import { rankTierPalette } from "../../src/lib/rank-tier";
@@ -70,6 +73,28 @@ const previousNames = [
   "Muzi",
 ];
 
+const scenario = new URLSearchParams(location.search);
+const { modifications, skillsets } = sipResponse(42, 0);
+const externalRatings: ProfileRatings = {
+  otr: null,
+  sip: {
+    api: {
+      value: null,
+      fetchedAt: "2025-06-03T12:00:00Z",
+      snapshot: { rating: null, modifications, skillsets },
+    },
+    csv: { value: -4, importedAt: "2025-06-01T12:00:00Z" },
+  },
+  etx: {
+    source: "api",
+    value: 5.126,
+    provisional: true,
+    outdated: null,
+    mods: { NM: 0, HD: 5.125, DT: 6, FM: 4 },
+    importedAt: "2025-06-02T12:00:00Z",
+  },
+};
+
 // The real cover branch of PlayerProfile: the player id pill and level chip
 // anchored to the card corners, with the identity heading overlaid on the
 // cover and the rank chart / statistics body below it.
@@ -118,10 +143,20 @@ createRoot(document.getElementById("root")!).render(
                 countryRank={321}
                 globalRankPercent={0.0142}
                 oii={1.35}
+                profileRatings={
+                  scenario.has("rating-notes") ? externalRatings : undefined
+                }
                 badges={badges}
               />
             </div>
           </div>
+          {scenario.has("compact-notes") && (
+            <CompactPlayerRatings
+              ratings={externalRatings}
+              etxFractionDigits={2}
+              showNotes
+            />
+          )}
           <div className="profile-body">
             <div className="rank-chart-card">
               <RankChart data={history} globalRank={12345} />

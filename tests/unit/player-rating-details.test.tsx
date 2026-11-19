@@ -2,7 +2,7 @@ import { renderToStaticMarkup } from "react-dom/server";
 import { expect, it, vi } from "vitest";
 import {
   CompactPlayerRatings,
-  PlayerRatingDetails,
+  CoverPlayerRatings,
 } from "../../src/components/player-profile-ratings";
 import {
   profileRatingsSchema,
@@ -29,6 +29,7 @@ it("labels SIP sources separately and shows profile ETX ratings to two decimal p
       csv: { value: -4, importedAt: null },
     },
     etx: {
+      source: "api",
       value: 6.13512525816855,
       mods: { NM: 0, HD: 6.1 },
       provisional: true,
@@ -36,11 +37,12 @@ it("labels SIP sources separately and shows profile ETX ratings to two decimal p
       importedAt: time,
     },
   });
-  const html = renderToStaticMarkup(<PlayerRatingDetails ratings={ratings} />);
+  const html = renderToStaticMarkup(<CoverPlayerRatings ratings={ratings} />);
   for (const text of [
     "-4",
     "SkillIssue API · OCLR fetch time",
     "S11 CSV · OCLR import time",
+    "Elitebotix API · OCLR fetch time",
     time,
     "Hard Rock: 0",
     "High AR: -12",

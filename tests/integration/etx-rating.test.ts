@@ -7,7 +7,10 @@ import {
   registrations,
   users,
 } from "@/db/schema";
-import { readDirectoryEtxRatings } from "@/lib/etx-rating";
+import {
+  readDirectoryEtxRatings,
+  readEtxRatingSnapshots,
+} from "@/lib/etx-rating";
 import { refreshEtxRatings } from "@/lib/etx-rating-worker";
 import { assertTestDatabase } from "../database";
 import { edition } from "../fixtures/edition";
@@ -28,6 +31,8 @@ function providerRating(osuId: number) {
     osuUserId: String(osuId),
     duelRating: {
       osuDuelStarRating: "4.96954251",
+      osuNoModDuelStarRating: "0",
+      osuHiddenDuelStarRating: "5.25",
       osuDuelProvisional: true,
       osuDuelOutdated: false,
     },
@@ -96,6 +101,11 @@ describe.skipIf(!url)("S11 ETX refresh", () => {
       [ids[1], null],
     ]);
     expect(await readDirectoryEtxRatings(ids)).toEqual(saved);
+    const observation = (await readEtxRatingSnapshots(ids)).get(ids[0])!;
+    expect(observation).toMatchObject({
+      rating: { value: 4.96954251, mods: { NM: 0, HD: 5.25 } },
+      fetchedAt: expect.any(Date),
+    });
     expect(await refreshEtxRatings()).toMatchObject({ skipped: 3 });
     expect(fetchRating).toHaveBeenCalledTimes(3);
 
@@ -111,12 +121,46 @@ describe.skipIf(!url)("S11 ETX refresh", () => {
     });
     expect(fetchRating).toHaveBeenCalledTimes(2);
     expect(await readDirectoryEtxRatings(ids)).toEqual(saved);
+    const [attempt] = await db()
+      .select({ day: etxRatingCache.attemptedOn })
+      .from(etxRatingCache)
+      .where(eq(etxRatingCache.osuId, ids[0]));
+    await db().update(etxRatingCache).set({ attemptedOn: attempt.day });
+    for (const failure of [
+      async () => new Response(null, { status: 500 }),
+      async () => {
+        throw new DOMException("Timed out", "TimeoutError");
+      },
+      async () =>
+        Response.json({
+          osuUserId: String(ids[0]),
+          duelRating: {
+            osuDuelStarRating: "6.5",
+            osuHiddenDuelStarRating: "invalid",
+          },
+        }),
+      async () => new Response(null, { status: 429 }),
+    ]) {
+      await db()
+        .update(etxRatingCache)
+        .set({ attemptedOn: "2000-01-01" })
+        .where(eq(etxRatingCache.osuId, ids[0]));
+      fetchRating.mockReset().mockImplementationOnce(failure);
+      expect(await refreshEtxRatings()).toMatchObject({
+        failed: 1,
+        updated: 0,
+      });
+      expect((await readEtxRatingSnapshots(ids)).get(ids[0])).toEqual(
+        observation,
+      );
+    }
 
+    fetchRating.mockClear();
     await db()
       .update(editionState)
       .set({ configuration: { ...edition, published: false } })
       .where(eq(editionState.slug, slug));
     expect(await refreshEtxRatings()).toEqual({ state: "unavailable" });
-    expect(fetchRating).toHaveBeenCalledTimes(2);
+    expect(fetchRating).not.toHaveBeenCalled();
   });
 });

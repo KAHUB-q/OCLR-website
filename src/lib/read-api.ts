@@ -200,6 +200,9 @@ export function readApiRoute(request: Request) {
         const data = await extendedRead(operation.id, params, query, principal);
         return { data: JSON.parse(JSON.stringify(data ?? null)) };
       }
+      const ratingFormat = query.get("ratings");
+      const includeRatings =
+        ratingFormat === "1" ? "legacy" : ratingFormat === "2";
       switch (operation.id) {
         case "getStaffOclrProfile":
           return {
@@ -210,7 +213,7 @@ export function readApiRoute(request: Request) {
               String(osuId(params.osuId)),
               "osu",
               edition(params.edition),
-              query.get("ratings") === "1",
+              includeRatings,
             ),
           };
         case "getOclrProfile":
@@ -227,7 +230,7 @@ export function readApiRoute(request: Request) {
               true,
               undefined,
               undefined,
-              query.get("ratings") === "1",
+              includeRatings,
             ),
           };
         }

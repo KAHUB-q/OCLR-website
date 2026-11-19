@@ -43,7 +43,7 @@ export async function publishedPlayerProfile(
   savedOnly = false,
   authorizedEdition?: string,
   scheduleRefresh?: ProfileRefreshScheduler,
-  includeRatings = false,
+  includeRatings: boolean | "legacy" = false,
 ) {
   const identity = parseOsuProfile(input, mode);
   if (
@@ -80,7 +80,12 @@ export async function publishedPlayerProfile(
     includeRatings && identity.mode === "osu" && participation.length
       ? await (
           await import("./published-profile-ratings")
-        ).readPublishedProfileRatings(identity.osuId, participation, edition)
+        ).readPublishedProfileRatings(
+          identity.osuId,
+          participation,
+          edition,
+          includeRatings === "legacy",
+        )
       : undefined;
   // Check again after provider I/O: publication may have been withdrawn meanwhile.
   // Self/account-only access has no public listing to withdraw, so only re-check
@@ -119,7 +124,7 @@ export async function staffOclrPlayerProfile(
   input: string,
   mode: string | undefined,
   edition: string,
-  includeRatings = false,
+  includeRatings: boolean | "legacy" = false,
 ) {
   await assertReadCapability(user, "manage_registrations", edition);
   const { db } = await import("@/db");

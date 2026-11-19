@@ -12,6 +12,8 @@ import { eq, sql } from "drizzle-orm";
 import { afterAll, beforeEach, describe, expect, it, vi } from "vitest";
 import { publishedPlayerProfile } from "../../src/lib/player-profiles";
 import { oclrProfileSchema } from "../../src/lib/read-api-contract";
+import { legacyProfileEtxSchema } from "../../src/lib/profile-ratings-model";
+import { profileRatingsParameter } from "../../src/lib/read-api-version";
 import { readApiRoute } from "../../src/lib/read-api";
 import { importPlayerRatings } from "../../src/lib/player-rating-import";
 import { publicPlayerDirectoryModel } from "../../src/lib/public-read-models";
@@ -90,10 +92,19 @@ describe.skipIf(!url)("S11 imported player ratings", () => {
     expect(published.snapshot).toBeNull();
     expect(published.ratings).toMatchObject({
       sip: { api: null, csv: { value: -31, importedAt: null } },
-      etx: { value: 0, provisional: true, mods: null, importedAt: null },
+      etx: {
+        source: "csv",
+        value: 0,
+        provisional: true,
+        mods: null,
+        importedAt: null,
+      },
     });
     const url = `https://oclr.example.test/api/v1/players/${player.osuId}/oclr-profile`;
-    const wire = await readApiRoute(new Request(url + "?ratings=1"));
+    expect(profileRatingsParameter("1.38.0")).toBeUndefined();
+    expect(profileRatingsParameter("1.42.0")).toBe("1");
+    expect(profileRatingsParameter("1.43.0")).toBe("2");
+    const wire = await readApiRoute(new Request(url + "?ratings=2"));
     expect(wire.status).toBe(200);
     expect(oclrProfileSchema.parse((await wire.json()).data).ratings).toEqual(
       published.ratings,
@@ -115,19 +126,56 @@ describe.skipIf(!url)("S11 imported player ratings", () => {
       importedAt: fetchedAt.toISOString(),
       mods: null,
     };
-    expect((await read(player.osuId)).ratings?.etx).toEqual(providerRating);
+    expect((await read(player.osuId)).ratings?.etx).toEqual({
+      ...providerRating,
+      source: "api",
+    });
     const apiProviderRating = await readApiRoute(
       new Request(url + "?ratings=1"),
     );
+    const legacyRating = (await apiProviderRating.json()).data.ratings.etx;
+    expect(legacyProfileEtxSchema.parse(legacyRating)).toEqual(providerRating);
+    expect(legacyRating).not.toHaveProperty("source");
+    await db()
+      .update(etxRatingCache)
+      .set({
+        rating: {
+          value: 0,
+          provisional: null,
+          outdated: false,
+          mods: { NM: 0, FM: 5.678 },
+        },
+      })
+      .where(eq(etxRatingCache.osuId, player.osuId));
+    const detailed = (await read(player.osuId)).ratings?.etx;
+    expect(detailed).toEqual({
+      source: "api",
+      value: 0,
+      provisional: null,
+      outdated: false,
+      mods: { NM: 0, FM: 5.678 },
+      importedAt: fetchedAt.toISOString(),
+    });
+    const detailedWire = await readApiRoute(new Request(url + "?ratings=2"));
     expect(
-      oclrProfileSchema.parse((await apiProviderRating.json()).data).ratings
-        ?.etx,
-    ).toEqual(providerRating);
+      oclrProfileSchema.parse((await detailedWire.json()).data).ratings?.etx,
+    ).toEqual(detailed);
+    const oldWire = await readApiRoute(new Request(url + "?ratings=1"));
+    expect(
+      legacyProfileEtxSchema.parse((await oldWire.json()).data.ratings.etx),
+    ).toMatchObject({
+      value: 0,
+      provisional: true,
+      importedAt: null,
+      mods: null,
+    });
     await db()
       .update(etxRatingCache)
       .set({ rating: null })
       .where(eq(etxRatingCache.osuId, player.osuId));
-    expect((await read(player.osuId)).ratings?.etx).toBeNull();
+    expect((await read(player.osuId)).ratings?.etx).toEqual(
+      published.ratings?.etx,
+    );
     const legacy = await readApiRoute(new Request(url));
     expect(legacy.status).toBe(200);
     expect((await legacy.json()).data).not.toHaveProperty("ratings");

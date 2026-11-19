@@ -694,6 +694,24 @@ const liruRarities: Partial<Record<string, WikiCardRarity>> = {
   "lolita-opera-phantom": "SSR",
   "lolita-spring-flower-goddess": "UR",
   "lolita-rose-music-box": "SSR",
+  "lolita-librarian-open-book": "SSR",
+  "lolita-vampire-sweeping-cape": "SSR",
+  "lolita-desert-sash-dance": "SSR",
+  "lolita-detective-closer-look": "SR",
+  "lolita-fern-leaf-dress": "R",
+  "lolita-mist-blue-fan": "R",
+  "lolita-pocket-watch-pinafore": "R",
+  "lolita-cocoa-handkerchief": "R",
+  "lolita-burgundy-uniform": "R",
+  "lolita-indigo-kimono-dress": "R",
+  "lolita-porcelain-unfolded-fan": "SSR",
+  "lolita-rose-knight-salute": "SSR",
+  "lolita-antique-doll-curtsy": "SR",
+  "lolita-mermaid-shell-dance": "UR",
+  "lolita-candy-witch-leap": "SR",
+  "lolita-astrolabe-raised": "SSR",
+  "lolita-circus-opening": "SSR",
+  "lolita-snow-queen-scepter": "UR",
 };
 
 export function liruGallery(tr: AppTranslator): {
@@ -1920,6 +1938,96 @@ export function liruGallery(tr: AppTranslator): {
       tr(
         "Liru opens a brass music box with a rose on its lid, wearing a peach dress trimmed with gears.",
       ),
+    ],
+    [
+      "lolita-librarian-open-book",
+      tr("Gilded spellbook"),
+      tr("Liru in a green dress with gold keys and a gilt book."),
+    ],
+    [
+      "lolita-vampire-sweeping-cape",
+      tr("Crimson night cape"),
+      tr("Liru in a cape with crimson lining and a ruby clasp."),
+    ],
+    [
+      "lolita-desert-sash-dance",
+      tr("Sunburst tassels"),
+      tr("Liru in a teal skirt with a coral sash and gold tassels."),
+    ],
+    [
+      "lolita-detective-closer-look",
+      tr("Gilt magnifying glass"),
+      tr("Liru in a houndstooth cape with a gilt magnifying glass."),
+    ],
+    [
+      "lolita-fern-leaf-dress",
+      tr("Fern dress"),
+      tr("Liru in a moss green dress with a fern and lilac bow."),
+    ],
+    [
+      "lolita-mist-blue-fan",
+      tr("Mist blue fan"),
+      tr("Liru in a mist blue dress with a pink bow and a closed fan."),
+    ],
+    [
+      "lolita-pocket-watch-pinafore",
+      tr("Pocket watch pinafore"),
+      tr("Liru in a charcoal dress with a brass pocket watch."),
+    ],
+    [
+      "lolita-cocoa-handkerchief",
+      tr("Cocoa and cream"),
+      tr("Liru in a cocoa brown dress with a cream handkerchief."),
+    ],
+    [
+      "lolita-burgundy-uniform",
+      tr("Burgundy uniform"),
+      tr("Liru in a burgundy jacket with brass buttons."),
+    ],
+    [
+      "lolita-indigo-kimono-dress",
+      tr("Indigo kimono dress"),
+      tr("Liru in an indigo dress with wide sleeves and a peach sash."),
+    ],
+    [
+      "lolita-porcelain-unfolded-fan",
+      tr("Porcelain peony fan"),
+      tr("Liru in a blue and white dress with a matching peony fan."),
+    ],
+    [
+      "lolita-rose-knight-salute",
+      tr("Silver rose dress"),
+      tr("Liru in a wine red dress with a silver rose brooch."),
+    ],
+    [
+      "lolita-antique-doll-curtsy",
+      tr("Pearl rose dress"),
+      tr("Liru in a layered rose dress with pearls and tassels."),
+    ],
+    [
+      "lolita-mermaid-shell-dance",
+      tr("Spiral shell mermaid"),
+      tr("Liru in a navy dress with iridescent ruffles and a spiral shell."),
+    ],
+    [
+      "lolita-candy-witch-leap",
+      tr("Swirl candy witch"),
+      tr("Liru in a purple candy dress with a swirl lollipop."),
+    ],
+    [
+      "lolita-astrolabe-raised",
+      tr("Star chart cape"),
+      tr("Liru in a constellation cape with a brass astrolabe."),
+    ],
+    [
+      "lolita-circus-opening",
+      tr("Circus baton"),
+      tr("Liru with a red baton and a skirt embroidered with a circus tent."),
+    ],
+    [
+      "lolita-snow-queen-scepter",
+      tr("Snow crystal scepter"),
+      tr("Liru in a pale blue fur-trimmed cape with a snowflake scepter."),
     ],
   ];
   // Saved draws still refer to these images by their original URLs.

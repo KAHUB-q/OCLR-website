@@ -63,12 +63,14 @@ export function BwsRankNote({
       note.dataset.positioned = "";
     };
     update();
+    note.addEventListener("toggle", update, true);
     window.addEventListener("resize", update);
     window.addEventListener("scroll", update);
     viewport?.addEventListener("resize", update);
     viewport?.addEventListener("scroll", update);
     return () => {
       delete note.dataset.positioned;
+      note.removeEventListener("toggle", update, true);
       window.removeEventListener("resize", update);
       window.removeEventListener("scroll", update);
       viewport?.removeEventListener("resize", update);

@@ -8,10 +8,19 @@ import {
   type ProfileRatings,
 } from "@/lib/profile-ratings-model";
 import type { SipRating } from "@/lib/sip-rating-model";
-import { BwsCardNoteTrigger } from "./profile-info";
+import { BwsRankNote } from "./bws-rank-note";
 import styles from "./player-profile-ratings.module.css";
 
 type Props = { ratings?: ProfileRatings | null };
+
+function etxTimeLabel(
+  etx: ProfileRatings["etx"] | undefined,
+  tr: ReturnType<typeof useAppTranslations>,
+) {
+  if (etx?.source === "api") return tr("Elitebotix API · OCLR fetch time");
+  if (etx?.source === "csv") return tr("S11 CSV · OCLR import time");
+  return tr("Last updated");
+}
 
 function number(locale: string, value: number, fractionDigits?: number) {
   if (fractionDigits !== undefined) {
@@ -49,7 +58,8 @@ function EtxTotal({
 export function CompactPlayerRatings({
   ratings,
   etxFractionDigits,
-}: Props & { etxFractionDigits?: number }) {
+  showNotes = false,
+}: Props & { etxFractionDigits?: number; showNotes?: boolean }) {
   const tr = useAppTranslations();
   const sip = profileSipTotal(ratings);
   return (
@@ -66,12 +76,16 @@ export function CompactPlayerRatings({
       </div>
       <div>
         <dt>{tr("SIP")}</dt>
-        <dd>{sip === null ? tr("No rating data") : number(tr.locale, sip)}</dd>
+        <dd className={showNotes ? styles.compactValue : undefined}>
+          {sip === null ? tr("No rating data") : number(tr.locale, sip)}
+          {showNotes && <PlayerRatingNote provider="SIP" ratings={ratings} />}
+        </dd>
       </div>
       <div>
         <dt>{tr("ETX")}</dt>
-        <dd>
+        <dd className={showNotes ? styles.compactValue : undefined}>
           <EtxTotal etx={ratings?.etx} fractionDigits={etxFractionDigits} />
+          {showNotes && <PlayerRatingNote provider="ETX" ratings={ratings} />}
         </dd>
       </div>
     </dl>
@@ -80,23 +94,17 @@ export function CompactPlayerRatings({
 
 export function CoverPlayerRatings({ ratings }: Props) {
   const tr = useAppTranslations();
-  const sipApi = ratings?.sip.api;
   const etx = ratings?.etx;
   const metrics = [
     {
+      provider: "SIP" as const,
       label: tr("SIP"),
       value: profileSipTotal(ratings),
-      description: tr("osu!standard tournament rating from SkillIssue."),
-      time:
-        sipApi?.value != null
-          ? sipApi.fetchedAt
-          : (ratings?.sip.csv?.importedAt ?? null),
     },
     {
+      provider: "ETX" as const,
       label: tr("ETX"),
       value: etx?.value ?? null,
-      description: tr("osu!standard tournament rating from Elitebotix."),
-      time: etx?.importedAt ?? null,
       unit: " ★",
       fractionDigits: 2,
       provisional: etx?.provisional,
@@ -106,31 +114,20 @@ export function CoverPlayerRatings({ ratings }: Props) {
 
   return metrics.map(
     ({
+      provider,
       label,
       value,
-      description,
-      time,
       unit,
       fractionDigits,
       provisional,
       outdated,
     }) => (
-      <Fragment key={label}>
+      <Fragment key={provider}>
         <span className="bws-card-divider" aria-hidden="true" />
         <div className="bws-card-metric">
           <div className="bws-card-label-row">
             <span className="bws-card-label">{label}</span>
-            <div className="bws-card-note">
-              <BwsCardNoteTrigger
-                onOpenLabel={tr("About the {value0} rating", { value0: label })}
-              />
-              <div className="bws-card-note-panel" role="note">
-                <p className="small muted">{description}</p>
-                {value !== null && (
-                  <RatingObservation label={tr("Rating fetched")} time={time} />
-                )}
-              </div>
-            </div>
+            <PlayerRatingNote provider={provider} ratings={ratings} />
           </div>
           <div className="bws-card-value-row">
             {value === null ? (
@@ -246,80 +243,101 @@ function SipGroup({
   );
 }
 
-export function PlayerRatingDetails({ ratings }: Props) {
+function PlayerRatingNote({
+  provider,
+  ratings,
+}: Props & { provider: "SIP" | "ETX" }) {
   const tr = useAppTranslations();
   const api = ratings?.sip.api;
   const csv = ratings?.sip.csv;
-  const total = profileSipTotal(ratings);
   const etx = ratings?.etx;
   return (
-    <section className="panel" aria-label={tr("Tournament ratings")}>
-      <h2>{tr("Tournament ratings")}</h2>
-      <div className={styles.sources}>
-        <section>
-          <h3>{tr("SkillIssue (SIP)")}</h3>
-          <p>
-            <strong>
-              {total === null ? tr("No rating data") : number(tr.locale, total)}
-            </strong>
-          </p>
-          {api?.value == null && csv && (
-            <RatingObservation
-              label={tr("S11 CSV · OCLR import time")}
-              time={csv.importedAt}
+    <BwsRankNote label={tr("About the {value0} rating", { value0: provider })}>
+      <div className={styles.noteContent}>
+        {provider === "SIP" ? (
+          <>
+            <p className="small muted">
+              {tr("osu!standard tournament rating from SkillIssue.")}
+            </p>
+            {api?.value == null && csv && (
+              <>
+                <p>
+                  {tr("Overall SIP rating")}: {number(tr.locale, csv.value)}
+                </p>
+                <RatingObservation
+                  label={tr("S11 CSV · OCLR import time")}
+                  time={csv.importedAt}
+                />
+              </>
+            )}
+            {api && (
+              <RatingObservation
+                label={tr("SkillIssue API · OCLR fetch time")}
+                time={api.fetchedAt}
+              />
+            )}
+            {api?.snapshot?.rating && (
+              <SipIndicators
+                label={tr("Overall SIP rating")}
+                rating={api.snapshot.rating}
+              />
+            )}
+            <SipGroup
+              title={tr("Mod ratings")}
+              entries={api?.snapshot?.modifications}
             />
-          )}
-          {api && (
-            <RatingObservation
-              label={tr("SkillIssue API · OCLR fetch time")}
-              time={api.fetchedAt}
+            <SipGroup
+              title={tr("Skillset ratings")}
+              entries={api?.snapshot?.skillsets}
             />
-          )}
-          {api?.snapshot?.rating && (
-            <SipIndicators
-              label={tr("Overall SIP rating")}
-              rating={api.snapshot.rating}
-            />
-          )}
-          <SipGroup
-            title={tr("Mod ratings")}
-            entries={api?.snapshot?.modifications}
-          />
-          <SipGroup
-            title={tr("Skillset ratings")}
-            entries={api?.snapshot?.skillsets}
-          />
-        </section>
-        <section>
-          <h3>{tr("Elitebotix (ETX)")}</h3>
-          <p>
-            <strong>
-              <EtxTotal etx={etx} fractionDigits={2} />
-            </strong>
-          </p>
-          {etx && (
-            <RatingObservation
-              label={tr("Rating fetched")}
-              time={etx.importedAt}
-            />
-          )}
-          <dl className={styles.detailedMetrics}>
-            {etxMods.map((mod) => {
-              const stars = etx?.mods?.[mod];
-              return (
-                <div key={mod}>
-                  <dt>{mod}</dt>
-                  <dd>
-                    {stars == null
-                      ? tr("No rating data")
-                      : `${number(tr.locale, stars, 2)} ★`}
-                  </dd>
-                </div>
-              );
-            })}
-          </dl>
-        </section>
+          </>
+        ) : (
+          <>
+            <p className="small muted">
+              {tr("osu!standard tournament rating from Elitebotix.")}
+            </p>
+            {etx && (
+              <RatingObservation
+                label={etxTimeLabel(etx, tr)}
+                time={etx.importedAt}
+              />
+            )}
+            <dl className={styles.detailedMetrics}>
+              {etxMods.map((mod) => {
+                const stars = etx?.mods?.[mod];
+                return (
+                  <div key={mod}>
+                    <dt>{mod}</dt>
+                    <dd>
+                      {stars == null
+                        ? tr("No rating data")
+                        : `${number(tr.locale, stars, 2)} ★`}
+                    </dd>
+                  </div>
+                );
+              })}
+              {etx &&
+                (
+                  [
+                    [tr("Provisional rating"), etx.provisional],
+                    [tr("Outdated rating"), etx.outdated],
+                  ] as const
+                ).map(([label, value]) => (
+                  <div key={label}>
+                    <dt>{label}</dt>
+                    <dd>
+                      {value === null
+                        ? tr("Unknown")
+                        : value
+                          ? tr("Yes")
+                          : tr("No")}
+                    </dd>
+                  </div>
+                ))}
+            </dl>
+          </>
+        )}
       </div>
-    </section>
+    </BwsRankNote>
   );
 }

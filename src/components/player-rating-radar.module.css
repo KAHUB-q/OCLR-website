@@ -1,0 +1,115 @@
+.card {
+  display: grid;
+  grid-template-columns: minmax(0, 18rem) minmax(0, 32rem);
+  align-items: center;
+  justify-content: center;
+  gap: 1.25rem 2rem;
+}
+
+.radar {
+  display: block;
+  width: 100%;
+  max-width: 18rem;
+  height: auto;
+  justify-self: center;
+}
+
+.grid {
+  fill: none;
+  stroke: var(--site-border, var(--color-border));
+  vector-effect: non-scaling-stroke;
+}
+
+.mod {
+  fill: var(--site-foreground, var(--color-text));
+  font-size: 14px;
+  font-weight: 700;
+}
+
+.tick {
+  fill: var(--site-muted, var(--color-muted));
+  font-size: 11px;
+}
+
+.card [data-provider="etx"] {
+  color: var(--site-accent, var(--color-accent));
+}
+
+.card [data-provider="sip"] {
+  color: var(--site-foreground, var(--color-text));
+}
+
+.seriesLine,
+.marker {
+  stroke: currentColor;
+  stroke-width: 2;
+  stroke-linecap: round;
+  stroke-linejoin: round;
+  vector-effect: non-scaling-stroke;
+}
+
+.seriesLine {
+  fill: none;
+}
+
+[data-provider="sip"] .seriesLine {
+  stroke-dasharray: 4 3;
+}
+
+.marker {
+  fill: var(--site-surface, var(--color-raised));
+}
+
+.values {
+  min-width: 0;
+}
+
+.table {
+  min-width: 0;
+  font-variant-numeric: tabular-nums;
+}
+
+.card .table :is(th, td) {
+  padding: 0.5rem 0.375rem;
+  border-color: var(--site-border, var(--color-border));
+}
+
+.card .table th {
+  background: transparent;
+  color: var(--site-muted, var(--color-muted));
+  letter-spacing: normal;
+  text-transform: none;
+}
+
+.table td {
+  overflow-wrap: anywhere;
+}
+
+.table tbody tr:last-child > * {
+  border-bottom: 0;
+}
+
+.table :is(th, td):not(:first-child) {
+  text-align: right;
+}
+
+.table th svg {
+  display: inline-block;
+  margin-inline-end: 0.35rem;
+  vertical-align: middle;
+}
+
+.values p {
+  margin-block: 0.75rem 0;
+}
+
+@media (max-width: 640px) {
+  .card {
+    grid-template-columns: minmax(0, 1fr);
+  }
+
+  .table th svg {
+    display: block;
+    margin: 0 0 0.2rem auto;
+  }
+}

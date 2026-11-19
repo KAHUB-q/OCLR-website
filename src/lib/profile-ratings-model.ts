@@ -24,11 +24,16 @@ export const profileCsvTotalSchema = z.strictObject({
   importedAt: time.nullable(),
 });
 // importedAt is when OCLR saved the API response or imported the CSV row.
-export const profileEtxSchema = profileCsvTotalSchema.extend({
+export const legacyProfileEtxSchema = profileCsvTotalSchema.extend({
   value: z.number().finite().nonnegative(),
   provisional: z.boolean(),
   outdated: z.boolean(),
   mods: etxModsSchema.nullable(),
+});
+export const profileEtxSchema = legacyProfileEtxSchema.extend({
+  provisional: z.boolean().nullable(),
+  outdated: z.boolean().nullable(),
+  source: z.enum(["api", "csv"]).optional(),
 });
 export const profileRatingsSchema = z.strictObject({
   otr: profileOtrSchema.nullable(),

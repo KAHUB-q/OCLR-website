@@ -60,8 +60,8 @@ test("the improvement index carries the faster-than-typical colour band", async 
 }) => {
   await page.goto("/player-profile-cover");
   const badges = page.locator(".bws-card-metric").nth(3);
-  await expect(badges.locator(".bws-card-label")).toHaveText("Badges");
-  await expect(badges.locator(".bws-value")).toHaveText("2");
+  await expect(badges.locator(".bws-card-label")).toHaveText("Weighted badge");
+  await expect(badges.locator(".bws-value")).toHaveText("1/2");
   const metric = page.locator(".bws-card-metric").last();
   await expect(metric.locator(".bws-card-label")).toHaveText("OII");
   const value = metric.locator(".bws-value");
@@ -69,6 +69,65 @@ test("the improvement index carries the faster-than-typical colour band", async 
   await expect(value).toHaveClass(/bws-value--oii-up/);
   await expect(value).toHaveClass(/bws-value--rank-tier/);
 });
+
+for (const display of ["rating-notes", "compact-notes"]) {
+  test(`the ${display} profile controls expose both saved rating breakdowns`, async ({
+    page,
+    isMobile,
+  }) => {
+    await page.goto(`/player-profile-cover?${display}`);
+    const etx = page.getByRole("button", { name: "About the ETX rating" });
+    if (isMobile) await etx.tap();
+    else await etx.press("Enter");
+    const note = page.locator("[popover]:popover-open");
+    await expect(note).toContainText("Elitebotix API · OCLR fetch time");
+    await expect(note.locator("time")).toHaveAttribute(
+      "datetime",
+      "2025-06-02T12:00:00Z",
+    );
+    for (const [mod, value] of [
+      ["NM", "0.00 ★"],
+      ["HD", "5.13 ★"],
+      ["HR", "No rating data"],
+      ["DT", "6.00 ★"],
+      ["FM", "4.00 ★"],
+      ["Provisional rating", "Yes"],
+      ["Outdated rating", "Unknown"],
+    ]) {
+      await expect(
+        note.getByText(mod, { exact: true }).locator("..").locator("dd"),
+      ).toHaveText(value);
+    }
+    const bounds = (await note.boundingBox())!;
+    expect(bounds.x).toBeGreaterThanOrEqual(0);
+    expect(bounds.x + bounds.width).toBeLessThanOrEqual(
+      page.viewportSize()!.width,
+    );
+    await page.keyboard.press("Escape");
+    await expect(note).toHaveCount(0);
+
+    const sip = page.getByRole("button", { name: "About the SIP rating" });
+    if (isMobile) await sip.tap();
+    else await sip.press("Enter");
+    await expect(note).toContainText("Overall SIP rating: -4");
+    await expect(
+      note.getByText(/S11 CSV · OCLR import time/).locator("time"),
+    ).toHaveAttribute("datetime", "2025-06-01T12:00:00Z");
+    await expect(
+      note.getByText(/SkillIssue API · OCLR fetch time/).locator("time"),
+    ).toHaveAttribute("datetime", "2025-06-03T12:00:00Z");
+    await expect(note.getByText("Hard Rock: 0", { exact: true })).toBeVisible();
+    await note.getByText("High AR: -12", { exact: true }).click();
+    await expect(
+      note
+        .locator("details[open]")
+        .getByText("SIP country rank", { exact: true }),
+    ).toBeVisible();
+    await expect(
+      page.getByRole("heading", { name: "Tournament ratings" }),
+    ).toHaveCount(0);
+  });
+}
 
 // The sticky header and the actual browser top layer determine whether the
 // formula can be read and activated when there is too little room above.

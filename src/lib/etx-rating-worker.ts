@@ -1,16 +1,13 @@
 import { setTimeout } from "node:timers/promises";
 import { eq, gte } from "drizzle-orm";
 import { drizzle } from "drizzle-orm/node-postgres";
-import { z } from "zod";
 import { db, getPool, readOnlyData } from "@/db";
 import { etxRatingCache } from "@/db/schema";
-import type { EtxRating } from "./etx-rating";
+import { fetchEtxRating } from "./etx-provider";
 import { importedRatingsEdition } from "./player-rating-import-contract";
 import { publicPlayerFilters, publicPlayersForEditions } from "./players";
 import { readTournament } from "./tournament-reads";
 
-const providerUrl =
-  "https://www.eliteronix.de/elitebotix/api/player-duelrating";
 const requestIntervalMs = 1000;
 const taipeiDate = new Intl.DateTimeFormat("sv-SE", {
   timeZone: "Asia/Taipei",
@@ -18,47 +15,6 @@ const taipeiDate = new Intl.DateTimeFormat("sv-SE", {
   month: "2-digit",
   day: "2-digit",
 });
-const duelRating = z.object({
-  osuUserId: z.string(),
-  duelRating: z.object({
-    osuDuelStarRating: z
-      .string()
-      .regex(/^\d+(?:\.\d+)?$/)
-      .transform(Number)
-      .pipe(z.number().nonnegative()),
-    osuDuelProvisional: z.boolean(),
-    osuDuelOutdated: z.boolean(),
-  }),
-});
-
-async function fetchEtxRating(
-  osuId: number,
-): Promise<EtxRating | "throttled" | null> {
-  const url = new URL(providerUrl);
-  url.searchParams.set("u", String(osuId));
-  const response = await fetch(url, {
-    cache: "no-store",
-    redirect: "error",
-    signal: AbortSignal.timeout(8000),
-  });
-  if (response.status === 429) return "throttled";
-  if (
-    response.status === 404 &&
-    (await response.text()).trim() ===
-      "No duel rating found for the specified osu! user id"
-  )
-    return null;
-  if (!response.ok) throw new Error("ETX rating request failed");
-
-  const payload = duelRating.parse(await response.json());
-  if (payload.osuUserId !== String(osuId))
-    throw new Error("ETX returned a different player");
-  return {
-    value: payload.duelRating.osuDuelStarRating,
-    provisional: payload.duelRating.osuDuelProvisional,
-    outdated: payload.duelRating.osuDuelOutdated,
-  };
-}
 
 export async function refreshEtxRatings() {
   const client = await getPool().connect();

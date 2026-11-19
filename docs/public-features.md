@@ -107,10 +107,29 @@ the backend.
 
 The S11 website directory reads the saved overall [Elitebotix Duel Rating](https://www.eliteronix.de/elitebotix/api/player-duelrating?u=1176704) and its provisional and outdated flags. Existing ETX sorting and filters use the displayed score. Imported ETX remains the fallback until the provider confirms a result. A confirmed missing rating shows `—`. Timeouts, unexpected responses and network errors preserve the last confirmed result. Saved remote mode continues to use the backend's imported ratings.
 
-The public player profile and player dashboard prefer the same saved Elitebotix
-API result. Before a confirmed API response, they can show an eligible S11 CSV
-rating. The profile cover shows SIP and ETX totals beside o!TR and gives the
-provider and OCLR fetch or import time in each rating note.
+The public player profile and player dashboard prefer a saved Elitebotix API
+rating with a valid total. With no usable API rating, they can show an eligible
+S11 CSV observation and its import time. The player profile keeps SIP and ETX
+totals beside o!TR. Its information buttons open the saved breakdowns, also
+available in the compact layout when the osu! snapshot is unavailable. On a
+published player's profile, this list also identifies ratings with no saved
+data. ETX shows five mod slots, preserves zero and leaves missing entries unscored.
+SIP identifies its API observation separately if a CSV supplies the total.
+The profile also compares saved Elitebotix Mod stars and SkillIssue Mod SR in
+one radar chart on NM, HD, HR, DT and FM. SkillIssue supplies no FM rating.
+The chart shows available values, including zero, and leaves gaps on missing
+axes. A profile with only overall ratings has no radar chart. SkillIssue
+points and skillset ratings remain available in the SIP details.
+
+The ETX worker reads the existing `duelRating` response envelope, checks an
+echoed osu! UID against the request, and projects the five mod fields named in
+the [Elitebotix model](https://github.com/Eliteronix/Elitebotix/blob/2fded5e69b3fb4028c637163ec5130f591971dc6/models/DBDiscordUsers.js).
+The earlier [API integration](https://github.com/OCLR-dev/OCLR-website/pull/1143)
+verified the total and the explicit no-rating response. The five-field HTTP
+mapping uses public source and synthetic fixtures pending a successful sample
+for [#1170](https://github.com/OCLR-dev/OCLR-website/issues/1170). A timeout,
+rate limit, server error or invalid observation preserves the last valid rating
+and its original fetch time.
 
 The worker looks up public S11 directory UIDs and stores results in PostgreSQL.
 The existing daemon runs ETX alongside SIP and o!TR during the

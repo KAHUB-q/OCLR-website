@@ -17,10 +17,11 @@ database. Successful and missing ratings are checked at most once per UTC day;
 a manual rerun can finish players skipped after a failure. Timeouts, invalid
 payloads and other temporary errors preserve the last good rating. A 404
 counts as missing for this run and prevents a repeat lookup today, without
-changing any verified value, details or fetch time. A valid identity-matched
-response with a null overall rating saves a snapshot without a total. A 401, 403 or 429
-stops the run without retries. Run a single worker schedule for this token;
-independent databases using the same token do not share the lock.
+changing any verified value, details or fetch time. The worker saves Mod and
+skillset ratings even when the overall rating is absent. A total or any such
+entry counts as updated. A successful response with no ratings counts as
+missing. A 401, 403 or 429 stops the run without retries. Run a single worker
+schedule for this token because independent databases do not share the lock.
 
 ## Operator setup
 

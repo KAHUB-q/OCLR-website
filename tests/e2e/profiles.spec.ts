@@ -5,17 +5,118 @@ import AxeBuilder from "@axe-core/playwright";
 import { eq } from "drizzle-orm";
 import { db, closeDb } from "../../src/db";
 import {
+  etxRatingCache,
   registrations,
+  sipRatingCache,
   staffRoles,
   userProfileCache,
 } from "../../src/db/schema";
 import { normalizeOsuProfile } from "../../src/lib/osu-profile-model";
 import { profileResponse } from "../fixtures/osu-profile";
+import { sipResponse } from "../fixtures/sip-response";
 import { seedPublicDirectory } from "../fixtures/players";
 import { seedSession } from "./session";
 test.describe("published osu! profiles", () => {
   test.skip(!process.env.TEST_DATABASE_URL, "Requires isolated PostgreSQL");
   test.afterAll(async () => closeDb());
+  test("opens saved rating breakdowns on the public player route with and without an osu! snapshot", async ({
+    page,
+    isMobile,
+  }) => {
+    const uid = isMobile ? 262801 : 262701;
+    const { privateId } = await seedPublicDirectory(uid);
+    await db().delete(userProfileCache).where(eq(userProfileCache.osuId, uid));
+    await db()
+      .insert(userProfileCache)
+      .values({
+        osuId: uid,
+        mode: "osu",
+        profile: null,
+        attemptedAt: new Date(),
+        retryAt: new Date(Date.now() + 600000),
+      });
+    await page.goto(`/players/${uid}`);
+    for (const provider of ["SIP", "ETX"]) {
+      const label = page.getByRole("term").filter({ hasText: provider });
+      await expect(label.locator("+ dd")).toHaveText("No rating data", {
+        useInnerText: true,
+      });
+    }
+    await expect(
+      page.getByRole("heading", { name: "Mod rating radar" }),
+    ).toHaveCount(0);
+
+    const fetchedAt = new Date("2025-02-12T12:00:00Z");
+    const { modifications, skillsets } = sipResponse(uid, 0);
+    await db()
+      .insert(sipRatingCache)
+      .values({
+        osuId: uid,
+        fetchedAt,
+        value: null,
+        snapshot: { rating: null, modifications, skillsets },
+      });
+    await db()
+      .insert(etxRatingCache)
+      .values({
+        osuId: uid,
+        attemptedOn: "2025-02-12",
+        fetchedAt,
+        rating: {
+          value: 5.125,
+          provisional: null,
+          outdated: false,
+          mods: { NM: 0, HR: 5.125 },
+        },
+      });
+    const wire = await page.request.get(
+      `/api/v1/players/${uid}/oclr-profile?ratings=2`,
+    );
+    expect(wire.ok()).toBeTruthy();
+    expect((await wire.json()).data.ratings.etx).toMatchObject({
+      source: "api",
+      provisional: null,
+      mods: { NM: 0, HR: 5.125 },
+    });
+    expect(
+      (
+        await page.request.get(
+          `/api/v1/players/${privateId}/oclr-profile?ratings=2`,
+        )
+      ).status(),
+    ).toBe(404);
+
+    await page.goto(`/players/${uid}`);
+    await expect(
+      page.getByText("osu! statistics are temporarily unavailable."),
+    ).toBeVisible();
+    await page.getByRole("button", { name: "About the ETX rating" }).click();
+    const note = page.locator("[popover]:popover-open");
+    await expect(note).toContainText("0.00 ★");
+    await expect(note).toContainText("Elitebotix API · OCLR fetch time");
+    await page.keyboard.press("Escape");
+
+    const profile = normalizeOsuProfile(
+      { ...profileResponse, id: uid, username: `Synthetic Profile ${uid}` },
+      uid,
+      "osu",
+    );
+    await db()
+      .update(userProfileCache)
+      .set({ profile })
+      .where(eq(userProfileCache.osuId, uid));
+    await page.reload();
+    await page
+      .locator(".bws-card")
+      .getByRole("button", { name: "About the SIP rating" })
+      .click();
+    await expect(note.getByText("Hard Rock: 0", { exact: true })).toBeVisible();
+    await expect(note.getByText("High AR: -12", { exact: true })).toBeVisible();
+    await expect(note.locator("time")).toHaveAttribute(
+      "datetime",
+      fetchedAt.toISOString(),
+    );
+  });
   test("returns from a season to the same player's full profile", async ({
     page,
     isMobile,

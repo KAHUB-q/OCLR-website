@@ -1,11 +1,13 @@
 import { and, inArray, isNotNull } from "drizzle-orm";
 import { db } from "@/db";
 import { etxRatingCache } from "@/db/schema";
+import type { EtxMods } from "./etx-rating-model";
 
 export type EtxRating = {
   value: number;
-  provisional: boolean;
-  outdated: boolean;
+  provisional: boolean | null;
+  outdated: boolean | null;
+  mods?: EtxMods;
 };
 
 /** Only look up IDs from the publication-checked directory. */
@@ -13,7 +15,11 @@ export async function readDirectoryEtxRatings(osuIds: number[]) {
   return new Map(
     [...(await readEtxRatingSnapshots(osuIds))].map(([osuId, { rating }]) => [
       osuId,
-      rating,
+      rating && {
+        value: rating.value,
+        provisional: rating.provisional ?? undefined,
+        outdated: rating.outdated ?? undefined,
+      },
     ]),
   );
 }

@@ -1,37 +1,13 @@
 import { z } from "zod";
 
 import { sipSnapshotSchema } from "./sip-rating-model";
+import { readRatingBody } from "./rating-provider-body";
 
 const ratingResponse = sipSnapshotSchema.extend({
   playerId: z.int().positive(),
   activeUsername: z.string().min(1).max(128),
   countryCode: z.string().min(1).max(8),
 });
-
-// Bound bytes as well as the saved dictionary shapes, including when the
-// response is chunked or its Content-Length describes compressed bytes.
-async function readRatingBody(response: Response): Promise<unknown> {
-  const reader = response.body?.getReader();
-  if (!reader) throw new Error("Missing Skill Issue response.");
-  const decoder = new TextDecoder("utf-8", { fatal: true });
-  let bytes = 0;
-  let text = "";
-  try {
-    for (;;) {
-      const part = await reader.read();
-      if (part.done) break;
-      bytes += part.value.byteLength;
-      if (bytes > 64 * 1024) throw new Error("Oversized Skill Issue response.");
-      text += decoder.decode(part.value, { stream: true });
-    }
-    return JSON.parse(text + decoder.decode());
-  } catch {
-    void reader.cancel().catch(() => {});
-    throw new Error("Invalid Skill Issue response body.");
-  } finally {
-    reader.releaseLock();
-  }
-}
 
 export async function fetchSipRating(osuId: number, token: string) {
   if (!Number.isSafeInteger(osuId) || osuId < 1)
@@ -53,7 +29,9 @@ export async function fetchSipRating(osuId: number, token: string) {
     throw new Error("Skill Issue rating request failed.");
   }
 
-  const parsed = ratingResponse.safeParse(await readRatingBody(response));
+  const parsed = ratingResponse.safeParse(
+    await readRatingBody<unknown>(response, JSON.parse),
+  );
   if (!parsed.success || parsed.data.playerId !== osuId)
     throw new Error("Skill Issue returned an invalid rating.");
 

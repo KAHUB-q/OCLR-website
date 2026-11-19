@@ -11,6 +11,7 @@ import { getOtrRating } from "./otr-rating";
 import { importedRatingsEdition as s11 } from "./player-rating-import-contract";
 import { publicPlayerStillListed } from "./players";
 import {
+  legacyProfileEtxSchema,
   profileCsvTotalSchema,
   profileEtxSchema,
   profileOtrSchema,
@@ -53,6 +54,7 @@ export async function readPublishedProfileRatings(
   osuId: number,
   participation: readonly { osuId: number; editionSlug: string }[],
   edition?: string,
+  legacy = false,
 ): Promise<ProfileRatings | undefined> {
   const candidates = new Set(
     participation
@@ -103,21 +105,31 @@ export async function readPublishedProfileRatings(
           importedAt: sip.importedAt?.toISOString() ?? null,
         },
       );
-      const stars = profileEtxSchema.safeParse(
-        etxSnapshot
-          ? etxSnapshot.rating && {
-              ...etxSnapshot.rating,
-              importedAt: etxSnapshot.fetchedAt.toISOString(),
-              mods: null,
-            }
-          : etx && {
+      const etxSchema = legacy ? legacyProfileEtxSchema : profileEtxSchema;
+      const saved = etxSnapshot?.rating;
+      const providerStars = etxSchema.safeParse(
+        saved && {
+          value: saved.value,
+          provisional: saved.provisional ?? null,
+          outdated: saved.outdated ?? null,
+          importedAt: etxSnapshot.fetchedAt.toISOString(),
+          mods: saved.mods ?? null,
+          ...(!legacy && { source: "api" }),
+        },
+      );
+      // The older wire format cannot represent an unknown provider flag.
+      const stars = providerStars.success
+        ? providerStars
+        : etxSchema.safeParse(
+            etx && {
               value: etx.value,
               provisional: etx.provisional,
               outdated: etx.outdated,
               importedAt: etx.importedAt?.toISOString() ?? null,
               mods: etx.mods,
+              ...(!legacy && { source: "csv" }),
             },
-      );
+          );
       const otr = profileOtrSchema.safeParse(await getOtrRating(osuId));
       return {
         otr: otr.success ? otr.data : null,

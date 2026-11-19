@@ -261,8 +261,9 @@ export async function frontendProfile(
   // Negotiate using the freshly verified header. Old v1 backends reject unknown
   // paths/queries with 400; never probe and silently downgrade authorization.
   const version = (await frontendConnection()).contractVersion;
-  const { supportsProfileRatings } = await import("./read-api-version");
-  if (supportsProfileRatings(version)) query.set("ratings", "1");
+  const { profileRatingsParameter } = await import("./read-api-version");
+  const ratings = profileRatingsParameter(version);
+  if (ratings) query.set("ratings", ratings);
   if (Number(/^1\.(\d+)\./.exec(version ?? "")?.[1] ?? 0) >= 3) {
     try {
       return oclrProfileSchema.parse(

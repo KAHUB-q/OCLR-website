@@ -507,6 +507,16 @@ published fixtures, public identities and eligible game scores together.
 Historical Series use the same published archive statistics release as the
 other statistics views. See [YumuRating](yumu-rating.md).
 
+Contract 1.43.0 adds `ratings=2` on the public, self and edition-scoped staff
+OCLR profile reads. ETX includes its selected `source` (`api` or `csv`),
+available NM/HD/HR/DT/FM stars, and nullable provisional/outdated flags.
+`importedAt` records when OCLR fetched that API observation or imported that
+CSV row. A confirmed miss can fall back to an eligible S11 CSV. The original
+`ratings=1` shape requires boolean flags. When an API observation has an
+unknown flag, that format returns an eligible CSV observation or null.
+Clients request version 2 from 1.43+, version 1 from 1.39–1.42, and omit
+the query on older servers.
+
 Contract 1.42.0 adds [Showcase replay lists and original file downloads](streaming-api.md#showcase-replays-1189)
 to the Streaming bearer channel. Showcase pool details include a stable
 `entryId` for every slot, and Admin-only Showcase grants report replay access.

@@ -1,12 +1,7 @@
-.sources,
 .detailedMetrics,
 .compactMetrics {
   display: grid;
   gap: 0.65rem 1rem;
-}
-
-.sources {
-  grid-template-columns: repeat(auto-fit, minmax(min(100%, 19rem), 1fr));
 }
 
 .detailedMetrics,
@@ -15,7 +10,6 @@ dl.compactMetrics {
   margin-block: 0.75rem;
 }
 
-.sources section,
 .detailedMetrics div,
 .compactMetrics div {
   min-width: 0;
@@ -27,10 +21,17 @@ dl.compactMetrics {
   margin-inline-start: 0;
 }
 
-.sources details {
+.compactValue {
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 0.4rem;
+}
+
+.noteContent details {
   margin-block: 0.4rem;
 }
 
-.sources summary {
+.noteContent summary {
   cursor: pointer;
 }

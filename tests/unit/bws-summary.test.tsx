@@ -116,10 +116,11 @@ describe("shared public and staff BWS display", () => {
     };
     const html = render(10000, 1234, false, "compact", null, null, ratings);
     expect(html).toMatch(/>o!TR<[\s\S]*>SIP<[\s\S]*>0<\/strong>[\s\S]*>ETX</);
-    expect(html).toContain("6.23 ★");
+    expect(html).toContain('<strong class="bws-value">6.23 ★</strong>');
     expect(html).toContain("Provisional rating");
     expect(html).toContain("Outdated rating");
-    expect(html).not.toContain("3.50 ★");
+    expect(html).toContain("<dt>NM</dt><dd>3.50 ★</dd>");
+    expect(html).not.toContain('<strong class="bws-value">3.50 ★</strong>');
     expect(html).toContain(`dateTime="${fetchedAt}"`);
     expect(html).toContain(`dateTime="${etxReadTime}"`);
     expect(html).not.toContain(sipImportTime);
@@ -132,7 +133,9 @@ describe("shared public and staff BWS display", () => {
     expect(withCsv).not.toContain(fetchedAt);
 
     const empty = render(10000, 1234, false, "compact", null, null, null);
-    expect(empty.match(/>No rating data</g)).toHaveLength(3);
+    expect(
+      empty.match(/<span class="bws-card-state">No rating data<\/span>/g),
+    ).toHaveLength(3);
     expect(empty).toContain('aria-label="About the SIP rating"');
     expect(empty).toContain('aria-label="About the ETX rating"');
     expect(empty).toContain("osu!standard tournament rating from SkillIssue.");

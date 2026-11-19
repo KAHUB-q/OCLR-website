@@ -123,12 +123,7 @@ export function PlayerEditionView({
   const ratings = selected ? ratingsByEdition[selected] : undefined;
   const selectedBws = selected ? (bwsByEdition[selected] ?? null) : bws;
   const showRatingFallback =
-    (!snapshot || !selectedBws) &&
-    profileRatings &&
-    (profileRatings.otr ||
-      profileRatings.sip.api ||
-      profileRatings.sip.csv ||
-      profileRatings.etx);
+    (!snapshot || !selectedBws) && profileRatings != null;
   const staffDuties = selected
     ? staffHistory.filter((record) => record.editionSlug === selected)
     : staffHistory;

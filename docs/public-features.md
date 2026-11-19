@@ -111,8 +111,9 @@ The public player profile and player dashboard prefer a saved Elitebotix API
 rating with a valid total. With no usable API rating, they can show an eligible
 S11 CSV observation and its import time. The player profile keeps SIP and ETX
 totals beside o!TR. Its information buttons open the saved breakdowns, also
-available in the compact layout when the osu! snapshot is unavailable. ETX
-shows five mod slots, preserves zero and leaves missing entries unscored.
+available in the compact layout when the osu! snapshot is unavailable. On a
+published player's profile, this list also identifies ratings with no saved
+data. ETX shows five mod slots, preserves zero and leaves missing entries unscored.
 SIP identifies its API observation separately if a CSV supplies the total.
 The profile also compares saved Elitebotix Mod stars and SkillIssue Mod SR in
 one radar chart on NM, HD, HR, DT and FM. SkillIssue supplies no FM rating.

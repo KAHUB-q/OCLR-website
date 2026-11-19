@@ -25,15 +25,36 @@ test.describe("published osu! profiles", () => {
   }) => {
     const uid = isMobile ? 262801 : 262701;
     const { privateId } = await seedPublicDirectory(uid);
+    await db().delete(userProfileCache).where(eq(userProfileCache.osuId, uid));
+    await db()
+      .insert(userProfileCache)
+      .values({
+        osuId: uid,
+        mode: "osu",
+        profile: null,
+        attemptedAt: new Date(),
+        retryAt: new Date(Date.now() + 600000),
+      });
+    await page.goto(`/players/${uid}`);
+    for (const provider of ["SIP", "ETX"]) {
+      const label = page.getByRole("term").filter({ hasText: provider });
+      await expect(label.locator("+ dd")).toHaveText("No rating data", {
+        useInnerText: true,
+      });
+    }
+    await expect(
+      page.getByRole("heading", { name: "Mod rating radar" }),
+    ).toHaveCount(0);
+
     const fetchedAt = new Date("2025-02-12T12:00:00Z");
-    const { rating, modifications, skillsets } = sipResponse(uid, 0);
+    const { modifications, skillsets } = sipResponse(uid, 0);
     await db()
       .insert(sipRatingCache)
       .values({
         osuId: uid,
         fetchedAt,
-        value: 0,
-        snapshot: { rating, modifications, skillsets },
+        value: null,
+        snapshot: { rating: null, modifications, skillsets },
       });
     await db()
       .insert(etxRatingCache)
@@ -47,16 +68,6 @@ test.describe("published osu! profiles", () => {
           outdated: false,
           mods: { NM: 0, HR: 5.125 },
         },
-      });
-    await db().delete(userProfileCache).where(eq(userProfileCache.osuId, uid));
-    await db()
-      .insert(userProfileCache)
-      .values({
-        osuId: uid,
-        mode: "osu",
-        profile: null,
-        attemptedAt: new Date(),
-        retryAt: new Date(Date.now() + 600000),
       });
     const wire = await page.request.get(
       `/api/v1/players/${uid}/oclr-profile?ratings=2`,

@@ -16,9 +16,18 @@ import { seedEditions } from "../fixtures/editions";
 
 const url = process.env.TEST_DATABASE_URL;
 const slug = "s11";
-const [updated, missing, failed, limited, deferred, pending] = [
-  90401, 90402, 90403, 90404, 90405, 90406,
-];
+const ids = [90401, 90402, 90403, 90404, 90405, 90406, 90407, 90408, 90409];
+const [
+  updated,
+  modOnly,
+  skillOnly,
+  unrated,
+  missing,
+  failed,
+  limited,
+  deferred,
+  pending,
+] = ids;
 
 describe.skipIf(!url)("Daily S11 SIP cache", () => {
   beforeAll(async () => {
@@ -27,7 +36,6 @@ describe.skipIf(!url)("Daily S11 SIP cache", () => {
     vi.stubEnv("SIP_API_TOKEN", "synthetic-worker-token");
     await db().execute(sql`TRUNCATE edition_state, users CASCADE`);
     await seedEditions([{ ...edition, slug }, edition]);
-    const ids = [updated, missing, failed, limited, deferred, pending];
     await db()
       .insert(users)
       .values(ids.map((osuId) => ({ osuId, username: `Synthetic ${osuId}` })));
@@ -85,22 +93,34 @@ describe.skipIf(!url)("Daily S11 SIP cache", () => {
         expect((await refreshSipRatings(true)).stopped).toBe("busy");
         return Response.json(sipResponse(id, 4567));
       }
+      if (id === modOnly || id === skillOnly || id === unrated) {
+        const sample = sipResponse(id, 0);
+        return Response.json({
+          ...sample,
+          rating: null,
+          modifications: id === modOnly ? sample.modifications : {},
+          skillsets: id === skillOnly ? sample.skillsets : null,
+        });
+      }
       if (id === missing) return new Response(null, { status: 404 });
       if (id === failed) return Response.json(sipResponse(id + 1, 9999));
       return new Response(null, { status: 429 });
     });
 
-    expect((await refreshSipRatings(false)).pending).toBe(5);
+    expect((await refreshSipRatings(false)).pending).toBe(8);
     expect(calls).toHaveLength(0);
     expect(await refreshSipRatings(true)).toEqual({
-      pending: 5,
-      updated: 1,
-      missing: 1,
+      pending: 8,
+      updated: 3,
+      missing: 2,
       failed: 1,
       stopped: "rate-limited",
     });
     expect(calls.map(({ id }) => id)).toEqual([
       updated,
+      modOnly,
+      skillOnly,
+      unrated,
       missing,
       failed,
       limited,
@@ -147,6 +167,6 @@ describe.skipIf(!url)("Daily S11 SIP cache", () => {
       rows.find((row) => row.osuId === deferred)?.importedRatings,
     ).toBeUndefined();
     expect(rows.some((row) => row.osuId === pending)).toBe(false);
-    expect(calls).toHaveLength(4);
+    expect(calls).toHaveLength(7);
   });
 });

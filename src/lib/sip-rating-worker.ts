@@ -110,8 +110,16 @@ export async function refreshSipRatings(apply: boolean) {
         .insert(sipRatingCache)
         .values({ osuId, ...snapshot })
         .onConflictDoUpdate({ target: sipRatingCache.osuId, set: snapshot });
-      if (rating.value === null) summary.missing++;
-      else summary.updated++;
+      const { modifications, skillsets } = rating.snapshot;
+      if (
+        rating.value !== null ||
+        Object.keys(modifications ?? {}).length > 0 ||
+        Object.keys(skillsets ?? {}).length > 0
+      ) {
+        summary.updated++;
+      } else {
+        summary.missing++;
+      }
     }
     return summary;
   } finally {

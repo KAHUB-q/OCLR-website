@@ -658,6 +658,42 @@ const liruRarities: Partial<Record<string, WikiCardRarity>> = {
   raincoat: "R",
   roller: "SR",
   stargazer: "SSR",
+  "lolita-steampunk": "SSR",
+  "lolita-antique-doll": "SR",
+  "lolita-desert-princess": "SSR",
+  "lolita-blue-porcelain": "SSR",
+  "lolita-rose-knight": "SSR",
+  "lolita-magic-librarian": "SSR",
+  "lolita-moon-vampire": "SSR",
+  "lolita-vintage-detective": "SR",
+  "lolita-candy-witch": "SR",
+  "lolita-deep-sea-mermaid": "UR",
+  "lolita-circus": "SSR",
+  "lolita-astrologer": "SSR",
+  "lolita-military": "SR",
+  "peony-stage-dress": "SSR",
+  "starlight-crystal-gown": "UR",
+  "arcade-techwear": "R",
+  "jade-blossom-cape": "UR",
+  "campus-knit-notebook": "R",
+  "lolita-gothic-rose": "SSR",
+  "bamboo-fan-hanfu": "SR",
+  "lolita-strawberry-sweet": "SR",
+  "lolita-maple-kimono": "SR",
+  "lolita-snow-queen": "UR",
+  "lolita-forest-lily": "SR",
+  "lolita-sailor-shell": "SR",
+  "lolita-court-blue-rose": "SSR",
+  "lolita-classic-rose": "SR",
+  "lolita-daisy-gingham": "R",
+  "lolita-mint-tie-sailor": "R",
+  "lolita-pink-bow-pinafore": "R",
+  "lolita-monochrome-gothic": "R",
+  "lolita-burgundy-bow-academy": "R",
+  "lolita-sage-pocket-dress": "R",
+  "lolita-opera-phantom": "SSR",
+  "lolita-spring-flower-goddess": "UR",
+  "lolita-rose-music-box": "SSR",
 };
 
 export function liruGallery(tr: AppTranslator): {
@@ -1634,6 +1670,256 @@ export function liruGallery(tr: AppTranslator): {
       "typewriter",
       tr("Vintage typewriter"),
       tr("Liru in a red blouse types on a cream typewriter."),
+    ],
+    [
+      "lolita-steampunk",
+      tr("Clockwork Lolita"),
+      tr(
+        "Liru holds a brass pocket watch in a brown dress embroidered with gears.",
+      ),
+    ],
+    [
+      "lolita-antique-doll",
+      tr("Antique rose doll"),
+      tr(
+        "Liru touches a rose brooch above a dusty pink dress with lace and pearl chains.",
+      ),
+    ],
+    [
+      "lolita-desert-princess",
+      tr("Desert sun princess"),
+      tr(
+        "Liru holds a blue pendant in a tasseled cape and skirt with gold sun motifs.",
+      ),
+    ],
+    [
+      "lolita-blue-porcelain",
+      tr("Blue porcelain Lolita"),
+      tr(
+        "Liru holds a closed fan that matches the cobalt peonies on her ivory dress.",
+      ),
+    ],
+    [
+      "lolita-rose-knight",
+      tr("Rose knight"),
+      tr(
+        "Liru wears silver shoulder armor over a burgundy dress embroidered with roses.",
+      ),
+    ],
+    [
+      "lolita-magic-librarian",
+      tr("Spellbook librarian"),
+      tr(
+        "Liru holds a gold-stamped book in a dark green cape, with a small key in her hair.",
+      ),
+    ],
+    [
+      "lolita-moon-vampire",
+      tr("Moonlit vampire"),
+      tr(
+        "Liru smiles with small fangs in a bat-wing cape fastened with a red gem.",
+      ),
+    ],
+    [
+      "lolita-vintage-detective",
+      tr("Houndstooth detective"),
+      tr("Liru raises a brass magnifying glass in a brown houndstooth cape."),
+    ],
+    [
+      "lolita-candy-witch",
+      tr("Candy witch"),
+      tr(
+        "Liru winks with a swirl lollipop in a purple witch hat and candy-print skirt.",
+      ),
+    ],
+    [
+      "lolita-deep-sea-mermaid",
+      tr("Deep sea mermaid"),
+      tr(
+        "Liru cradles a spiral shell in a navy dress with shimmering scales and pearl strands.",
+      ),
+    ],
+    [
+      "lolita-circus",
+      tr("Circus ringmaster"),
+      tr(
+        "Liru winks in a burgundy ringmaster jacket, lifting a skirt embroidered with a circus tent.",
+      ),
+    ],
+    [
+      "lolita-astrologer",
+      tr("Astrolabe keeper"),
+      tr(
+        "Liru holds a brass astrolabe, with gold moon phases embroidered on her skirt.",
+      ),
+    ],
+    [
+      "lolita-military",
+      tr("Ceremonial uniform"),
+      tr(
+        "Liru adjusts her cuff on a dark green uniform with gold epaulettes and a burgundy sash.",
+      ),
+    ],
+    [
+      "peony-stage-dress",
+      tr("Scarlet peony dress"),
+      tr(
+        "Liru touches her collar in a scarlet outfit with peony embroidery, a jade ring and long draped sleeves.",
+      ),
+    ],
+    [
+      "starlight-crystal-gown",
+      tr("Starlight crystal gown"),
+      tr(
+        "Liru winks in a violet gown with silver star embroidery and dangling purple crystals.",
+      ),
+    ],
+    [
+      "arcade-techwear",
+      tr("Neon arcade outfit"),
+      tr(
+        "Liru raises a fist in a neon-trimmed jacket and loose cargo pants, with headphones around her neck.",
+      ),
+    ],
+    [
+      "jade-blossom-cape",
+      tr("Jade blossom cape"),
+      tr(
+        "Liru closes her eyes with a white bouquet in her hands and jade clasps on her green cape.",
+      ),
+    ],
+    [
+      "campus-knit-notebook",
+      tr("Campus knit cardigan"),
+      tr(
+        "Liru waves in a lavender cable-knit cardigan, holding a notebook beside a sprout satchel.",
+      ),
+    ],
+    [
+      "lolita-gothic-rose",
+      tr("Gothic violet rose"),
+      tr(
+        "Liru holds a closed lace fan beside a black velvet skirt embroidered with purple roses.",
+      ),
+    ],
+    [
+      "bamboo-fan-hanfu",
+      tr("Bamboo fan hanfu"),
+      tr(
+        "Liru opens a green bamboo-patterned fan beside her lavender pleated skirt.",
+      ),
+    ],
+    [
+      "lolita-strawberry-sweet",
+      tr("Strawberry ribbon dress"),
+      tr(
+        "Liru lifts a strawberry charm beside the pink bow and berry embroidery on her lavender dress.",
+      ),
+    ],
+    [
+      "lolita-maple-kimono",
+      tr("Maple kimono Lolita"),
+      tr(
+        "Liru lifts a kimono-style sleeve above a lace skirt patterned with maple leaves and chrysanthemums.",
+      ),
+    ],
+    [
+      "lolita-snow-queen",
+      tr("Snow queen"),
+      tr(
+        "Liru holds a snowflake scepter in a pale blue dress with a white fur-trimmed cape.",
+      ),
+    ],
+    [
+      "lolita-forest-lily",
+      tr("Woodland lily of the valley"),
+      tr(
+        "Liru closes her eyes holding lily of the valley, with fern embroidery on her sage-green skirt.",
+      ),
+    ],
+    [
+      "lolita-sailor-shell",
+      tr("Seashell sailor dress"),
+      tr(
+        "Liru winks and lifts a navy sailor skirt trimmed with rope knots, shells and waves.",
+      ),
+    ],
+    [
+      "lolita-court-blue-rose",
+      tr("Blue rose court dress"),
+      tr(
+        "Liru holds a lace fan in a powder-blue gown with blue roses, gold scrollwork and pearls.",
+      ),
+    ],
+    [
+      "lolita-classic-rose",
+      tr("Classic rose Lolita"),
+      tr(
+        "Liru holds a single pink rose in a moss-green dress with dusty pink ribbons.",
+      ),
+    ],
+    [
+      "lolita-daisy-gingham",
+      tr("Daisy gingham dress"),
+      tr(
+        "Liru holds a white daisy in a peach gingham pinafore with a cream pocket.",
+      ),
+    ],
+    [
+      "lolita-mint-tie-sailor",
+      tr("Mint tie sailor dress"),
+      tr(
+        "Liru winks in a navy sailor dress with a striped white collar and a mint green tie.",
+      ),
+    ],
+    [
+      "lolita-pink-bow-pinafore",
+      tr("Pink bow pinafore"),
+      tr(
+        "Liru smiles in a pink pinafore with a waist bow and a white eyelet hem.",
+      ),
+    ],
+    [
+      "lolita-monochrome-gothic",
+      tr("Monochrome gothic dress"),
+      tr(
+        "Liru adjusts a cream cuff on her black dress with a ribbon at the ruffled collar.",
+      ),
+    ],
+    [
+      "lolita-burgundy-bow-academy",
+      tr("Burgundy bow academy outfit"),
+      tr(
+        "Liru holds a cream book in a blue-violet jacket with a burgundy bow.",
+      ),
+    ],
+    [
+      "lolita-sage-pocket-dress",
+      tr("Sage pocket dress"),
+      tr(
+        "Liru slips one hand into the pocket of a sage green pinafore with a lace hem.",
+      ),
+    ],
+    [
+      "lolita-opera-phantom",
+      tr("Opera phantom"),
+      tr(
+        "Liru raises an ivory mask beside a black cape and a skirt draped in burgundy.",
+      ),
+    ],
+    [
+      "lolita-spring-flower-goddess",
+      tr("Spring flower goddess"),
+      tr(
+        "Liru holds a flowering branch in a petal cape and a yellow skirt embroidered with tulips.",
+      ),
+    ],
+    [
+      "lolita-rose-music-box",
+      tr("Rose windup music box"),
+      tr(
+        "Liru opens a brass music box with a rose on its lid, wearing a peach dress trimmed with gears.",
+      ),
     ],
   ];
   // Saved draws still refer to these images by their original URLs.

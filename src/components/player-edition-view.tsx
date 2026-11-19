@@ -18,6 +18,7 @@ import { PlayerMapPerformance as PlayerMapPerformanceView } from "./player-map-p
 import { PlayerParticipatedTournaments } from "./player-participated-tournaments";
 import { PlayerProfile } from "./player-profile";
 import { CompactPlayerRatings } from "./player-profile-ratings";
+import { PlayerRatingRadar } from "./player-rating-radar";
 import type { ProfileRatings } from "@/lib/profile-ratings-model";
 import { HistoricalStaffHistory } from "./historical-staff-history";
 import type { HistoricalStaffHistory as StaffHistory } from "@/lib/archive-staff-history";
@@ -209,6 +210,7 @@ export function PlayerEditionView({
           showNotes
         />
       )}
+      <PlayerRatingRadar ratings={profileRatings} />
       {selected && ratings && <RoundRatings data={ratings} slug={selected} />}
       {(timeline.marks.length > 0 || timeline.spans.length > 0) && (
         <PlayerTimelineView timeline={timeline} />

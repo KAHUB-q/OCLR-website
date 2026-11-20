@@ -26,6 +26,7 @@ function respond(
 ) {
   request.mockImplementationOnce((_options, respond) =>
     Object.assign(new EventEmitter(), {
+      setTimeout() {},
       end() {
         respond(
           Object.assign(Readable.from([bytes]), {
@@ -73,7 +74,9 @@ describe("beatmap mirror transport", () => {
   it("rejects unapproved redirects and nonpublic resolution before connecting", async () => {
     respond(302, { location: "https://unapproved.test/resource" });
     await expect(
-      downloadBeatmapMirror(origin, new AbortController().signal),
+      downloadBeatmapMirror(origin, new AbortController().signal, [
+        new URL("https://catboy.best/d/75"),
+      ]),
     ).rejects.toMatchObject({ status: 422 });
     expect(request).toHaveBeenCalledTimes(1);
     request.mockClear();
@@ -82,6 +85,62 @@ describe("beatmap mirror transport", () => {
       downloadBeatmapMirror(origin, new AbortController().signal),
     ).rejects.toMatchObject({ status: 422 });
     expect(request).not.toHaveBeenCalled();
+  });
+
+  it("tries approved mirrors in order when the selected source is rate limited or unavailable", async () => {
+    respond(429, { "retry-after": "3600" });
+    respond(502, {});
+    respond(200, { "content-type": "application/octet-stream" });
+    await expect(
+      downloadBeatmapMirror(
+        new URL("https://beatconnect.io/b/75"),
+        new AbortController().signal,
+        [origin, new URL("https://catboy.best/d/75")],
+      ),
+    ).resolves.toEqual(Buffer.from("archive"));
+    expect(request.mock.calls.map(([options]) => options.servername)).toEqual([
+      "beatconnect.io",
+      "dl.sayobot.cn",
+      "catboy.best",
+    ]);
+    expect(
+      new Set(request.mock.calls.map(([options]) => options.signal)).size,
+    ).toBe(1);
+  });
+
+  it("reports a rate limit if the only mirror was rate limited", async () => {
+    respond(429, { "retry-after": "3600" });
+    await expect(
+      downloadBeatmapMirror(origin, new AbortController().signal),
+    ).rejects.toMatchObject({ status: 429 });
+    expect(request).toHaveBeenCalledTimes(1);
+  });
+
+  it("abandons a stalled connection while the next mirror can still respond", async () => {
+    vi.useFakeTimers();
+    try {
+      request.mockImplementationOnce(() => {
+        const outgoing = new EventEmitter();
+        return Object.assign(outgoing, {
+          setTimeout() {},
+          end() {},
+          destroy(error: Error) {
+            outgoing.emit("error", error);
+          },
+        });
+      });
+      respond(200, {});
+      const result = downloadBeatmapMirror(
+        origin,
+        new AbortController().signal,
+        [new URL("https://catboy.best/d/75")],
+      );
+      await vi.advanceTimersByTimeAsync(8_000);
+      await expect(result).resolves.toEqual(Buffer.from("archive"));
+      expect(request).toHaveBeenCalledTimes(2);
+    } finally {
+      vi.useRealTimers();
+    }
   });
 
   it("rejects oversize and partial HTTP bodies", async () => {

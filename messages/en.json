@@ -4926,6 +4926,11 @@
     "me3d2880b5b12": "Loading replay list…",
     "mbc978cbf7343": "No playable osu!standard replays for this map.",
     "m7b70e3179842": "Replay player for {value0}",
-    "m129664db2224": "Online playback supports only osu!standard. Download {filename} from Saved replays."
+    "m129664db2224": "Online playback supports only osu!standard. Download {filename} from Saved replays.",
+    "ma251c18205f1": "Cached",
+    "mc989e0f468ee": "osu! official download",
+    "m839c8db93357": "Download on osu!",
+    "maa25b7d04192": "Download the .osz on osu!, then upload it here.",
+    "m21da162c6274": "The mirror is rate limited. Try another mirror or upload an .osz."
   }
 }

@@ -120,6 +120,27 @@ const files = [
   ),
 ].sort();
 const rows = files.map((file) => {
+  const playbackRoute = file.endsWith(
+    "/replays/[replayId]/playback/[asset]/route.ts",
+  );
+  if (playbackRoute || file.endsWith("/mappool-replay-player.tsx")) {
+    return {
+      file,
+      kind: playbackRoute ? "read-route" : "client",
+      authority: "denied",
+      operations: [],
+      commands: "Read-only",
+      metadata: "Inherited or static",
+      services: ["src/lib/mappool-replays.ts#loadMappoolReplayPlaybackAsset"],
+      test: "integration/mappool-replays.test.ts + unit/replay-playback-archive.test.ts",
+      authorization:
+        "Edition-scoped browser session and saved replay membership; remote frontend does not offer site-hosted playback",
+      adapter: "Browser-session media route",
+      media: "Private beatmap and skin archives",
+      requiredVerification:
+        "Replay membership, revocation and exact beatmap checksum",
+    };
+  }
   const replayRoute = file.match(
     /\/showcase\/pools\/\[poolId\]\/replays\/(?:([^/]+)\/)?route\.ts$/,
   );

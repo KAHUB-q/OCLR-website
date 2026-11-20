@@ -846,6 +846,20 @@
       "requiredVerification": "Desktop/mobile direct load, reload/navigation; authorized denial where applicable"
     },
     {
+      "file": "src/app/api/admin/tournaments/[edition]/mappools/entries/[entryId]/replays/[replayId]/playback/[asset]/route.ts",
+      "kind": "read-route",
+      "authority": "denied",
+      "operations": [],
+      "commands": "Read-only",
+      "metadata": "Inherited or static",
+      "services": ["src/lib/mappool-replays.ts#loadMappoolReplayPlaybackAsset"],
+      "test": "integration/mappool-replays.test.ts + unit/replay-playback-archive.test.ts",
+      "authorization": "Edition-scoped browser session and saved replay membership; remote frontend does not offer site-hosted playback",
+      "adapter": "Browser-session media route",
+      "media": "Private beatmap and skin archives",
+      "requiredVerification": "Replay membership, revocation and exact beatmap checksum"
+    },
+    {
       "file": "src/app/api/admin/tournaments/[edition]/mappools/entries/[entryId]/replays/[replayId]/route.ts",
       "kind": "read-route",
       "authority": "saved-read",
@@ -2985,6 +2999,20 @@
       "adapter": "no database; repository content/navigation/preferences",
       "media": "Replay list/file authorization",
       "requiredVerification": "Browser interaction/polling + API snapshot immutability"
+    },
+    {
+      "file": "src/components/mappool-replay-player.tsx",
+      "kind": "client",
+      "authority": "denied",
+      "operations": [],
+      "commands": "Read-only",
+      "metadata": "Inherited or static",
+      "services": ["src/lib/mappool-replays.ts#loadMappoolReplayPlaybackAsset"],
+      "test": "integration/mappool-replays.test.ts + unit/replay-playback-archive.test.ts",
+      "authorization": "Edition-scoped browser session and saved replay membership; remote frontend does not offer site-hosted playback",
+      "adapter": "Browser-session media route",
+      "media": "Private beatmap and skin archives",
+      "requiredVerification": "Replay membership, revocation and exact beatmap checksum"
     },
     {
       "file": "src/components/mappool-replays.tsx",

@@ -29,6 +29,10 @@ import {
   type ReplayUploadReceipt,
 } from "./replay-write-contract";
 import { readReplay, removeReplayFile, storeReplay } from "./replay-storage";
+import {
+  readReplayPlaybackAsset,
+  type ReplayPlaybackAsset,
+} from "./replay-playback-storage";
 type Reader = Pick<ReturnType<typeof db>, "select">;
 type ReplayList = ExplicitReadData<"replayList">;
 function validId(id: string) {
@@ -233,7 +237,7 @@ export async function uploadMappoolReplay(
     throw error;
   }
 }
-export async function downloadMappoolReplay(
+async function findMappoolReplay(
   actor: User,
   slug: string,
   entryId: string,
@@ -248,10 +252,38 @@ export async function downloadMappoolReplay(
       and(eq(mappoolReplays.id, replayId), eq(mappoolReplays.entryId, entryId)),
     );
   if (!row) throw new HttpError(404, "Replay not found.");
+  return row;
+}
+export async function downloadMappoolReplay(
+  actor: User,
+  slug: string,
+  entryId: string,
+  replayId: string,
+) {
+  const row = await findMappoolReplay(actor, slug, entryId, replayId);
   const bytes = await readReplay(row.id, row.size, row.sha256);
   await assertReadCapability(actor, "view_replays", slug);
   return { filename: row.filename, bytes };
 }
+export async function loadMappoolReplayPlaybackAsset(
+  actor: User,
+  slug: string,
+  entryId: string,
+  replayId: string,
+  asset: ReplayPlaybackAsset,
+) {
+  const row = await findMappoolReplay(actor, slug, entryId, replayId);
+  if (row.summary.mode !== "osu")
+    throw new HttpError(404, "Replay playback is available for osu!standard.");
+  const bytes = await readReplayPlaybackAsset(
+    entryId,
+    row.summary.beatmapMd5,
+    asset,
+  );
+  await assertReadCapability(actor, "view_replays", slug);
+  return bytes;
+}
+
 export async function deleteMappoolReplay(
   actor: User,
   slug: string,

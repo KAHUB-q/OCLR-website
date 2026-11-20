@@ -20,7 +20,7 @@ export async function readReplayPlaybackAsset(
 
   const isBeatmap = asset === "beatmap.osz";
   const directory = await mediaDirectory(
-    isBeatmap ? "replay-beatmaps" : "replay-skins",
+    isBeatmap ? "beatmaps" : "replay-skins",
     false,
   );
   const filename = isBeatmap

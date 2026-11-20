@@ -190,10 +190,10 @@ describe.skipIf(!url)("private replay attachment lifecycle", () => {
     const { id: replayId } = await upload();
     const beatmap = Buffer.from("synthetic osz");
     const skin = Buffer.from("synthetic osk");
-    await mkdir(join(root, "replay-beatmaps"), { recursive: true });
+    await mkdir(join(root, "beatmaps"), { recursive: true });
     await mkdir(join(root, "replay-skins"), { recursive: true });
     await writeFile(
-      join(root, "replay-beatmaps", `${entryId}-${replayChecksum}.osz`),
+      join(root, "beatmaps", `${entryId}-${replayChecksum}.osz`),
       beatmap,
     );
     await writeFile(join(root, "replay-skins", "default.osk"), skin);

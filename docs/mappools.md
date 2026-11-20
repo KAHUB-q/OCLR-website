@@ -132,7 +132,7 @@ select a local `.osz` for the current player. That file stays in the browser.
 For this first integration, a maintainer provisions the playback media inside
 the existing `OCLR_MEDIA_DIR` (normally `/var/lib/oclr/media/`):
 
-- `replay-beatmaps/<entryId>-<beatmapMd5>.osz` for each playable map revision.
+- `beatmaps/<entryId>-<beatmapMd5>.osz` for each playable map revision.
   Use lowercase UUID and MD5 values. The replay list displays the MD5 and its
   download URL includes the entry UUID. The player verifies the original
   `.osu` bytes and uses the matching difficulty's audio.

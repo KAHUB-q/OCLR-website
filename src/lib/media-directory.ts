@@ -29,7 +29,7 @@ export async function mediaRoot(
   return path;
 }
 export async function mediaDirectory(
-  name: "teams" | "replays" | "replay-beatmaps" | "replay-skins",
+  name: "teams" | "replays" | "beatmaps" | "replay-skins",
   create = true,
 ) {
   const directory = join(await mediaRoot(), name);

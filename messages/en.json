@@ -4841,6 +4841,25 @@
     "m350dde9c1c38": "Mappoolers",
     "m1a93fab250ea": "Inherit from selection workbench",
     "m557c6f1f2d13": "Choose a current Mappooler for this edition.",
-    "ma1d4800142da": "This workbench suggestion is no longer available for this beatmap."
+    "ma1d4800142da": "This workbench suggestion is no longer available for this beatmap.",
+    "m5088b65ee3d2": "Could not load this replay. Reload the list and try again.",
+    "m2f43c6524baa": "Could not load the beatmap package. Choose a matching .osz up to 64 MiB.",
+    "mc39061a2d6aa": "The beatmap package has no difficulty matching this replay.",
+    "m84074c5d8e6d": "Replay skin is unavailable. Ask an Admin to check the installed skin.",
+    "md6e2fd174034": "Could not start replay audio. Check the beatmap package and try again.",
+    "md34f8de06457": "Could not play this replay. Try again.",
+    "mef2f55b34d6d": "Replay playback for {value0}",
+    "m40d5a10f75ac": "Replay progress",
+    "m711930ab0548": "Pause replay",
+    "ma3894d9516e2": "Play replay",
+    "m97f32abda901": "Replay volume",
+    "mda38340a78ed": "Use a local beatmap package (.osz)",
+    "mf21721fa6c85": "Loading replay…",
+    "mdf6a15231bd2": "Close player",
+    "m55b1dcc0b974": "Open replay player",
+    "me115ad418d13": "Replay playback is available for osu!standard.",
+    "mba14258adf82": "The replay playback asset is invalid or too large.",
+    "m122a067d4095": "The replay playback asset could not be read.",
+    "m6563aa16fe14": "The replay playback asset is missing."
   }
 }

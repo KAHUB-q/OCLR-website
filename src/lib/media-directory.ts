@@ -28,7 +28,10 @@ export async function mediaRoot(
   if (!(await lstat(path)).isDirectory()) throw invalid();
   return path;
 }
-export async function mediaDirectory(name: "teams" | "replays", create = true) {
+export async function mediaDirectory(
+  name: "teams" | "replays" | "replay-beatmaps" | "replay-skins",
+  create = true,
+) {
   const directory = join(await mediaRoot(), name);
   if (create) await mkdir(directory, { mode: 0o700, recursive: true });
   const stat = await lstat(directory).catch((error: NodeJS.ErrnoException) => {

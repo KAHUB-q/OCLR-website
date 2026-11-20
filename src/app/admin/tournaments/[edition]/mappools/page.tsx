@@ -4,6 +4,7 @@ import { getAppTranslations } from "@/i18n/server";
 import { authorizedPage } from "@/lib/auth/page";
 import { hasCapability } from "@/lib/auth/staff";
 import { requireUser } from "@/lib/auth/user";
+import { remoteMode } from "@/lib/data-source";
 import { mappoolWorkspace } from "@/lib/mappool-reads";
 import { mappoolSuggesterEditorData } from "@/lib/mappool-suggesters";
 import { remotePage } from "@/lib/remote-page";
@@ -44,6 +45,7 @@ async function Issue271Page({
             "configure_tournament",
             edition,
           )}
+          canPlayReplays={!remoteMode()}
           canManageReplays={await hasCapability(
             actor,
             "manage_replays",

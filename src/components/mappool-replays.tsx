@@ -1,6 +1,7 @@
 "use client";
 
 import { LoadingRegion } from "./loading-region";
+import { MappoolReplayPlayer } from "./mappool-replay-player";
 import {
   useEffect,
   useId,
@@ -32,12 +33,14 @@ export function MappoolReplays({
   pool,
   entry,
   canManage,
+  canPlay,
   renderTrigger = (trigger) => trigger,
 }: {
   slug: string;
   pool: Pool;
   entry: Entry;
   canManage: boolean;
+  canPlay?: boolean;
   renderTrigger?: (trigger: ReactNode) => ReactNode;
 }) {
   const tr = useAppTranslations(),
@@ -60,6 +63,7 @@ export function MappoolReplays({
   const [error, setError] = useState(""),
     [listError, setListError] = useState(""),
     [status, setStatus] = useState("");
+  const [selectedReplay, setSelectedReplay] = useState<string | null>(null);
   const [deleting, setDeleting] = useState<ReplayItem | null>(null);
   const input = useRef<HTMLInputElement>(null),
     summary = useRef<HTMLButtonElement>(null);
@@ -276,6 +280,7 @@ export function MappoolReplays({
           listRequest.current = null;
           setLoading(false);
           setExpanded(false);
+          setSelectedReplay(null);
           summary.current?.focus();
         }}
       >
@@ -355,6 +360,27 @@ export function MappoolReplays({
                     MD5 {item.summary.beatmapMd5}
                   </code>
                   <div className="actions">
+                    {canPlay && item.summary.mode === "osu" && (
+                      <button
+                        type="button"
+                        className="secondary"
+                        aria-expanded={selectedReplay === item.id}
+                        aria-controls={
+                          selectedReplay === item.id
+                            ? `${id}-player`
+                            : undefined
+                        }
+                        onClick={() =>
+                          setSelectedReplay(
+                            selectedReplay === item.id ? null : item.id,
+                          )
+                        }
+                      >
+                        {selectedReplay === item.id
+                          ? tr("Close player")
+                          : tr("Open replay player")}
+                      </button>
+                    )}
                     <a className="button secondary" href={`${url}/${item.id}`}>
                       {tr("Download replay")}
                     </a>
@@ -373,6 +399,15 @@ export function MappoolReplays({
                       </button>
                     )}
                   </div>
+                  {expanded && canPlay && selectedReplay === item.id && (
+                    <MappoolReplayPlayer
+                      key={`${url}/${item.id}`}
+                      id={`${id}-player`}
+                      replayUrl={`${url}/${item.id}`}
+                      beatmapMd5={item.summary.beatmapMd5}
+                      filename={item.filename}
+                    />
+                  )}
                 </li>
               ))}
             </ul>

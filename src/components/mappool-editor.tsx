@@ -578,6 +578,7 @@ export function MappoolEditor({
   data,
   readOnlyMaps = false,
   canManageReplays = false,
+  canPlayReplays = false,
   canConfigureShowcase = false,
   suggesters,
 }: {
@@ -585,6 +586,7 @@ export function MappoolEditor({
   data: MappoolWorkspace;
   readOnlyMaps?: boolean;
   canManageReplays?: boolean;
+  canPlayReplays?: boolean;
   canConfigureShowcase?: boolean;
   suggesters?: MappoolSuggesterEditorData | null;
 }) {
@@ -595,6 +597,7 @@ export function MappoolEditor({
         slug={slug}
         data={data}
         canManageReplays={canManageReplays}
+        canPlayReplays={canPlayReplays}
         canConfigureShowcase={canConfigureShowcase}
         suggesters={suggesters}
       />
@@ -605,12 +608,14 @@ function MappoolEditorContent({
   slug,
   data,
   canManageReplays,
+  canPlayReplays,
   canConfigureShowcase,
   suggesters,
 }: {
   slug: string;
   data: MappoolWorkspace;
   canManageReplays: boolean;
+  canPlayReplays: boolean;
   canConfigureShowcase: boolean;
   suggesters?: MappoolSuggesterEditorData | null;
 }) {
@@ -976,6 +981,7 @@ function MappoolEditorContent({
                                   pool={pool}
                                   entry={entry}
                                   canManage={canManageReplays}
+                                  canPlay={canPlayReplays}
                                   renderTrigger={(replayTrigger) =>
                                     editable && !readOnly ? (
                                       <EntryEditor

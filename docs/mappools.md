@@ -121,6 +121,35 @@ Official beatmap responses retain the optional MD5 checksum. A known checksum/ru
 
 Files stay private even when the pool is published. There is no public replay API or public download URL. The protected endpoints are `/api/admin/tournaments/[edition]/mappools/entries/[entryId]/replays` (GET list / POST bounded multipart upload) and its `/[replayId]` resource (GET attachment / DELETE confirmed versioned removal). Reads validate current read grants; writes also enforce same-origin, current write grants, versions and archive protection. A retry of already committed content is idempotent; a different concurrent write with a stale version returns 409. See [deployment and recovery](deployment.md#private-mappool-replay-storage-185) for persistent storage, quotas, Python LZMA, backup and offline cleanup.
 
+## Staff replay player (#1224)
+
+On the mappool management page, open a map's **Replays** dialog and choose
+**Open replay player** for a saved stable osu!standard replay. The player loads
+the original attachment through the existing edition-scoped download route.
+It looks for a server-installed beatmap package by default. Staff can also
+select a local `.osz` for the current player. That file stays in the browser.
+
+For this first integration, a maintainer provisions the playback media inside
+the existing `OCLR_MEDIA_DIR` (normally `/var/lib/oclr/media/`):
+
+- `replay-beatmaps/<entryId>-<beatmapMd5>.osz` for each playable map revision.
+  Use lowercase UUID and MD5 values. The replay list displays the MD5 and its
+  download URL includes the entry UUID. The player verifies the original
+  `.osu` bytes and uses the matching difficulty's audio.
+- `replay-skins/default.osk` for the shared osu!standard skin. Use a skin with
+  suitable redistribution rights and retain its source, version, license and
+  attribution with the deployment records. The npm package does not provide
+  production skin assets.
+
+Use the same service ownership, private directory permissions and backup
+location as [private replay storage](deployment.md#private-mappool-replay-storage-185).
+Copy new files into place with a rename on the same filesystem. Both media
+routes require current permission to read the selected replay. The browser
+accepts beatmap packages up to 64 MiB and a skin up to 32 MiB. Each archive is
+also limited to 2,048 entries and 128 MiB expanded. Use the saved download
+mirror as the source when preparing a package. The mirror synchronization and
+web management controls tracked by #1224 are a subsequent phase.
+
 ## Historical S4–S6 metadata
 
 See [historical metadata supplements](archive-map-metadata.md) for the #335 root

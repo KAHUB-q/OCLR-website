@@ -12,6 +12,7 @@ import { randomUUID } from "node:crypto";
 import {
   realpath,
   mkdtemp,
+  mkdir,
   readdir,
   readFile,
   rename,
@@ -36,6 +37,7 @@ import {
   uploadMappoolReplay,
   deleteMappoolReplay,
   downloadMappoolReplay,
+  loadMappoolReplayPlaybackAsset,
 } from "../../src/lib/mappool-replays";
 import { cleanupReplayFiles } from "../../src/lib/replay-storage";
 import { mappoolCommand } from "../../src/lib/mappools";
@@ -47,6 +49,7 @@ import { assertTestDatabase } from "../database";
 import { syntheticReplay, replayChecksum } from "../fixtures/replay";
 import { fetchBeatmap } from "../../src/lib/osu-beatmaps";
 import { POST as postReplay } from "../../src/app/api/admin/tournaments/[edition]/mappools/entries/[entryId]/replays/route";
+import { GET as playbackAsset } from "../../src/app/api/admin/tournaments/[edition]/mappools/entries/[entryId]/replays/[replayId]/playback/[asset]/route";
 import { DELETE as removeReplay } from "../../src/app/api/admin/tournaments/[edition]/mappools/entries/[entryId]/replays/[replayId]/route";
 import {
   deleteReplayWrite,
@@ -183,6 +186,52 @@ describe.skipIf(!url)("private replay attachment lifecycle", () => {
     await rm(root, { recursive: true, force: true });
     vi.unstubAllEnvs();
   });
+  it("serves playback assets only for the authorized replay and entry", async () => {
+    const { id: replayId } = await upload();
+    const beatmap = Buffer.from("synthetic osz");
+    const skin = Buffer.from("synthetic osk");
+    await mkdir(join(root, "replay-beatmaps"), { recursive: true });
+    await mkdir(join(root, "replay-skins"), { recursive: true });
+    await writeFile(
+      join(root, "replay-beatmaps", `${entryId}-${replayChecksum}.osz`),
+      beatmap,
+    );
+    await writeFile(join(root, "replay-skins", "default.osk"), skin);
+    const asset = "skin.osk";
+    const url = new Request(
+      `${origin}/api/admin/tournaments/${edition.slug}/mappools/entries/${entryId}/replays/${replayId}/playback/${asset}`,
+    );
+    const response = await playbackAsset(url, {
+      params: Promise.resolve({
+        edition: edition.slug,
+        entryId,
+        replayId,
+        asset,
+      }),
+    });
+    expect(response.status).toBe(200);
+    expect(response.headers.get("cache-control")).toBe("private, no-store");
+    expect(Buffer.from(await response.arrayBuffer())).toEqual(skin);
+    const read = (actor = mapper, slug = edition.slug, target = entryId) =>
+      loadMappoolReplayPlaybackAsset(
+        actor,
+        slug,
+        target,
+        replayId,
+        "beatmap.osz",
+      );
+    expect(Buffer.from(await read())).toEqual(beatmap);
+    await expect(
+      read(mapper, edition.slug, randomUUID()),
+    ).rejects.toMatchObject({ status: 404 });
+    await expect(read(mapper, "other-test-cup")).rejects.toMatchObject({
+      status: 403,
+    });
+    await expect(read(outsider)).rejects.toMatchObject({ status: 403 });
+    await db().delete(staffRoles).where(eq(staffRoles.userId, mapper.osuId));
+    await expect(read()).rejects.toMatchObject({ status: 403 });
+  });
+
   it("allows uploads and deletions without a window and after legacy deadlines", async () => {
     const initial = await upload();
     expect(

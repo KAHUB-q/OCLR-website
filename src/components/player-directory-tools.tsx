@@ -188,7 +188,6 @@ export function PlayerDirectoryTools({
           >
             {directorySorts
               .filter((sort) => {
-                if (sort.startsWith("rank")) return options.rank;
                 const metric = directoryMetrics.find((key) =>
                   sort.startsWith(`${key}-`),
                 );

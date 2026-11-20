@@ -30,6 +30,12 @@ const router: AppRouterInstance = {
   prefetch() {},
   bfcacheId: "synthetic",
 };
+const directoryPlayers = params.has("unranked")
+  ? players
+      .slice(0, 2)
+      .reverse()
+      .map((player) => ({ ...player, rank: null }))
+  : players;
 createRoot(document.getElementById("root")!).render(
   <AppRouterContext value={router}>
     <SearchParamsContext value={params}>
@@ -37,7 +43,7 @@ createRoot(document.getElementById("root")!).render(
         <main className="themed-site">
           <EventPlayers
             edition="synthetic"
-            players={players}
+            players={directoryPlayers}
             remote
             grouped
             preview={params.has("preview")}

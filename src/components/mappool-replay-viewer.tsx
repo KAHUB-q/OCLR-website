@@ -25,7 +25,9 @@ export function MappoolReplayViewer({
   const [retry, setRetry] = useState(0);
   const [selectedId, setSelectedId] = useState("");
   const selected = Array.isArray(replays)
-    ? (replays.find((replay) => replay.id === selectedId) ?? replays[0])
+    ? (replays.find((replay) => replay.id === selectedId) ??
+      replays.find((replay) => replay.summary.mode === "osu") ??
+      replays[0])
     : undefined;
   const slot = slotLabel(entry.category, entry.position);
 
@@ -43,8 +45,9 @@ export function MappoolReplayViewer({
         });
         if (!response.ok) throw new Error();
         const items: ReplayItem[] = await response.json();
-        if (!controller.signal.aborted)
-          setReplays(items.filter((item) => item.summary.mode === "osu"));
+        if (!Array.isArray(items) || items.some((item) => !item?.summary))
+          throw new Error();
+        if (!controller.signal.aborted) setReplays(items);
       } catch {
         if (!controller.signal.aborted) setReplays("error");
       }
@@ -88,19 +91,25 @@ export function MappoolReplayViewer({
           </select>
         </label>
       )}
-      {selected && (
-        <MappoolReplayPlayer
-          key={selected.id}
-          replayUrl={`${listUrl}/${selected.id}`}
-          beatmapMd5={selected.summary.beatmapMd5}
-          filename={selected.filename}
-        />
-      )}
+      {selected &&
+        (selected.summary.mode === "osu" ? (
+          <MappoolReplayPlayer
+            key={selected.id}
+            replayUrl={`${listUrl}/${selected.id}`}
+            beatmapMd5={selected.summary.beatmapMd5}
+            filename={selected.filename}
+          />
+        ) : (
+          <p role="status">
+            {tr(
+              "Online playback supports only osu!standard. Download {filename} from Saved replays.",
+              { filename: selected.filename },
+            )}
+          </p>
+        ))}
       {replays === null && <p role="status">{tr("Loading replay list…")}</p>}
       {Array.isArray(replays) && !replays.length && (
-        <p role="status">
-          {tr("No playable osu!standard replays for this map.")}
-        </p>
+        <p role="status">{tr("No replays attached.")}</p>
       )}
       {replays === "error" && (
         <div className={styles.listError}>

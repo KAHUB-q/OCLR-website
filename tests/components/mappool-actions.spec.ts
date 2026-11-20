@@ -259,10 +259,14 @@ test("the map opens an inline player with controls in its frame", async ({
 }) => {
   await page.route("**/entries/entry-1/replays", (route) =>
     route.fulfill({
-      json: ["First", "Second"].map((player, index) => ({
-        id: `replay-${index}`,
-        filename: `${player}.osr`,
-        summary: { mode: "osu", beatmapMd5: "a".repeat(32) },
+      json: [
+        ["Keys", "mania"],
+        ["First", "osu"],
+        ["Second", "osu"],
+      ].map(([name, mode]) => ({
+        id: name,
+        filename: `${name}.osr`,
+        summary: { mode, beatmapMd5: "a".repeat(32) },
       })),
     }),
   );
@@ -290,9 +294,19 @@ test("the map opens an inline player with controls in its frame", async ({
     frame.getByRole("slider", { name: "Replay volume" }),
   ).toHaveValue("100");
 
-  await viewer
-    .getByRole("combobox", { name: "Replay file" })
-    .selectOption("replay-1");
+  const files = viewer.getByRole("combobox", { name: "Replay file" });
+  await expect(files.getByRole("option")).toHaveText([
+    "Keys.osr",
+    "First.osr",
+    "Second.osr",
+  ]);
+  await expect(files).toHaveValue("First");
+  await files.selectOption("Keys");
+  await expect(viewer.getByRole("status")).toHaveText(
+    "Online playback supports only osu!standard. Download Keys.osr from Saved replays.",
+  );
+  await expect(viewer.getByRole("group")).toHaveCount(0);
+  await files.selectOption("Second");
   await expect(
     viewer.getByRole("group", { name: "Replay playback for Second.osr" }),
   ).toBeVisible();

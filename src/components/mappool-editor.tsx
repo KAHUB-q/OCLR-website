@@ -635,7 +635,6 @@ function MappoolEditorContent({
   const [replayTarget, setReplayTarget] = useState<{
     entryId: string;
     url: string;
-    listRevision: number;
   } | null>(null);
   const replayTrigger = useRef<HTMLButtonElement>(null);
   const replayViewerId = `${id}-replay-viewer`;
@@ -668,13 +667,6 @@ function MappoolEditorContent({
     setCreatingPool(false);
     setEditingEntry(null);
     setFeedback("");
-  }
-  function refreshReplayList(entryId: string) {
-    setReplayTarget((target) =>
-      target?.entryId === entryId
-        ? { ...target, listRevision: target.listRevision + 1 }
-        : target,
-    );
   }
   return (
     <div className="mappool-workbench">
@@ -954,7 +946,6 @@ function MappoolEditorContent({
                     id={replayViewerId}
                     entry={replayEntry}
                     listUrl={replayTarget.url}
-                    listRevision={replayTarget.listRevision}
                     onClose={() => {
                       setReplayTarget(null);
                       replayTrigger.current?.focus();
@@ -1026,17 +1017,12 @@ function MappoolEditorContent({
                                   canPlay={canPlayReplays}
                                   playbackId={replayViewerId}
                                   playbackOpen={replayEntry?.id === entry.id}
-                                  onReplaysChanged={refreshReplayList}
                                   onOpenPlayback={(url, trigger) => {
                                     replayTrigger.current = trigger;
                                     setReplayTarget(
                                       replayEntry?.id === entry.id
                                         ? null
-                                        : {
-                                            entryId: entry.id,
-                                            url,
-                                            listRevision: 0,
-                                          },
+                                        : { entryId: entry.id, url },
                                     );
                                   }}
                                   canManageCache={!readOnly}

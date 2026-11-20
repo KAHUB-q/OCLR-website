@@ -5,6 +5,7 @@ import { useAppTranslations } from "@/i18n/shared";
 import { slotLabel } from "@/lib/mappool-model";
 import type { MappoolWorkspace } from "@/lib/mappool-reads";
 import type { ReplayItem } from "@/lib/mappool-replays";
+import { openReplayListChannel } from "@/lib/replay-list-updates";
 import { MappoolReplayPlayer } from "./mappool-replay-player";
 import styles from "./mappool-replay-player.module.css";
 
@@ -12,20 +13,18 @@ export function MappoolReplayViewer({
   id,
   entry,
   listUrl,
-  listRevision = 0,
   onClose,
 }: {
   id: string;
   entry: MappoolWorkspace["entries"][number];
   listUrl: string;
-  listRevision?: number;
   onClose: () => void;
 }) {
   const tr = useAppTranslations();
   const panel = useRef<HTMLDialogElement>(null);
   const heading = useRef<HTMLHeadingElement>(null);
   const [replays, setListState] = useState<ReplayItem[] | "error" | null>(null);
-  const [retry, setRetry] = useState(0);
+  const [listRevision, setListRevision] = useState(0);
   const [selectedId, setSelectedId] = useState("");
   const selected = Array.isArray(replays)
     ? (replays.find((replay) => replay.id === selectedId) ?? replays[0])
@@ -42,6 +41,20 @@ export function MappoolReplayViewer({
     if (dialog && !dialog.open) dialog.showModal();
     heading.current?.focus();
   }, []);
+
+  useEffect(() => {
+    const refresh = () => setListRevision((revision) => revision + 1);
+    const channel = openReplayListChannel(listUrl);
+    if (channel) channel.onmessage = refresh;
+    function onVisibilityChange() {
+      if (document.visibilityState === "visible") refresh();
+    }
+    document.addEventListener("visibilitychange", onVisibilityChange);
+    return () => {
+      channel?.close();
+      document.removeEventListener("visibilitychange", onVisibilityChange);
+    };
+  }, [listUrl]);
 
   useEffect(() => {
     const controller = new AbortController();
@@ -61,7 +74,7 @@ export function MappoolReplayViewer({
     }
     void load();
     return () => controller.abort();
-  }, [listUrl, listRevision, retry]);
+  }, [listUrl, listRevision]);
 
   return (
     <dialog
@@ -129,7 +142,7 @@ export function MappoolReplayViewer({
             className="secondary"
             onClick={() => {
               setListState(null);
-              setRetry(retry + 1);
+              setListRevision((revision) => revision + 1);
             }}
           >
             {tr("Reload replay list")}

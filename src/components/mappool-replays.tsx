@@ -21,6 +21,7 @@ import {
 } from "@/lib/beatmap-cache-contract";
 import type { MappoolWorkspace } from "@/lib/mappool-reads";
 import type { ReplayItem } from "@/lib/mappool-replays";
+import { notifyReplayListChanged } from "@/lib/replay-list-updates";
 import { REPLAY_MAX_BYTES, REPLAY_ENTRY_LIMIT } from "@/lib/replay-model";
 import {
   deleteReplayWrite,
@@ -45,7 +46,6 @@ export function MappoolReplays({
   playbackId,
   playbackOpen,
   onOpenPlayback,
-  onReplaysChanged,
   renderActions = (actions) => actions,
 }: {
   slug: string;
@@ -57,7 +57,6 @@ export function MappoolReplays({
   playbackId?: string;
   playbackOpen?: boolean;
   onOpenPlayback?: (url: string, trigger: HTMLButtonElement) => void;
-  onReplaysChanged?: (entryId: string) => void;
   renderActions?: (actions: ReactNode) => ReactNode;
 }) {
   const tr = useAppTranslations(),
@@ -234,7 +233,7 @@ export function MappoolReplays({
       setKnownVersion(result.version);
       listVersion = result.version;
       if (!result.duplicate) {
-        onReplaysChanged?.(entry.id);
+        notifyReplayListChanged(url);
         if (count !== undefined)
           setObservedCount({ version: result.version, count: count + 1 });
       }
@@ -287,7 +286,7 @@ export function MappoolReplays({
       setKnownVersion(parsed.data.version);
       listVersion = parsed.data.version;
       if (parsed.data.removed) {
-        onReplaysChanged?.(entry.id);
+        notifyReplayListChanged(url);
         setItems((current) =>
           current.filter((item) => item.id !== deleting.id),
         );

@@ -40,6 +40,7 @@ export function MappoolReplays({
   playbackId,
   playbackOpen,
   onOpenPlayback,
+  onReplaysChanged,
   renderActions = (actions) => actions,
 }: {
   slug: string;
@@ -51,6 +52,7 @@ export function MappoolReplays({
   playbackId?: string;
   playbackOpen?: boolean;
   onOpenPlayback?: (url: string, trigger: HTMLButtonElement) => void;
+  onReplaysChanged?: (entryId: string) => void;
   renderActions?: (actions: ReactNode) => ReactNode;
 }) {
   const tr = useAppTranslations(),
@@ -211,8 +213,11 @@ export function MappoolReplays({
       );
       setKnownVersion(result.version);
       listVersion = result.version;
-      if (!result.duplicate && count !== undefined)
-        setObservedCount({ version: result.version, count: count + 1 });
+      if (!result.duplicate) {
+        onReplaysChanged?.(entry.id);
+        if (count !== undefined)
+          setObservedCount({ version: result.version, count: count + 1 });
+      }
       setStatus(
         result.duplicate
           ? tr("This file is already attached. No duplicate was created.")
@@ -262,6 +267,7 @@ export function MappoolReplays({
       setKnownVersion(parsed.data.version);
       listVersion = parsed.data.version;
       if (parsed.data.removed) {
+        onReplaysChanged?.(entry.id);
         setItems((current) =>
           current.filter((item) => item.id !== deleting.id),
         );

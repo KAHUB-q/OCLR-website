@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useRef, useState } from "react";
+import { useEffect, useEffectEvent, useRef, useState } from "react";
 import { useAppTranslations } from "@/i18n/shared";
 import { slotLabel } from "@/lib/mappool-model";
 import type { MappoolWorkspace } from "@/lib/mappool-reads";
@@ -12,22 +12,29 @@ export function MappoolReplayViewer({
   id,
   entry,
   listUrl,
+  listRevision = 0,
   onClose,
 }: {
   id: string;
   entry: MappoolWorkspace["entries"][number];
   listUrl: string;
+  listRevision?: number;
   onClose: () => void;
 }) {
   const tr = useAppTranslations();
   const heading = useRef<HTMLHeadingElement>(null);
-  const [replays, setReplays] = useState<ReplayItem[] | "error" | null>(null);
+  const [replays, setListState] = useState<ReplayItem[] | "error" | null>(null);
   const [retry, setRetry] = useState(0);
   const [selectedId, setSelectedId] = useState("");
   const selected = Array.isArray(replays)
     ? (replays.find((replay) => replay.id === selectedId) ?? replays[0])
     : undefined;
   const slot = slotLabel(entry.category, entry.position);
+  const setReplays = useEffectEvent((items: ReplayItem[]) => {
+    // A new upload can appear ahead of the implicitly selected first replay.
+    if (selected) setSelectedId(selected.id);
+    setListState(items);
+  });
 
   useEffect(() => {
     heading.current?.focus();
@@ -46,12 +53,12 @@ export function MappoolReplayViewer({
         if (!controller.signal.aborted)
           setReplays(items.filter((item) => item.summary.mode === "osu"));
       } catch {
-        if (!controller.signal.aborted) setReplays("error");
+        if (!controller.signal.aborted) setListState("error");
       }
     }
     void load();
     return () => controller.abort();
-  }, [listUrl, retry]);
+  }, [listUrl, listRevision, retry]);
 
   return (
     <section id={id} className={styles.viewer} aria-labelledby={`${id}-title`}>
@@ -111,7 +118,7 @@ export function MappoolReplayViewer({
             type="button"
             className="secondary"
             onClick={() => {
-              setReplays(null);
+              setListState(null);
               setRetry(retry + 1);
             }}
           >

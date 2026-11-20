@@ -1,10 +1,11 @@
 "use client";
 
-import { useEffect, useRef, useState } from "react";
+import { useEffect, useEffectEvent, useRef, useState } from "react";
 import { useAppTranslations } from "@/i18n/shared";
 import { slotLabel } from "@/lib/mappool-model";
 import type { MappoolWorkspace } from "@/lib/mappool-reads";
 import type { ReplayItem } from "@/lib/mappool-replays";
+import { openReplayListChannel } from "@/lib/replay-list-updates";
 import { MappoolReplayPlayer } from "./mappool-replay-player";
 import styles from "./mappool-replay-player.module.css";
 
@@ -22,19 +23,38 @@ export function MappoolReplayViewer({
   const tr = useAppTranslations();
   const panel = useRef<HTMLDialogElement>(null);
   const heading = useRef<HTMLHeadingElement>(null);
-  const [replays, setReplays] = useState<ReplayItem[] | "error" | null>(null);
-  const [retry, setRetry] = useState(0);
+  const [replays, setListState] = useState<ReplayItem[] | "error" | null>(null);
+  const [listRevision, setListRevision] = useState(0);
   const [selectedId, setSelectedId] = useState("");
   const selected = Array.isArray(replays)
     ? (replays.find((replay) => replay.id === selectedId) ?? replays[0])
     : undefined;
   const slot = slotLabel(entry.category, entry.position);
+  const setReplays = useEffectEvent((items: ReplayItem[]) => {
+    // A new upload can appear ahead of the implicitly selected first replay.
+    if (selected) setSelectedId(selected.id);
+    setListState(items);
+  });
 
   useEffect(() => {
     const dialog = panel.current;
     if (dialog && !dialog.open) dialog.showModal();
     heading.current?.focus();
   }, []);
+
+  useEffect(() => {
+    const refresh = () => setListRevision((revision) => revision + 1);
+    const channel = openReplayListChannel(listUrl);
+    if (channel) channel.onmessage = refresh;
+    function onVisibilityChange() {
+      if (document.visibilityState === "visible") refresh();
+    }
+    document.addEventListener("visibilitychange", onVisibilityChange);
+    return () => {
+      channel?.close();
+      document.removeEventListener("visibilitychange", onVisibilityChange);
+    };
+  }, [listUrl]);
 
   useEffect(() => {
     const controller = new AbortController();
@@ -49,12 +69,12 @@ export function MappoolReplayViewer({
         if (!controller.signal.aborted)
           setReplays(items.filter((item) => item.summary.mode === "osu"));
       } catch {
-        if (!controller.signal.aborted) setReplays("error");
+        if (!controller.signal.aborted) setListState("error");
       }
     }
     void load();
     return () => controller.abort();
-  }, [listUrl, retry]);
+  }, [listUrl, listRevision]);
 
   return (
     <dialog
@@ -120,8 +140,8 @@ export function MappoolReplayViewer({
             type="button"
             className="secondary"
             onClick={() => {
-              setReplays(null);
-              setRetry(retry + 1);
+              setListState(null);
+              setListRevision((revision) => revision + 1);
             }}
           >
             {tr("Reload replay list")}

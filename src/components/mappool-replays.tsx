@@ -21,6 +21,7 @@ import {
 } from "@/lib/beatmap-cache-contract";
 import type { MappoolWorkspace } from "@/lib/mappool-reads";
 import type { ReplayItem } from "@/lib/mappool-replays";
+import { notifyReplayListChanged } from "@/lib/replay-list-updates";
 import { REPLAY_MAX_BYTES, REPLAY_ENTRY_LIMIT } from "@/lib/replay-model";
 import {
   deleteReplayWrite,
@@ -231,8 +232,11 @@ export function MappoolReplays({
       );
       setKnownVersion(result.version);
       listVersion = result.version;
-      if (!result.duplicate && count !== undefined)
-        setObservedCount({ version: result.version, count: count + 1 });
+      if (!result.duplicate) {
+        notifyReplayListChanged(url);
+        if (count !== undefined)
+          setObservedCount({ version: result.version, count: count + 1 });
+      }
       setStatus(
         result.duplicate
           ? tr("This file is already attached. No duplicate was created.")
@@ -282,6 +286,7 @@ export function MappoolReplays({
       setKnownVersion(parsed.data.version);
       listVersion = parsed.data.version;
       if (parsed.data.removed) {
+        notifyReplayListChanged(url);
         setItems((current) =>
           current.filter((item) => item.id !== deleting.id),
         );

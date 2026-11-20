@@ -29,6 +29,105 @@ const file = {
   buffer: Buffer.from("synthetic mock upload"),
 };
 
+test("the open player follows attachment changes from another tab and keeps a surviving selection", async ({
+  context,
+  page,
+}) => {
+  const first = { ...replay, id: "first", filename: "First.osr" };
+  const second = { ...replay, id: "second", filename: "Second.osr" };
+  const added = { ...replay, id: "added", filename: file.name };
+  let items = [second, first];
+  await context.route("https://assets.ppy.sh/**", (route) => route.abort());
+  await context.route("**/entries/entry-1/replays", async (route) => {
+    if (route.request().method() === "POST") {
+      items = [added, ...items];
+      await route.fulfill({ json: { version: 8, duplicate: false } });
+    } else {
+      await route.fulfill({ json: items });
+    }
+  });
+  await context.route("**/entries/entry-1/replays/second", async (route) => {
+    expect(route.request().method()).toBe("DELETE");
+    items = items.filter((item) => item.id !== second.id);
+    await route.fulfill({ json: { version: 9, removed: true } });
+  });
+  await page.goto("/mappool-actions?manage=1&playback=1");
+  const entry = page.locator('[data-map-entry="entry-1"]');
+  await entry.getByRole("button", { name: "Open replay player" }).click();
+  const viewer = page.getByRole("dialog", { name: "Replay player for NM1" });
+  const choices = viewer.getByRole("combobox", { name: "Replay file" });
+  await expect(choices).toHaveValue(second.id);
+  const volume = viewer.getByRole("slider", { name: "Replay volume" });
+  await volume.press("End");
+
+  const manager = await context.newPage();
+  await manager.goto("/mappool-actions?manage=1&playback=1");
+  const attachments = manager
+    .locator('[data-map-entry="entry-1"]')
+    .getByRole("button", { name: /^Saved replays/ });
+  const dialog = manager.getByRole("dialog", { name: "Replays for NM1" });
+  await attachments.click();
+  await dialog.getByLabel("Replay file", { exact: true }).setInputFiles(file);
+  await dialog
+    .getByRole("button", { name: "Upload replay", exact: true })
+    .click();
+  await expect(dialog.getByRole("status")).toHaveText("Replay uploaded.");
+  await expect(choices.getByRole("option")).toHaveText(
+    items.map((item) => item.filename),
+  );
+  await expect(choices).toHaveValue(second.id);
+  await expect(volume).toHaveValue("100");
+
+  await dialog
+    .getByRole("listitem")
+    .filter({ hasText: second.filename })
+    .getByRole("button", { name: "Delete replay" })
+    .click();
+  await manager
+    .getByRole("dialog", { name: "Delete replay?", exact: true })
+    .getByRole("button", { name: "Delete replay", exact: true })
+    .click();
+  await expect(dialog.getByRole("status")).toHaveText("Replay deleted.");
+  await expect(choices.getByRole("option")).toHaveText(
+    items.map((item) => item.filename),
+  );
+  await expect(choices).toHaveValue(added.id);
+  await expect(
+    viewer.getByRole("group", {
+      name: `Replay playback for ${added.filename}`,
+    }),
+  ).toBeVisible();
+});
+
+test("returning to the viewer clears the last replay when tab messages are unavailable", async ({
+  page,
+}) => {
+  await page.addInitScript(() => {
+    Object.defineProperty(window, "BroadcastChannel", { value: undefined });
+  });
+  let items = [replay];
+  await page.route("https://assets.ppy.sh/**", (route) => route.abort());
+  await page.route("**/entries/entry-1/replays", (route) =>
+    route.fulfill({ json: items }),
+  );
+  await page.goto("/mappool-actions?manage=1&playback=1");
+  await page
+    .locator('[data-map-entry="entry-1"]')
+    .getByRole("button", { name: "Open replay player" })
+    .click();
+  const viewer = page.getByRole("dialog", { name: "Replay player for NM1" });
+  const player = viewer.getByRole("group", {
+    name: `Replay playback for ${replay.filename}`,
+  });
+  await expect(player).toBeVisible();
+  items = [];
+  await page.evaluate(() => {
+    document.dispatchEvent(new Event("visibilitychange"));
+  });
+  await expect(player).toHaveCount(0);
+  await expect(viewer.getByRole("status")).toBeVisible();
+});
+
 for (const operation of ["upload", "delete"] as const) {
   test(`${operation} rejection stays visible after reloading and clears on a successful retry`, async ({
     page,

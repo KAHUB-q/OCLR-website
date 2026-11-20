@@ -7,6 +7,31 @@ test.beforeEach(async ({ page }) => {
   await page.route("https://a.ppy.sh/**", (route) => route.abort());
 });
 
+test("a shared rank sort stays selected in a season without ranks", async ({
+  page,
+}) => {
+  await page.goto("/event-players?unranked=1&group=list&sort=pp-desc");
+  const sort = page.getByRole("combobox", { name: "Sort players" });
+  const rankOptions = sort.locator('option[value^="rank-"]');
+  const rows = page.locator(".event-player-row h3");
+  await expect(sort).toHaveValue("rank-asc");
+  await expect(rankOptions).toHaveCount(1);
+  await expect(
+    page.getByRole("list", { name: "Applied filters" }),
+  ).toContainText("Global rank: best first");
+  await expect(rows).toHaveText(["Subset Player 001", "Subset Player 002"]);
+
+  await sort.selectOption("default");
+  await expect(rankOptions).toHaveCount(0);
+  await expect(page.getByRole("list", { name: "Applied filters" })).toHaveCount(
+    0,
+  );
+  await expect(rows).toHaveText(["Subset Player 002", "Subset Player 001"]);
+  await page.goBack();
+  await expect(sort).toHaveValue("rank-asc");
+  await expect(rows).toHaveText(["Subset Player 001", "Subset Player 002"]);
+});
+
 test("scrolling appends successive batches and retains the existing player rows", async ({
   page,
 }) => {

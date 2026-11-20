@@ -133,8 +133,16 @@ Close the dialog with the close button or Escape. Open **Saved replays** to
 download a file from another game mode, upload a replay, or delete an attachment.
 
 Playback reads the saved attachment through the edition-scoped route and
-uses the cached beatmap package. Staff can also select a local `.osz`
-for the current playback session. That file stays in the browser.
+uses the server's cached beatmap package. To provide a local `.osz` for
+playback, upload it through **Server beatmap cache**.
+
+The player uses [OCLR's replayviewer-js fork at `06bd864ee`](https://github.com/OCLR-dev/replayviewer-js/tree/06bd864ee6f0886c77ef18b71e4490aad3c0b9ba).
+Stable osu!standard replays with SV2 use the ScoreV2 timeline in the player.
+The website installs the fork's 2.0.0 build from the npm archive in `vendor/`
+with the integrity recorded in `package-lock.json`. To refresh the archive,
+check out the intended fork commit and run `npm ci`, `npm run build`,
+`npm test` and `npm pack --ignore-scripts` in the fork, then update the
+archive and lockfile in this repository.
 
 Under **Server beatmap cache**, edition Admins and Mappoolers can sync a map's
 approved saved mirror or choose a direct mirror for the saved beatmapset ID.

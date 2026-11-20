@@ -1,5 +1,38 @@
 # S6 surviving historical sources (#289)
 
+## Coach UID verification (2026-11-20, Asia/Taipei)
+
+All 12 coaches were linked to their confirmed osu! accounts through the
+historical archive admin page. The official profiles confirmed each coach's
+current or previous username. The public roster was checked against all 12
+profile links and displays the names used during S6.
+[S6 public players](https://oclr.org/tournaments/s6/players)
+
+| Name in the MainSheet |                                      osu! UID | Profile evidence                     |
+| --------------------- | --------------------------------------------: | ------------------------------------ |
+| Neina                 |   [6763434](https://osu.ppy.sh/users/6763434) | Current username                     |
+| Kishin Sagume         |     [596803](https://osu.ppy.sh/users/596803) | Current username                     |
+| Michka                | [10636530](https://osu.ppy.sh/users/10636530) | Current username                     |
+| 970                   |   [4075655](https://osu.ppy.sh/users/4075655) | Current username                     |
+| wdwdwww               |   [7166953](https://osu.ppy.sh/users/7166953) | Previous username of Yurisaki_M1kaoo |
+| [Crz]Makii            |   [5242158](https://osu.ppy.sh/users/5242158) | Current username                     |
+| Kazumi Pager          | [15030466](https://osu.ppy.sh/users/15030466) | Previous username of Pager           |
+| Old K                 |   [2385405](https://osu.ppy.sh/users/2385405) | Current username                     |
+| CUWAN                 |   [7799707](https://osu.ppy.sh/users/7799707) | Current username                     |
+| Miracle               |   [5964035](https://osu.ppy.sh/users/5964035) | Current username                     |
+| Kotor1                |   [2351439](https://osu.ppy.sh/users/2351439) | Current username                     |
+| Crystal               |   [1646397](https://osu.ppy.sh/users/1646397) | Current username                     |
+
+All **1,614 published score records** matched field for field before and after
+the coach links were saved. Statistics remained public for all 34 matches,
+covering 269 scored maps and 75 players.
+[S6 public statistics](https://oclr.org/tournaments/s6/statistics) ·
+[#289 production verification](https://github.com/OCLR-dev/OCLR-website/issues/289#issuecomment-7029165763)
+
+The sections below retain the original import checkpoints, including identity
+counts at the time of import. The issue records the other open source questions.
+[#289 archive record](https://github.com/OCLR-dev/OCLR-website/issues/289)
+
 ## Captain qualifier NM3 original package (#852, 2026-11-06)
 
 The organizer supplied the official

@@ -22,6 +22,7 @@ export function MappoolReplayViewer({
   onClose: () => void;
 }) {
   const tr = useAppTranslations();
+  const panel = useRef<HTMLDialogElement>(null);
   const heading = useRef<HTMLHeadingElement>(null);
   const [replays, setListState] = useState<ReplayItem[] | "error" | null>(null);
   const [retry, setRetry] = useState(0);
@@ -37,6 +38,8 @@ export function MappoolReplayViewer({
   });
 
   useEffect(() => {
+    const dialog = panel.current;
+    if (dialog && !dialog.open) dialog.showModal();
     heading.current?.focus();
   }, []);
 
@@ -61,13 +64,20 @@ export function MappoolReplayViewer({
   }, [listUrl, listRevision, retry]);
 
   return (
-    <section id={id} className={styles.viewer} aria-labelledby={`${id}-title`}>
+    <dialog
+      ref={panel}
+      id={id}
+      className={styles.viewer}
+      aria-labelledby={`${id}-title`}
+      aria-describedby={`${id}-map`}
+      onClose={onClose}
+    >
       <header className={styles.header}>
         <div className={styles.heading}>
           <h3 ref={heading} tabIndex={-1} id={`${id}-title`}>
             {tr("Replay player for {value0}", { value0: slot })}
           </h3>
-          <p>
+          <p id={`${id}-map`}>
             {entry.metadata.title} · {entry.metadata.difficulty}
           </p>
         </div>
@@ -75,7 +85,7 @@ export function MappoolReplayViewer({
           type="button"
           className="secondary"
           aria-label={tr("Close player")}
-          onClick={onClose}
+          onClick={() => panel.current?.close()}
         >
           <span aria-hidden="true">×</span>
         </button>
@@ -126,6 +136,6 @@ export function MappoolReplayViewer({
           </button>
         </div>
       )}
-    </section>
+    </dialog>
   );
 }

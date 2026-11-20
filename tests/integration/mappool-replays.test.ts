@@ -290,6 +290,9 @@ describe.skipIf(!url)("private replay attachment lifecycle", () => {
     await expect(
       mappoolBeatmapCacheStatus(mapper, "other-test-cup", entryId),
     ).rejects.toMatchObject({ status: 403 });
+    expect((await mappoolWorkspace(mapper, edition.slug)).entries).toMatchObject([
+      { id: entryId, beatmapCached: false },
+    ]);
     expect((await status()).mirrors[0]).toMatchObject({ id: "saved" });
     vi.mocked(downloadBeatmapMirror).mockResolvedValueOnce(archive);
     const saved = await changeMappoolBeatmapCache(
@@ -298,6 +301,12 @@ describe.skipIf(!url)("private replay attachment lifecycle", () => {
       entryId,
       sync,
       signal,
+    );
+    expect((await mappoolWorkspace(mapper, edition.slug)).entries).toMatchObject([
+      { id: entryId, beatmapCached: true },
+    ]);
+    expect((await mappoolWorkspace(tester, edition.slug)).entries[0]).not.toHaveProperty(
+      "beatmapCached",
     );
     expect(saved.package).toMatchObject({
       size: archive.length,
@@ -390,6 +399,9 @@ describe.skipIf(!url)("private replay attachment lifecycle", () => {
       signal,
     );
     expect((await status()).package).toBeNull();
+    expect((await mappoolWorkspace(mapper, edition.slug)).entries).toMatchObject([
+      { id: entryId, beatmapCached: false },
+    ]);
     expect(await readdir(join(root, "beatmaps"))).toEqual([]);
     const events = await db().select().from(mappoolEvents);
     expect(events.map(({ action }) => action)).toEqual(
@@ -691,6 +703,46 @@ describe.skipIf(!url)("private replay attachment lifecycle", () => {
       (await db().select().from(users).where(eq(users.osuId, tester.osuId)))[0]
         .username,
     ).toBe(tester.username);
+  });
+  it("reads score analysis for older attachments without rewriting them or hiding unavailable files", async () => {
+    const { id } = await upload(
+      tester,
+      syntheticReplay({
+        judgements: [95, 5, 0, 0, 0, 0],
+        score: 987654,
+        fullCombo: true,
+      }),
+    );
+    const performance = {
+      score: 987654,
+      grade: "S",
+      accuracy: 580 / 600,
+      fullCombo: true,
+    };
+    expect((await replayList(tester, edition.slug, entryId))[0]).toMatchObject({
+      id,
+      summary: { performance },
+    });
+    await db()
+      .update(mappoolReplays)
+      .set({ summary: sql`${mappoolReplays.summary} - 'performance'` })
+      .where(eq(mappoolReplays.id, id));
+    expect((await replayList(tester, edition.slug, entryId))[0]).toMatchObject({
+      id,
+      summary: { performance },
+    });
+    const [saved] = await db()
+      .select({ summary: mappoolReplays.summary })
+      .from(mappoolReplays)
+      .where(eq(mappoolReplays.id, id));
+    expect(saved.summary).not.toHaveProperty("performance");
+    await rename(
+      join(root, "replays", `${id}.osr`),
+      join(root, "unavailable.osr"),
+    );
+    const [unavailable] = await replayList(tester, edition.slug, entryId);
+    expect(unavailable.id).toBe(id);
+    expect(unavailable.summary).not.toHaveProperty("performance");
   });
   it("rolls back metadata/audit failures, detects missing files, retains files across releases and restores backups", async () => {
     const bytes = syntheticReplay();

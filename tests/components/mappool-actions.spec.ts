@@ -254,7 +254,7 @@ test("replay dialog keeps the map row compact and restores focus", async ({
   await expect(trigger).toBeFocused();
 });
 
-test("the map opens an inline player with controls in its frame", async ({
+test("the map opens a player dialog with controls in its frame", async ({
   page,
 }) => {
   await page.route("**/entries/entry-1/replays", (route) =>
@@ -271,11 +271,11 @@ test("the map opens an inline player with controls in its frame", async ({
   const open = entry.getByRole("button", { name: "Open replay player" });
   await open.click();
 
-  const viewer = page.getByRole("region", { name: "Replay player for NM1" });
+  const viewer = page.getByRole("dialog", { name: "Replay player for NM1" });
   await expect(
     viewer.getByRole("heading", { name: "Replay player for NM1" }),
   ).toBeFocused();
-  await expect(page.getByRole("dialog")).toHaveCount(0);
+  await expect(page.locator("dialog:modal")).toHaveCount(1);
   const frame = viewer.getByRole("group", {
     name: "Replay playback for First.osr",
   });
@@ -299,6 +299,12 @@ test("the map opens an inline player with controls in its frame", async ({
   await expect(frame).toHaveCount(0);
   const box = (await viewer.boundingBox())!;
   expect(box.x + box.width).toBeLessThanOrEqual(page.viewportSize()!.width);
+  expect(box.y + box.height).toBeLessThanOrEqual(page.viewportSize()!.height);
+  await page.keyboard.press("Escape");
+  await expect(open).toBeFocused();
+  await expect(viewer).toHaveCount(0);
+  await open.click();
+  await expect(viewer).toBeVisible();
   await viewer.getByRole("button", { name: "Close player" }).click();
   await expect(open).toBeFocused();
   await expect(viewer).toHaveCount(0);
@@ -360,15 +366,22 @@ test("saved mirror cache reports progress and lets staff replace or remove the p
     } else statusReads++;
     await route.fulfill({ json: status });
   });
-  const response = await page.goto("/mappool-actions?cache&manage");
+  const response = await page.goto("/mappool-actions?cache&manage&cached");
   const policy = response?.headers()["content-security-policy"] ?? "";
   expect(policy).toMatch(/script-src [^;]*'strict-dynamic'/);
   expect(policy).not.toContain("'unsafe-eval'");
   const entry = page.locator('[data-map-entry="entry-1"]');
-  const trigger = entry
-    .locator(".mappool-entry-action-row")
-    .getByRole("button", { name: "Beatmap cache", exact: true });
+  await expect(
+    page.locator('[data-map-entry="entry-2"]').getByRole("button", {
+      name: "Cached",
+      exact: true,
+    }),
+  ).toBeVisible();
+  const trigger = entry.locator(
+    ".mappool-entry-action-row button[aria-controls$='-cache']",
+  );
   await expect(trigger).toBeVisible();
+  await expect(trigger).toHaveAccessibleName("Beatmap cache");
   await entry
     .getByRole("button", { name: "Upload replays", exact: true })
     .click();
@@ -379,6 +392,16 @@ test("saved mirror cache reports progress and lets staff replace or remove the p
   await replays.getByRole("button", { name: "Close", exact: true }).click();
   await trigger.click();
   const dialog = entry.getByRole("dialog", { name: "Server beatmap cache" });
+  const sources = dialog.getByRole("combobox", { name: "Beatmap mirror" });
+  await sources.selectOption({ label: "osu! official download" });
+  await expect(
+    dialog.getByRole("link", { name: "Download on osu!" }),
+  ).toHaveAttribute("href", "https://osu.ppy.sh/beatmaps/101");
+  await expect(
+    dialog.getByRole("button", { name: "Sync from mirror" }),
+  ).toHaveCount(0);
+  expect(requests).toEqual([]);
+  await sources.selectOption({ label: "Saved mirror" });
   await dialog.getByRole("button", { name: "Sync from mirror" }).click();
   await expect(dialog.getByText("Syncing beatmap package…")).toBeVisible();
   await expect(
@@ -389,6 +412,7 @@ test("saved mirror cache reports progress and lets staff replace or remove the p
   await expect.poll(() => !!completeSync).toBe(true);
   completeSync?.();
   await expect(dialog.getByText("Cached OSZ · 1.0 MiB")).toBeVisible();
+  await expect(trigger).toHaveText("Cached");
   await dialog
     .getByLabel("Beatmap package (.osz)", { exact: true })
     .setInputFiles({
@@ -401,6 +425,7 @@ test("saved mirror cache reports progress and lets staff replace or remove the p
   await dialog.getByRole("button", { name: "Remove cached package" }).click();
   await dialog.getByRole("button", { name: "Confirm", exact: true }).click();
   await expect(dialog.getByText("No beatmap package cached.")).toBeVisible();
+  await expect(trigger).toHaveText("Beatmap cache");
   expect(requests).toEqual(["sync", "upload", "remove"]);
   expect(evaluationViolations).toEqual([]);
   expect(

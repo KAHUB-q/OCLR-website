@@ -261,14 +261,18 @@ test("the map opens a player dialog with controls in its frame", async ({
   await page.route("**/entries/entry-1/replays", async (route) => {
     await replayList.promise;
     await route.fulfill({
-      json: ["First", "Second"].map((player, index) => ({
-        id: `replay-${index}`,
-        filename: `${player}.osr`,
-        summary: { mode: "osu", beatmapMd5: "a".repeat(32) },
+      json: [
+        ["Keys", "mania"],
+        ["First", "osu"],
+        ["Second", "osu"],
+      ].map(([name, mode]) => ({
+        id: name,
+        filename: `${name}.osr`,
+        summary: { mode, beatmapMd5: "a".repeat(32) },
       })),
     });
   });
-  await page.route(/\/entries\/entry-1\/replays\/replay-0(?:\/|$)/, (route) =>
+  await page.route(/\/entries\/entry-1\/replays\/First(?:\/|$)/, (route) =>
     route.request().url().endsWith("/playback/beatmap.osz")
       ? route.fulfill({ status: 404 })
       : route.fulfill({
@@ -307,16 +311,26 @@ test("the map opens a player dialog with controls in its frame", async ({
   ).toHaveValue("100");
 
   await Promise.all([
-    page.waitForRequest("**/replay-0/playback/beatmap.osz"),
+    page.waitForRequest("**/First/playback/beatmap.osz"),
     frame.getByRole("button", { name: "Play replay" }).click(),
   ]);
   await expect(viewer.getByRole("alert")).toHaveText(
     "Could not load the beatmap package. Check the server beatmap cache for this map.",
   );
 
-  await viewer
-    .getByRole("combobox", { name: "Replay file" })
-    .selectOption("replay-1");
+  const files = viewer.getByRole("combobox", { name: "Replay file" });
+  await expect(files.getByRole("option")).toHaveText([
+    "Keys.osr",
+    "First.osr",
+    "Second.osr",
+  ]);
+  await expect(files).toHaveValue("First");
+  await files.selectOption("Keys");
+  await expect(viewer.getByRole("status")).toHaveText(
+    "Online playback supports only osu!standard. Download Keys.osr from Saved replays.",
+  );
+  await expect(viewer.getByRole("group")).toHaveCount(0);
+  await files.selectOption("Second");
   await expect(
     viewer.getByRole("group", { name: "Replay playback for Second.osr" }),
   ).toBeVisible();

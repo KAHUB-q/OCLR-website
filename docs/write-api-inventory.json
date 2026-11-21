@@ -523,6 +523,40 @@
     }
   },
   {
+    "route": "/api/admin/tournaments/{edition}/pickem/fixtures/{fixtureId}",
+    "source": "src/app/api/admin/tournaments/[edition]/pickem/fixtures/[fixtureId]/route.ts",
+    "methods": {
+      "POST": {
+        "status": "documented",
+        "operationId": "commandPickemWindow",
+        "access": "browser",
+        "actions": [
+          "open",
+          "tighten",
+          "close",
+          "void"
+        ],
+        "consumers": [
+          "src/components/pickem-admin.tsx"
+        ]
+      }
+    }
+  },
+  {
+    "route": "/api/admin/tournaments/{edition}/pickem/settings",
+    "source": "src/app/api/admin/tournaments/[edition]/pickem/settings/route.ts",
+    "methods": {
+      "PUT": {
+        "status": "documented",
+        "operationId": "changePickemSettings",
+        "access": "browser",
+        "consumers": [
+          "src/components/pickem-admin.tsx"
+        ]
+      }
+    }
+  },
+  {
     "route": "/api/admin/tournaments/{edition}/player-ratings",
     "source": "src/app/api/admin/tournaments/[edition]/player-ratings/route.ts",
     "methods": {
@@ -1020,6 +1054,34 @@
         "access": "browser",
         "consumers": [
           "src/components/draft-pick.tsx"
+        ]
+      }
+    }
+  },
+  {
+    "route": "/api/tournaments/{edition}/pickem/fixtures/{fixtureId}/pick",
+    "source": "src/app/api/tournaments/[edition]/pickem/fixtures/[fixtureId]/pick/route.ts",
+    "methods": {
+      "PUT": {
+        "status": "documented",
+        "operationId": "savePickemPrediction",
+        "access": "browser",
+        "consumers": [
+          "src/components/pickem-match-card.tsx"
+        ]
+      }
+    }
+  },
+  {
+    "route": "/api/tournaments/{edition}/pickem/me/leaderboard-visibility",
+    "source": "src/app/api/tournaments/[edition]/pickem/me/leaderboard-visibility/route.ts",
+    "methods": {
+      "PUT": {
+        "status": "documented",
+        "operationId": "changePickemVisibility",
+        "access": "browser",
+        "consumers": [
+          "src/components/pickem-visibility.tsx"
         ]
       }
     }

@@ -33,6 +33,14 @@ const card: PickemFixture = {
   result: null,
   points: null,
 };
+if (new URLSearchParams(location.search).has("closed")) {
+  card.status = "closed";
+  card.closesAt = now.toISOString();
+  card.distribution = [
+    { outcomeKey: "home", count: 1 },
+    { outcomeKey: "away", count: 0 },
+  ];
+}
 const router = { refresh() {} } as AppRouterInstance;
 
 createRoot(document.getElementById("root")!).render(

@@ -5,6 +5,7 @@ import {
 import { describe, expect, it } from "vitest";
 import {
   legalPickemScore,
+  pickemPickBody,
   pickemOutcomesFor,
   pickemPoints,
   pickemReturnPath,
@@ -81,5 +82,21 @@ describe("Pick’em series rules", () => {
       false,
     );
     expect(remoteApiSupported("/api/tournaments/s11/pickem/me")).toBe(false);
+  });
+  it("requires the named prediction terms on each new save", () => {
+    const selection = {
+      windowId: "646c7afc-7e48-44cf-82a6-908aa1612537",
+      expectedVersion: null,
+      outcomeKey: "home",
+    };
+    expect(pickemPickBody.safeParse(selection).success).toBe(false);
+    expect(
+      pickemPickBody.safeParse({ ...selection, publishAfterDeadline: false })
+        .success,
+    ).toBe(false);
+    expect(
+      pickemPickBody.safeParse({ ...selection, publishAfterDeadline: true })
+        .success,
+    ).toBe(true);
   });
 });

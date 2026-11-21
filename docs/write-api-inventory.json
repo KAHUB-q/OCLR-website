@@ -1073,20 +1073,6 @@
     }
   },
   {
-    "route": "/api/tournaments/{edition}/pickem/me/leaderboard-visibility",
-    "source": "src/app/api/tournaments/[edition]/pickem/me/leaderboard-visibility/route.ts",
-    "methods": {
-      "PUT": {
-        "status": "documented",
-        "operationId": "changePickemVisibility",
-        "access": "browser",
-        "consumers": [
-          "src/components/pickem-visibility.tsx"
-        ]
-      }
-    }
-  },
-  {
     "route": "/api/tournaments/{edition}/player/availability",
     "source": "src/app/api/tournaments/[edition]/player/availability/route.ts",
     "methods": {

@@ -7,7 +7,6 @@ import {
   pickemPicks,
   pickemReceipts,
   pickemSettings,
-  pickemVisibility,
   pickemWindows,
   teams,
   tournamentRounds,
@@ -33,6 +32,7 @@ import {
 } from "./pickem-model";
 import type {
   PickemFixture,
+  PickemNamedPage,
   PickemRank,
   PickemSaved,
   PickemTeam,
@@ -78,7 +78,6 @@ const stale = () =>
   );
 
 const disabled = { enabled: false, version: 0 };
-const unlisted = { listed: false, version: 0 };
 
 async function settings(slug: string, reader: Reader = db()) {
   const [row] = await reader
@@ -310,13 +309,16 @@ export async function pickemRead(
       .where(eq(pickemWindows.editionSlug, slug))
       .orderBy(asc(pickemWindows.openedAt));
     const picksByWindow = new Map<string, StoredPick[]>();
+    const usernames = new Map<number, string>();
     if (actor) {
       const picks = await db()
-        .select({ pick: pickemPicks })
+        .select({ pick: pickemPicks, username: users.username })
         .from(pickemPicks)
+        .innerJoin(users, eq(users.osuId, pickemPicks.userId))
         .innerJoin(pickemWindows, eq(pickemWindows.id, pickemPicks.windowId))
         .where(eq(pickemWindows.editionSlug, slug));
-      for (const { pick } of picks) {
+      for (const { pick, username } of picks) {
+        usernames.set(pick.userId, username);
         const bucket = picksByWindow.get(pick.windowId) ?? [];
         bucket.push(pick);
         picksByWindow.set(pick.windowId, bucket);
@@ -420,24 +422,13 @@ export async function pickemRead(
       : roundId && !useDefaultRound
         ? new Map<number, Score>()
         : seasonScores;
-    const entries = actor
-      ? await db()
-          .select({ userId: users.osuId, username: users.username })
-          .from(pickemVisibility)
-          .innerJoin(users, eq(users.osuId, pickemVisibility.userId))
-          .where(
-            and(
-              eq(pickemVisibility.editionSlug, slug),
-              eq(pickemVisibility.listed, true),
-            ),
-          )
-      : [];
     const board = (scoreMap: Map<number, Score>) =>
       rank(
-        entries.flatMap((entry) => {
-          const score = scoreMap.get(entry.userId);
-          return score ? [{ ...entry, score }] : [];
-        }),
+        Array.from(scoreMap, ([userId, score]) => ({
+          userId,
+          username: usernames.get(userId)!,
+          score,
+        })),
         actor?.osuId ?? 0,
       );
 
@@ -453,9 +444,6 @@ export async function pickemRead(
       seasonLeaderboard: board(seasonScores),
       myScore: scores.get(actor?.osuId ?? 0) ?? emptyScore,
       seasonScore: seasonScores.get(actor?.osuId ?? 0) ?? emptyScore,
-      visibility: actor
-        ? await getVisibility(slug, actor.osuId, db())
-        : unlisted,
       rulesVersion: pickemScoringVersion,
       serverNow: now.toISOString(),
     };
@@ -494,6 +482,7 @@ export async function savePickemPick(
       .update(
         JSON.stringify({
           outcome: body.outcomeKey,
+          publishAfterDeadline: body.publishAfterDeadline,
           score: score ? [score.homeWins, score.awayWins] : null,
           expectedVersion: body.expectedVersion,
         }),
@@ -554,6 +543,7 @@ export async function savePickemPick(
     if (acceptedAt >= window.closesAt) throw closed();
     const data = {
       outcomeKey: body.outcomeKey,
+      namedAfterDeadline: body.publishAfterDeadline,
       homeWins: score?.homeWins ?? null,
       awayWins: score?.awayWins ?? null,
       updatedAt: acceptedAt,
@@ -581,47 +571,71 @@ export async function savePickemPick(
   });
 }
 
-async function getVisibility(slug: string, userId: number, reader: Reader) {
-  const [row] = await reader
-    .select({
-      listed: pickemVisibility.listed,
-      version: pickemVisibility.version,
-    })
-    .from(pickemVisibility)
-    .where(
-      and(
-        eq(pickemVisibility.editionSlug, slug),
-        eq(pickemVisibility.userId, userId),
-      ),
-    );
-  return row ?? unlisted;
-}
-
-export async function savePickemVisibility(
+export async function pickemNamedPredictions(
   slug: string,
-  actor: User,
-  input: { listed: boolean; expectedVersion: number },
-) {
-  assertUserWriteChannel();
-  return db().transaction(async (tx) => {
-    await lockEdition(tx, slug, "share");
-    await requireEdition(slug, tx, true);
-    const after = { listed: input.listed, version: input.expectedVersion + 1 };
-    const key = and(
-      eq(pickemVisibility.editionSlug, slug),
-      eq(pickemVisibility.userId, actor.osuId),
-      eq(pickemVisibility.version, input.expectedVersion),
+  fixtureId: string,
+  windowId: string,
+  cursor = 0,
+): Promise<PickemNamedPage> {
+  if (remoteMode() || !process.env.DATABASE_URL) throw unavailable();
+  return readOnlyData(async () => {
+    await requireEdition(slug, db(), true);
+    const [window] = await db()
+      .select()
+      .from(pickemWindows)
+      .where(
+        and(
+          eq(pickemWindows.editionSlug, slug),
+          eq(pickemWindows.fixtureId, fixtureId),
+          eq(pickemWindows.id, windowId),
+          isNull(pickemWindows.voidReason),
+        ),
+      );
+    if (!window) throw unavailable();
+    const fixture = (await publicCompetition(slug, db()))?.fixtures.find(
+      (item) => item.id === fixtureId,
     );
-    const result =
-      input.expectedVersion === 0
-        ? await tx
-            .insert(pickemVisibility)
-            .values({ editionSlug: slug, userId: actor.osuId, ...after })
-            .onConflictDoNothing()
-            .returning()
-        : await tx.update(pickemVisibility).set(after).where(key).returning();
-    if (!result.length) throw stale();
-    return after;
+    if (!fixture || !aligned(window, fixture) || fixture.status === "cancelled")
+      throw unavailable();
+    if (Date.now() < window.closesAt.getTime())
+      throw new PickemError(
+        409,
+        "prediction_not_revealed",
+        "Predictions are visible after the deadline.",
+      );
+
+    const pageSize = 25;
+    const rows = await db()
+      .select({
+        username: users.username,
+        outcomeKey: pickemPicks.outcomeKey,
+        homeWins: pickemPicks.homeWins,
+        awayWins: pickemPicks.awayWins,
+      })
+      .from(pickemPicks)
+      .innerJoin(users, eq(users.osuId, pickemPicks.userId))
+      .where(
+        and(
+          eq(pickemPicks.windowId, windowId),
+          eq(pickemPicks.namedAfterDeadline, true),
+        ),
+      )
+      .orderBy(asc(pickemPicks.userId))
+      .limit(pageSize + 1)
+      .offset(cursor);
+    return {
+      rows: rows
+        .slice(0, pageSize)
+        .map(({ username, outcomeKey, homeWins, awayWins }) => ({
+          username,
+          outcomeKey,
+          score:
+            homeWins === null || awayWins === null
+              ? null
+              : { homeWins, awayWins },
+        })),
+      nextCursor: rows.length > pageSize ? cursor + pageSize : null,
+    };
   });
 }
 

@@ -26,7 +26,6 @@ export function GET(
       ...pickemPage(rows, cursor),
       myRow: rows[mineIndex] ?? null,
       myCursor: mineIndex >= 0 ? Math.floor(mineIndex / 25) * 25 : null,
-      visibility: data.visibility,
     };
   });
 }

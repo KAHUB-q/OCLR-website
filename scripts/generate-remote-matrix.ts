@@ -121,7 +121,7 @@ const files = [
 ].sort();
 const rows = files.map((file) => {
   if (
-    /\/pickem\/|\/components\/pickem-(?:admin|match-card|visibility)\.tsx$/.test(
+    /\/pickem\/|\/components\/pickem-(?:admin|match-card|named-predictions)\.tsx$/.test(
       file,
     )
   ) {
@@ -284,7 +284,7 @@ const rows = files.map((file) => {
     );
   const denied =
     desktopLiveOnly ||
-    /\/pickem\/|\/components\/pickem-(?:admin|match-card|visibility)\.tsx$/.test(
+    /\/pickem\/|\/components\/pickem-(?:admin|match-card|named-predictions)\.tsx$/.test(
       file,
     ) ||
     file === "src/app/api/wiki/liru-gallery/gacha/route.ts" ||

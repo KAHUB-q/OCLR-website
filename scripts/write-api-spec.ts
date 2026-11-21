@@ -131,7 +131,6 @@ import {
 
 import {
   changePickemSettingsWrite,
-  changePickemVisibilityWrite,
   commandPickemWindowWrite,
   savePickemWrite,
 } from "../src/lib/pickem-write-contracts";
@@ -212,7 +211,6 @@ const operations: readonly WriteApiOperation[] = [
   placeChessPixelWrite,
   moderateChessWrite,
   changePickemSettingsWrite,
-  changePickemVisibilityWrite,
   commandPickemWindowWrite,
   savePickemWrite,
 ];

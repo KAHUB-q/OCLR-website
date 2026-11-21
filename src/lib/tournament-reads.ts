@@ -6,7 +6,12 @@ import { archiveEditionStates } from "./archive-relations";
 import { supportsArchiveStatistics } from "./archive-statistics-model";
 import { privacyReady } from "./auth/config";
 import type { User } from "./auth/sessions";
-import { assertReadCapability, canRead, permits, staffAccess } from "./auth/staff";
+import {
+  assertReadCapability,
+  canRead,
+  permits,
+  staffAccess,
+} from "./auth/staff";
 import type { SavedTournament } from "./configuration-read-contracts";
 import { remoteMode } from "./data-source";
 import {
@@ -19,6 +24,7 @@ import type { ExplicitReadData } from "./explicit-read-contracts";
 import { assertRemoteSubject, frontendResource } from "./frontend-resource";
 import { publicHistoricalArchive } from "./historical-archive";
 import { HttpError } from "./http-error";
+import { inReadChannel } from "./read-channel";
 import { compareTournamentSeasons } from "./tournament-order";
 
 type Reader = Pick<ReturnType<typeof db>, "select">;
@@ -100,7 +106,10 @@ export function tournamentLinks(
       .filter(
         (item) =>
           (!item.capabilities || item.capabilities.some(can)) &&
-          (item.path !== "statistics" || supportsArchiveStatistics(slug)),
+          (item.path !== "statistics" || supportsArchiveStatistics(slug)) &&
+          (item.path !== "pickem" ||
+            (!inReadChannel() &&
+              permits(grants, "configure_tournament", slug))),
       )
       .map((item) => ({
         href: `/admin/tournaments/${slug}${item.path ? `/${item.path}` : ""}`,

@@ -113,6 +113,11 @@ export const tournamentNavigation: readonly {
         capabilities: ["manage_fixtures", "record_results", "view_streaming"],
       },
       {
+        path: "pickem",
+        label: "Match predictions",
+        capabilities: ["configure_tournament"],
+      },
+      {
         path: "streaming",
         label: "Streaming tasks",
         capabilities: ["view_streaming"],

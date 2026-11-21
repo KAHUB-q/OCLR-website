@@ -177,6 +177,7 @@ export const oauthStates = pgTable(
   {
     stateHash: text("state_hash").primaryKey(),
     desktopRequestId: uuid("desktop_request_id"),
+    pickemReturnTo: text("pickem_return_to"),
     expiresAt: timestamp("expires_at", { withTimezone: true }).notNull(),
   },
   (table) => [index("oauth_states_expiry_idx").on(table.expiresAt)],
@@ -2962,4 +2963,133 @@ export const rankingSnapshots = pgTable(
       sql`jsonb_typeof(${t.result}) = 'object'`,
     ),
   ],
+);
+
+export const pickemSettings = pgTable("pickem_settings", {
+  editionSlug: text("edition_slug")
+    .primaryKey()
+    .references(() => editionState.slug),
+  enabled: boolean("enabled").notNull().default(false),
+  version: integer("version").notNull().default(0),
+});
+
+export const pickemWindows = pgTable(
+  "pickem_windows",
+  {
+    id: uuid("id").primaryKey().defaultRandom(),
+    editionSlug: text("edition_slug")
+      .notNull()
+      .references(() => editionState.slug),
+    fixtureId: uuid("fixture_id").notNull(),
+    roundId: uuid("round_id").notNull(),
+    homeTeamId: uuid("home_team_id").notNull(),
+    awayTeamId: uuid("away_team_id").notNull(),
+    rules: jsonb("rules")
+      .$type<import("../lib/pickem-model").PickemRules>()
+      .notNull(),
+    ruleVersion: text("rule_version").notNull(),
+    scoringVersion: integer("scoring_version").notNull(),
+    scoreEnabled: boolean("score_enabled").notNull(),
+    closesAt: timestamp("closes_at", { withTimezone: true }).notNull(),
+    version: integer("version").notNull().default(0),
+    voidReason: text("void_reason", {
+      enum: ["admin", "fixture_changed", "round_changed", "cancelled"],
+    }),
+    openedAt: timestamp("opened_at", { withTimezone: true })
+      .notNull()
+      .defaultNow(),
+  },
+  (t) => [
+    foreignKey({
+      columns: [t.fixtureId, t.editionSlug],
+      foreignColumns: [fixtures.id, fixtures.editionSlug],
+    }),
+    foreignKey({
+      columns: [t.roundId, t.editionSlug],
+      foreignColumns: [tournamentRounds.id, tournamentRounds.editionSlug],
+    }),
+    foreignKey({
+      columns: [t.homeTeamId, t.editionSlug],
+      foreignColumns: [teams.id, teams.editionSlug],
+    }),
+    foreignKey({
+      columns: [t.awayTeamId, t.editionSlug],
+      foreignColumns: [teams.id, teams.editionSlug],
+    }),
+    uniqueIndex("pickem_windows_active_fixture")
+      .on(t.fixtureId)
+      .where(sql`${t.voidReason} is null`),
+    index("pickem_windows_edition").on(t.editionSlug),
+    check("pickem_windows_sides", sql`${t.homeTeamId} <> ${t.awayTeamId}`),
+    check(
+      "pickem_windows_void_reason",
+      sql`${t.voidReason} in ('admin', 'fixture_changed', 'round_changed', 'cancelled')`,
+    ),
+  ],
+);
+
+export const pickemPicks = pgTable(
+  "pickem_picks",
+  {
+    windowId: uuid("window_id")
+      .notNull()
+      .references(() => pickemWindows.id),
+    userId: bigint("user_id", { mode: "number" })
+      .notNull()
+      .references(() => users.osuId, { onDelete: "cascade" }),
+    outcomeKey: text("outcome_key", {
+      enum: ["home", "away", "draw"],
+    }).notNull(),
+    homeWins: integer("home_wins"),
+    awayWins: integer("away_wins"),
+    version: integer("version").notNull(),
+    updatedAt: timestamp("updated_at", { withTimezone: true }).notNull(),
+  },
+  (t) => [
+    primaryKey({ columns: [t.windowId, t.userId] }),
+    index("pickem_picks_user").on(t.userId, t.windowId),
+    check(
+      "pickem_picks_outcome",
+      sql`${t.outcomeKey} in ('home', 'away', 'draw')`,
+    ),
+    check(
+      "pickem_picks_score",
+      sql`(${t.homeWins} is null and ${t.awayWins} is null) or (${t.homeWins} is not null and ${t.awayWins} is not null and ${t.homeWins} between 0 and 99 and ${t.awayWins} between 0 and 99)`,
+    ),
+  ],
+);
+
+export const pickemReceipts = pgTable(
+  "pickem_receipts",
+  {
+    windowId: uuid("window_id").notNull(),
+    userId: bigint("user_id", { mode: "number" }).notNull(),
+    requestId: uuid("request_id").notNull(),
+    fingerprint: text("fingerprint").notNull(),
+    receipt: jsonb("receipt")
+      .$type<import("../lib/pickem-types").PickemSaved>()
+      .notNull(),
+  },
+  (t) => [
+    primaryKey({ columns: [t.windowId, t.userId, t.requestId] }),
+    foreignKey({
+      columns: [t.windowId, t.userId],
+      foreignColumns: [pickemPicks.windowId, pickemPicks.userId],
+    }).onDelete("cascade"),
+  ],
+);
+
+export const pickemVisibility = pgTable(
+  "pickem_visibility",
+  {
+    editionSlug: text("edition_slug")
+      .notNull()
+      .references(() => editionState.slug),
+    userId: bigint("user_id", { mode: "number" })
+      .notNull()
+      .references(() => users.osuId, { onDelete: "cascade" }),
+    listed: boolean("listed").notNull(),
+    version: integer("version").notNull(),
+  },
+  (t) => [primaryKey({ columns: [t.editionSlug, t.userId] })],
 );

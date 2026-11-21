@@ -6,6 +6,7 @@ import {
   fixtureStreams,
   fixtureCommentators,
   fixtures,
+  pickemWindows,
   mappools,
   matchResults,
   refereeSessions,
@@ -519,6 +520,16 @@ export async function fixtureCommand(
           throw new HttpError(
             400,
             "Type the exact fixture label to confirm force deletion.",
+          );
+        const [predictions] = await tx
+          .select({ id: pickemWindows.id })
+          .from(pickemWindows)
+          .where(eq(pickemWindows.fixtureId, before!.id))
+          .limit(1);
+        if (predictions)
+          throw new HttpError(
+            409,
+            "This match has prediction history. Cancel it instead of deleting it.",
           );
         const forced =
           c.action === "force_delete"

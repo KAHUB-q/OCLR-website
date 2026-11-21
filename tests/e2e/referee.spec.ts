@@ -284,17 +284,15 @@ test.describe("referee command workspace", () => {
     const records = page.locator("#referee-record-editor");
     await records.getByRole("button", { name: /PICK NM2/ }).click();
     await records
-      .getByRole("button", { name: "Record win: Blue team", exact: true })
+      .getByRole("button", { name: "Record win: Red team", exact: true })
       .click();
     await expect
       .poll(async () => (await read()).projection.score[home.id])
       .toBe(1);
-    await expect(summary.locator('[data-team="blue"] > span')).toHaveText(
+    await expect(summary.locator('[data-team="red"] > span')).toHaveText(
       home.name,
     );
-    await expect(summary.locator('[data-team="blue"] > strong')).toHaveText(
-      "1",
-    );
+    await expect(summary.locator('[data-team="red"] > strong')).toHaveText("1");
     await page
       .getByRole("button", { name: "Record replay", exact: true })
       .click();

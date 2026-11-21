@@ -216,13 +216,33 @@ test.describe("referee command workspace", () => {
       .poll(async () => (await read()).session?.firstPickTeamId)
       .toBe(away.id);
     const beforePrepare = (await read()).events.length;
-    await page
-      .locator("#referee-preparation button[data-copied]:not([disabled])")
-      .first()
+    const commandList = page.getByRole("region", {
+      name: "Command list",
+      exact: true,
+    });
+    const ircCommand = page.getByLabel("IRC command", { exact: true });
+    await commandList
+      .getByRole("button", { name: "Copy Create room", exact: true })
       .click();
-    await expect(
-      page.getByLabel("IRC command", { exact: true }),
-    ).not.toHaveValue("");
+    await expect
+      .poll(() =>
+        page.evaluate(
+          () => (window as unknown as { lastCopied: string }).lastCopied,
+        ),
+      )
+      .toBe(`!mp make ${seeded.workspace.defaultSettings.roomName}`);
+    await expect(ircCommand).toHaveValue("");
+
+    const captain = home.captainUsername!;
+    await commandList
+      .getByRole("button", {
+        name: `Prepare Invite captain: ${home.name} · ${captain} in IRC`,
+        exact: true,
+      })
+      .click();
+    await expect(ircCommand).toHaveValue(
+      `!mp invite ${captain.replace(/\s+/gu, "_")}`,
+    );
     await expect(
       page.getByRole("button", { name: "Send to local IRC", exact: true }),
     ).toBeDisabled();
@@ -264,17 +284,15 @@ test.describe("referee command workspace", () => {
     const records = page.locator("#referee-record-editor");
     await records.getByRole("button", { name: /PICK NM2/ }).click();
     await records
-      .getByRole("button", { name: "Record win: Blue team", exact: true })
+      .getByRole("button", { name: "Record win: Red team", exact: true })
       .click();
     await expect
       .poll(async () => (await read()).projection.score[home.id])
       .toBe(1);
-    await expect(summary.locator('[data-team="blue"] > span')).toHaveText(
+    await expect(summary.locator('[data-team="red"] > span')).toHaveText(
       home.name,
     );
-    await expect(summary.locator('[data-team="blue"] > strong')).toHaveText(
-      "1",
-    );
+    await expect(summary.locator('[data-team="red"] > strong')).toHaveText("1");
     await page
       .getByRole("button", { name: "Record replay", exact: true })
       .click();

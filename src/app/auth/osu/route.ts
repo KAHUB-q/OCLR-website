@@ -5,6 +5,7 @@ import { authorizationUrl } from "@/lib/auth/osu";
 import { randomToken, hashToken } from "@/lib/auth/tokens";
 import { cookieOptions, stateCookie } from "@/lib/auth/config";
 import { apiError } from "@/lib/http";
+import { pickemReturnPath } from "@/lib/pickem-model";
 import { streamingReturnPath } from "@/lib/streaming-connect-model";
 import { streamingOrigins } from "@/lib/streaming-api";
 export async function GET(request?: Request) {
@@ -25,6 +26,9 @@ export async function GET(request?: Request) {
     const returnTo = returnValue
       ? streamingReturnPath(returnValue, streamingOrigins())
       : null;
+    const pickemReturnTo = pickemReturnPath(
+      request ? new URL(request.url).searchParams.get("pickem_return") : null,
+    );
     const token = randomToken();
     const url = authorizationUrl(token);
     await db()
@@ -32,6 +36,7 @@ export async function GET(request?: Request) {
       .values({
         stateHash: hashToken(token),
         desktopRequestId,
+        pickemReturnTo,
         expiresAt: new Date(Date.now() + 600000),
       });
     const response = NextResponse.redirect(url);

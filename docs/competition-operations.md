@@ -131,6 +131,30 @@ fixture-time, Tier or participant-publication changes mark affected releases sta
 the public page withholds winners pending deliberate review and republication.
 Previous releases remain in the database. No scheduler or second score store is used.
 
+### Pick’em match predictions
+
+Edition Admins can enable Match predictions and open an individual published team
+fixture in the Pick’em workspace. The feature starts disabled for every edition.
+Opening a match freezes its teams, legal series outcomes, optional score mode
+and scoring version. A deadline can move earlier but never later. Advancing the
+published schedule or changing a fixture to in progress tightens the deadline.
+Cancelling the fixture or changing its matchup or legal scoring options voids
+the old window. Use cancellation to retain a fixture with prediction history.
+
+Signed-in players can save and revise one prediction per match window. An exact
+score means both teams' map-win counts in the displayed team order. A correct
+outcome earns one point, plus a point for an exact comparable score when a
+player supplies one. The public competition projection supplies the active,
+approved result revision. Hidden, withdrawn or replaced results are reflected
+when predictions and standings are next read.
+
+Individual picks stay private. Deadline-passed matches can show anonymous
+outcome counts. Players opt in to list their osu! name on the season leaderboard.
+The feature is available through website browser sessions and its same-origin
+API routes. Operator writes and payloads are documented in the
+[write API](write-api.openapi.json); the player design is in
+[the Pick’em reference](design/pickem/README.md).
+
 ### Historical drawn results
 
 Historical archive reviews accept played tied scores (for example, 5:5). Admin

@@ -120,6 +120,32 @@ const files = [
   ),
 ].sort();
 const rows = files.map((file) => {
+  if (
+    /\/pickem\/|\/components\/pickem-(?:admin|match-card|visibility)\.tsx$/.test(
+      file,
+    )
+  ) {
+    return {
+      file,
+      kind: file.endsWith("/page.tsx")
+        ? "page"
+        : file.endsWith("/route.ts")
+          ? "read-route"
+          : "client",
+      authority: "denied",
+      operations: [],
+      commands: "Website browser session only",
+      metadata: "Inherited or static",
+      services: ["src/lib/pickem.ts"],
+      test: "integration/pickem.test.ts + unit/pickem.test.ts",
+      authorization:
+        "Published, enabled edition; own session for private reads and writes; edition Admin for configuration",
+      adapter: "Local website session and native database",
+      media: "Published team avatars",
+      requiredVerification:
+        "Publication, ownership, deadline, score settlement and remote rejection",
+    };
+  }
   const beatmapCacheRoute = file.endsWith("/beatmap-cache/route.ts");
   if (beatmapCacheRoute || file.endsWith("/mappool-beatmap-cache.tsx")) {
     return {
@@ -258,6 +284,9 @@ const rows = files.map((file) => {
     );
   const denied =
     desktopLiveOnly ||
+    /\/pickem\/|\/components\/pickem-(?:admin|match-card|visibility)\.tsx$/.test(
+      file,
+    ) ||
     file === "src/app/api/wiki/liru-gallery/gacha/route.ts" ||
     file === "src/components/liru-gacha.tsx" ||
     file ===
@@ -383,6 +412,7 @@ const pages = files
       !p.includes("/streaming/[edition]/") &&
       p !== "src/app/streaming/page.tsx" &&
       !p.includes("/admin/backups/") &&
+      !p.includes("/pickem/") &&
       !p.includes("/schedule/requests/") &&
       !p.includes("/matches/schedule-requests/") &&
       !/\/tournaments\/\[edition\]\/player\//.test(p),

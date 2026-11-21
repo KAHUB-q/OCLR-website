@@ -129,6 +129,13 @@ import {
   type WriteResponseSchema,
 } from "../src/lib/write-api-contract";
 
+import {
+  changePickemSettingsWrite,
+  changePickemVisibilityWrite,
+  commandPickemWindowWrite,
+  savePickemWrite,
+} from "../src/lib/pickem-write-contracts";
+
 const writeMethods = ["POST", "PUT", "PATCH", "DELETE"];
 const operations: readonly WriteApiOperation[] = [
   beatmapCacheWrite,
@@ -204,6 +211,10 @@ const operations: readonly WriteApiOperation[] = [
   updateSiteAppearanceWrite,
   placeChessPixelWrite,
   moderateChessWrite,
+  changePickemSettingsWrite,
+  changePickemVisibilityWrite,
+  commandPickemWindowWrite,
+  savePickemWrite,
 ];
 const readOnlyAliases = new Map([
   ["src/app/api/v1/[...path]/route.ts", "readApiRoute"],

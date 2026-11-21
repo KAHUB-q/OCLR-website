@@ -149,14 +149,15 @@ approved result revision. Hidden, withdrawn or replaced results are reflected
 when predictions and standings are next read.
 
 The round and season leaderboards show the current osu! name and points of
-everyone with a scored prediction. Signed-in players can also open a match’s
-named predictions after its deadline to see the osu! name, outcome and optional
-score. The match must still be released and valid. The page shows submission
+everyone with a scored prediction. When a released, valid match is marked ended or its approved result is published,
+any visitor can see the osu! name, outcome and optional score on its prediction
+card. The deadline locks submissions. Individual picks and aggregate counts stay
+hidden until the match ends. The page shows submission
 terms before saving. Predictions saved before those terms applied contribute to
 totals and standings, with their individual selections visible only to their
 authors.
 
-The site-session read for the named list is
+The public read for the named list is
 `GET /api/tournaments/{edition}/pickem/fixtures/{fixtureId}/predictions?window={windowId}&cursor={cursor}`.
 Player writes and operator commands are documented in the
 [write API](write-api.openapi.json). The [original Pick’em design](design/pickem/README.md)

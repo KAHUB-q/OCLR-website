@@ -195,7 +195,7 @@ export function PickemMatchCard({
     const body = JSON.stringify({
       windowId: card.windowId,
       outcomeKey: outcome,
-      publishAfterDeadline: true,
+      publishAfterMatch: true,
       score: score && { homeWins: score.homeWins, awayWins: score.awayWins },
       expectedVersion: stored?.version ?? null,
     });
@@ -320,7 +320,7 @@ export function PickemMatchCard({
           )}
           <p className={styles.muted} id={disclosureId}>
             {tr(
-              "After the deadline, signed-in players can see your osu! name, pick and optional score.",
+              "After the match ends, anyone can see your osu! name, pick and optional score.",
             )}
           </p>
           <footer className={styles.cardFooter}>
@@ -383,10 +383,9 @@ export function PickemMatchCard({
           )}
         </p>
       )}
-      {card.distribution &&
-        Date.parse(card.closesAt) <= Date.parse(serverNow) && (
-          <PickemNamedPredictions key={card.windowId} slug={slug} card={card} />
-        )}
+      {card.distribution && (
+        <PickemNamedPredictions key={card.windowId} slug={slug} card={card} />
+      )}
       {card.status !== "open" && (
         <footer className={styles.cardFooter}>
           <div>
@@ -401,6 +400,11 @@ export function PickemMatchCard({
                 {card.result.score &&
                   ` · ${card.result.score.homeWins} : ${card.result.score.awayWins}`}
               </div>
+            )}
+            {card.status !== "void" && !card.distribution && (
+              <span>
+                {tr("Predictions are revealed after the match ends.")}
+              </span>
             )}
             {card.status === "void" && (
               <span>{pickemVoidText(tr, card.voidReason)}</span>

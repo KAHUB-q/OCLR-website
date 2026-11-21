@@ -433,7 +433,7 @@ function Rules({ tr }: { tr: Awaited<ReturnType<typeof getAppTranslations>> }) {
         <li>{tr("An exact score earns 1 extra point.")}</li>
         <li>
           {tr(
-            "After the deadline, signed-in players can see your osu! name, pick and optional score.",
+            "After the match ends, anyone can see your osu! name, pick and optional score.",
           )}
         </li>
         <li>

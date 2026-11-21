@@ -51,7 +51,7 @@ export const savePickemWrite = {
   request: pickemPickBody,
   summary: "Save the signed-in player's match prediction",
   description:
-    "Provide an Idempotency-Key UUID header. A new selection expects null for expectedVersion. Set publishAfterDeadline to true to acknowledge that signed-in players can see the selection and optional score with the osu! name after the deadline. The server checks the published match, deadline, window version, and optional score against its frozen series rules.",
+    "Provide an Idempotency-Key UUID header. A new selection expects null for expectedVersion. Set publishAfterMatch to true to acknowledge that anyone can see the selection and optional score with the osu! name after the match ends. The server checks the published match, deadline, window version, and optional score against its frozen series rules.",
   successDescription: "Saved personal prediction and authoritative deadline.",
   response: z.strictObject({ saved, closesAt: instant, serverNow: instant }),
   consumers: ["src/components/pickem-match-card.tsx"],

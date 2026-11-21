@@ -3040,9 +3040,7 @@ export const pickemPicks = pgTable(
     outcomeKey: text("outcome_key", {
       enum: ["home", "away", "draw"],
     }).notNull(),
-    namedAfterDeadline: boolean("named_after_deadline")
-      .notNull()
-      .default(false),
+    namedAfterMatch: boolean("named_after_match").notNull().default(false),
     homeWins: integer("home_wins"),
     awayWins: integer("away_wins"),
     version: integer("version").notNull(),

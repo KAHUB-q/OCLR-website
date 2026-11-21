@@ -1,5 +1,4 @@
 import {
-  pickemActor,
   pickemId,
   pickemQuery,
   pickemResponse,
@@ -13,7 +12,6 @@ export function GET(
   }: RouteContext<"/api/tournaments/[edition]/pickem/fixtures/[fixtureId]/predictions">,
 ) {
   return pickemResponse(async () => {
-    await pickemActor(true);
     const { edition, fixtureId } = await params;
     const windowId = pickemId(new URL(request.url).searchParams.get("window"));
     const { cursor } = pickemQuery(request);

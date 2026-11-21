@@ -42,7 +42,7 @@ async function Issue271Page() {
       </p>
       <p>
         {tr(
-          "For match predictions, signed-in players can see osu! names and points on the leaderboard. After a match deadline, they can also see selections and scores submitted under the named prediction rules.",
+          "Signed-in players can see osu! names and points on the match prediction leaderboard. After each match ends, anyone can see osu! names, selections and scores submitted under the named prediction rules.",
         )}
       </p>
       <h2>{tr("Cookies and external services")}</h2>

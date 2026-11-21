@@ -46073,7 +46073,7 @@
       "put": {
         "operationId": "savePickemPrediction",
         "summary": "Save the signed-in player's match prediction",
-        "description": "Provide an Idempotency-Key UUID header. A new selection expects null for expectedVersion. Set publishAfterDeadline to true to acknowledge that signed-in players can see the selection and optional score with the osu! name after the deadline. The server checks the published match, deadline, window version, and optional score against its frozen series rules.",
+        "description": "Provide an Idempotency-Key UUID header. A new selection expects null for expectedVersion. Set publishAfterMatch to true to acknowledge that anyone can see the selection and optional score with the osu! name after the match ends. The server checks the published match, deadline, window version, and optional score against its frozen series rules.",
         "security": [
           {
             "browserSession": []
@@ -46132,7 +46132,7 @@
                       "draw"
                     ]
                   },
-                  "publishAfterDeadline": {
+                  "publishAfterMatch": {
                     "type": "boolean",
                     "const": true
                   },
@@ -46179,7 +46179,7 @@
                 "required": [
                   "windowId",
                   "outcomeKey",
-                  "publishAfterDeadline",
+                  "publishAfterMatch",
                   "expectedVersion"
                 ],
                 "additionalProperties": false

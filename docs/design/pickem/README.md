@@ -4,7 +4,7 @@
 
 规则与中文文案仍是提案，需主办确认。所有队伍、玩家、时间与数字均为合成示例，不能作为赛季数据使用。
 
-現行頁面依 [#1275](https://github.com/OCLR-dev/OCLR-website/issues/1275) 使用 osu! 暱稱上榜與截止後實名揭曉。以下保留 #1268 的原始設計與截圖。請以[現行功能說明](../../competition-operations.md#pickem-match-predictions)為準。
+現行頁面依 [#1275](https://github.com/OCLR-dev/OCLR-website/issues/1275) 使用 osu! 暱稱上榜與比賽結束後公開實名預測。以下保留 #1268 的原始設計與截圖。請以[現行功能說明](../../competition-operations.md#pickem-match-predictions)為準。
 
 ## 文件
 

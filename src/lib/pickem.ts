@@ -12,7 +12,7 @@ import {
   tournamentRounds,
   users,
 } from "@/db/schema";
-import { and, asc, eq, isNotNull, isNull, sql } from "drizzle-orm";
+import { and, asc, eq, inArray, isNotNull, isNull, sql } from "drizzle-orm";
 import { createHash } from "node:crypto";
 import type { z } from "zod";
 import type { User } from "./auth/sessions";
@@ -187,6 +187,16 @@ function decision(
   };
 }
 
+function canReveal(window: Window, fixture: PublicFixture, now: Date) {
+  return (
+    !window.voidReason &&
+    fixture.status !== "cancelled" &&
+    aligned(window, fixture) &&
+    now >= window.closesAt &&
+    (fixture.status === "ended" || fixture.result !== null)
+  );
+}
+
 function project(
   window: Window,
   fixture: PublicFixture,
@@ -256,7 +266,7 @@ function project(
       result && saved
         ? pickemPoints(saved, result.outcomeKey, result.score)
         : null,
-    ...(userId !== undefined && status !== "open" && status !== "void"
+    ...(canReveal(window, fixture, now)
       ? {
           distribution: outcomes.map((outcomeKey) => ({
             outcomeKey,
@@ -308,15 +318,28 @@ export async function pickemRead(
       .from(pickemWindows)
       .where(eq(pickemWindows.editionSlug, slug))
       .orderBy(asc(pickemWindows.openedAt));
+    const now = new Date();
+    const guestWindows = actor
+      ? []
+      : windows
+          .filter((window) => {
+            const fixture = publicFixtures.get(window.fixtureId);
+            return fixture && canReveal(window, fixture, now);
+          })
+          .map((window) => window.id);
     const picksByWindow = new Map<string, StoredPick[]>();
     const usernames = new Map<number, string>();
-    if (actor) {
+    if (actor || guestWindows.length) {
       const picks = await db()
         .select({ pick: pickemPicks, username: users.username })
         .from(pickemPicks)
         .innerJoin(users, eq(users.osuId, pickemPicks.userId))
         .innerJoin(pickemWindows, eq(pickemWindows.id, pickemPicks.windowId))
-        .where(eq(pickemWindows.editionSlug, slug));
+        .where(
+          actor
+            ? eq(pickemWindows.editionSlug, slug)
+            : inArray(pickemPicks.windowId, guestWindows),
+        );
       for (const { pick, username } of picks) {
         usernames.set(pick.userId, username);
         const bucket = picksByWindow.get(pick.windowId) ?? [];
@@ -357,7 +380,6 @@ export async function pickemRead(
             )
         : [];
     const identities = new Map(previousTeams.map((team) => [team.id, team]));
-    const now = new Date();
     const roundScores = new Map<string, Map<number, Score>>();
     const seasonScores = new Map<number, Score>();
     const cards: PickemFixture[] = [];
@@ -377,7 +399,8 @@ export async function pickemRead(
         actor?.osuId,
         identities,
       );
-      if (!card || (!actor && card.status !== "open")) continue;
+      if (!card || (!actor && card.status !== "open" && !card.distribution))
+        continue;
       if (card.status === "void" && !card.mine) continue;
       cards.push(card);
       if (!rounds.has(card.roundId))
@@ -386,7 +409,7 @@ export async function pickemRead(
           name: card.roundName,
           position: fixture.roundPosition,
         });
-      if (!card.result) continue;
+      if (!actor || !card.result) continue;
       const scores = roundScores.get(card.roundId) ?? new Map<number, Score>();
       roundScores.set(card.roundId, scores);
       for (const pick of picks) {
@@ -482,7 +505,7 @@ export async function savePickemPick(
       .update(
         JSON.stringify({
           outcome: body.outcomeKey,
-          publishAfterDeadline: body.publishAfterDeadline,
+          publishAfterMatch: body.publishAfterMatch,
           score: score ? [score.homeWins, score.awayWins] : null,
           expectedVersion: body.expectedVersion,
         }),
@@ -543,7 +566,7 @@ export async function savePickemPick(
     if (acceptedAt >= window.closesAt) throw closed();
     const data = {
       outcomeKey: body.outcomeKey,
-      namedAfterDeadline: body.publishAfterDeadline,
+      namedAfterMatch: body.publishAfterMatch,
       homeWins: score?.homeWins ?? null,
       awayWins: score?.awayWins ?? null,
       updatedAt: acceptedAt,
@@ -597,11 +620,11 @@ export async function pickemNamedPredictions(
     );
     if (!fixture || !aligned(window, fixture) || fixture.status === "cancelled")
       throw unavailable();
-    if (Date.now() < window.closesAt.getTime())
+    if (!canReveal(window, fixture, new Date()))
       throw new PickemError(
         409,
         "prediction_not_revealed",
-        "Predictions are visible after the deadline.",
+        "Predictions are visible after the match ends.",
       );
 
     const pageSize = 25;
@@ -617,7 +640,7 @@ export async function pickemNamedPredictions(
       .where(
         and(
           eq(pickemPicks.windowId, windowId),
-          eq(pickemPicks.namedAfterDeadline, true),
+          eq(pickemPicks.namedAfterMatch, true),
         ),
       )
       .orderBy(asc(pickemPicks.userId))

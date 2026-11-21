@@ -1,5 +1,5 @@
 {
-  "id": "7b6d3142-d593-4a8f-b096-f1acc94ec3d7",
+  "id": "1d92547d-2251-4a6b-a206-4d49f39dc41a",
   "prevId": "7bde83f0-52e5-4137-a59f-bb3f7d97ade4",
   "version": "7",
   "dialect": "postgresql",
@@ -7320,8 +7320,8 @@
           "primaryKey": false,
           "notNull": true
         },
-        "named_after_deadline": {
-          "name": "named_after_deadline",
+        "named_after_match": {
+          "name": "named_after_match",
           "type": "boolean",
           "primaryKey": false,
           "notNull": true,

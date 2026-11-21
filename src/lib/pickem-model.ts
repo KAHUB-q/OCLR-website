@@ -80,7 +80,7 @@ export const pickemPickBody = z
   .object({
     windowId: uuid,
     outcomeKey: z.enum(pickemOutcomes),
-    publishAfterDeadline: z.literal(true),
+    publishAfterMatch: z.literal(true),
     score: pickemScore.nullish(),
     expectedVersion: z.number().int().positive().nullable(),
   })

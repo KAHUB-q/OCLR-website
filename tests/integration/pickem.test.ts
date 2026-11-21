@@ -32,11 +32,6 @@ import { assertTestDatabase } from "../database";
 import { seedPublicDirectory } from "../fixtures/players";
 
 import { GET as namedPredictionsRoute } from "../../src/app/api/tournaments/[edition]/pickem/fixtures/[fixtureId]/predictions/route";
-const session = vi.hoisted(() => ({
-  user: null as { osuId: number; username: string } | null,
-}));
-vi.mock("@/lib/auth/user", () => ({ currentUser: async () => session.user }));
-
 const dbUrl = process.env.TEST_DATABASE_URL;
 const slug = "test-cup";
 const admin = { osuId: 281090, username: "Synthetic Prediction Admin" };
@@ -180,7 +175,7 @@ describe.skipIf(!dbUrl)(
         .where(eq(matchResults.fixtureId, fixture.id));
     }
 
-    it("keeps picks private until cutoff and recalculates when the official revision changes", async () => {
+    it("reveals picks only after the match ends and recalculates when the official revision changes", async () => {
       await expect(pickemRead(slug, null)).rejects.toMatchObject({
         status: 404,
       });
@@ -192,7 +187,7 @@ describe.skipIf(!dbUrl)(
         windowId: window.id,
         expectedVersion: null,
         outcomeKey: "home" as const,
-        publishAfterDeadline: true as const,
+        publishAfterMatch: true as const,
         score: { homeWins: 5, awayWins: 3 },
       };
       const requestId = randomUUID();
@@ -247,7 +242,7 @@ describe.skipIf(!dbUrl)(
       ).rejects.toMatchObject({ status: 409 });
       await db()
         .update(pickemPicks)
-        .set({ namedAfterDeadline: false })
+        .set({ namedAfterMatch: false })
         .where(
           and(
             eq(pickemPicks.windowId, window.id),
@@ -275,20 +270,32 @@ describe.skipIf(!dbUrl)(
           randomUUID(),
         ),
       ).rejects.toMatchObject({ code: "prediction_closed" });
-      expect((await pickemRead(slug, null)).cards).toHaveLength(0);
-      expect(
-        (await pickemRead(slug, bob)).cards[0].distribution,
-      ).toContainEqual({ outcomeKey: "home", count: 2 });
-      expect(close.closesAt.getTime()).toBeLessThan(window.closesAt.getTime());
       const reveal = new Request(
         `http://localhost/api/tournaments/${slug}/pickem/fixtures/${fixture.id}/predictions?window=${window.id}`,
       );
       const context = {
         params: Promise.resolve({ edition: slug, fixtureId: fixture.id }),
       };
-      session.user = null;
-      expect((await namedPredictionsRoute(reveal, context)).status).toBe(401);
-      session.user = bob;
+      expect((await pickemRead(slug, null)).cards).toHaveLength(0);
+      expect((await pickemRead(slug, bob)).cards[0]).not.toHaveProperty(
+        "distribution",
+      );
+      expect((await namedPredictionsRoute(reveal, context)).status).toBe(409);
+      expect(close.closesAt.getTime()).toBeLessThan(window.closesAt.getTime());
+
+      await db()
+        .update(fixtures)
+        .set({ status: "in_progress" })
+        .where(eq(fixtures.id, fixture.id));
+      expect((await pickemRead(slug, alice)).cards[0]).not.toHaveProperty(
+        "distribution",
+      );
+      expect((await namedPredictionsRoute(reveal, context)).status).toBe(409);
+
+      await db()
+        .update(fixtures)
+        .set({ status: "ended" })
+        .where(eq(fixtures.id, fixture.id));
       const revealed = await namedPredictionsRoute(reveal, context);
       expect(revealed.status).toBe(200);
       expect(revealed.headers.get("Cache-Control")).toBe("private, no-store");
@@ -302,12 +309,13 @@ describe.skipIf(!dbUrl)(
         ],
         nextCursor: null,
       });
-      session.user = null;
-
-      await db()
-        .update(fixtures)
-        .set({ status: "ended" })
-        .where(eq(fixtures.id, fixture.id));
+      const guest = await pickemRead(slug, null);
+      expect(guest.cards[0].distribution).toContainEqual({
+        outcomeKey: "home",
+        count: 2,
+      });
+      expect(guest.cards[0].mine).toBeNull();
+      expect(guest.seasonLeaderboard).toHaveLength(0);
       await db().insert(matchResults).values({ fixtureId: fixture.id });
       await publish(1, 5, 3, false);
       expect((await pickemRead(slug, alice)).cards[0]).toMatchObject({
@@ -380,7 +388,7 @@ describe.skipIf(!dbUrl)(
           windowId: window.id,
           expectedVersion: null,
           outcomeKey: "home",
-          publishAfterDeadline: true,
+          publishAfterMatch: true,
         },
         randomUUID(),
       );
@@ -410,7 +418,7 @@ describe.skipIf(!dbUrl)(
             windowId: window.id,
             expectedVersion: 1,
             outcomeKey: "away",
-            publishAfterDeadline: true,
+            publishAfterMatch: true,
           },
           randomUUID(),
         ),

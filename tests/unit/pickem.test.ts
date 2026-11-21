@@ -91,11 +91,11 @@ describe("Pick’em series rules", () => {
     };
     expect(pickemPickBody.safeParse(selection).success).toBe(false);
     expect(
-      pickemPickBody.safeParse({ ...selection, publishAfterDeadline: false })
+      pickemPickBody.safeParse({ ...selection, publishAfterMatch: false })
         .success,
     ).toBe(false);
     expect(
-      pickemPickBody.safeParse({ ...selection, publishAfterDeadline: true })
+      pickemPickBody.safeParse({ ...selection, publishAfterMatch: true })
         .success,
     ).toBe(true);
   });

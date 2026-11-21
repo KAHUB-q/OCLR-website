@@ -33,13 +33,15 @@ const card: PickemFixture = {
   result: null,
   points: null,
 };
-if (new URLSearchParams(location.search).has("closed")) {
-  card.status = "closed";
+const state = new URLSearchParams(location.search);
+if (state.has("closed") || state.has("ended")) {
+  card.status = state.has("ended") ? "pending" : "closed";
   card.closesAt = now.toISOString();
-  card.distribution = [
-    { outcomeKey: "home", count: 1 },
-    { outcomeKey: "away", count: 0 },
-  ];
+  if (state.has("ended"))
+    card.distribution = [
+      { outcomeKey: "home", count: 1 },
+      { outcomeKey: "away", count: 0 },
+    ];
 }
 const router = { refresh() {} } as AppRouterInstance;
 
@@ -50,7 +52,7 @@ createRoot(document.getElementById("root")!).render(
         <PickemMatchCard
           card={card}
           slug="synthetic-test"
-          signedIn
+          signedIn={!state.has("ended")}
           userId={28001}
           serverNow={now.toISOString()}
         />

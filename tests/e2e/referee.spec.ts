@@ -216,13 +216,33 @@ test.describe("referee command workspace", () => {
       .poll(async () => (await read()).session?.firstPickTeamId)
       .toBe(away.id);
     const beforePrepare = (await read()).events.length;
-    await page
-      .locator("#referee-preparation button[data-copied]:not([disabled])")
-      .first()
+    const commandList = page.getByRole("region", {
+      name: "Command list",
+      exact: true,
+    });
+    const ircCommand = page.getByLabel("IRC command", { exact: true });
+    await commandList
+      .getByRole("button", { name: "Copy Create room", exact: true })
       .click();
-    await expect(
-      page.getByLabel("IRC command", { exact: true }),
-    ).not.toHaveValue("");
+    await expect
+      .poll(() =>
+        page.evaluate(
+          () => (window as unknown as { lastCopied: string }).lastCopied,
+        ),
+      )
+      .toBe(`!mp make ${seeded.workspace.defaultSettings.roomName}`);
+    await expect(ircCommand).toHaveValue("");
+
+    const captain = home.captainUsername!;
+    await commandList
+      .getByRole("button", {
+        name: `Prepare Invite captain: ${home.name} · ${captain} in IRC`,
+        exact: true,
+      })
+      .click();
+    await expect(ircCommand).toHaveValue(
+      `!mp invite ${captain.replace(/\s+/gu, "_")}`,
+    );
     await expect(
       page.getByRole("button", { name: "Send to local IRC", exact: true }),
     ).toBeDisabled();

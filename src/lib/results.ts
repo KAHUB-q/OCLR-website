@@ -6,11 +6,12 @@ import {
   mappools,
   matchImports,
   matchResults,
+  pickemWindows,
   resultAuditEvents,
   resultGameClaims,
   resultRevisions,
 } from "@/db/schema";
-import { and, eq } from "drizzle-orm";
+import { and, eq, gt, isNull, sql } from "drizzle-orm";
 import { isDeepStrictEqual } from "node:util";
 import type { User } from "./auth/sessions";
 import { assertCapability } from "./auth/staff";
@@ -463,14 +464,28 @@ export async function resultCommand(
               409,
               "Publish the fixture and approve this revision before publishing its result.",
             );
+          const publishedAt = new Date();
           await tx
             .update(matchResults)
             .set({
               publishedRevision: c.revision,
-              publishedAt: new Date(),
+              publishedAt,
               version: state.version + 1,
             })
             .where(eq(matchResults.fixtureId, fixtureId));
+          await tx
+            .update(pickemWindows)
+            .set({
+              closesAt: publishedAt,
+              version: sql`${pickemWindows.version} + 1`,
+            })
+            .where(
+              and(
+                eq(pickemWindows.fixtureId, fixtureId),
+                isNull(pickemWindows.voidReason),
+                gt(pickemWindows.closesAt, publishedAt),
+              ),
+            );
           await tx
             .delete(resultGameClaims)
             .where(eq(resultGameClaims.fixtureId, fixtureId));

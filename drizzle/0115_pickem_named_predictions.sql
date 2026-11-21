@@ -1,0 +1,1 @@
+ALTER TABLE "pickem_picks" ADD COLUMN "named_after_match" boolean DEFAULT false NOT NULL;

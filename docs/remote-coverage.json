@@ -1547,6 +1547,20 @@
       "requiredVerification": "Desktop/mobile direct load, reload/navigation; authorized denial where applicable"
     },
     {
+      "file": "src/app/api/tournaments/[edition]/pickem/fixtures/[fixtureId]/predictions/route.ts",
+      "kind": "read-route",
+      "authority": "denied",
+      "operations": [],
+      "commands": "Website browser session only",
+      "metadata": "Inherited or static",
+      "services": ["src/lib/pickem.ts"],
+      "test": "integration/pickem.test.ts + unit/pickem.test.ts",
+      "authorization": "Published, enabled edition; own session for private reads and writes; edition Admin for configuration",
+      "adapter": "Local website session and native database",
+      "media": "Published team avatars",
+      "requiredVerification": "Publication, ownership, deadline, score settlement and remote rejection"
+    },
+    {
       "file": "src/app/api/tournaments/[edition]/pickem/fixtures/route.ts",
       "kind": "read-route",
       "authority": "denied",
@@ -3263,7 +3277,7 @@
       "requiredVerification": "Publication, ownership, deadline, score settlement and remote rejection"
     },
     {
-      "file": "src/components/pickem-visibility.tsx",
+      "file": "src/components/pickem-named-predictions.tsx",
       "kind": "client",
       "authority": "denied",
       "operations": [],

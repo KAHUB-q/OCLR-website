@@ -3040,6 +3040,7 @@ export const pickemPicks = pgTable(
     outcomeKey: text("outcome_key", {
       enum: ["home", "away", "draw"],
     }).notNull(),
+    namedAfterMatch: boolean("named_after_match").notNull().default(false),
     homeWins: integer("home_wins"),
     awayWins: integer("away_wins"),
     version: integer("version").notNull(),
@@ -3079,6 +3080,7 @@ export const pickemReceipts = pgTable(
   ],
 );
 
+// Legacy leaderboard preferences are retained for existing databases.
 export const pickemVisibility = pgTable(
   "pickem_visibility",
   {

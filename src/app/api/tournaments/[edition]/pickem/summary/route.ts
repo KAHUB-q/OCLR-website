@@ -11,27 +11,29 @@ export function GET(
       rounds: data.rounds,
       rulesVersion: data.rulesVersion,
       serverNow: data.serverNow,
-      fixtures: data.cards.map(
-        ({
-          fixtureId,
-          label,
-          roundId,
-          home,
-          away,
-          scheduledAt,
-          timeZone,
-          closesAt,
-        }) => ({
-          fixtureId,
-          label,
-          roundId,
-          home,
-          away,
-          scheduledAt,
-          timeZone,
-          closesAt,
-        }),
-      ),
+      fixtures: data.cards
+        .filter((card) => card.status === "open")
+        .map(
+          ({
+            fixtureId,
+            label,
+            roundId,
+            home,
+            away,
+            scheduledAt,
+            timeZone,
+            closesAt,
+          }) => ({
+            fixtureId,
+            label,
+            roundId,
+            home,
+            away,
+            scheduledAt,
+            timeZone,
+            closesAt,
+          }),
+        ),
     };
   });
 }

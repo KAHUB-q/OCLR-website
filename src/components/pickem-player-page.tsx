@@ -10,7 +10,6 @@ import { pickemPage } from "@/lib/pickem-model";
 import { pickemStatusText } from "@/lib/pickem-labels";
 import type { PickemRank, PickemStatus } from "@/lib/pickem-types";
 import { PickemMatchCard } from "./pickem-match-card";
-import { PickemVisibility } from "./pickem-visibility";
 import styles from "./pickem.module.css";
 
 type View = "matches" | "mine" | "leaderboard";
@@ -179,7 +178,6 @@ export async function PickemPlayerPage({
             )}
           </p>
         </div>
-        <a href="#pickem-rules">{tr("How to play")}</a>
       </header>
       <nav className={styles.tabs} aria-label={tr("Match predictions")}>
         {tabs.map((tab) => (
@@ -398,7 +396,6 @@ export async function PickemPlayerPage({
               </Link>
             )}
           </nav>
-          <PickemVisibility slug={slug} initial={data.visibility} />
           {list(boardPage.rows)}
           {myPlace >= 0 && (
             <Link
@@ -429,14 +426,19 @@ export async function PickemPlayerPage({
 }
 function Rules({ tr }: { tr: Awaited<ReturnType<typeof getAppTranslations>> }) {
   return (
-    <section className={styles.aside} id="pickem-rules">
+    <section className={styles.aside}>
       <h2>{tr("How to play")}</h2>
       <ul>
         <li>{tr("You can change your prediction until the deadline.")}</li>
         <li>{tr("An exact score earns 1 extra point.")}</li>
         <li>
           {tr(
-            "Only you can see your picks. Group totals appear after the deadline.",
+            "After the match ends, anyone can see your osu! name, pick and optional score.",
+          )}
+        </li>
+        <li>
+          {tr(
+            "The leaderboard shows the osu! name and points of every player with a scored prediction.",
           )}
         </li>
       </ul>

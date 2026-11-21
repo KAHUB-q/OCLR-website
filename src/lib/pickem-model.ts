@@ -80,6 +80,7 @@ export const pickemPickBody = z
   .object({
     windowId: uuid,
     outcomeKey: z.enum(pickemOutcomes),
+    publishAfterMatch: z.literal(true),
     score: pickemScore.nullish(),
     expectedVersion: z.number().int().positive().nullable(),
   })
@@ -91,13 +92,6 @@ export const pickemSettingsBody = z
     expectedVersion: version,
   })
   .strict();
-export const pickemVisibilityBody = z
-  .object({
-    listed: z.boolean(),
-    expectedVersion: version,
-  })
-  .strict();
-
 const closesAt = z.iso.datetime({ offset: true });
 const windowVersion = { windowId: uuid, expectedVersion: version };
 export const pickemAdminBody = z.discriminatedUnion("action", [

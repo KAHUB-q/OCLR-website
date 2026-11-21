@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useRef, useState } from "react";
+import { useEffect, useId, useRef, useState } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { useAppTranslations } from "@/i18n/shared";
@@ -13,6 +13,7 @@ import {
 import { pickemStatusText, pickemVoidText } from "@/lib/pickem-labels";
 import type { PickemFixture, PickemSaved } from "@/lib/pickem-types";
 import { TeamAvatar } from "./team-avatar";
+import { PickemNamedPredictions } from "./pickem-named-predictions";
 import styles from "./pickem.module.css";
 
 function ScoreFields({
@@ -119,6 +120,7 @@ export function PickemMatchCard({
 }) {
   const tr = useAppTranslations();
   const router = useRouter();
+  const disclosureId = useId();
   const [saved, setSaved] = useState(card.mine);
   const [outcome, setOutcome] = useState<PickemOutcome | null>(
     card.mine?.outcomeKey ?? null,
@@ -193,6 +195,7 @@ export function PickemMatchCard({
     const body = JSON.stringify({
       windowId: card.windowId,
       outcomeKey: outcome,
+      publishAfterMatch: true,
       score: score && { homeWins: score.homeWins, awayWins: score.awayWins },
       expectedVersion: stored?.version ?? null,
     });
@@ -315,6 +318,11 @@ export function PickemMatchCard({
               onChange={setScore}
             />
           )}
+          <p className={styles.muted} id={disclosureId}>
+            {tr(
+              "After the match ends, anyone can see your osu! name, pick and optional score.",
+            )}
+          </p>
           <footer className={styles.cardFooter}>
             <div role="status" aria-live="polite">
               {stored && (
@@ -329,6 +337,7 @@ export function PickemMatchCard({
             </div>
             <button
               type="button"
+              aria-describedby={disclosureId}
               aria-busy={sending}
               aria-disabled={!outcome || !changed || sending || !editable}
               onClick={() => void submit()}
@@ -374,6 +383,9 @@ export function PickemMatchCard({
           )}
         </p>
       )}
+      {card.distribution && (
+        <PickemNamedPredictions key={card.windowId} slug={slug} card={card} />
+      )}
       {card.status !== "open" && (
         <footer className={styles.cardFooter}>
           <div>
@@ -388,6 +400,11 @@ export function PickemMatchCard({
                 {card.result.score &&
                   ` · ${card.result.score.homeWins} : ${card.result.score.awayWins}`}
               </div>
+            )}
+            {card.status !== "void" && !card.distribution && (
+              <span>
+                {tr("Predictions are revealed after the match ends.")}
+              </span>
             )}
             {card.status === "void" && (
               <span>{pickemVoidText(tr, card.voidReason)}</span>

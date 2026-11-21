@@ -5023,6 +5023,16 @@
     "m64390000bc51": "The round rules changed. This prediction does not count.",
     "mda38d311183b": "The match was cancelled. This prediction does not count.",
     "m716adad9c05b": "Total predictions",
-    "m88f67edeac3a": "This match has prediction history. Cancel it instead of deleting it."
+    "m88f67edeac3a": "This match has prediction history. Cancel it instead of deleting it.",
+    "md6ae87c8196b": "View named predictions",
+    "m1cdf10b6ad46": "osu! name",
+    "m6f2ddd1d52d5": "Prediction",
+    "mce80aa8f4f84": "No named predictions yet.",
+    "mec838225da6d": "Could not load named predictions.",
+    "mac8991ef0101": "Load more",
+    "mce803fdc0dd6": "The leaderboard shows the osu! name and points of every player with a scored prediction.",
+    "m83ebca835736": "After the match ends, anyone can see your osu! name, pick and optional score.",
+    "mb7fc3ff5e377": "Predictions are revealed after the match ends.",
+    "m403a9ee3da3b": "Signed-in players can see osu! names and points on the match prediction leaderboard. After each match ends, anyone can see osu! names, selections and scores submitted under the named prediction rules."
   }
 }

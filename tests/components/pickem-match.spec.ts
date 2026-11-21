@@ -22,6 +22,8 @@ test("replaces an incompatible score when changing the selected winner", async (
     },
   );
   await page.goto("/pickem-match");
+  await expect(page.getByText(/anyone can see your osu!/)).toBeVisible();
+  await expect(page.getByText("View named predictions")).toHaveCount(0);
   await page.getByRole("radio", { name: "Aurora Rookies" }).check();
   const score = page.getByRole("group", {
     name: "Predict the score (optional)",
@@ -40,9 +42,46 @@ test("replaces an incompatible score when changing the selected winner", async (
   expect(saves).toMatchObject([
     {
       outcomeKey: "home",
+      publishAfterMatch: true,
       score: { homeWins: 5, awayWins: 3 },
       expectedVersion: null,
     },
     { outcomeKey: "away", score: null, expectedVersion: 1 },
   ]);
+});
+
+test("keeps the list hidden at cutoff and reveals it to guests after the match", async ({
+  page,
+}) => {
+  let loads = 0;
+  await page.route("**/fixtures/fixture/predictions?*", (route) => {
+    loads++;
+    return route.fulfill({
+      json: {
+        rows: [
+          {
+            username: "SyntheticAlice",
+            outcomeKey: "home",
+            score: { homeWins: 5, awayWins: 3 },
+          },
+        ],
+        nextCursor: null,
+      },
+    });
+  });
+  await page.goto("/pickem-match?closed");
+  await expect(
+    page.getByText("Predictions are revealed after the match ends."),
+  ).toBeVisible();
+  await expect(page.getByText("View named predictions")).toHaveCount(0);
+  expect(loads).toBe(0);
+  await page.goto("/pickem-match?ended");
+  const disclosure = page.getByText("View named predictions");
+  await expect(disclosure).toBeVisible();
+  expect(loads).toBe(0);
+  await disclosure.click();
+  await expect(page.getByRole("row", { name: /SyntheticAlice/ })).toContainText(
+    "5 : 3",
+  );
+  expect(loads).toBe(1);
 });

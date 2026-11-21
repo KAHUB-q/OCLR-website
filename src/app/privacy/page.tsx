@@ -40,6 +40,11 @@ async function Issue271Page() {
           "An explicitly designated self introduction is public after application acceptance; other questionnaire answers remain private. Signed player messages are public and identify the authenticated author's osu! account.",
         )}
       </p>
+      <p>
+        {tr(
+          "Signed-in players can see osu! names and points on the match prediction leaderboard. After each match ends, anyone can see osu! names, selections and scores submitted under the named prediction rules.",
+        )}
+      </p>
       <h2>{tr("Cookies and external services")}</h2>
       <p>
         {tr(

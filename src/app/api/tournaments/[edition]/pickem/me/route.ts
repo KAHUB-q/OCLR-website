@@ -12,7 +12,7 @@ export function GET(
 ) {
   return pickemResponse(async () => {
     const { round, cursor } = pickemQuery(request);
-    const { cards, myScore, seasonScore, visibility } = await pickemRead(
+    const { cards, myScore, seasonScore } = await pickemRead(
       (await params).edition,
       await pickemActor(true),
       round,
@@ -24,7 +24,6 @@ export function GET(
       ),
       myScore,
       seasonScore,
-      visibility,
     };
   });
 }

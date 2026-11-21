@@ -148,12 +148,20 @@ player supplies one. The public competition projection supplies the active,
 approved result revision. Hidden, withdrawn or replaced results are reflected
 when predictions and standings are next read.
 
-Individual picks stay private. Deadline-passed matches can show anonymous
-outcome counts. Players opt in to list their osu! name on the season leaderboard.
-The feature is available through website browser sessions and its same-origin
-API routes. Operator writes and payloads are documented in the
-[write API](write-api.openapi.json); the player design is in
-[the Pick’em reference](design/pickem/README.md).
+The round and season leaderboards show the current osu! name and points of
+everyone with a scored prediction. When a released, valid match is marked ended or its approved result is published,
+any visitor can see the osu! name, outcome and optional score on its prediction
+card. The deadline locks submissions. Individual picks and aggregate counts stay
+hidden until the match ends. The page shows submission
+terms before saving. Predictions saved before those terms applied contribute to
+totals and standings, with their individual selections visible only to their
+authors.
+
+The public read for the named list is
+`GET /api/tournaments/{edition}/pickem/fixtures/{fixtureId}/predictions?window={windowId}&cursor={cursor}`.
+Player writes and operator commands are documented in the
+[write API](write-api.openapi.json). The [original Pick’em design](design/pickem/README.md)
+records the launch layout.
 
 ### Historical drawn results
 

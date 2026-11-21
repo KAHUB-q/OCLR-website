@@ -44,3 +44,12 @@ export type PickemRank = {
   exact: number;
   settled: number;
 };
+
+export type PickemNamedPage = {
+  rows: {
+    username: string;
+    outcomeKey: PickemOutcome;
+    score: PickemScore | null;
+  }[];
+  nextCursor: number | null;
+};

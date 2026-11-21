@@ -5,6 +5,7 @@ import { remotePage } from "@/lib/remote-page";
 import { getAppTranslations } from "@/i18n/server";
 import { TournamentShell } from "@/components/tournament-navigation";
 import { notFound } from "next/navigation";
+import { pickemEnabled } from "@/lib/pickem";
 import { publicDraft } from "@/lib/draft-reads";
 import { getPublicEdition } from "@/lib/content";
 import { informationPreview } from "@/lib/tournament-information";
@@ -76,7 +77,10 @@ export default async function EditionLayout({
         {children}
       </TournamentShell>
     );
-  const [draftResult] = await Promise.allSettled([publicDraft(slug)]);
+  const [draftResult, pickem] = await Promise.allSettled([
+    publicDraft(slug),
+    pickemEnabled(slug),
+  ]);
   const draft = draftResult.status === "fulfilled" ? draftResult.value : null;
   const liveUnavailable = draftResult.status === "rejected";
   return (
@@ -84,6 +88,7 @@ export default async function EditionLayout({
       slug={slug}
       name={informationPreview(slug)?.name ?? edition.name}
       liveDraft={Boolean(draft)}
+      pickem={pickem.status === "fulfilled" && pickem.value}
       {...await workspaceNavigation(slug)}
     >
       {liveUnavailable && (

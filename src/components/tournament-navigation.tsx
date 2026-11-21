@@ -25,11 +25,13 @@ function Navigation({
   liveDraft,
   archived = false,
   mobileMenu = false,
+  pickem = false,
 }: {
   slug: string;
   liveDraft: boolean;
   archived?: boolean;
   mobileMenu?: boolean;
+  pickem?: boolean;
 }) {
   const tr = useAppTranslations();
 
@@ -66,7 +68,7 @@ function Navigation({
       ? [["statistics", "Player statistics"]]
       : []),
   ];
-  const links = mobileMenu
+  const primaryLinks = mobileMenu
     ? [
         ["", "Main page"],
         ["players", "Players"],
@@ -80,6 +82,9 @@ function Navigation({
         ...(archived ? [["staff", "Staff"]] : []),
       ]
     : legacyLinks;
+  const links = pickem
+    ? [...primaryLinks, ["pickem", "Match predictions"]]
+    : primaryLinks;
   const section = publicTournamentSection(pathname, base);
   const active = mobileMenu
     ? ["bracket", "results"].includes(section ?? "")
@@ -132,6 +137,7 @@ export function TournamentNavigation(props: {
   liveDraft: boolean;
   archived?: boolean;
   mobileMenu?: boolean;
+  pickem?: boolean;
 }) {
   const path = usePathname();
   return <Navigation key={path} {...props} />;
@@ -145,6 +151,7 @@ export function TournamentShell({
   archived = false,
   captainWorkspace,
   playerWorkspace = false,
+  pickem = false,
   children,
 }: {
   slug: string;
@@ -153,6 +160,7 @@ export function TournamentShell({
   archived?: boolean;
   captainWorkspace?: { scheduleRequests: boolean };
   playerWorkspace?: boolean;
+  pickem?: boolean;
   children: ReactNode;
 }) {
   const tr = useAppTranslations();
@@ -378,6 +386,7 @@ export function TournamentShell({
           liveDraft={liveDraft}
           archived={archived}
           mobileMenu
+          pickem={pickem}
         />
         {captainWorkspace && !playerWorkspace && (
           <Link className="button secondary" href={`${base}/team`}>

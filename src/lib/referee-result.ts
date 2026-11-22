@@ -19,7 +19,6 @@ export function previewRefereeResult(
 
   const games: RefereeResultGame[] = [];
   let unresolved = false;
-  let extra = false;
   let homeWins = 0;
   let awayWins = 0;
   let tiedMaps = 0;
@@ -36,16 +35,12 @@ export function previewRefereeResult(
       (winner === fixture.homeTeamId || winner === fixture.awayTeamId) &&
       winner !== null;
     const validTie =
-      attempt.status === "tied" && rules?.tiedMapPolicy === "count_as_draw";
+      attempt.status === "tied" &&
+      session.basis.tiedMapPolicy === "count_as_draw";
     if (!validWinner && !validTie) {
       unresolved = true;
       continue;
     }
-    if (
-      rules?.series.type === "first_to" &&
-      Math.max(homeWins, awayWins) >= rules.series.wins
-    )
-      extra = true;
     if (validTie) tiedMaps++;
     else if (winner === fixture.homeTeamId) homeWins++;
     else awayWins++;
@@ -57,25 +52,25 @@ export function previewRefereeResult(
     });
   }
   const draw = homeWins === awayWins;
-  const series = rules?.series;
-  const resolved =
-    series?.type === "first_to"
-      ? !extra && !draw && Math.max(homeWins, awayWins) === series.wins
-      : series?.type === "fixed_maps" &&
-        games.length === series.count &&
-        (!draw || series.allowDraw);
-  const blocker =
-    session.dependencyFingerprint !== dependencyFingerprint
-      ? "Reconfirm the fixture dependencies in the referee workspace."
-      : fixture.status === "cancelled" ||
-          !fixture.homeTeamId ||
-          !fixture.awayTeamId ||
-          fixture.homeTeamId === fixture.awayTeamId ||
-          unresolved ||
-          !resolved ||
-          !games.length
-        ? "The saved referee outcomes do not complete the configured series."
-        : null;
+  const series = session.basis.series;
+  let blocker: string | null = null;
+  if (fixture.status === "cancelled")
+    blocker = "Cancelled fixtures cannot receive a scored result.";
+  else if (
+    !fixture.homeTeamId ||
+    !fixture.awayTeamId ||
+    fixture.homeTeamId === fixture.awayTeamId ||
+    !session.basis.teamIds.includes(fixture.homeTeamId) ||
+    !session.basis.teamIds.includes(fixture.awayTeamId)
+  )
+    blocker = "Both fixture teams must match the saved referee record.";
+  else if (!rules)
+    blocker = "The round scoring rules have not been configured.";
+  else if (unresolved)
+    blocker = "Resolve the current map or record a replay before continuing.";
+  else if (!games.length) blocker = "Include at least one completed game.";
+  else if (draw && !(series?.type === "fixed_maps" && series.allowDraw))
+    blocker = "The saved referee outcomes do not determine a series winner.";
   return {
     revision: session.revision,
     dependencyFingerprint,

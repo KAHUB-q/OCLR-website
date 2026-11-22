@@ -253,6 +253,66 @@ describe.skipIf(!url)("saved referee MP reconciliation boundaries", () => {
       published?.result,
     );
   });
+  it("submits the recorded score below the win target after the fixture ends", async () => {
+    const winner = w.teams[1].id;
+    await refereeCommand(actor, "test-cup", fixtureId, {
+      action: "resolve_attempt",
+      pickId: w.projection.lastSelectionId,
+      status: "completed",
+      winnerTeamId: winner,
+      requestKey: randomUUID(),
+      expectedRevision: w.session!.revision,
+      dependencyFingerprint: w.dependencyFingerprint,
+    });
+    await db()
+      .update(fixtures)
+      .set({ status: "ended", version: w.fixture.version + 1 })
+      .where(eq(fixtures.id, fixtureId));
+    const view = await matchReview(actor, "test-cup", fixtureId);
+    const record = view.refereeReview!;
+    expect(record.blocker).toBeNull();
+    expect(record.dependencyFingerprint).not.toBe(w.dependencyFingerprint);
+    const command = {
+      action: "submit_referee",
+      confirmed: true,
+      expectedVersion: view.context.result!.version,
+      expectedFixtureVersion: view.context.fixture.version,
+      refereeRevision: record.revision,
+      dependencyFingerprint: record.dependencyFingerprint,
+      publicNote: "",
+      requestKey: randomUUID(),
+    };
+    await expect(
+      resultCommand(actor, "test-cup", fixtureId, {
+        ...command,
+        dependencyFingerprint: w.dependencyFingerprint,
+      }),
+    ).rejects.toMatchObject({ status: 409 });
+    const { review } = await resultCommand(
+      actor,
+      "test-cup",
+      fixtureId,
+      command,
+    );
+    expect(review.current?.proposal?.series).toMatchObject({
+      homeWins: 0,
+      awayWins: 1,
+      includedGames: 1,
+      winnerTeamId: winner,
+    });
+    expect(review.current?.proposal?.referee?.games).toEqual(record.games);
+    expect(review.published).toBeNull();
+    const approval = await resultCommand(admin, "test-cup", fixtureId, {
+      action: "approve_publish",
+      confirmed: true,
+      expectedVersion: review.context.result!.version,
+      expectedFixtureVersion: review.context.fixture.version,
+      revision: review.current!.revision,
+      progressionAcknowledged: true,
+      requestKey: randomUUID(),
+    });
+    expect(approval.review.published?.proposal?.series).toEqual(record.series);
+  });
   it("reads no automatic mappings and preserves official result state", async () => {
     const before = await db().select().from(matchResults);
     const data = await refereeReconciliation(actor, "test-cup", fixtureId);

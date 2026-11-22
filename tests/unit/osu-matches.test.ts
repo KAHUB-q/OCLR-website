@@ -224,6 +224,7 @@ describe("official MP history normalization", () => {
     { type: "match-abandoned" },
     { type: "other", text: "Match abandoned." },
     { type: "match-disbanded" },
+    { type: "other", text: "The match was disbanded." },
   ])(
     "recognizes $type as a terminal room event without finishing its game",
     async (detail) => {
@@ -247,24 +248,42 @@ describe("official MP history normalization", () => {
     },
   );
 
-  it("keeps the open-room warning when the latest event does not confirm closure", async () => {
-    const page = syntheticPage([syntheticEvent(1), syntheticEvent(2)]);
+  it("recognizes a disband even with an actor and a later player departure", async () => {
+    const page = syntheticPage([
+      { ...syntheticEvent(1), detail: { type: "match-disbanded" } },
+      { ...syntheticEvent(2), detail: { type: "player-left" } },
+    ]);
     vi.mocked(osuApi).mockResolvedValue({
       ...page,
       match: { ...page.match, end_time: null },
-      events: [
-        { ...syntheticEvent(1), detail: { type: "match-abandoned" } },
-        {
-          ...syntheticEvent(2),
-          user_id: 1001,
-          detail: { type: "other", text: "ABANDON" },
-        },
-      ],
+      events: page.events.map((event) => ({ ...event, user_id: 1001 })),
     });
-    expect((await fetchMatchSource(syntheticMatchId)).warnings).toContain(
+    expect((await fetchMatchSource(syntheticMatchId)).warnings).not.toContain(
       OPEN_MATCH_WARNING,
     );
   });
+
+  it.each(["ABANDON", "The match was disbanded."])(
+    "keeps the open-room warning for player text %s",
+    async (text) => {
+      const page = syntheticPage([syntheticEvent(1), syntheticEvent(2)]);
+      vi.mocked(osuApi).mockResolvedValue({
+        ...page,
+        match: { ...page.match, end_time: null },
+        events: [
+          { ...syntheticEvent(1), detail: { type: "match-abandoned" } },
+          {
+            ...syntheticEvent(2),
+            user_id: 1001,
+            detail: { type: "other", text },
+          },
+        ],
+      });
+      expect((await fetchMatchSource(syntheticMatchId)).warnings).toContain(
+        OPEN_MATCH_WARNING,
+      );
+    },
+  );
 
   it("preserves incomplete games, missing metadata and upstream differences for explicit review", async () => {
     const game = syntheticApiGame(1);

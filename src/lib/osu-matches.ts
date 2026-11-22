@@ -344,18 +344,23 @@ export async function fetchMatchSource(matchId: number): Promise<MatchSource> {
       }
       const detail = object(e.detail);
       // Unmapped legacy MP events are returned as `other` with their original text.
-      const abandoned =
-        detail.type === "other" &&
+      let eventType = text(detail.type, 80) ?? "unknown";
+      if (
+        eventType === "other" &&
         e.user_id === null &&
         e.game == null &&
-        typeof detail.text === "string" &&
-        /^(?:ABANDON|Match abandoned\.?)$/i.test(detail.text.trim());
+        typeof detail.text === "string"
+      ) {
+        const message = detail.text.trim();
+        if (/^(?:DISBAND|(?:The )?match (?:was )?disbanded\.?)$/i.test(message))
+          eventType = "match-disbanded";
+        else if (/^(?:ABANDON|Match abandoned\.?)$/i.test(message))
+          eventType = "match-abandoned";
+      }
       const event = {
         id,
         at: timestamp(e.timestamp),
-        type: abandoned
-          ? "match-abandoned"
-          : (text(detail.type, 80) ?? "unknown"),
+        type: eventType,
         actorOsuId: number(e.user_id, 1),
         gameId: g?.id ?? null,
       };

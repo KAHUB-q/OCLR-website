@@ -109,10 +109,11 @@ export function hasMatchClosureEvent({
 }: Pick<MatchSource, "events" | "latestEventId">) {
   return events.some(
     (event) =>
-      event.id === latestEventId &&
-      event.actorOsuId === null &&
-      event.gameId === null &&
-      (event.type === "match-disbanded" || event.type === "match-abandoned"),
+      event.type === "match-disbanded" ||
+      (event.type === "match-abandoned" &&
+        event.id === latestEventId &&
+        event.actorOsuId === null &&
+        event.gameId === null),
   );
 }
 

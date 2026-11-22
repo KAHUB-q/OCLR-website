@@ -11,6 +11,7 @@ import type { RefereeCommand } from "@/lib/referee-write-contracts";
 import {
   refereeOrderConflicts,
   projectReferee,
+  lastRestorableSelectionId,
   validateRefereeAction,
   refereeActionSchema,
   resolveRefereeActor,
@@ -750,11 +751,11 @@ export function RefereePanel({
         .join(" → ");
     }
     if (p.type === "dependencies_reconfirmed") return "";
-    const pickId = p.type === "selection_voided" ? p.selectionId : p.pickId;
+    const pickId = "selectionId" in p ? p.selectionId : p.pickId;
     const selection = state.selections.find((item) => item.id === pickId);
     if (!selection) return "";
     const step = `${tr("Step {number}", { number: selection.stepIndex + 1 })} · ${selection.category} · ${selection.beatmapId}`;
-    if (p.type === "selection_voided") return step;
+    if ("selectionId" in p) return step;
     const attemptId = p.type === "attempt_replayed" ? event.id : p.attemptId;
     const attempt = selection.attempts.find((item) => item.id === attemptId);
     const description = `${step} · ${tr("Attempt {number}", { number: attempt?.number ?? 1 })}`;
@@ -814,6 +815,16 @@ export function RefereePanel({
             onClick={() => send({ action: "void_last" })}
           >
             {tr("Withdraw last Ban / Pick")}
+          </button>
+          <button
+            type="button"
+            className="secondary"
+            disabled={
+              disabled || readOnly || !lastRestorableSelectionId(model.events)
+            }
+            onClick={() => send({ action: "restore_last" })}
+          >
+            {tr("Restore withdrawn Ban / Pick")}
           </button>
           {syncControl}
         </div>

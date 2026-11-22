@@ -23,7 +23,11 @@ import {
 } from "./referee-irc-reads";
 import { expireIrcCommands, lockRefereeIrc } from "./referee-irc-transaction";
 import { validateRefereeAction } from "./referee-model";
-import { bpSyncSource, scoreNoticePrefix } from "./referee-sync";
+import {
+  bpSyncSource,
+  scoreNoticePrefix,
+  selectionSyncSuperseded,
+} from "./referee-sync";
 import { assertRefereeAccess, readRefereeWorkspace } from "./referee-workspace";
 
 const digest = (value: unknown) =>
@@ -104,6 +108,7 @@ export async function refereeIrcBrowserCommand(
       if (
         !w.canRecord ||
         source.selection.voided !== source.withdrawn ||
+        selectionSyncSuperseded(w, source.event, source.selectionId) ||
         (w.session &&
           w.session.dependencyFingerprint !== w.dependencyFingerprint)
       )

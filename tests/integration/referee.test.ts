@@ -144,7 +144,7 @@ describe.skipIf(!url)("private persistent referee workspace", () => {
       firstPickTeamId: w.teams[1].id,
     });
   }
-  it("persists authorized EX declarations for result scoring, rejects late edits and removes withdrawn picks", async () => {
+  it("persists authorized EX declarations for result scoring, rejects late edits and restores withdrawn outcomes on ended fixtures", async () => {
     await db()
       .update(tournamentRounds)
       .set({ scoringRules: { ...w.rules!, exPlayersPerTeam: 1 } })
@@ -178,12 +178,41 @@ describe.skipIf(!url)("private persistent referee workspace", () => {
     await expect(
       command({ action: "declare_ex", pickId, enabled: false }),
     ).rejects.toMatchObject({ status: 409 });
+    await command({
+      action: "resolve_attempt",
+      pickId,
+      status: "completed",
+      winnerTeamId: w.teams[1].id,
+    });
+    const original = w.projection;
+    const savedFingerprint = w.session!.dependencyFingerprint;
+    await db()
+      .update(fixtures)
+      .set({ status: "ended", version: w.fixture.version + 1 })
+      .where(eq(fixtures.id, fixtureId));
+    w = await refereeWorkspace(referee, "test-cup", fixtureId);
+    expect(w.dependencyFingerprint).not.toBe(savedFingerprint);
     await command({ action: "void_last" });
     expect(
       (
         await fixtureForReview(referee, "test-cup", fixtureId)
       ).exDeclarations.some((p) => p.exMode),
     ).toBe(false);
+    const restore = input({ action: "restore_last" });
+    const response = await post(fixtureId, restore);
+    expect(response.status).toBe(200);
+    const { receipt, workspace } = await response.json();
+    expect(workspace.projection).toEqual(original);
+    expect(workspace.session.dependencyFingerprint).toBe(savedFingerprint);
+    expect(workspace.events.at(-1).payload).toEqual({
+      type: "selection_restored",
+      selectionId: pickId,
+    });
+    const replay = await post(fixtureId, restore);
+    expect((await replay.json()).receipt).toEqual(receipt);
+    expect(
+      (await fixtureForReview(referee, "test-cup", fixtureId)).exDeclarations,
+    ).toContainEqual({ id: pickId, beatmapId: maps[1].beatmapId, exMode: true });
   });
   it("persists a two-replay cap and rejects an extra replay without writes", async () => {
     await configure();
@@ -591,6 +620,9 @@ describe.skipIf(!url)("private persistent referee workspace", () => {
     expect(w.session?.dependencyFingerprint).toBe(w.dependencyFingerprint);
     expect(w.projection.activeSelections).toHaveLength(0);
     expect(w.projection.selections).toHaveLength(1);
+    await expect(command({ action: "restore_last" })).rejects.toMatchObject({
+      status: 409,
+    });
   });
   it("records multiphase selection, opposite-side wins, ties, replay, corrections and reverse undo without official writes", async () => {
     const before = await db()

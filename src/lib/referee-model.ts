@@ -132,6 +132,7 @@ export type RefereeEventPayload =
     }
   | { type: "attempt_replayed"; pickId: string }
   | { type: "selection_voided"; selectionId: string }
+  | { type: "selection_restored"; selectionId: string }
   | { type: "settings_saved"; settings: RefereeSettings }
   | { type: "dependencies_reconfirmed" }
   | { type: "policy_configured"; policy: RefereePolicy; revision: number };
@@ -195,9 +196,25 @@ export function refereeOrderConflicts(
     })
     .map((s) => s.stepIndex + 1);
 }
-export function projectReferee(input: RefereeModelInput): RefereeProjection {
+/** A new BP decision or a new basis starts a different history branch. */
+export function lastRestorableSelectionId(
+  events: RefereeEvent[],
+): string | null {
+  const withdrawn: string[] = [];
+  for (const { payload } of events) {
+    if (payload.type === "selection_voided")
+      withdrawn.push(payload.selectionId);
+    else if (payload.type === "selection_restored") withdrawn.pop();
+    else if (payload.type !== "settings_saved") withdrawn.length = 0;
+  }
+  return withdrawn.at(-1) ?? null;
+}
+
+export function projectRefereeSelections(
+  events: Pick<RefereeEvent, "id" | "payload">[],
+) {
   const selections: RefereeSelection[] = [];
-  for (const event of input.events) {
+  for (const event of events) {
     const p = event.payload;
     if (p.type === "selection_recorded")
       selections.push({
@@ -224,9 +241,12 @@ export function projectReferee(input: RefereeModelInput): RefereeProjection {
     else if (p.type === "ex_declared") {
       const s = selections.find((s) => s.id === p.pickId);
       if (s) s.exMode = p.enabled;
-    } else if (p.type === "selection_voided") {
+    } else if (
+      p.type === "selection_voided" ||
+      p.type === "selection_restored"
+    ) {
       const s = selections.find((s) => s.id === p.selectionId);
-      if (s) s.voided = true;
+      if (s) s.voided = p.type === "selection_voided";
     } else if (p.type === "attempt_replayed") {
       const s = selections.find((s) => s.id === p.pickId);
       if (s)
@@ -246,6 +266,11 @@ export function projectReferee(input: RefereeModelInput): RefereeProjection {
       }
     }
   }
+  return selections;
+}
+
+export function projectReferee(input: RefereeModelInput): RefereeProjection {
+  const selections = projectRefereeSelections(input.events);
   const activeSelections = selections.filter((s) => !s.voided);
   const score: Record<string, number> = Object.fromEntries(
     input.teamIds.map((id) => [id, 0]),
@@ -370,6 +395,7 @@ export const refereeActionSchema = z.discriminatedUnion("action", [
     .strict(),
   z.object({ action: z.literal("replay_attempt"), pickId: z.uuid() }).strict(),
   z.object({ action: z.literal("void_last") }).strict(),
+  z.object({ action: z.literal("restore_last") }).strict(),
 ]);
 export type RefereeAction = z.infer<typeof refereeActionSchema>;
 export function validateRefereeAction(
@@ -408,6 +434,11 @@ export function validateRefereeAction(
       ...orders,
       ...(skipBans ? { skipBans: true } : {}),
     };
+  }
+  if (action.action === "restore_last") {
+    const selectionId = lastRestorableSelectionId(input.events);
+    if (!selectionId) throw new Error("There is no withdrawn step to restore.");
+    return { type: "selection_restored", selectionId };
   }
   if (action.action === "void_last") {
     if (!state.lastSelectionId) fail("There is no active step to withdraw.");

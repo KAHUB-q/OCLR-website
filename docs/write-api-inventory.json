@@ -449,7 +449,8 @@
           "start_attempt",
           "resolve_attempt",
           "replay_attempt",
-          "void_last"
+          "void_last",
+          "restore_last"
         ],
         "consumers": [
           "src/components/referee-panel.tsx"

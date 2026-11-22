@@ -57,6 +57,10 @@ export function refereeMessage(tr: AppTranslator, message: string): string {
       return tr("Attempt outcome recorded");
     case "attempt_replayed":
       return tr("Replay recorded");
+    case "selection_restored":
+      return tr("Selection restored");
+    case "There is no withdrawn step to restore.":
+      return tr("There is no withdrawn step to restore.");
     case "selection_voided":
       return tr("Selection withdrawn");
     case "settings_saved":

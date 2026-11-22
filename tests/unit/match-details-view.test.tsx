@@ -140,6 +140,26 @@ describe("match-page presentation", () => {
     expect(match(data)).not.toContain("Failed scores counted as 0");
   });
 
+  it("shows recorded MP scores alongside a referee result without assigning reviewed wins", () => {
+    const data = details();
+    const html = render(
+      <MatchDetailsView
+        details={data}
+        slug="s7"
+        teams={statisticsArchive.teams}
+        timeZone="UTC"
+        mpRecordOnly
+      />,
+    );
+    expect(html).toContain(`/community/matches/${data.sources[0].mpId}`);
+    expect(html).toContain("Actual MP totals");
+    expect(html).toContain("Recorded MP scores");
+    expect(html).toContain(data.games[0].scores[0].username);
+    expect(html).not.toContain("Reviewed played-map wins");
+    expect(html).not.toContain("Excluded from official result");
+    expect(html).not.toContain("Reviewed score");
+  });
+
   it("marks the recorded lobby side regardless of reviewed team mapping", () => {
     const data = details();
     data.rating = null;

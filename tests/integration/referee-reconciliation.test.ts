@@ -29,7 +29,10 @@ import {
 import { assertTestDatabase } from "../database";
 import { matchReview } from "../../src/lib/result-review";
 import { resultCommand } from "../../src/lib/results";
-import { publicFixture } from "../../src/lib/public-competition";
+import {
+  publicCompetition,
+  publicFixture,
+} from "../../src/lib/public-competition";
 import { refereeCommand } from "../../src/lib/referee";
 import { type RefereeWorkspace } from "../../src/lib/referee-workspace";
 import {
@@ -44,6 +47,7 @@ import {
   reconcileRefereeAttemptWrite,
   refereeReconciliationReceipt,
 } from "../../src/lib/referee-write-contracts";
+import { syntheticMatchId } from "../fixtures/match";
 import { matchSourceSchema } from "../../src/lib/match-model";
 import { extendedSchemas } from "../../src/lib/extended-read-resources";
 const origin = "https://oclr.example.test";
@@ -78,9 +82,9 @@ describe.skipIf(!url)("saved referee MP reconciliation boundaries", () => {
     vi.stubEnv("APP_URL", origin);
     vi.stubEnv("ADMIN_OSU_IDS", String(admin.osuId));
   });
-  beforeEach(async () => {
+  async function prepareFixture(openExhibition = false) {
     await db().execute(sql`TRUNCATE edition_state,users CASCADE`);
-    const setup = await seedRefereeFixture();
+    const setup = await seedRefereeFixture(true, openExhibition);
     fixtureId = setup.fixtureId;
     w = setup.workspace;
     async function run(extra: Record<string, unknown>) {
@@ -106,7 +110,8 @@ describe.skipIf(!url)("saved referee MP reconciliation boundaries", () => {
       action: "record_selection",
       entryId: w.maps.find((m) => m.beatmapId === 10001)!.id,
     });
-  });
+  }
+  beforeEach(() => prepareFixture());
   afterAll(async () => {
     await closeDb();
     vi.unstubAllEnvs();
@@ -253,66 +258,166 @@ describe.skipIf(!url)("saved referee MP reconciliation boundaries", () => {
       published?.result,
     );
   });
-  it("submits the recorded score below the win target after the fixture ends", async () => {
-    const winner = w.teams[1].id;
-    await refereeCommand(actor, "test-cup", fixtureId, {
-      action: "resolve_attempt",
-      pickId: w.projection.lastSelectionId,
-      status: "completed",
-      winnerTeamId: winner,
-      requestKey: randomUUID(),
-      expectedRevision: w.session!.revision,
-      dependencyFingerprint: w.dependencyFingerprint,
-    });
-    await db()
-      .update(fixtures)
-      .set({ status: "ended", version: w.fixture.version + 1 })
-      .where(eq(fixtures.id, fixtureId));
-    const view = await matchReview(actor, "test-cup", fixtureId);
-    const record = view.refereeReview!;
-    expect(record.blocker).toBeNull();
-    expect(record.dependencyFingerprint).not.toBe(w.dependencyFingerprint);
-    const command = {
-      action: "submit_referee",
-      confirmed: true,
-      expectedVersion: view.context.result!.version,
-      expectedFixtureVersion: view.context.fixture.version,
-      refereeRevision: record.revision,
-      dependencyFingerprint: record.dependencyFingerprint,
-      publicNote: "",
-      requestKey: randomUUID(),
-    };
-    await expect(
-      resultCommand(actor, "test-cup", fixtureId, {
-        ...command,
+  it.each([
+    "selected import",
+    "bound exhibition room",
+    "room without a snapshot",
+  ] as const)(
+    "publishes an ended fixture's recorded score with its %s",
+    async (evidence) => {
+      if (evidence !== "selected import") {
+        await prepareFixture(true);
+        await db()
+          .update(matchResults)
+          .set({ latestImportId: null })
+          .where(eq(matchResults.fixtureId, fixtureId));
+        await db()
+          .insert(resultAuditEvents)
+          .values({
+            fixtureId,
+            actorId: actor.osuId,
+            action: "referee_mp_bound",
+            detail: {
+              matchId:
+                evidence === "room without a snapshot"
+                  ? syntheticMatchId + 1
+                  : syntheticMatchId,
+            },
+          });
+      }
+      const winner = w.teams[1].id;
+      await refereeCommand(actor, "test-cup", fixtureId, {
+        action: "resolve_attempt",
+        pickId: w.projection.lastSelectionId,
+        status: "completed",
+        winnerTeamId: winner,
+        requestKey: randomUUID(),
+        expectedRevision: w.session!.revision,
         dependencyFingerprint: w.dependencyFingerprint,
-      }),
-    ).rejects.toMatchObject({ status: 409 });
-    const { review } = await resultCommand(
-      actor,
-      "test-cup",
-      fixtureId,
-      command,
-    );
-    expect(review.current?.proposal?.series).toMatchObject({
-      homeWins: 0,
-      awayWins: 1,
-      includedGames: 1,
-      winnerTeamId: winner,
-    });
-    expect(review.current?.proposal?.referee?.games).toEqual(record.games);
-    expect(review.published).toBeNull();
-    const approval = await resultCommand(admin, "test-cup", fixtureId, {
-      action: "approve_publish",
-      confirmed: true,
-      expectedVersion: review.context.result!.version,
-      expectedFixtureVersion: review.context.fixture.version,
-      revision: review.current!.revision,
-      progressionAcknowledged: true,
-      requestKey: randomUUID(),
-    });
-    expect(approval.review.published?.proposal?.series).toEqual(record.series);
-  });
+      });
+      await db()
+        .update(fixtures)
+        .set({ status: "ended", version: w.fixture.version + 1 })
+        .where(eq(fixtures.id, fixtureId));
+      const view = await matchReview(actor, "test-cup", fixtureId);
+      const record = view.refereeReview!;
+      expect(record.blocker).toBeNull();
+      expect(record.dependencyFingerprint).not.toBe(w.dependencyFingerprint);
+      const command = {
+        action: "submit_referee",
+        confirmed: true,
+        expectedVersion: view.context.result!.version,
+        expectedFixtureVersion: view.context.fixture.version,
+        refereeRevision: record.revision,
+        dependencyFingerprint: record.dependencyFingerprint,
+        publicNote: "",
+        requestKey: randomUUID(),
+      };
+      await expect(
+        resultCommand(actor, "test-cup", fixtureId, {
+          ...command,
+          dependencyFingerprint: w.dependencyFingerprint,
+        }),
+      ).rejects.toMatchObject({ status: 409 });
+      const { review } = await resultCommand(
+        actor,
+        "test-cup",
+        fixtureId,
+        command,
+      );
+      expect(review.current?.proposal?.series).toMatchObject({
+        homeWins: 0,
+        awayWins: 1,
+        includedGames: 1,
+        winnerTeamId: winner,
+      });
+      expect(review.current?.proposal?.referee?.games).toEqual(record.games);
+      expect(review.published).toBeNull();
+      expect((await publicFixture("test-cup", fixtureId))?.result).toBeNull();
+      const approval = await resultCommand(admin, "test-cup", fixtureId, {
+        action: "approve_publish",
+        confirmed: true,
+        expectedVersion: review.context.result!.version,
+        expectedFixtureVersion: review.context.fixture.version,
+        revision: review.current!.revision,
+        progressionAcknowledged: true,
+        requestKey: randomUUID(),
+      });
+      expect(approval.review.published?.proposal?.series).toEqual(
+        record.series,
+      );
+      const room =
+        evidence === "room without a snapshot"
+          ? syntheticMatchId + 1
+          : syntheticMatchId;
+      const [original] = await db()
+        .select()
+        .from(matchImports)
+        .where(eq(matchImports.fixtureId, fixtureId));
+      const saved = matchSourceSchema.parse(original.source);
+      const fingerprint = "e".repeat(64);
+      const [later] = await db()
+        .insert(matchImports)
+        .values({
+          fixtureId,
+          externalMatchId: room,
+          fingerprint,
+          source: {
+            ...saved,
+            match: { ...saved.match, id: room },
+            fingerprint,
+            games: [],
+          },
+          createdBy: actor.osuId,
+        })
+        .returning();
+      await db()
+        .update(matchResults)
+        .set({ latestImportId: later.id })
+        .where(eq(matchResults.fixtureId, fixtureId));
+      await db()
+        .insert(resultAuditEvents)
+        .values({
+          fixtureId,
+          actorId: actor.osuId,
+          action: "referee_mp_unbound",
+          detail: { matchId: room },
+        });
+      const schedule = await publicCompetition("test-cup");
+      const summary = schedule?.fixtures.find(
+        (f) => f.id === fixtureId,
+      )?.result;
+      expect(summary).toMatchObject({
+        mpUrl: `https://osu.ppy.sh/community/matches/${room}`,
+        homeWins: 0,
+        awayWins: 1,
+        games: [],
+        refereeGames: [{ winnerTeamId: winner }],
+      });
+      const detail = await publicFixture("test-cup", fixtureId);
+      expect(detail?.result).toEqual(summary);
+      if (evidence === "room without a snapshot") {
+        expect(detail?.details).toBeNull();
+      } else {
+        expect(detail?.details?.games.map((g) => g.gameId)).toEqual([1, 2, 3]);
+        expect(detail?.details?.games[0].scores[0].total).toBe(
+          saved.games[0].scores[0].total,
+        );
+        expect(detail?.details?.rating).toBeNull();
+        if (evidence === "bound exhibition room") {
+          expect(detail?.details?.games[2].scores).toContainEqual(
+            expect.objectContaining({
+              osuId: 9901005,
+              username: "Synthetic Open Player 9901005",
+              lobbyTeam: "blue",
+              teamId: w.teams[1].id,
+              mapping: "provider",
+            }),
+          );
+        }
+      }
+    },
+  );
   it("reads no automatic mappings and preserves official result state", async () => {
     const before = await db().select().from(matchResults);
     const data = await refereeReconciliation(actor, "test-cup", fixtureId);

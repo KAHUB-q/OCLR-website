@@ -15,6 +15,7 @@ function MapResultSummary({
   timeZone,
   exhibition,
   historical,
+  mpRecordOnly,
 }: {
   game: MatchDetailGame;
   index: number;
@@ -23,6 +24,7 @@ function MapResultSummary({
   timeZone: string;
   exhibition: boolean;
   historical: boolean;
+  mpRecordOnly: boolean;
 }) {
   const tr = useAppTranslations();
   const number = (value: number | null) =>
@@ -58,15 +60,17 @@ function MapResultSummary({
             {tr("MAP ")}
             {index + 1}
           </span>
-          <span className={styles.mapStatus}>
-            {game.included
-              ? exhibition
-                ? tr("Included in exhibition result")
-                : tr("Included in official result")
-              : exhibition
-                ? tr("Excluded from exhibition result")
-                : tr("Excluded from official result")}
-          </span>
+          {!mpRecordOnly && (
+            <span className={styles.mapStatus}>
+              {game.included
+                ? exhibition
+                  ? tr("Included in exhibition result")
+                  : tr("Included in official result")
+                : exhibition
+                  ? tr("Excluded from exhibition result")
+                  : tr("Excluded from official result")}
+            </span>
+          )}
         </div>
         <h3>
           {game.beatmap?.artist ? `${game.beatmap.artist} — ` : ""}
@@ -85,40 +89,44 @@ function MapResultSummary({
           )}
         </div>
       </header>
-      <section className={styles.reviewedTotals}>
-        <h4>{tr("Reviewed totals")}</h4>
-        {game.included ? (
-          <>
-            <dl className={styles.teamTotals}>
-              {teamNames.map((name, teamIndex) => (
-                <div
-                  key={teamIndex}
-                  className={
-                    teamIndex === winner ? styles.winningTotal : undefined
-                  }
-                >
-                  <dt>
-                    {name}
-                    {teamIndex === winner && (
-                      <span className={styles.winnerLabel}>{tr("Winner")}</span>
-                    )}
-                  </dt>
-                  <dd>{number(game.effectiveTotals[teamIndex])}</dd>
-                </div>
-              ))}
-            </dl>
-            {!complete || first === second ? (
-              <p className="small muted">
-                {tr("Winner")}:{" "}
-                {complete ? tr("Approved tied map") : tr("Not recorded")}
-              </p>
-            ) : null}
-          </>
-        ) : (
-          <p className="muted">{tr("Not applicable")}</p>
-        )}
-      </section>
-      <details className={styles.mpDetails}>
+      {!mpRecordOnly && (
+        <section className={styles.reviewedTotals}>
+          <h4>{tr("Reviewed totals")}</h4>
+          {game.included ? (
+            <>
+              <dl className={styles.teamTotals}>
+                {teamNames.map((name, teamIndex) => (
+                  <div
+                    key={teamIndex}
+                    className={
+                      teamIndex === winner ? styles.winningTotal : undefined
+                    }
+                  >
+                    <dt>
+                      {name}
+                      {teamIndex === winner && (
+                        <span className={styles.winnerLabel}>
+                          {tr("Winner")}
+                        </span>
+                      )}
+                    </dt>
+                    <dd>{number(game.effectiveTotals[teamIndex])}</dd>
+                  </div>
+                ))}
+              </dl>
+              {!complete || first === second ? (
+                <p className="small muted">
+                  {tr("Winner")}:{" "}
+                  {complete ? tr("Approved tied map") : tr("Not recorded")}
+                </p>
+              ) : null}
+            </>
+          ) : (
+            <p className="muted">{tr("Not applicable")}</p>
+          )}
+        </section>
+      )}
+      <details className={styles.mpDetails} open={mpRecordOnly || undefined}>
         <summary>{tr("Original MP and game details")}</summary>
         <dl className="detail-list">
           <div>
@@ -170,12 +178,14 @@ export function MatchDetailsView({
   teams,
   timeZone,
   historical = false,
+  mpRecordOnly = false,
 }: {
   details: MatchDetails | null;
   slug: string;
   teams: { id: string; name: string; exhibition?: boolean }[];
   timeZone: string;
   historical?: boolean;
+  mpRecordOnly?: boolean;
 }) {
   const tr = useAppTranslations();
   const exhibition = teams.some((t) => t.exhibition);
@@ -209,10 +219,12 @@ export function MatchDetailsView({
             {tr("Technical adjudication; recorded series score")}
           </p>
         )}
-        <p>
-          {tr("Reviewed played-map wins")}: {team(details.teamIds[0])} {wins[0]}{" "}
-          : {wins[1]} {team(details.teamIds[1])}
-        </p>
+        {!mpRecordOnly && (
+          <p>
+            {tr("Reviewed played-map wins")}: {team(details.teamIds[0])}{" "}
+            {wins[0]} : {wins[1]} {team(details.teamIds[1])}
+          </p>
+        )}
         <ul>
           {details.sources.map((s) => (
             <li key={s.mpId}>
@@ -228,7 +240,11 @@ export function MatchDetailsView({
           ))}
         </ul>
         {!details.games.length && (
-          <p>{tr("No approved scored games available for rating.")}</p>
+          <p>
+            {mpRecordOnly
+              ? tr("Match details unavailable.")
+              : tr("No approved scored games available for rating.")}
+          </p>
         )}
         {details.games.map((g, i) => (
           <article
@@ -244,6 +260,7 @@ export function MatchDetailsView({
               timeZone={timeZone}
               exhibition={exhibition}
               historical={historical}
+              mpRecordOnly={mpRecordOnly}
             />
             {g.rosterMapping && (
               <p className="notice">{tr("Team mapping adjusted")}</p>
@@ -263,7 +280,7 @@ export function MatchDetailsView({
             {!g.scores.length ? (
               <p>{tr("No public player scores available.")}</p>
             ) : (
-              <details open={g.included}>
+              <details open={mpRecordOnly || g.included}>
                 <summary>{tr("Player scores")}</summary>
                 <div
                   className="table-scroll"
@@ -273,7 +290,9 @@ export function MatchDetailsView({
                 >
                   <table className={styles.scores}>
                     <caption>
-                      {tr("Actual MP scores and reviewed contribution")}
+                      {mpRecordOnly
+                        ? tr("Recorded MP scores")
+                        : tr("Actual MP scores and reviewed contribution")}
                     </caption>
                     <thead>
                       <tr>
@@ -281,7 +300,9 @@ export function MatchDetailsView({
                         <th scope="col">{tr("Team")}</th>
                         <th scope="col">{tr("Lobby team / slot")}</th>
                         <th scope="col">{tr("Score")}</th>
-                        <th scope="col">{tr("Reviewed score")}</th>
+                        {!mpRecordOnly && (
+                          <th scope="col">{tr("Reviewed score")}</th>
+                        )}
                         {g.scores.some(
                           (s) => (s.statisticsMultiplier ?? 1) !== 1,
                         ) && <th scope="col">{tr("Statistics score")}</th>}
@@ -356,11 +377,13 @@ export function MatchDetailsView({
                             / {number(s.slot)}
                           </td>
                           <td>{number(s.total)}</td>
-                          <td>
-                            {s.included
-                              ? number(s.effectiveTotal)
-                              : tr("Not applicable")}
-                          </td>
+                          {!mpRecordOnly && (
+                            <td>
+                              {s.included
+                                ? number(s.effectiveTotal)
+                                : tr("Not applicable")}
+                            </td>
+                          )}
                           {g.scores.some(
                             (row) => (row.statisticsMultiplier ?? 1) !== 1,
                           ) && (
@@ -429,27 +452,29 @@ export function MatchDetailsView({
           </article>
         ))}
       </section>
-      <section className="section-space stack">
-        <h2>{tr("Match Rating")}</h2>
-        {exhibition ? (
-          <p className="notice">
-            {tr(
-              "Exhibition results do not count toward official standings or career history.",
-            )}
-          </p>
-        ) : details.rating ? (
-          <PlayerRatings
-            report={details.rating}
-            slug={slug}
-            historical={historical}
-            compact
-          />
-        ) : (
-          <p role="status" className="notice">
-            {tr("Rating unavailable; approved score data needs review.")}
-          </p>
-        )}
-      </section>
+      {!mpRecordOnly && (
+        <section className="section-space stack">
+          <h2>{tr("Match Rating")}</h2>
+          {exhibition ? (
+            <p className="notice">
+              {tr(
+                "Exhibition results do not count toward official standings or career history.",
+              )}
+            </p>
+          ) : details.rating ? (
+            <PlayerRatings
+              report={details.rating}
+              slug={slug}
+              historical={historical}
+              compact
+            />
+          ) : (
+            <p role="status" className="notice">
+              {tr("Rating unavailable; approved score data needs review.")}
+            </p>
+          )}
+        </section>
+      )}
     </>
   );
 }

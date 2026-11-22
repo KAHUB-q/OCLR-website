@@ -182,9 +182,10 @@ async function Issue271Page({
           </InfoNote>
         )}
       </section>
-      {!result?.refereeGames && (
+      {(f.details || !result?.refereeGames) && (
         <MatchDetailsView
           details={f.details}
+          mpRecordOnly={Boolean(result?.refereeGames)}
           slug={slug}
           teams={[f.home.team, f.away.team].flatMap((t) => (t ? [t] : []))}
           timeZone={f.timeZone}

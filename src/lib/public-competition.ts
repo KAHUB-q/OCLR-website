@@ -9,11 +9,22 @@ import {
   matchGames,
   matchResults,
   resultRevisions,
+  resultAuditEvents,
   teams,
   tournamentRounds,
   tournamentStages,
 } from "@/db/schema";
-import { and, asc, eq, isNotNull, isNull } from "drizzle-orm";
+import {
+  and,
+  asc,
+  desc,
+  eq,
+  inArray,
+  isNotNull,
+  isNull,
+  lte,
+  sql,
+} from "drizzle-orm";
 import type { RatingReader } from "./approved-rating-games";
 import {
   groupConfigurationSchema,
@@ -54,6 +65,62 @@ export type {
 import type { ExplicitReadData } from "./explicit-read-contracts";
 type PublicCompetition = ExplicitReadData<"publicCompetition">;
 type PublicFixtureRead = ExplicitReadData<"publicFixture">;
+/** Resolve evidence for this published revision without following later imports. */
+function publishedMpEvidence(tx: RatingReader) {
+  const submission = tx
+    .select({
+      id: sql<string>`${resultAuditEvents.detail} #>> '{after,latestImportId}'`,
+    })
+    .from(resultAuditEvents)
+    .where(
+      and(
+        eq(resultAuditEvents.fixtureId, resultRevisions.fixtureId),
+        eq(resultAuditEvents.action, "result_submit_referee"),
+        sql`${resultAuditEvents.detail}->>'revision' = ${resultRevisions.revision}::text`,
+      ),
+    )
+    .limit(1);
+  // Reconstruct the binding at submission, including rebinds and removals.
+  const binding = tx
+    .select({
+      id: sql<number>`case when ${resultAuditEvents.action} = 'referee_mp_bound'
+      then (${resultAuditEvents.detail}->>'matchId')::bigint end`,
+    })
+    .from(resultAuditEvents)
+    .where(
+      and(
+        eq(resultAuditEvents.fixtureId, resultRevisions.fixtureId),
+        inArray(resultAuditEvents.action, [
+          "referee_mp_bound",
+          "referee_mp_unbound",
+        ]),
+        lte(resultAuditEvents.createdAt, resultRevisions.createdAt),
+      ),
+    )
+    .orderBy(desc(resultAuditEvents.createdAt), desc(resultAuditEvents.id))
+    .limit(1);
+  const room = sql`case when ${resultRevisions.proposal} ? 'referee' then (${binding}) end`;
+  const snapshot = tx
+    .select({ id: matchImports.id })
+    .from(matchImports)
+    .where(
+      and(
+        eq(matchImports.fixtureId, resultRevisions.fixtureId),
+        eq(matchImports.externalMatchId, room),
+        lte(matchImports.createdAt, resultRevisions.createdAt),
+      ),
+    )
+    .orderBy(desc(matchImports.createdAt), desc(matchImports.id))
+    .limit(1);
+  return {
+    importId: sql`coalesce(${resultRevisions.importId}, case when ${resultRevisions.proposal} ? 'referee'
+      then coalesce((${submission})::uuid, (${snapshot})) end)`,
+    roomId: sql<
+      number | null
+    >`coalesce(${matchImports.externalMatchId}, ${room})`.mapWith(Number),
+  };
+}
+
 async function databasePublicCompetition(
   slug: string,
   reader?: RatingReader,
@@ -97,6 +164,7 @@ async function databasePublicCompetition(
         ),
       );
     // Publication and approval predicates are enforced in SQL, before any public projection.
+    const mp = publishedMpEvidence(tx);
     const rows = await tx
       .select({
         fixture: fixtures,
@@ -106,7 +174,7 @@ async function databasePublicCompetition(
         approvedAt: resultRevisions.approvedAt,
         revision: resultRevisions.revision,
         resultPublishedAt: matchResults.publishedAt,
-        mpId: matchImports.externalMatchId,
+        mpId: mp.roomId,
         vodUrl: fixtureRecordings.vodUrl,
         publicPoolId: mappools.id,
         publicPoolName: mappools.name,
@@ -147,7 +215,7 @@ async function databasePublicCompetition(
       .leftJoin(
         matchImports,
         and(
-          eq(matchImports.id, resultRevisions.importId),
+          eq(matchImports.id, mp.importId),
           eq(matchImports.fixtureId, fixtures.id),
         ),
       )
@@ -249,7 +317,7 @@ async function databasePublicCompetition(
         aligned &&
         row.approvedAt &&
         row.resultPublishedAt &&
-        (p!.referee ? row.mpId === null : row.mpId !== null) &&
+        (p!.referee || row.mpId !== null) &&
         row.revision
           ? {
               revision: row.revision,
@@ -418,7 +486,7 @@ async function databasePublicFixture(
         .innerJoin(
           matchImports,
           and(
-            eq(matchImports.id, resultRevisions.importId),
+            eq(matchImports.id, publishedMpEvidence(tx).importId),
             eq(matchImports.fixtureId, resultRevisions.fixtureId),
           ),
         )
@@ -435,44 +503,48 @@ async function databasePublicFixture(
       if (
         !proposal.success ||
         !source.success ||
-        proposal.data.sourceFingerprint !== row.fingerprint ||
+        (!proposal.data.referee &&
+          proposal.data.sourceFingerprint !== row.fingerprint) ||
+        source.data.match.id !== fixture.result.mpId ||
         source.data.fingerprint !== row.fingerprint
       )
         return result;
-      const rows = await tx
-        .select()
-        .from(matchGames)
-        .where(eq(matchGames.importId, row.importId));
-      const parsed = rows.map((r) => matchGameSchema.safeParse(r.data));
-      if (
-        parsed.some((g) => !g.success) ||
-        proposal.data.games.some(
-          (g) => !rows.some((r) => r.externalGameId === g.gameId),
-        )
-      )
-        return result;
-      const identities = fixture.home.team?.exhibition
-        ? new Map(
-            proposal.data.games.flatMap((game) =>
-              (game.attribution ?? []).flatMap((score) =>
-                score.osuId === null
-                  ? []
-                  : [
-                      [
-                        score.osuId,
-                        source.data.players?.find(
-                          (p) => p.osuId === score.osuId,
-                        )?.username ?? String(score.osuId),
-                      ] as const,
-                    ],
-              ),
-            ),
+      const rawMp = Boolean(proposal.data.referee);
+      let games = source.data.games;
+      if (!rawMp) {
+        const rows = await tx
+          .select()
+          .from(matchGames)
+          .where(eq(matchGames.importId, row.importId));
+        const parsed = rows.map((r) => matchGameSchema.safeParse(r.data));
+        if (
+          parsed.some((g) => !g.success) ||
+          proposal.data.games.some(
+            (g) => !rows.some((r) => r.externalGameId === g.gameId),
           )
-        : await ratingIdentities(slug, tx, proposal.data.teamIds);
-      const ezScoreMultiplier = proposal.data.rulesSnapshot
-        ? ((await readTournament(slug, tx, true))?.edition.ezScoreMultiplier ??
-          1)
-        : 1;
+        )
+          return result;
+        games = parsed.flatMap((g) => (g.success ? [g.data] : []));
+      }
+      const openExhibition = Boolean(fixture.home.team?.exhibition);
+      let identities: Map<number, string>;
+      if (openExhibition) {
+        const names = new Map(
+          source.data.players?.map((p) => [p.osuId, p.username]),
+        );
+        const scores = rawMp
+          ? games.flatMap((game) => game.scores)
+          : proposal.data.games.flatMap((game) => game.attribution ?? []);
+        identities = new Map(
+          scores.flatMap(({ osuId }) =>
+            osuId === null
+              ? []
+              : [[osuId, names.get(osuId) ?? String(osuId)] as const],
+          ),
+        );
+      } else {
+        identities = await ratingIdentities(slug, tx, proposal.data.teamIds);
+      }
       const pool = fixture.pool;
       const publicPool =
         pool && proposal.data.poolSnapshot?.poolId === pool.id
@@ -489,26 +561,30 @@ async function databasePublicFixture(
                 .where(eq(mappoolEntries.poolId, pool.id)),
             }
           : undefined;
-      const details = withStatisticsScores(
-        reviewedMatchDetails(
-          proposal.data,
-          parsed.flatMap((g) => (g.success ? [g.data] : [])),
-          fixture.result.mpId,
-          fixture.result.revision,
-          identities,
-          publicPool,
-        ),
-        ezScoreMultiplier,
+      const played = reviewedMatchDetails(
+        proposal.data,
+        games,
+        fixture.result.mpId,
+        fixture.result.revision,
+        identities,
+        publicPool,
+        openExhibition && rawMp,
       );
-      details.sources[0].complete = source.data.complete;
-      const games = (await approvedRatingGames(slug, tx)).filter(
+      played.sources[0].complete = source.data.complete;
+      if (rawMp) return { ...fixture, details: played };
+      const ezScoreMultiplier = proposal.data.rulesSnapshot
+        ? ((await readTournament(slug, tx, true))?.edition.ezScoreMultiplier ??
+          1)
+        : 1;
+      const details = withStatisticsScores(played, ezScoreMultiplier);
+      const ratedGames = (await approvedRatingGames(slug, tx)).filter(
         (g) => g.fixtureId === id && g.revision === fixture.result!.revision,
       );
       if (
         fixture.stage !== "exhibition" &&
-        !games.some((g) => g.scores.some((s) => !identities.has(s.userId)))
+        !ratedGames.some((g) => g.scores.some((s) => !identities.has(s.userId)))
       )
-        details.rating = ratingSnapshot(games, identities);
+        details.rating = ratingSnapshot(ratedGames, identities);
       return { ...fixture, details };
     },
     { isolationLevel: "repeatable read", accessMode: "read only" },

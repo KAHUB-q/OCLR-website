@@ -649,7 +649,6 @@ function RefereeResultReview({
 }) {
   const tr = useAppTranslations();
   const record = data.refereeReview!;
-  const [confirmed, setConfirmed] = useState(false);
   const [publicNote, setPublicNote] = useState("");
   return (
     <ReadOnlyFields>
@@ -663,16 +662,7 @@ function RefereeResultReview({
         </p>
         <RefereeResultGames data={data} games={record.games} />
         {record.blocker ? (
-          <p className="notice">
-            {record.blocker ===
-            "Reconfirm the fixture dependencies in the referee workspace."
-              ? tr(
-                  "Reconfirm the fixture dependencies in the referee workspace.",
-                )
-              : tr(
-                  "The saved referee outcomes do not complete the configured series.",
-                )}
-          </p>
+          <p className="notice">{tr(record.blocker)}</p>
         ) : (
           <>
             <label className="field">
@@ -686,30 +676,18 @@ function RefereeResultReview({
                 onChange={(e) => setPublicNote(e.target.value)}
               />
             </label>
-            <label className="check-label">
-              <input
-                type="checkbox"
-                checked={confirmed}
-                onChange={(e) => setConfirmed(e.target.checked)}
-              />
-              {tr(
-                "I reviewed the referee-recorded map outcomes and confirmed the series result",
-              )}
-            </label>
-            {confirmed && (
-              <Operation
-                label={tr("Submit proposed result")}
-                action="submit_referee"
-                data={data}
-                slug={slug}
-                extra={{
-                  refereeRevision: record.revision,
-                  dependencyFingerprint: record.dependencyFingerprint,
-                  publicNote,
-                }}
-                onError={onError}
-              />
-            )}
+            <Operation
+              label={tr("Submit proposed result")}
+              action="submit_referee"
+              data={data}
+              slug={slug}
+              extra={{
+                refereeRevision: record.revision,
+                dependencyFingerprint: record.dependencyFingerprint,
+                publicNote,
+              }}
+              onError={onError}
+            />
           </>
         )}
       </section>

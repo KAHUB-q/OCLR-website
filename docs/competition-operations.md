@@ -443,9 +443,11 @@ for score evidence, warnings, substitutions and exceptions.
 
 **Referee record** uses the final attempt of each active pick or tiebreak from
 the saved referee session, including corrections and replays. Staff can submit
-a complete series from that record even without an MP import. The proposal stores
-the session revision and map outcomes. Changes to the session or its dependencies
-require a fresh review before approval or publication. Only the approved,
+the score shown in match review, including a series that ended before the
+configured win target or map count. A fixture or configuration edit before
+review does not require a trip back to the referee panel. Submission records
+the reviewed revision, current dependency fingerprint and individual map
+outcomes. Further changes require a fresh review before submission or approval. Only the approved,
 published revision feeds public results, standings and bracket advancement.
 Referee outcomes contribute map wins and allowed ties. Player scores, appearances
 and Rating require actual reviewed MP data.

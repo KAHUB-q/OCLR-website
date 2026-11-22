@@ -10399,6 +10399,23 @@
                       "properties": {
                         "type": {
                           "type": "string",
+                          "const": "selection_restored"
+                        },
+                        "selectionId": {
+                          "type": "string"
+                        }
+                      },
+                      "required": [
+                        "type",
+                        "selectionId"
+                      ],
+                      "additionalProperties": false
+                    },
+                    {
+                      "type": "object",
+                      "properties": {
+                        "type": {
+                          "type": "string",
                           "const": "settings_saved"
                         },
                         "settings": {
@@ -29920,7 +29937,7 @@
       "patch": {
         "operationId": "changeRefereeWorkspace",
         "summary": "Save referee settings and record provisional fixture events",
-        "description": "Requires record_results and fixture access. Commands check the current session revision and dependency fingerprint. Policy changes also check the policy revision and configuration capability. Repeating the same request key and payload returns the original event receipt with the current workspace.",
+        "description": "Requires record_results and fixture access. Commands check the current session revision and dependency fingerprint. restore_last reverses the latest outstanding withdrawal on the saved session basis, including its recorded attempts. A new BP decision or configuration confirmation clears the restore history. Policy changes also check the policy revision and configuration capability. Repeating the same request key and payload returns the original event receipt with the current workspace.",
         "security": [
           {
             "browserSession": []
@@ -30625,6 +30642,36 @@
                       "action": {
                         "type": "string",
                         "const": "void_last"
+                      },
+                      "requestKey": {
+                        "type": "string",
+                        "format": "uuid",
+                        "pattern": "^([0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[1-8][0-9a-fA-F]{3}-[89abAB][0-9a-fA-F]{3}-[0-9a-fA-F]{12}|00000000-0000-0000-0000-000000000000|ffffffff-ffff-ffff-ffff-ffffffffffff)$"
+                      },
+                      "expectedRevision": {
+                        "type": "integer",
+                        "minimum": 0,
+                        "maximum": 9007199254740991
+                      },
+                      "dependencyFingerprint": {
+                        "type": "string",
+                        "pattern": "^[a-f0-9]{64}$"
+                      }
+                    },
+                    "required": [
+                      "action",
+                      "requestKey",
+                      "expectedRevision",
+                      "dependencyFingerprint"
+                    ],
+                    "additionalProperties": false
+                  },
+                  {
+                    "type": "object",
+                    "properties": {
+                      "action": {
+                        "type": "string",
+                        "const": "restore_last"
                       },
                       "requestKey": {
                         "type": "string",

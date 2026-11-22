@@ -71,6 +71,7 @@ export function scoreNoticeSource(
   const map = workspace.maps.find((item) => item.id === selection?.entryId);
   if (
     !map ||
+    selectionSyncSuperseded(workspace, event, outcome.pickId) ||
     !attempt ||
     attempt.id !== outcome.attemptId ||
     attempt.status !== outcome.status ||
@@ -129,6 +130,21 @@ export function scoreNoticeSource(
   const text = header + red + score + blue + footer;
   return isScoreNotice(text) ? text : null;
 }
+/** Restoring history must not reactivate pending IRC commands from before the correction. */
+export function selectionSyncSuperseded(
+  workspace: RefereeWorkspace,
+  event: RefereeEvent,
+  selectionId: string,
+) {
+  return workspace.events.some(
+    ({ ordinal, payload }) =>
+      ordinal > event.ordinal &&
+      (payload.type === "selection_voided" ||
+        payload.type === "selection_restored") &&
+      payload.selectionId === selectionId,
+  );
+}
+
 export function bpSyncSource(workspace: RefereeWorkspace, eventId: string) {
   const event = workspace.events.find((e) => e.id === eventId);
   if (!event) return null;

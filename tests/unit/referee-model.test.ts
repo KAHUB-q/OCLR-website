@@ -177,6 +177,25 @@ describe("referee finite workflow", () => {
     expect(projectReferee(i).activeSelections.some((s) => s.exMode)).toBe(
       false,
     );
+    act(i, { action: "void_last" });
+    act(i, { action: "restore_last" });
+    expect(projectReferee(i).activeSelections.map((s) => s.kind)).toEqual([
+      "ban",
+    ]);
+    act(i, { action: "restore_last" });
+    expect(projectReferee(i).activeSelections.at(-1)).toMatchObject({
+      id: pick,
+      exMode: true,
+      attempts: [{ status: "aborted" }, { status: "pending" }],
+    });
+    expect(() => act(i, { action: "restore_last" })).toThrow(
+      /no withdrawn step/,
+    );
+    act(i, { action: "void_last" });
+    act(i, { action: "record_selection", entryId: i.maps[2].id });
+    expect(() => act(i, { action: "restore_last" })).toThrow(
+      /no withdrawn step/,
+    );
     const missing = input();
     act(missing, { action: "record_selection", entryId: missing.maps[0].id });
     const next = act(missing, {

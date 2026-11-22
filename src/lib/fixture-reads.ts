@@ -45,6 +45,7 @@ import type { ExplicitReadData } from "./explicit-read-contracts";
 import type { FixtureReviewContext } from "./fixture-read-contracts";
 import { assertRemoteSubject, frontendResource } from "./frontend-resource";
 import { HttpError } from "./http-error";
+import { projectRefereeSelections } from "./referee-model";
 
 type Reader = Pick<ReturnType<typeof db>, "select">;
 export type { FixtureReviewContext } from "./fixture-read-contracts";
@@ -403,29 +404,19 @@ async function databaseFixtureForReview(
       .from(refereeEvents)
       .where(eq(refereeEvents.fixtureId, id))
       .orderBy(refereeEvents.ordinal);
-    const exPicks = new Map<
-      string,
-      { id: string; beatmapId: number; exMode: boolean }
-    >();
-    for (const event of exEvents) {
-      const p = event.payload;
-      if (p.type === "selection_recorded" && p.kind !== "ban")
-        exPicks.set(event.id, {
-          id: event.id,
-          beatmapId: p.beatmapId,
-          exMode: false,
-        });
-      else if (p.type === "ex_declared") {
-        const pick = exPicks.get(p.pickId);
-        if (pick) pick.exMode = p.enabled;
-      } else if (p.type === "selection_voided") exPicks.delete(p.selectionId);
-    }
+    const exDeclarations = projectRefereeSelections(exEvents)
+      .filter((selection) => selection.kind !== "ban" && !selection.voided)
+      .map(({ id, beatmapId, exMode }) => ({
+        id,
+        beatmapId,
+        exMode: Boolean(exMode),
+      }));
     const [result] = await tx
       .select()
       .from(matchResults)
       .where(eq(matchResults.fixtureId, id));
     return {
-      exDeclarations: [...exPicks.values()],
+      exDeclarations,
       fixture: {
         ...fixtureRecord,
         homeTeamId: home.id,

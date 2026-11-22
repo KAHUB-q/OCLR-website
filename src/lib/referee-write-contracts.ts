@@ -205,7 +205,7 @@ export const changeRefereeWorkspaceWrite = {
   request: refereeCommandSchema,
   summary: "Save referee settings and record provisional fixture events",
   description:
-    "Requires record_results and fixture access. Commands check the current session revision and dependency fingerprint. Policy changes also check the policy revision and configuration capability. Repeating the same request key and payload returns the original event receipt with the current workspace.",
+    "Requires record_results and fixture access. Commands check the current session revision and dependency fingerprint. restore_last reverses the latest outstanding withdrawal on the saved session basis, including its recorded attempts. A new BP decision or configuration confirmation clears the restore history. Policy changes also check the policy revision and configuration capability. Repeating the same request key and payload returns the original event receipt with the current workspace.",
   successDescription:
     "Event receipt and the current private referee workspace.",
   response: {

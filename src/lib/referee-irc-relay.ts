@@ -30,6 +30,7 @@ import {
 } from "./referee-relay-contract";
 import {
   bpSyncSource,
+  selectionSyncSuperseded,
   isBpNotice,
   isScoreNotice,
   scoreNoticePrefix,
@@ -398,6 +399,7 @@ export async function refereeIrcRelay(
               !source ||
               !w.canRecord ||
               source.selection.voided !== a.withdrawn ||
+              selectionSyncSuperseded(w, source.event, source.selectionId) ||
               (a.step !== "notice" &&
                 w.projection.lastSelectionId !== a.selectionId) ||
               (w.session &&

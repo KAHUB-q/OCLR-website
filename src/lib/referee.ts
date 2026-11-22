@@ -111,9 +111,13 @@ export async function refereeCommand(
       workspace.session.dependencyFingerprint !==
         workspace.dependencyFingerprint,
     );
+    // Both corrections operate on the saved session basis, even after a fixture ends.
+    const correctingSelection =
+      command.action === "void_last" || command.action === "restore_last";
     if (
       stale &&
-      !["void_last", "reconfirm_dependencies"].includes(command.action)
+      !correctingSelection &&
+      command.action !== "reconfirm_dependencies"
     )
       throw new HttpError(
         409,
@@ -184,7 +188,7 @@ export async function refereeCommand(
       payload = { type: "dependencies_reconfirmed" };
     } else {
       if (
-        command.action !== "void_last" &&
+        !correctingSelection &&
         command.action !== "set_order" &&
         workspace.readiness.length
       )

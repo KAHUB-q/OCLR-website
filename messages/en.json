@@ -5033,6 +5033,9 @@
     "mce803fdc0dd6": "The leaderboard shows the osu! name and points of every player with a scored prediction.",
     "m83ebca835736": "After the match ends, anyone can see your osu! name, pick and optional score.",
     "mb7fc3ff5e377": "Predictions are revealed after the match ends.",
-    "m403a9ee3da3b": "Signed-in players can see osu! names and points on the match prediction leaderboard. After each match ends, anyone can see osu! names, selections and scores submitted under the named prediction rules."
+    "m403a9ee3da3b": "Signed-in players can see osu! names and points on the match prediction leaderboard. After each match ends, anyone can see osu! names, selections and scores submitted under the named prediction rules.",
+    "m1c2c899025ac": "Restore withdrawn Ban / Pick",
+    "m5fd5b9b933e4": "Selection restored",
+    "m1b91c7f1f361": "There is no withdrawn step to restore."
   }
 }

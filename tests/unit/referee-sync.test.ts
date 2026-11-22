@@ -2,6 +2,7 @@ import { describe, it, expect } from "vitest";
 import {
   isBpNotice,
   bpSyncSource,
+  selectionSyncSuperseded,
   isScoreNotice,
   scoreNoticeSource,
 } from "../../src/lib/referee-sync";
@@ -68,6 +69,31 @@ describe("BP notification and Mods evidence", () => {
     expect(long).toContain("🌌 1 - 0 🌠");
     expect(long).not.toContain("�");
     expect(isScoreNotice(`${long}\n`)).toBe(false);
+    const restored = workspace([
+      ...w.events,
+      {
+        ...shared,
+        id: id(703),
+        ordinal: 5,
+        payload: { type: "selection_voided", selectionId: pickId },
+      },
+      {
+        ...shared,
+        id: id(704),
+        ordinal: 6,
+        payload: { type: "selection_restored", selectionId: pickId },
+      },
+    ]);
+    expect(restored.projection.score).toEqual(w.projection.score);
+    expect(
+      selectionSyncSuperseded(
+        restored,
+        restored.events.find((event) => event.id === pickId)!,
+        pickId,
+      ),
+    ).toBe(true);
+    expect(scoreNoticeSource(restored, outcome)).toBeNull();
+    expect(bpSyncSource(restored, id(704))).toBeNull();
   });
   it("uses saved BP identities, sanitizes authored text, and rejects command injection", () => {
     const w = workspace();

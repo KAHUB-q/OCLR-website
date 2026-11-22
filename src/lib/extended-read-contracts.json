@@ -9361,6 +9361,18 @@
                   {
                     "type": "object",
                     "properties": {
+                      "type": {
+                        "type": "string",
+                        "const": "selection_restored"
+                      },
+                      "selectionId": { "type": "string" }
+                    },
+                    "required": ["type", "selectionId"],
+                    "additionalProperties": false
+                  },
+                  {
+                    "type": "object",
+                    "properties": {
                       "type": { "type": "string", "const": "settings_saved" },
                       "settings": { "$ref": "#/$defs/Read013e8c9616bd" }
                     },

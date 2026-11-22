@@ -214,6 +214,7 @@ export function reviewedMatchDetails(
       position: number;
     }[];
   },
+  useLobbySides = false,
 ): MatchDetails {
   const snapshot = proposal.poolSnapshot;
   const projected = games.map((g) => {
@@ -231,7 +232,12 @@ export function reviewedMatchDetails(
       const substitution = proposal.rulesSnapshot?.allowSubstitutions
         ? decision?.substitutions.find((a) => a.osuId === s.osuId)
         : undefined;
+      const lobbyTeamId =
+        useLobbySides && (s.team === "red" || s.team === "blue")
+          ? proposal.teamIds[s.team === "red" ? 0 : 1]
+          : null;
       const teamId =
+        lobbyTeamId ??
         attribution?.teamId ??
         (roster.length === 1 ? roster[0].teamId : substitution?.teamId) ??
         null;
@@ -242,12 +248,14 @@ export function reviewedMatchDetails(
           teamId,
           !!reviewed,
           proposal.rulesSnapshot?.failedScorePolicy === "zero",
-          attribution?.evidence ??
-            (roster.length === 1
-              ? "roster"
-              : substitution
-                ? "substitution"
-                : null),
+          lobbyTeamId
+            ? "provider"
+            : (attribution?.evidence ??
+                (roster.length === 1
+                  ? "roster"
+                  : substitution
+                    ? "substitution"
+                    : null)),
         ),
       ];
     });

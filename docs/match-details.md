@@ -32,10 +32,14 @@ beatmap ID. Reviewers still explicitly select valid games, and existing eligibil
 MP coverage, uniqueness, technical adjudication and series reconciliation checks
 remain required. Merely importing a replay does not include it.
 
-Ordinary result revisions currently approve one import/MP. The details follow that
-exact import; unrelated or newer imports are not treated as additional approved
-rooms. Historical fixtures support all recorded MP rooms atomically. This change
-does not invent a new multi-import ordinary-result approval workflow.
+An MP-reviewed result uses its approved import. A referee-recorded result publishes
+the referee's series and map outcomes alongside the MP selected at submission.
+If there was no selected import, the public page uses the room bound to the
+fixture at submission and its latest saved snapshot at that time. A bound room
+with no saved games still has a public link. Subsequent imports and room changes
+do not change the published revision. The MP section shows the recorded games
+and player scores. Only reviewed contributions count toward results and ratings.
+Historical fixtures can publish several reviewed rooms together.
 
 ## Match-page presentation (#377)
 

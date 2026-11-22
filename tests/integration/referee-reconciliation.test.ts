@@ -285,6 +285,16 @@ describe.skipIf(!url)("saved referee MP reconciliation boundaries", () => {
             },
           });
       }
+      if (evidence === "bound exhibition room") {
+        await db()
+          .insert(resultAuditEvents)
+          .values({
+            fixtureId,
+            actorId: actor.osuId,
+            action: "referee_mp_unbound",
+            detail: { matchId: syntheticMatchId },
+          });
+      }
       const winner = w.teams[1].id;
       await refereeCommand(actor, "test-cup", fixtureId, {
         action: "resolve_attempt",
@@ -380,8 +390,8 @@ describe.skipIf(!url)("saved referee MP reconciliation boundaries", () => {
         .values({
           fixtureId,
           actorId: actor.osuId,
-          action: "referee_mp_unbound",
-          detail: { matchId: room },
+          action: "referee_mp_bound",
+          detail: { matchId: room + 10 },
         });
       const schedule = await publicCompetition("test-cup");
       const summary = schedule?.fixtures.find(

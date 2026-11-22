@@ -14,17 +14,7 @@ import {
   tournamentRounds,
   tournamentStages,
 } from "@/db/schema";
-import {
-  and,
-  asc,
-  desc,
-  eq,
-  inArray,
-  isNotNull,
-  isNull,
-  lte,
-  sql,
-} from "drizzle-orm";
+import { and, asc, desc, eq, isNotNull, isNull, lte, sql } from "drizzle-orm";
 import type { RatingReader } from "./approved-rating-games";
 import {
   groupConfigurationSchema,
@@ -80,20 +70,16 @@ function publishedMpEvidence(tx: RatingReader) {
       ),
     )
     .limit(1);
-  // Reconstruct the binding at submission, including rebinds and removals.
+  // Stopping automatic scoring keeps the bound room and its saved games.
   const binding = tx
     .select({
-      id: sql<number>`case when ${resultAuditEvents.action} = 'referee_mp_bound'
-      then (${resultAuditEvents.detail}->>'matchId')::bigint end`,
+      id: sql<number>`(${resultAuditEvents.detail}->>'matchId')::bigint`,
     })
     .from(resultAuditEvents)
     .where(
       and(
         eq(resultAuditEvents.fixtureId, resultRevisions.fixtureId),
-        inArray(resultAuditEvents.action, [
-          "referee_mp_bound",
-          "referee_mp_unbound",
-        ]),
+        eq(resultAuditEvents.action, "referee_mp_bound"),
         lte(resultAuditEvents.createdAt, resultRevisions.createdAt),
       ),
     )

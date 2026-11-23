@@ -6,7 +6,7 @@ import { BwsSummary } from "../../src/components/bws-summary";
 import { CompactPlayerRatings } from "../../src/components/player-profile-ratings";
 import type { ProfileRatings } from "../../src/lib/profile-ratings-model";
 import { sipResponse } from "../fixtures/sip-response";
-import { RankChart } from "../../src/components/rank-chart";
+import { RankChart, rankChartPoints } from "../../src/components/rank-chart";
 import { PreviousUsernames } from "../../src/components/previous-usernames";
 import { rankTierPalette } from "../../src/lib/rank-tier";
 import en from "../../messages/en.json";
@@ -166,7 +166,7 @@ createRoot(document.getElementById("root")!).render(
           )}
           <div className="profile-body">
             <div className="rank-chart-card">
-              <RankChart data={history} globalRank={12345} />
+              <RankChart points={rankChartPoints(history, 12345)} />
             </div>
             <dl className="profile-statistics">
               {[

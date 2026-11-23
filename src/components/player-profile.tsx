@@ -2,7 +2,7 @@
 
 import { useAppTranslations } from "@/i18n/shared";
 import { BwsSummary } from "./bws-summary";
-import { RankChart } from "./rank-chart";
+import { RankChart, rankChartPoints } from "./rank-chart";
 import { rankTierPalette } from "@/lib/rank-tier";
 import { PlayerIdBadge } from "./player-id-badge";
 import { ProfileLevel } from "./profile-level";
@@ -58,7 +58,12 @@ export function PlayerProfile({
   const p = snapshot.profile;
   const badges = p.badges?.length ? p.badges : null;
   const s = p.statistics;
-  const history = p.rankHistory?.data ?? null;
+  const rankPoints = rankChartPoints(
+    p.rankHistory?.data ?? [],
+    s.globalRank,
+    p.rankHistory?.dayOffsets,
+  );
+  const showRankChart = rankPoints.length > 1;
   // The improvement index describes the ruleset the rank history belongs to.
   const oii = calculateOii(s.pp, s.playTimeSeconds, oiiMode(snapshot));
   // The card id reuses the mappool beatmap-id pill with the player's rank tier
@@ -118,20 +123,13 @@ export function PlayerProfile({
       </div>
       <div
         className={
-          history && history.length > 1
-            ? "profile-body"
-            : "profile-body profile-body--single"
+          showRankChart ? "profile-body" : "profile-body profile-body--single"
         }
       >
         {badges && <ProfileBadges badges={badges} />}
-        {history && history.length > 1 && (
+        {showRankChart && (
           <div className="rank-chart-card">
-            <RankChart
-              dayOffsets={p.rankHistory?.dayOffsets}
-              data={history}
-              globalRank={s.globalRank}
-              observedAt={p.fetchedAt}
-            />
+            <RankChart points={rankPoints} observedAt={p.fetchedAt} />
           </div>
         )}
         <dl className="profile-statistics">

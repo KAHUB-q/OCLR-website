@@ -5039,6 +5039,8 @@
     "m1b91c7f1f361": "There is no withdrawn step to restore.",
     "m7508bf5aa3a1": "Both fixture teams must match the saved referee record.",
     "m6f6cc99cfd81": "The saved referee outcomes do not determine a series winner.",
-    "m2e7f6fd57d5a": "Complete the series before closing the room."
+    "m2e7f6fd57d5a": "Complete the series before closing the room.",
+    "m9b8e25b98a19": "Choose a time earlier than the current deadline.",
+    "m1f48cbdbe218": "Choose a deadline at or before the match start."
   }
 }

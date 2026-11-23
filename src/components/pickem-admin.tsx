@@ -118,6 +118,10 @@ function AdminRow({ slug, row }: { slug: string; row: AdminFixture }) {
   const active = row.window;
   const [closesAt, setClosesAt] = useState(active?.closesAt ?? row.scheduledAt);
   const [valid, setValid] = useState(false);
+  const deadline = Date.parse(closesAt ?? "");
+  const limit = Date.parse(active?.closesAt ?? row.scheduledAt ?? "");
+  const canSaveDeadline =
+    valid && (active ? deadline < limit : deadline <= limit);
   const [scoreEnabled, setScoreEnabled] = useState(false);
   const [pending, setPending] = useState(false);
   const [error, setError] = useState("");
@@ -228,13 +232,22 @@ function AdminRow({ slug, row }: { slug: string; row: AdminFixture }) {
       {!active && disabledReason && <p>{disabledReason}</p>}
       {row.lastVoid && !active && <p>{pickemVoidText(tr, row.lastVoid)}</p>}
       {((!active && !disabledReason) || active?.status === "open") && (
-        <ZonedDateInput
-          label={tr("Pick deadline")}
-          value={closesAt}
-          timeZone={row.timeZone}
-          onChange={setClosesAt}
-          onValidityChange={setValid}
-        />
+        <>
+          <ZonedDateInput
+            label={tr("Pick deadline")}
+            value={closesAt}
+            timeZone={row.timeZone}
+            onChange={setClosesAt}
+            onValidityChange={setValid}
+          />
+          {valid && deadline > limit && (
+            <p role="alert" className={styles.problem}>
+              {active
+                ? tr("Choose a time earlier than the current deadline.")
+                : tr("Choose a deadline at or before the match start.")}
+            </p>
+          )}
+        </>
       )}
       {!active && !disabledReason && (
         <label>
@@ -250,7 +263,7 @@ function AdminRow({ slug, row }: { slug: string; row: AdminFixture }) {
         {!active && !disabledReason && (
           <button
             type="button"
-            disabled={pending || !valid}
+            disabled={pending || !canSaveDeadline}
             onClick={() => void save("open")}
           >
             {tr("Open predictions")}
@@ -260,7 +273,7 @@ function AdminRow({ slug, row }: { slug: string; row: AdminFixture }) {
           <>
             <button
               type="button"
-              disabled={pending || !valid || closesAt === active.closesAt}
+              disabled={pending || !canSaveDeadline}
               onClick={() => void save("tighten")}
             >
               {tr("Set earlier deadline")}

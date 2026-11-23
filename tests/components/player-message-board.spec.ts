@@ -37,6 +37,48 @@ async function json(route: Route, body: unknown, status = 200) {
   await route.fulfill({ json: body, status });
 }
 
+test("the new-message button cannot replace an edit draft on a player card", async ({
+  page,
+}) => {
+  const revision = "Revised message";
+  const updates: unknown[] = [];
+  await page.route(`**${endpoint}`, (route) => json(route, [original]));
+  await page.route(`**${endpoint}/${original.id}`, (route) => {
+    updates.push([route.request().method(), route.request().postDataJSON()]);
+    return json(route, { ...original, text: revision, version: "2" });
+  });
+  await page.goto("/");
+  const compose = page.getByRole("button", {
+    name: "Leave a message",
+    exact: true,
+  });
+  const editButton = page.getByRole("button", {
+    name: "Edit message",
+    exact: true,
+  });
+  const editor = page.getByRole("textbox", {
+    name: "Edit message",
+    exact: true,
+  });
+  await editButton.click();
+  await editor.fill(revision);
+  await expect(compose).toBeDisabled();
+  await compose.click({ force: true });
+  await expect(editor).toHaveValue(revision);
+  await page.getByRole("button", { name: "Save message", exact: true }).click();
+  await expect(page.locator(".event-message-scroll")).toContainText(revision);
+  await expect(compose).toBeEnabled();
+
+  await editButton.click();
+  await editor.fill("Discard this edit");
+  await page.getByRole("button", { name: "Cancel", exact: true }).click();
+  await expect(compose).toBeFocused();
+  await compose.click();
+  await expect(page.getByRole("textbox")).toHaveValue("");
+  await expect(page.locator(".event-message-scroll")).toContainText(revision);
+  expect(updates).toEqual([["PATCH", { text: revision, version: "1" }]]);
+});
+
 test("gallery displays the full history and edits older messages in place", async ({
   page,
 }) => {

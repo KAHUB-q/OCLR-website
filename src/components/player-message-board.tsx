@@ -329,7 +329,7 @@ export function SignedMessageBoard({
       className="secondary"
       aria-expanded={open}
       aria-controls={`${id}-form`}
-      disabled={pending || !!deleting || (showAll && (open || !loaded))}
+      disabled={pending || open || !!deleting || (showAll && !loaded)}
       onClick={() => {
         setEditing(null);
         setEditConflict(false);

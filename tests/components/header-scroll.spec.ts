@@ -15,6 +15,37 @@ async function scroll(page: Page, y: number) {
 }
 const header = (page: Page) => page.locator(".site-header");
 
+test("the mobile dashboard hides its header in place and reveals it on focus", async ({
+  page,
+}) => {
+  await page.setViewportSize({ width: 393, height: 790 });
+  await page.goto("/header?path=/dashboard&user=player&theme=dark");
+  const bar = header(page);
+  const top = await page.locator("main").evaluate((main) => main.offsetTop);
+  await scroll(page, 260);
+  await expect(bar).toHaveAttribute("data-scroll-hidden", "true");
+  await expect(bar).toHaveCSS("transform", "none");
+  await expect(bar).toHaveCSS("opacity", "0");
+  expect(
+    await page.evaluate(
+      () => !!document.elementFromPoint(15, 15)?.closest("header"),
+    ),
+  ).toBe(false);
+  await page.setViewportSize({ width: 393, height: 850 });
+  await expect(bar).toHaveCSS("opacity", "0");
+  await scroll(page, 230);
+  await expect(bar).toHaveCSS("opacity", "1");
+  await scroll(page, 340);
+  await expect(bar).toHaveCSS("opacity", "0");
+  await bar.locator(".brand").focus();
+  await expect(bar).toHaveCSS("opacity", "1");
+  await expect(bar.locator(".brand")).toBeFocused();
+  expect(await page.evaluate(() => scrollY)).toBe(340);
+  expect(await page.locator("main").evaluate((main) => main.offsetTop)).toBe(
+    top,
+  );
+});
+
 test("phone hides after downward travel and reveals on reverse without moving content", async ({
   page,
 }) => {

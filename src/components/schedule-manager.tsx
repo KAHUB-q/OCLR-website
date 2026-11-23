@@ -280,7 +280,11 @@ function FixtureEditor({
                         setIntervals(
                           intervals.filter((_, index) => n !== index),
                         );
-                        clearSelection();
+                        if (n === editing) {
+                          clearSelection();
+                        } else if (editing !== null && n < editing) {
+                          setEditing(editing - 1);
+                        }
                       }}
                     >
                       {tr("Remove")}

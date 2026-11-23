@@ -17,6 +17,13 @@ import type {
   DeletePlayerMessageInput,
   EditPlayerMessageInput,
 } from "@/lib/player-message-write-contract";
+
+type MessageChange = (rows: Message[]) => Message[];
+
+function limitHistory(rows: Message[], showAll: boolean) {
+  return showAll ? rows : rows.slice(0, 20);
+}
+
 export function PlayerMessageBoard({
   edition,
   playerId,
@@ -83,7 +90,7 @@ export function SignedMessageBoard({
   const input = useRef<HTMLTextAreaElement>(null);
   const requestId = useRef<string | null>(null);
   const replyRequestId = useRef<string | null>(null);
-  const readGeneration = useRef(0);
+  const pendingRead = useRef<MessageChange[] | null>(null);
   const loadError = tr(
     "Messages could not be loaded. Please refresh to try again.",
   );
@@ -98,23 +105,34 @@ export function SignedMessageBoard({
   }, []);
   const load = useCallback(
     async (signal?: AbortSignal): Promise<Message[] | null> => {
-      const generation = ++readGeneration.current;
+      // Keep confirmed writes made after this read started. A newer read
+      // replaces the list of changes and supersedes this request.
+      const changes: MessageChange[] = [];
+      pendingRead.current = changes;
       try {
         const response = await fetch(endpoint, { signal });
         if (!response.ok) throw new Error();
         const rows: Message[] = await response.json();
-        if (signal?.aborted || generation !== readGeneration.current)
-          return null;
-        receive(rows);
-        return rows;
+        if (signal?.aborted || pendingRead.current !== changes) return null;
+        const history = limitHistory(
+          changes.reduce((list, change) => change(list), rows),
+          showAll,
+        );
+        receive(history);
+        return history;
       } catch {
-        if (signal?.aborted || generation !== readGeneration.current)
-          return null;
-        setError(loadError);
+        if (
+          !signal?.aborted &&
+          pendingRead.current === changes &&
+          !changes.length
+        )
+          setError(loadError);
         return null;
+      } finally {
+        if (pendingRead.current === changes) pendingRead.current = null;
       }
     },
-    [endpoint, receive, loadError],
+    [endpoint, receive, loadError, showAll],
   );
   useEffect(() => {
     const controller = new AbortController();
@@ -159,15 +177,16 @@ export function SignedMessageBoard({
       (row ?? trigger.current)?.focus();
     });
   }
-  function showMessage(message: Message) {
-    // A confirmed write supersedes every list read already in flight.
-    readGeneration.current++;
+  function applyConfirmedChange(change: MessageChange) {
+    pendingRead.current?.push(change);
+    setMessages((rows) => limitHistory(change(rows), showAll));
     setLoaded(true);
-    setMessages((rows) => {
+  }
+  function showMessage(message: Message) {
+    applyConfirmedChange((rows) => {
       if (rows.some((row) => row.id === message.id))
         return rows.map((row) => (row.id === message.id ? message : row));
-      const updated = [message, ...rows];
-      return showAll ? updated : updated.slice(0, 20);
+      return [message, ...rows];
     });
     setCurrentId(message.id);
   }
@@ -233,13 +252,11 @@ export function SignedMessageBoard({
         setError(result.error);
         return;
       }
-      readGeneration.current++;
-      setLoaded(true);
       const deletedIndex = messages.findIndex((m) => m.id === deleting.id);
       const remaining = messages.filter((m) => m.id !== deleting.id);
       const nextId =
         remaining[Math.min(deletedIndex, remaining.length - 1)]?.id ?? null;
-      setMessages((rows) =>
+      applyConfirmedChange((rows) =>
         rows
           .filter((m) => m.id !== deleting.id)
           .map((m) =>

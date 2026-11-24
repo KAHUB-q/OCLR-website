@@ -85,13 +85,36 @@ for (const theme of ["light", "dark"]) {
         await s6.focus();
         if (!isMobile) await page.mouse.move(0, 0);
         await page.keyboard.press("Enter");
-        await page.keyboard.press("Escape");
       } else {
         await expect(s6).toHaveAttribute("href", "/tournaments/s6");
       }
-      await s6.blur();
+      await page.keyboard.press("Escape");
+      await expect(s6).toBeFocused();
       await expect(tip).toHaveCount(0);
+      await expect(page.getByRole("status")).toBeEmpty();
+      if (!participated) {
+        await expect(s6).toHaveAttribute("aria-pressed", "false");
+        await s6.press("Enter");
+        await expect(s6).toHaveAttribute("aria-pressed", "true");
+        await expect(tip).toContainText("S6");
+      }
       expect(errors).toEqual([]);
     });
   }
 }
+
+test("Escape dismisses a hovered season without focusing it", async ({
+  page,
+}) => {
+  await page.goto("/player-timeline");
+  const s6 = page.getByRole("button", { name: /^S6 ·/ });
+  const tip = page.getByRole("note");
+  await s6.hover();
+  await expect(tip).toContainText("S6");
+  await page.keyboard.press("Escape");
+  await expect(tip).toHaveCount(0);
+  await expect(s6).not.toBeFocused();
+  await page.mouse.move(0, 0);
+  await s6.hover();
+  await expect(tip).toContainText("S6");
+});

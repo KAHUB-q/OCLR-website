@@ -34,7 +34,7 @@ export function WikiGallery({
       headingId={headingId}
     >
       <figure className="wiki-gallery-layout">
-        <WikiGalleryPreview figure={figure} showHint />
+        <WikiGalleryPreview key={figure.src} figure={figure} showHint />
         <div className="wiki-gallery-controls">
           <button
             className="wiki-gallery-shuffle"

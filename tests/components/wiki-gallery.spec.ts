@@ -2,6 +2,39 @@ import { readFile } from "node:fs/promises";
 import { expect, test } from "@playwright/test";
 import sharp from "sharp";
 
+test("shuffling discards a pending request to enlarge the previous card", async ({
+  page,
+}) => {
+  await page.goto("/wiki-gallery");
+  const showcase = page.getByRole("region", { name: "Liru Card Showcase" });
+  const trigger = showcase.locator('a[aria-haspopup="dialog"]');
+  const shuffle = showcase.getByRole("button", { name: "Show another look" });
+
+  // Activate the preview and shuffle in one turn, before the lightbox can mount.
+  await showcase.evaluate((region) => {
+    region
+      .querySelector<HTMLAnchorElement>('a[aria-haspopup="dialog"]')!
+      .click();
+    const button = region.querySelector<HTMLButtonElement>(
+      ".wiki-gallery-shuffle",
+    )!;
+    button.focus();
+    button.click();
+  });
+  await expect(trigger).toHaveAccessibleName(/Purple punk \(SR\)$/);
+  await expect(shuffle).toBeFocused();
+  await page.keyboard.press("Enter");
+  await expect(trigger).toHaveAccessibleName(/Elegant maid outfit \(SSR\)$/);
+  await expect(page.getByRole("dialog")).toHaveCount(0);
+
+  await shuffle.click();
+  await trigger.click();
+  const dialog = page.getByRole("dialog", { name: "Purple punk" });
+  await expect(dialog).toBeVisible();
+  await dialog.getByRole("button", { name: "Close" }).click();
+  await expect(trigger).toBeFocused();
+});
+
 // Real lightbox interactions need a browser: focus restoration, zoom gestures,
 // native downloads, and reopening the newly shuffled image. No DB workflow.
 test("previews in place, restores focus and downloads the current card and artwork", async ({

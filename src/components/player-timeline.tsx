@@ -236,7 +236,18 @@ export function PlayerTimeline({ timeline }: { timeline: PlayerTimeline }) {
   }, [active]);
 
   useLayoutEffect(() => {
-    if (active) placeTip();
+    const card = cardRef.current;
+    const tip = tipRef.current;
+    if (!active || !card || !tip) return;
+    placeTip();
+    const observer = new ResizeObserver(placeTip);
+    observer.observe(card);
+    observer.observe(tip);
+    window.addEventListener("resize", placeTip);
+    return () => {
+      observer.disconnect();
+      window.removeEventListener("resize", placeTip);
+    };
   }, [active, activeText, placeTip]);
 
   return (

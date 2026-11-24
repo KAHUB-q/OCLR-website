@@ -1,6 +1,48 @@
 import { test, expect } from "@playwright/test";
 import AxeBuilder from "@axe-core/playwright";
 
+test("the open season note follows its marker when the timeline resizes", async ({
+  page,
+  isMobile,
+}) => {
+  await page.setViewportSize({ width: 844, height: 390 });
+  await page.goto("/player-timeline");
+  const season = page.getByRole("button", { name: /^S6 ·/ });
+  const note = page.getByRole("note");
+  if (isMobile) await season.tap();
+  else await season.focus();
+  await expect(note).toContainText("S6");
+
+  async function expectNoteAtSeason() {
+    const marker = (await season.boundingBox())!;
+    const center = marker.x + marker.width / 2;
+    const width = page.viewportSize()!.width;
+    await expect
+      .poll(async () => {
+        const box = (await note.boundingBox())!;
+        return (
+          box.x >= 0 &&
+          box.x <= center &&
+          center <= box.x + box.width &&
+          box.x + box.width <= width
+        );
+      })
+      .toBe(true);
+    expect(
+      await page.evaluate(() => document.documentElement.scrollWidth),
+    ).toBeLessThanOrEqual(width);
+  }
+
+  await page.setViewportSize({ width: 390, height: 844 });
+  await expectNoteAtSeason();
+  await page.setViewportSize({ width: 844, height: 390 });
+  await expectNoteAtSeason();
+  await page.locator("main").evaluate((main) => {
+    main.style.maxWidth = "420px";
+  });
+  await expectNoteAtSeason();
+});
+
 for (const theme of ["light", "dark"]) {
   for (const participated of [false, true]) {
     test(`S6 shares the complete season background (${theme}, participated=${participated})`, async ({

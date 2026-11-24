@@ -4,6 +4,7 @@ import Link from "next/link";
 import Image from "next/image";
 import {
   useCallback,
+  useEffect,
   useLayoutEffect,
   useRef,
   useState,
@@ -77,6 +78,17 @@ export function PlayerTimeline({ timeline }: { timeline: PlayerTimeline }) {
   const [selected, setSelected] = useState<string | null>(null);
   const [hovered, setHovered] = useState<string | null>(null);
   const active = hovered ?? selected;
+
+  useEffect(() => {
+    if (!active) return;
+    function dismiss(event: KeyboardEvent) {
+      if (event.key !== "Escape" || event.defaultPrevented) return;
+      setHovered(null);
+      setSelected(null);
+    }
+    document.addEventListener("keydown", dismiss);
+    return () => document.removeEventListener("keydown", dismiss);
+  }, [active]);
 
   // The tooltip is centred on the hovered span or milestone dot. Its text
   // width varies, so the centre is clamped to the viewport after measuring.
@@ -295,9 +307,6 @@ export function PlayerTimeline({ timeline }: { timeline: PlayerTimeline }) {
                   onClick={() =>
                     setSelected(selected === span.key ? null : span.key)
                   }
-                  onKeyDown={(event) => {
-                    if (event.key === "Escape") setSelected(null);
-                  }}
                   {...shared}
                 >
                   {fill}

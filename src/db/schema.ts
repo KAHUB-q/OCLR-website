@@ -3178,3 +3178,11 @@ export const chatSourceVectors = pgTable(
     index("chat_source_keywords_idx").using("gin", t.keywords),
   ],
 );
+
+export const chatArtworkCaptions = pgTable("chat_artwork_captions", {
+  image: text("image").primaryKey(),
+  model: text("model").notNull(),
+  digest: text("digest"),
+  caption: text("caption"),
+  checkedAt: timestamp("checked_at", { withTimezone: true }).notNull(),
+});

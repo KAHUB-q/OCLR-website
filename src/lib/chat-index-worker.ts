@@ -1,3 +1,4 @@
+import { refreshArtwork } from "./chat-artwork-worker";
 import { chatTerms } from "./chat-retrieval";
 import { and, eq, inArray, sql } from "drizzle-orm";
 import { db, getPool, readOnlyData } from "@/db";
@@ -41,6 +42,7 @@ export async function refreshChatIndex() {
       .from(editionState)
       .where(published)
       .orderBy(editionState.slug);
+    const visitedArtwork = new Set<string>();
     for (const { slug } of editions) {
       try {
         const edition = await getPublicEdition(slug);
@@ -52,6 +54,8 @@ export async function refreshChatIndex() {
         const remaining = new Map(saved.map((row) => [row.digest, row.model]));
         const seen = new Set<string>();
         for (const collection of chatCollections) {
+          if (collection === "artwork")
+            counts.failed += await refreshArtwork(edition, visitedArtwork);
           const sources = await readOnlyData(() =>
             seasonContent(edition, collection),
           );
@@ -70,9 +74,10 @@ export async function refreshChatIndex() {
             const embeddings = provider
               ? await normalizedEmbeddings(
                   provider,
-                  batch.map(
-                    ({ source }) =>
-                      collection + " · " + source.title + "\n" + source.text,
+                  batch.map(({ source }) =>
+                    collection === "artwork"
+                      ? source.text
+                      : collection + " · " + source.title + "\n" + source.text,
                   ),
                 )
               : [];
@@ -87,7 +92,9 @@ export async function refreshChatIndex() {
                   url: source.url,
                   content: source.text,
                   keywords: chatTerms(
-                    collection + " " + source.title + " " + source.text,
+                    collection === "artwork"
+                      ? source.text
+                      : collection + " " + source.title + " " + source.text,
                   ),
                   model: provider?.key ?? null,
                   embedding: embeddings[j] ?? null,

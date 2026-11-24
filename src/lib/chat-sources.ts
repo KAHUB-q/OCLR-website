@@ -1,3 +1,4 @@
+import { artworkQuery } from "./chat-artwork";
 import { seasonCount, seasonCountIntent } from "./chat-season-counts";
 import { searchSeasonIndex } from "./chat-vectors";
 import {
@@ -40,6 +41,15 @@ export async function chatEvidence(
       ],
     };
   }
+  const visual = artworkQuery(question);
+  if (visual !== null)
+    return {
+      edition: edition.name,
+      total: null,
+      sources: visual
+        ? await searchSeasonIndex(edition, visual, "", signal, "artwork")
+        : [],
+    };
   const countIntent = seasonCountIntent(question);
   if (countIntent) {
     const total = await seasonCount(edition, countIntent, now);

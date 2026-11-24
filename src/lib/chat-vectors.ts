@@ -1,7 +1,7 @@
 import { createHash } from "node:crypto";
 import { embedMany } from "ai";
 import { chatProvider } from "./chat-provider";
-import { and, eq, sql } from "drizzle-orm";
+import { and, eq, ne, sql } from "drizzle-orm";
 import { db } from "@/db";
 import { chatSourceVectors as vectors } from "@/db/schema";
 import type { Edition } from "./editions";
@@ -59,6 +59,7 @@ export async function searchSeasonIndex(
   question: string,
   previous: string,
   signal?: AbortSignal,
+  collection?: "artwork",
 ) {
   const metadata = {
     digest: vectors.digest,
@@ -68,7 +69,12 @@ export async function searchSeasonIndex(
     text: vectors.content,
     model: vectors.model,
   };
-  const scope = eq(vectors.editionSlug, edition.slug);
+  const scope = and(
+    eq(vectors.editionSlug, edition.slug),
+    collection
+      ? eq(vectors.collection, collection)
+      : ne(vectors.collection, "artwork"),
+  );
   const query = [question, previous].filter(Boolean).join(" ");
   const tokens = sql`${sql.param(chatTerms(query))}::text[]`;
   const rows = await db()
@@ -111,7 +117,7 @@ export async function searchSeasonIndex(
             scope,
             eq(vectors.model, provider.key),
             sql`cardinality(${vectors.embedding}) = ${v.length}`,
-            sql`${similarity} > 0`,
+            sql`${similarity} > ${collection === "artwork" ? 0.35 : 0}`,
           ),
         )
         .orderBy(sql`${similarity} desc`, vectors.digest)

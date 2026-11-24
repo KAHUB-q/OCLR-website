@@ -1,3 +1,4 @@
+import { artworkSources } from "./chat-artwork";
 import { registrationCount } from "./chat-registration";
 import type { Edition } from "./editions";
 import { publicEditionSummary } from "./editions";
@@ -37,6 +38,7 @@ export const chatCollections = [
   "awards",
   "staff",
   "pickem",
+  "artwork",
 ] as const;
 export type ChatCollection = (typeof chatCollections)[number];
 
@@ -195,6 +197,8 @@ export async function seasonContent(
           cancelled: f.cancelled,
         });
       break;
+    case "artwork":
+      return artworkSources(e);
     case "mappools":
       return poolSources(e);
     case "statistics": {

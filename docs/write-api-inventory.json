@@ -70,7 +70,7 @@
         "access": "browser",
         "actions": [
           "save",
-          "refresh"
+          "refreshAll"
         ],
         "consumers": [
           "src/components/osu-image-settings.tsx"

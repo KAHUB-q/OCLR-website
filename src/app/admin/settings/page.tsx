@@ -37,9 +37,24 @@ async function Issue271Page() {
           initialAppearance={settings.defaultAppearance}
           revision={settings.revision}
         />
-        {policies.map((policy) => (
-          <OsuImageSettings key={policy.kind} initial={policy} />
-        ))}
+        {policies.length > 0 && (
+          <section
+            className="image-cache-settings"
+            aria-labelledby="image-cache-heading"
+          >
+            <header>
+              <h2 id="image-cache-heading">{tr("Sitewide image cache")}</h2>
+              <p>
+                {tr(
+                  "After a refresh, each image is fetched again the next time it is displayed.",
+                )}
+              </p>
+            </header>
+            {policies.map((policy) => (
+              <OsuImageSettings key={policy.kind} initial={policy} />
+            ))}
+          </section>
+        )}
       </>
     );
   });

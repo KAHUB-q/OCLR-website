@@ -107,7 +107,10 @@ async function lookup(
   const [row] = await reader
     .select({
       image: osuCachedImages,
-      fresh: sql<boolean>`now() < ${osuCachedImages.fetchedAt} + ${osuImagePolicies.ttlHours} * interval '1 hour'`,
+      fresh: sql<boolean>`
+        (${osuImagePolicies.invalidatedAt} is null or ${osuCachedImages.fetchedAt} > ${osuImagePolicies.invalidatedAt})
+        and now() < ${osuCachedImages.fetchedAt} + ${osuImagePolicies.ttlHours} * interval '1 hour'
+      `,
     })
     .from(osuCachedImages)
     .innerJoin(
@@ -117,9 +120,15 @@ async function lookup(
     .where(imageKey(variant, id));
   return row;
 }
+const policyFields = {
+  kind: osuImagePolicies.kind,
+  ttlHours: osuImagePolicies.ttlHours,
+  capacityMiB: osuImagePolicies.capacityMiB,
+  revision: osuImagePolicies.revision,
+};
 async function lockPolicy(tx: Transaction, kind: ImageKind) {
   const [policy] = await tx
-    .select()
+    .select(policyFields)
     .from(osuImagePolicies)
     .where(eq(osuImagePolicies.kind, kind))
     .for("update");
@@ -137,45 +146,29 @@ async function trim(tx: Transaction, policy: OsuImagePolicy) {
   )`);
 }
 
-async function refresh(
-  tx: Transaction,
-  variant: ImageVariant,
-  id: number,
-  actor?: User,
-) {
+async function refresh(tx: Transaction, variant: ImageVariant, id: number) {
   const kind = imageKind(variant);
   // Cover and list share the beatmapset lock. Different IDs can download concurrently.
   await tx.execute(
     sql`select pg_advisory_xact_lock(${kind === "avatar" ? 142601 : 142602}::integer, ${id}::integer)`,
   );
-  if (!actor) {
-    const cached = await lookup(tx, variant, id);
-    if (cached?.fresh) return cached.image;
-  }
+  const cached = await lookup(tx, variant, id);
+  if (cached?.fresh) return cached.image;
   const bytes = await fetchImage(variant, id);
   const policy = await lockPolicy(tx, kind);
-  if (actor)
-    await assertCapability(actor, "configure_tournament", undefined, tx);
-  const image = { ...bytes, kind, variant, imageId: id, fetchedAt: new Date() };
-  await tx
+  // Downloads started before a concurrent sitewide refresh remain stale.
+  const image = { ...bytes, kind, variant, imageId: id };
+  const fetchedAt = sql`transaction_timestamp()`;
+  const [stored] = await tx
     .insert(osuCachedImages)
-    .values(image)
+    .values({ ...image, fetchedAt })
     .onConflictDoUpdate({
       target: [osuCachedImages.variant, osuCachedImages.imageId],
-      set: { ...bytes, fetchedAt: image.fetchedAt },
-    });
-  if (actor) {
-    if (kind === "background")
-      await tx.delete(osuCachedImages).where(imageKey("list", id));
-    await tx.insert(osuImageEvents).values({
-      actorId: actor.osuId,
-      kind,
-      operation: "refresh",
-      details: { imageId: id },
-    });
-  }
+      set: { ...bytes, fetchedAt },
+    })
+    .returning({ fetchedAt: osuCachedImages.fetchedAt });
   await trim(tx, policy);
-  return image;
+  return { ...image, fetchedAt: stored.fetchedAt };
 }
 
 // Leave database connections available for regular site traffic on a cold cache.
@@ -220,7 +213,10 @@ export async function imagePoliciesForAdmin(actor: User) {
     !(await hasCapability(actor, "configure_tournament"))
   )
     return [];
-  return db().select().from(osuImagePolicies).orderBy(osuImagePolicies.kind);
+  return db()
+    .select(policyFields)
+    .from(osuImagePolicies)
+    .orderBy(osuImagePolicies.kind);
 }
 
 export async function manageOsuImages(actor: User, input: unknown) {
@@ -228,21 +224,25 @@ export async function manageOsuImages(actor: User, input: unknown) {
   await assertCapability(actor, "configure_tournament");
   const parsed = manageOsuImagesWrite.request.safeParse(input);
   if (!parsed.success)
-    throw new HttpError(400, "Invalid image cache settings or ID.");
+    throw new HttpError(400, "Invalid image cache settings.");
   const command = parsed.data;
   return db().transaction(async (tx) => {
     const { kind } = command;
-    if (command.action === "refresh") {
-      await refresh(
-        tx,
-        kind === "avatar" ? "avatar" : "cover",
-        command.imageId,
-        actor,
-      );
-      return lockPolicy(tx, kind);
-    }
     const before = await lockPolicy(tx, kind);
     await assertCapability(actor, "configure_tournament", undefined, tx);
+    if (command.action === "refreshAll") {
+      await tx
+        .update(osuImagePolicies)
+        .set({ invalidatedAt: sql`clock_timestamp()` })
+        .where(eq(osuImagePolicies.kind, kind));
+      await tx.insert(osuImageEvents).values({
+        actorId: actor.osuId,
+        kind,
+        operation: "refreshAll",
+        details: {},
+      });
+      return before;
+    }
     if (command.expectedRevision !== before.revision)
       throw new HttpError(
         409,
@@ -261,7 +261,7 @@ export async function manageOsuImages(actor: User, input: unknown) {
         revision: before.revision + 1,
       })
       .where(eq(osuImagePolicies.kind, kind))
-      .returning();
+      .returning(policyFields);
     if (after.capacityMiB < before.capacityMiB) await trim(tx, after);
     await tx.insert(osuImageEvents).values({
       actorId: actor.osuId,

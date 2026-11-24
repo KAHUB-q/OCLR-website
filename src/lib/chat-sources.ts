@@ -1,6 +1,10 @@
-import { asksRegistrationCount, registrationCount } from "./chat-registration";
+import { seasonCount, seasonCountIntent } from "./chat-season-counts";
 import { searchSeasonIndex } from "./chat-vectors";
-import { matches, poolSources } from "./chat-competition-sources";
+import {
+  isUpcomingMatch,
+  matches,
+  poolSources,
+} from "./chat-competition-sources";
 import { getPublicEdition } from "./content";
 import { HttpError } from "./http-error";
 import {
@@ -19,8 +23,9 @@ export async function chatEvidence(
 ) {
   const edition = await getPublicEdition(slug);
   if (!edition) throw new HttpError(404, "Tournament not found.");
-  if (asksRegistrationCount(question)) {
-    const total = await registrationCount(edition);
+  const countIntent = seasonCountIntent(question);
+  if (countIntent) {
+    const total = await seasonCount(edition, countIntent, now);
     return {
       edition: edition.name,
       total,
@@ -65,10 +70,7 @@ export async function chatEvidence(
     const next = /下一[場场]|\bnext\b/i.test(intentText);
     if (next)
       fixtures = fixtures
-        .filter(
-          (f) =>
-            f.time && Date.parse(f.time) >= now && !f.score && !f.cancelled,
-        )
+        .filter((f) => isUpcomingMatch(f, now))
         .sort((a, b) => Date.parse(a.time!) - Date.parse(b.time!));
     else if (timing && edition.archive && !matchIntent.test(intentText))
       fixtures = fixtures

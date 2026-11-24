@@ -3,6 +3,7 @@ import { NextIntlClientProvider } from "next-intl";
 import { EventStatistics } from "../../src/components/event-statistics";
 import type { EventScore } from "../../src/lib/event-statistics";
 import en from "../../messages/en.json";
+const titleOnly = new URLSearchParams(location.search).has("title-only");
 const score: EventScore = {
   osuId: 11,
   teamId: "X",
@@ -10,8 +11,8 @@ const score: EventScore = {
   team: "Same team",
   round: "Final",
   slot: "NM1",
-  title: "Synthetic map",
-  mapId: 1001,
+  title: titleOnly ? "Pirate Radio" : "Synthetic map",
+  mapId: titleOnly ? null : 1001,
   score: 100,
   accuracy: 0.98,
   combo: 100,

@@ -29,6 +29,13 @@ const views = [
   "YumuRating Series",
 ];
 const SERIES_VIEW = views.length - 1;
+const percentageColumns = new Set([
+  "Accuracy",
+  "Average accuracy",
+  "Participation rate",
+  "Pick rate",
+  "Ban rate",
+]);
 export function EventStatistics({
   scores,
   coverage,
@@ -335,16 +342,11 @@ export function EventStatistics({
       );
     if (key === "Map ID" && typeof value === "number")
       return <a href={`https://osu.ppy.sh/b/${value}`}>{value} ↗</a>;
-    if (typeof value === "number" && ["MRA", "ERA", "DRA", "RWS"].includes(key))
+    if (typeof value !== "number") return value;
+    if (percentageColumns.has(key)) return `${number(value * 100, 2)}%`;
+    if (["MRA", "ERA", "DRA", "RWS", "Score multiplier"].includes(key))
       return number(value, 4);
-    if (typeof value === "number")
-      return /accuracy|rate/i.test(key)
-        ? `${number(value * 100, 2)}%`
-        : number(
-            value,
-            key === "Score multiplier" ? 4 : /MC|placement/.test(key) ? 3 : 0,
-          );
-    return value;
+    return number(value, key === "MC" || key === "Average placement" ? 3 : 0);
   }
   function filters(index: number) {
     const isSeries = index === SERIES_VIEW;

@@ -114,4 +114,20 @@ To route model requests through a forward proxy, add `OCLR_CHAT_PROXY_URL='http:
 
 On any published tournament overview, the Liru button at the bottom right opens the assistant-ui chat window. Closing and reopening it preserves the conversation on that page. Visitors sign in with osu! and return to the open window for that edition. The dedicated `/tournaments/[edition]/chat` page is also available. The assistant uses the same public sources for every signed-in account. The browser keeps the conversation in memory. Each request sends up to four recent questions and selected public excerpts to the configured provider. The app stores no conversation transcripts. The API allows eight requests per account per minute per server process, limits questions to 1,500 characters, and cancels model generation on disconnect or after 30 seconds.
 
-Rules are split into overlapping excerpts with links to the original chapters. The edition-specific index in `chat_rule_indexes` is rebuilt on demand when the current published source fingerprint changes. To rebuild from scratch, delete that edition's derived row in a maintenance session. Its next question recreates it from the published page data. Fixtures, published scores and mappools are read at request time. Retrieval uses multilingual keywords and requires no embedding service. Chat is disabled in remote development mode.
+Rules are split into overlapping excerpts with links to the original chapters. The edition-specific index in `chat_rule_indexes` is rebuilt on demand when the current published source fingerprint changes. To rebuild from scratch, delete that edition's derived row in a maintenance session. Its next question recreates it from the published page data. Fixtures, published scores and mappools are read at request time. These live lookups complement the background season index described below. Chat is disabled in remote development mode.
+
+### Season search and embeddings
+
+The index worker reads the public, edition-scoped projections for overview dates, rules, players, teams, draft picks, matches and results, mappools, statistics, brackets/standings, awards, staff and public predictions. Configure `OCLR_CHAT_EMBEDDING_MODEL` with a model ID supported by the provider’s `/embeddings` endpoint. The worker and queries share the chat base URL, key and proxy. The chat generation model is configured separately. A blank embedding model builds a keyword-only index.
+
+After migration 0118, run `npm run chat:index` for the initial backfill. The worker batches changed passages, removes obsolete ones and resumes after a provider outage. Changing the embedding model or provider regenerates the vectors. PostgreSQL indexes multilingual search terms with GIN, stores normalized numeric arrays and performs exact cosine search within the selected edition and model. Before sending a hit to the model, the server matches its fingerprint against the current public projection. Chat uses keyword matches when embeddings are unavailable.
+
+On Rocky Linux install the reviewed timer and service from the release and enable the timer as an operator. The first run starts after boot or timer activation. Subsequent refreshes begin 15 minutes after the preceding run finishes. Review the Node path in the unit for the deployed host.
+
+```sh
+sudo install -o root -g root -m 0644 docs/systemd/oclr-chat-index.{service,timer} /etc/systemd/system/
+sudo systemctl daemon-reload
+sudo systemctl enable --now oclr-chat-index.timer
+sudo systemctl start oclr-chat-index.service
+sudo journalctl -u oclr-chat-index.service -n 20 --no-pager
+```

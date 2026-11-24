@@ -827,6 +827,13 @@
       "when": 1795538855781,
       "tag": "0117_liru_chat",
       "breakpoints": true
+    },
+    {
+      "idx": 118,
+      "version": "7",
+      "when": 1795544552768,
+      "tag": "0118_chat_source_vectors",
+      "breakpoints": true
     }
   ]
 }

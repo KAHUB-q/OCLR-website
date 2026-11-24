@@ -35,6 +35,8 @@ export async function POST(request: Request) {
       edition,
       question,
       questions.at(-2) ?? "",
+      Date.now(),
+      request.signal,
     );
     request.signal.throwIfAborted();
     const sources = [

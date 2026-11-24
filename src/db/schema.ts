@@ -3154,3 +3154,26 @@ export const chatRuleIndexes = pgTable("chat_rule_indexes", {
     .$type<import("../lib/chat-retrieval").ChatSource[]>()
     .notNull(),
 });
+
+export const chatSourceVectors = pgTable(
+  "chat_source_vectors",
+  {
+    editionSlug: text("edition_slug")
+      .notNull()
+      .references(() => editionState.slug, { onDelete: "cascade" }),
+    digest: text("digest").notNull(),
+    collection: text("collection")
+      .$type<import("../lib/chat-season-content").ChatCollection>()
+      .notNull(),
+    title: text("title").notNull(),
+    url: text("url").notNull(),
+    content: text("content").notNull(),
+    model: text("model"),
+    keywords: text("keywords").array().notNull(),
+    embedding: doublePrecision("embedding").array(),
+  },
+  (t) => [
+    primaryKey({ columns: [t.editionSlug, t.digest] }),
+    index("chat_source_keywords_idx").using("gin", t.keywords),
+  ],
+);

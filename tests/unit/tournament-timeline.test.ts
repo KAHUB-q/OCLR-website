@@ -46,24 +46,30 @@ describe("competition timeline", () => {
       model.stages.map((stage) => stage.label),
     );
   });
-  it("shows an exhibition at one local time in the schedule and overview", () => {
-    const model = tournamentTimeline(
-      {
-        ...edition,
-        registration: null,
-        schedule: [{ kind: "exhibition", label: "exhibition_2", at: start }],
-      },
-      tr,
-      "en",
-    );
-    expect(model.schedule[0].event).toBe("Exhibition 2");
-    expect(model.schedule[0].date).toContain("UTC+8");
-    expect(model.schedule[0].date).not.toMatch(/End time|TBA/);
-    expect(model.stages[0].detail).toBe(model.schedule[0].date);
-    expect(tournamentStages(model.stages, null, Date.parse(end))[0].state).toBe(
-      "past",
-    );
-  });
+  it.each([
+    ["draft", "draft", "Draft ceremony"],
+    ["exhibition", "exhibition_2", "Exhibition 2"],
+  ] as const)(
+    "shows %s at one local time in the schedule and overview",
+    (kind, label, expected) => {
+      const model = tournamentTimeline(
+        {
+          ...edition,
+          registration: null,
+          schedule: [{ kind, label, at: start }],
+        },
+        tr,
+        "en",
+      );
+      expect(model.schedule[0].event).toBe(expected);
+      expect(model.schedule[0].date).toContain("UTC+8");
+      expect(model.schedule[0].date).not.toMatch(/End time|TBA/);
+      expect(model.stages[0].detail).toBe(model.schedule[0].date);
+      expect(
+        tournamentStages(model.stages, null, Date.parse(end))[0].state,
+      ).toBe("past");
+    },
+  );
   it("shows day-precision history without inventing midnight start or end times", () => {
     const schedule = editionSchema.shape.schedule.parse([
       {

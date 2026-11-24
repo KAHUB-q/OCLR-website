@@ -509,7 +509,8 @@ other statistics views. See [YumuRating](yumu-rating.md).
 
 Contract 1.51.0 adds the `exhibition` milestone kind. The schedule write API
 (v0.9.0) accepts `exhibition_1`, `exhibition_2` or `exhibition_3` as the
-label. Each exhibition has one optional instant (`at`).
+label. Each exhibition has one optional instant (`at`). Starting with write
+API v0.10.0 the draft ceremony follows the same single-time rule.
 
 Contract 1.50.0 adds the draft phase kind to tournament schedules. The schedule write operation accepts the fixed phase and name pairs documented in [tournament management](tournament-management.md#competition-times-and-milestones-430).
 

@@ -1,3 +1,4 @@
+import { isSingleTimeMilestone } from "./milestone-names";
 import type { Edition } from "./editions";
 
 /** Keep date semantics when removing the editor's local row identities. */
@@ -5,7 +6,7 @@ export function milestonePayload(
   rows: (Edition["schedule"][number] & { id?: number })[],
 ): Edition["schedule"] {
   return rows.map((s) => {
-    if (s.kind === "exhibition")
+    if (isSingleTimeMilestone(s.kind))
       return { kind: s.kind, label: s.label, at: s.at };
     return {
       label: s.label,

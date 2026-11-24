@@ -274,6 +274,8 @@ describe.skipIf(!url)("authoritative tournament edition storage", () => {
       { kind: "knockout", label: "swiss", at: null },
       { kind: "group", label: "Custom group", at: null },
       { kind: "exhibition", label: "finals", at: null },
+      { ...schedule[2], precision: "day" },
+      { ...schedule[2], endAt: "2026-11-08T13:00:00Z" },
       { ...schedule[3], precision: "day" },
       { ...schedule[3], endAt: "2026-11-08T13:00:00Z" },
     ]) {

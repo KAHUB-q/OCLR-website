@@ -3,6 +3,7 @@ import { ezScoreMultiplierSchema } from "@/lib/statistics-score";
 import { coachingEnabled } from "@/lib/editions";
 import {
   isMilestoneName,
+  isSingleTimeMilestone,
   milestoneName,
   milestoneNames,
   type MilestoneKind,
@@ -1123,7 +1124,7 @@ function Schedule({ data, saved }: EditorProps) {
                 value={s.kind ?? ""}
                 onChange={(e) => {
                   const kind = e.currentTarget.value as MilestoneKind;
-                  if (kind === "exhibition") {
+                  if (isSingleTimeMilestone(kind)) {
                     setInvalid((old) => ({ ...old, [s.id * 2 + 1]: false }));
                   }
                   setSchedule(
@@ -1133,7 +1134,7 @@ function Schedule({ data, saved }: EditorProps) {
                             ...v,
                             kind,
                             label: milestoneNames[kind][0],
-                            ...(kind === "exhibition"
+                            ...(isSingleTimeMilestone(kind)
                               ? { endAt: undefined, precision: undefined }
                               : {}),
                           }
@@ -1179,7 +1180,7 @@ function Schedule({ data, saved }: EditorProps) {
                 </select>
               </label>
             )}
-            {s.kind !== "exhibition" && (
+            {!isSingleTimeMilestone(s.kind) && (
               <label className="field">
                 <span>{tr("Date precision")}</span>
                 <select
@@ -1205,7 +1206,7 @@ function Schedule({ data, saved }: EditorProps) {
             )}
             <ZonedDateInput
               label={
-                s.kind === "exhibition"
+                isSingleTimeMilestone(s.kind)
                   ? tr("Milestone {value0} time", { value0: i + 1 })
                   : tr("Start time")
               }
@@ -1225,7 +1226,7 @@ function Schedule({ data, saved }: EditorProps) {
                 )
               }
             />
-            {s.kind && s.kind !== "exhibition" && (
+            {s.kind && !isSingleTimeMilestone(s.kind) && (
               <>
                 <ZonedDateInput
                   label={tr("End time")}
@@ -1309,7 +1310,7 @@ function Schedule({ data, saved }: EditorProps) {
               !isMilestoneName(s.kind, s.label) ||
               invalid[s.id * 2] ||
               (s.kind &&
-                s.kind !== "exhibition" &&
+                !isSingleTimeMilestone(s.kind) &&
                 (invalid[s.id * 2 + 1] ||
                   (s.at && s.endAt && Date.parse(s.endAt) < Date.parse(s.at)))),
           )}

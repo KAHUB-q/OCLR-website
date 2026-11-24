@@ -1,5 +1,23 @@
 import { expect, test } from "@playwright/test";
 
+test("confirming input method text leaves the time zone choice open", async ({
+  page,
+}) => {
+  await page.goto("/tournament-settings?locale=en");
+  const trigger = page.getByRole("button", { name: "Time zone", exact: true });
+  await trigger.click();
+  const search = page.getByRole("combobox", { name: "Search time zones" });
+  await search.fill("Tokyo");
+  for (const composition of [{ isComposing: true }, { keyCode: 229 }]) {
+    await search.dispatchEvent("keydown", { key: "Enter", ...composition });
+    await expect(search).toBeFocused();
+    await expect(trigger).toContainText("Asia/Taipei");
+  }
+  await search.press("Enter");
+  await expect(trigger).toBeFocused();
+  await expect(trigger).toContainText("Asia/Tokyo");
+});
+
 test("conflict refresh retains the name draft and adopts the saved coaching setting", async ({
   page,
 }) => {

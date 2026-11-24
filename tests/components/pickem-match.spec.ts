@@ -1,5 +1,36 @@
 import { expect, test } from "@playwright/test";
 
+test("keeps a long prediction window editable until its server deadline", async ({
+  page,
+}) => {
+  const day = 86_400_000;
+  const maxTimerDelay = 2_147_483_647;
+  await page.clock.install({ time: new Date("2030-03-01T00:00:00Z") });
+  await page.clock.pauseAt(new Date("2030-03-01T00:01:00Z"));
+  await page.goto("/pickem-match?long-window&serverNow=2030-01-01T00:00:00Z");
+  const home = page.getByRole("radio", { name: "Aurora Rookies" });
+  const away = page.getByRole("radio", { name: "Night Train" });
+  await home.check();
+
+  await page.clock.fastForward(maxTimerDelay);
+  await expect(home).toBeEnabled();
+  await expect(home).toBeChecked();
+  await away.check();
+  await expect(
+    page.getByRole("button", { name: "Save prediction" }),
+  ).toBeEnabled();
+  await page.clock.fastForward(30 * day - maxTimerDelay - 1_000);
+  await expect(away).toBeEnabled();
+  await expect(page.locator("html")).not.toHaveAttribute("data-refreshes");
+
+  await page.clock.fastForward(1_100);
+  await expect(away).toBeDisabled();
+  await expect(
+    page.getByText("Checking the prediction deadline…"),
+  ).toBeVisible();
+  await expect(page.locator("html")).toHaveAttribute("data-refreshes", "1");
+});
+
 test("replaces an incompatible score when changing the selected winner", async ({
   page,
 }) => {

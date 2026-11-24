@@ -1,8 +1,8 @@
 "use client";
 
-import { useEffect, useLayoutEffect, useMemo, useRef, useState } from "react";
+import { useEffect, useId, useMemo, useRef, useState } from "react";
 import { useAppTranslations } from "@/i18n/shared";
-import { fitSortRows } from "@/lib/leaderboard-sort";
+import { useLeaderboardSortLayout } from "./use-leaderboard-sort-layout";
 import { BeatmapRankCard, type BeatmapRankCardData } from "./beatmap-rank-card";
 import styles from "./player-leaderboard-cards.module.css";
 
@@ -85,11 +85,9 @@ export function BeatmapLeaderboardCards({
   const tr = useAppTranslations();
   const [sort, setSort] = useState<Sort | null>(null);
   const [visibleCount, setVisibleCount] = useState(PAGE_SIZE);
-  const [sortRowSizes, setSortRowSizes] = useState<number[] | null>(null);
   const sentinelRef = useRef<HTMLDivElement | null>(null);
-  const sortBarRef = useRef<HTMLDivElement | null>(null);
-  const sortWidthsRef = useRef<number[] | null>(null);
   const activeSort = sort ?? defaultSort;
+  const sortDescriptionId = useId();
 
   const columns: BeatmapLeaderboardColumn[] = providedColumns ?? [
     { key: "title", label: tr("Beatmap") },
@@ -107,65 +105,7 @@ export function BeatmapLeaderboardCards({
     .map((column) => `${column.key}:${column.label}`)
     .join("\u0001");
 
-  useLayoutEffect(() => {
-    const bar = sortBarRef.current;
-    if (!bar) return;
-    let cancelled = false;
-    let frame = 0;
-    const update = () => {
-      if (cancelled) return;
-      const row = bar.firstElementChild;
-      if (!(row instanceof HTMLElement)) return;
-      const gap = Number.parseFloat(getComputedStyle(row).columnGap) || 0;
-      const buttons = [...bar.querySelectorAll("button")];
-      let widths = sortWidthsRef.current;
-      if (!widths || widths.length !== buttons.length) {
-        for (const button of buttons) button.style.flex = "0 0 auto";
-        const measured: number[] = [];
-        try {
-          for (const button of buttons) {
-            measured.push(button.getBoundingClientRect().width);
-          }
-        } finally {
-          for (const button of buttons) button.style.removeProperty("flex");
-        }
-        if (measured.length === 0 || measured.some((width) => width <= 0)) {
-          return;
-        }
-        widths = measured;
-        sortWidthsRef.current = measured;
-      }
-      if (widths.length === 0 || widths.some((width) => width <= 0)) return;
-      const next = fitSortRows(widths, gap, bar.clientWidth);
-      setSortRowSizes((current) =>
-        current?.length === next.length &&
-        current.every((size, index) => size === next[index])
-          ? current
-          : next,
-      );
-    };
-    const schedule = () => {
-      if (cancelled) return;
-      cancelAnimationFrame(frame);
-      frame = requestAnimationFrame(update);
-    };
-    update();
-    const observer = new ResizeObserver(schedule);
-    observer.observe(bar);
-    window.addEventListener("resize", schedule);
-    void document.fonts.ready.then(() => {
-      if (cancelled) return;
-      sortWidthsRef.current = null;
-      update();
-    });
-    return () => {
-      cancelled = true;
-      cancelAnimationFrame(frame);
-      observer.disconnect();
-      window.removeEventListener("resize", schedule);
-      sortWidthsRef.current = null;
-    };
-  }, [labelKey]);
+  const { sortBarRef, sortRowSizes } = useLeaderboardSortLayout(labelKey);
 
   const sortRows: (typeof columns)[] = [];
   const rowSizes = sortRowSizes ?? [columns.length];
@@ -230,6 +170,11 @@ export function BeatmapLeaderboardCards({
 
   return (
     <div className={styles.board}>
+      <span id={sortDescriptionId} className="sr-only" role="status">
+        {activeSort.dir === "asc"
+          ? tr("Sorted ascending")
+          : tr("Sorted descending")}
+      </span>
       <div
         ref={sortBarRef}
         className={styles.sortBar}
@@ -253,6 +198,7 @@ export function BeatmapLeaderboardCards({
                   className={styles.sortButton}
                   data-active={active || undefined}
                   aria-pressed={active}
+                  aria-describedby={active ? sortDescriptionId : undefined}
                   onClick={() => toggle(column.key)}
                 >
                   <span

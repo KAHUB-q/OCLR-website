@@ -1,6 +1,8 @@
 import { createRoot } from "react-dom/client";
 import { NextIntlClientProvider } from "next-intl";
+import type { BeatmapRankCardData } from "../../src/components/beatmap-rank-card";
 import { PlayerLeaderboardCards } from "../../src/components/player-leaderboard-cards";
+import { BeatmapLeaderboardCards } from "../../src/components/beatmap-leaderboard-cards";
 import type { PlayerRankCardData } from "../../src/components/player-rank-card";
 import en from "../../messages/en.json";
 
@@ -43,8 +45,45 @@ const players: PlayerRankCardData[] = [3, 2, 1].map((mra, index) => ({
   avatarUrl: null,
   coverUrl: null,
 }));
+const maps: BeatmapRankCardData[] = [3, 1].map((picks, index) => ({
+  rank: index + 1,
+  beatmapId: 990001 + index,
+  title: `Synthetic map ${picks}`,
+  beatmapSetId: null,
+  difficulty: null,
+  slot: "NM1",
+  season: null,
+  editionName: "Test edition",
+  appearance: null,
+  round: "Final",
+  archive: false,
+  roundId: "",
+  stars: null,
+  fittedStars: null,
+  fittedOffset: null,
+  offsetColor: null,
+  picks,
+  bans: 0,
+  plays: picks,
+  averageAccuracy: null,
+  averageCombo: null,
+  statPositions: {
+    picks: null,
+    bans: null,
+    plays: null,
+    averageAccuracy: null,
+    averageCombo: null,
+  },
+}));
+
+const params = new URLSearchParams(location.search);
+
 createRoot(document.getElementById("root")!).render(
   <NextIntlClientProvider locale="en" messages={en} timeZone="UTC">
-    <PlayerLeaderboardCards players={players} />
+    {params.get("board") === "beatmap" || params.has("beatmaps") ? (
+      <BeatmapLeaderboardCards maps={params.has("beatmaps") ? [] : maps} />
+    ) : (
+      <PlayerLeaderboardCards players={players} />
+    )}
   </NextIntlClientProvider>,
 );

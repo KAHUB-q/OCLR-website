@@ -1,6 +1,7 @@
 "use client";
 import "../app/tournaments/[edition]/event-pages.css";
-import { useState, type ReactNode } from "react";
+import { selectFragment, useUrlFragment } from "./url-fragment";
+import { useEffect, useState, type ReactNode } from "react";
 import { useAppTranslations } from "@/i18n/shared";
 import type { BracketDisplay, BracketDisplayMatch } from "@/lib/bracket-model";
 import type { EventMatch } from "@/lib/event-preview";
@@ -38,12 +39,29 @@ export function EventSchedule({
     { id: "knockout", label: tr("Double elimination") },
     ...(hasExhibition ? [{ id: "exhibition", label: tr("Exhibition") }] : []),
   ];
-  const [phase, setPhase] = useState(() => {
+  function openingPhase() {
     if (phases) return phases[0]?.id ?? "";
     if (hasExhibition && stages.size === 1) return "exhibition";
     if (groups.length) return "group";
     return phaseOptions.find(({ id }) => stages.has(id))?.id ?? "group";
-  });
+  }
+  const fragment = useUrlFragment();
+  const linkedMatch = matches.find(
+    (match) =>
+      fragment === `#match-${match.id}` || fragment === `#row-${match.id}`,
+  );
+  const phase =
+    linkedMatch?.stage ??
+    phaseOptions.find(
+      (option) => fragment === `#${encodeURIComponent(option.id)}`,
+    )?.id ??
+    openingPhase();
+  useEffect(() => {
+    if (linkedMatch && fragment.startsWith("#match-"))
+      document
+        .getElementById(fragment.slice(1))
+        ?.scrollIntoView({ block: "nearest" });
+  }, [fragment, linkedMatch]);
   const [status, setStatus] = useState(initialStatus);
   const listed = matches.filter(
     (m) => status === "all" || m.recorded === (status === "recorded"),
@@ -247,7 +265,9 @@ export function EventSchedule({
               <button
                 key={option.id}
                 aria-pressed={phase === option.id}
-                onClick={() => setPhase(option.id)}
+                onClick={() =>
+                  selectFragment(`#${encodeURIComponent(option.id)}`)
+                }
               >
                 {option.label}
               </button>
@@ -464,14 +484,7 @@ export function EventSchedule({
                       {m.blueHref ? <a href={m.blueHref}>{m.blue}</a> : m.blue}
                     </td>
                     <td>
-                      <a
-                        href={m.href ?? `#match-${m.id}`}
-                        onClick={() => {
-                          if (!m.href) setPhase(m.stage);
-                        }}
-                      >
-                        {matchName(m)}
-                      </a>
+                      <a href={m.href ?? `#match-${m.id}`}>{matchName(m)}</a>
                     </td>
                     <td>
                       {m.first

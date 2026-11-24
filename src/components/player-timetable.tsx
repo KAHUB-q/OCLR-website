@@ -23,6 +23,7 @@ import {
   nextCellState,
   paintAvailability,
   shiftDate,
+  timetableScrollInstant,
   weekStart,
   selectableTimetableDate,
   type CellState,
@@ -115,12 +116,7 @@ export function PlayerTimetable({
           ? 0
           : selected.offsetLeft - strip.clientWidth + selected.clientWidth;
       const date = weekView ? startDate : selectedDate;
-      const scrollInstant = weekView
-        ? (zonedInstants(
-            `${date}T${localDateTime(anchor, timeZone).slice(11, 16)}`,
-            timeZone,
-          )[0] ?? anchor)
-        : anchor;
+      const scrollInstant = timetableScrollInstant(anchor, date, timeZone);
       const day = root?.querySelector<HTMLElement>(`[data-day="${date}"]`);
       if (!root || !day) return;
       root.scrollTop +=

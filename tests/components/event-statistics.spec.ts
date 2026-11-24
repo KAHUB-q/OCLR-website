@@ -32,6 +32,12 @@ test("all six statistics views preserve identity and same-name team filters", as
   await expect(rows).toHaveCount(2);
   await expect(player(11)).toContainText("90");
   await expect(player(22)).toContainText("50");
+  const mvps = page.getByRole("columnheader", { name: "MVPs", exact: true });
+  const mvpColumn = await mvps.evaluate(
+    (th: HTMLTableCellElement) => th.cellIndex,
+  );
+  await expect(player(11).locator("td").nth(mvpColumn)).toHaveText("2");
+  await expect(player(22).locator("td").nth(mvpColumn)).toHaveText("0");
   await expect(
     page.getByText("Players with data").locator("..").locator("strong"),
   ).toHaveText("2");
@@ -70,11 +76,45 @@ test("all six statistics views preserve identity and same-name team filters", as
     .click();
   await expect(rows).toHaveCount(1);
   await expect(player(22)).toContainText("50");
+  // Filtering out the winner must not award another team an MVP.
+  await expect(player(22).locator("td").nth(mvpColumn)).toHaveText("0");
   await page
     .getByRole("button", { name: "Mappool statistics", exact: true })
     .click();
   await expect(player(22)).toHaveCount(1);
   await expect(rows.locator("td").nth(10)).toHaveText("50");
+});
+
+test("statistics search matches displayed numbers and raw values", async ({
+  page,
+}) => {
+  await page.goto("/event-statistics");
+  await page
+    .getByRole("button", { name: "Individual leaderboard", exact: true })
+    .click();
+  const rows = page.locator("tbody tr");
+  const search = page.getByRole("textbox", { name: "Search" });
+  await expect(
+    rows.getByRole("cell", { name: "98%", exact: true }),
+  ).toHaveCount(3);
+  await search.fill("98%");
+  await expect(rows).toHaveCount(3);
+  await search.fill("0.98");
+  await expect(rows).toHaveCount(3);
+  await search.fill("1,234");
+  await expect(rows).toHaveCount(1);
+  await expect(rows.getByRole("link", { name: "Old name" })).toBeVisible();
+  await search.fill("  OLD NAME  ");
+  await expect(rows).toHaveCount(1);
+  await search.fill("   ");
+  await expect(rows).toHaveCount(3);
+  await page
+    .getByRole("button", { name: "Mappool statistics", exact: true })
+    .click();
+  await search.fill("1,001");
+  await expect(rows).toHaveCount(0);
+  await search.fill("1001");
+  await expect(rows.getByRole("link", { name: "1001 ↗" })).toBeVisible();
 });
 
 test("statistics notes remain visible below title", async ({ page }) => {
@@ -100,4 +140,33 @@ test("statistics notes remain visible below title", async ({ page }) => {
   await expect(
     page.getByRole("button", { name: "Notes", exact: true }),
   ).toHaveCount(0);
+});
+
+test("placement ranks and scores keep their units when the map title contains rate", async ({
+  page,
+}) => {
+  await page.goto("/event-statistics?title-only");
+  const rows = page.locator("tbody tr");
+  await expect(
+    rows.first().getByRole("cell", { name: "98%", exact: true }),
+  ).toBeVisible();
+  await expect(
+    rows.first().getByRole("cell", { name: "100%", exact: true }),
+  ).toBeVisible();
+  for (const view of ["Solo placements", "Team placements"]) {
+    await page.getByRole("button", { name: view, exact: true }).click();
+    await expect(
+      page.getByRole("columnheader", {
+        name: "Final · NM1 · Pirate Radio Score",
+      }),
+    ).toBeVisible();
+    await expect(rows.first().locator("td:nth-last-child(-n+2)")).toHaveText([
+      "1",
+      "100",
+    ]);
+    await expect(rows.last().locator("td:nth-last-child(-n+2)")).toHaveText([
+      "2",
+      "50",
+    ]);
+  }
 });

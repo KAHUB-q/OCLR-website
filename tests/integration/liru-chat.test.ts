@@ -13,6 +13,7 @@ import { users, sessions, registrations, staffRoles } from "@/db/schema";
 import { createSession, revokeSession } from "@/lib/auth/sessions";
 import { hashToken } from "@/lib/auth/tokens";
 import { english } from "@/i18n/translate";
+import { seasonCountIntent } from "@/lib/chat-season-counts";
 import { chatEvidence } from "@/lib/chat-sources";
 import { POST } from "@/app/api/chat/route";
 import { seedEditions } from "../fixtures/editions";
@@ -265,6 +266,38 @@ describe.skipIf(!testUrl)("authenticated tournament assistant", () => {
     } finally {
       vi.stubEnv("OCLR_CHAT_EMBEDDING_MODEL", "");
     }
+  });
+  it("uses public map slots, known difficulty IDs and released picks for natural count questions", async () => {
+    const archive = structuredClone(historicalArchive);
+    const maps = archive.pools[0].maps;
+    maps.push({ ...maps[0], slot: "HD1" });
+    const slug = archive.editionSlug;
+    await seedEditions([
+      { ...edition, slug, archive, status: "completed", registration: null },
+    ]);
+    const fetch = vi.fn();
+    vi.stubGlobal("fetch", fetch);
+    for (const [question, expected, path] of [
+      ["有幾張不重複的譜面？", 1, "mappools"],
+      ["图池里有几张 HD 图？", 1, "mappools"],
+      ["How many TB slots are there?", 1, "mappools"],
+      ["DT譜面共有幾張？", 0, "mappools"],
+      ["已公布的選秀紀錄有幾筆？", 1, "draft"],
+      ["賽程還剩幾場？", 0, "schedule"],
+    ] as const) {
+      const { total } = await chatEvidence(slug, question, "");
+      expect(total, question).toMatchObject({
+        count: expected,
+        source: { url: `/tournaments/${slug}/${path}` },
+      });
+    }
+    for (const query of [
+      "決賽有幾張 HD 圖？",
+      "Alpha 有幾筆選秀紀錄？",
+      "HD 和 DT 一共有幾張？",
+    ])
+      expect(seasonCountIntent(query)).toBeNull();
+    expect(fetch).not.toHaveBeenCalled();
   });
   it("streams cited public evidence through the configured compatible provider and discards client instructions", async () => {
     context.token = (await createSession(1425001)).token;

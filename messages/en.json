@@ -5159,6 +5159,9 @@
     "m8c4f9c435b8e": "{count, plural, one {# match has a published result} other {# matches have published results}}.",
     "ma94093205cb7": "{count, plural, one {# upcoming match has a scheduled start time} other {# upcoming matches have scheduled start times}}.",
     "mda64e34a9aa1": "This season has {count, plural, one {# published mappool} other {# published mappools}}.",
-    "m6ae4e2c359a5": "Published mappools contain {count, plural, one {# map slot} other {# map slots}}. A beatmap in multiple slots counts once per slot."
+    "m6ae4e2c359a5": "Published mappools contain {count, plural, one {# map slot} other {# map slots}}. A beatmap in multiple slots counts once per slot.",
+    "m3da0f6110ec3": "Published mappools list {count, plural, one {# {mod} slot} other {# {mod} slots}}.",
+    "mcbca81eda3e9": "Published mappools list {count, plural, one {# distinct identifiable beatmap} other {# distinct identifiable beatmaps}} by difficulty ID.",
+    "m3e33804e3595": "This season has {count, plural, one {# published draft pick} other {# published draft picks}}."
   }
 }

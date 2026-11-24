@@ -60,7 +60,8 @@ export function RankChart({
   const hostRef = useRef<HTMLDivElement>(null);
   const [width, setWidth] = useState(0);
   const [height, setHeight] = useState(MIN_HEIGHT);
-  const [active, setActive] = useState<{ index: number } | null>(null);
+  const [pointerIndex, setPointerIndex] = useState<number | null>(null);
+  const [keyboardIndex, setKeyboardIndex] = useState<number | null>(null);
 
   useEffect(() => {
     const host = hostRef.current;
@@ -153,41 +154,70 @@ export function RankChart({
         nearest = index;
       }
     });
-    setActive({ index: nearest });
+    setPointerIndex(nearest);
   };
 
-  const activePoint = active ? points[active.index] : null;
+  const lastIndex = points.length - 1;
+  const selectedIndex = Math.min(
+    pointerIndex ?? keyboardIndex ?? lastIndex,
+    lastIndex,
+  );
+  const selectedPoint = points[selectedIndex];
+  const activePoint =
+    pointerIndex !== null || keyboardIndex !== null ? selectedPoint : null;
+  const rankLabel = selectedPoint ? `#${number(selectedPoint.rank)}` : "";
+  const dayLabel = selectedPoint ? formattedDay(selectedPoint.day) : null;
 
   // A tap has no hover to end: touch pointers fire `pointerleave` right after
   // `pointerup`, which used to drop the readout instantly. Keep a touch pick
   // until the next tap outside the chart instead.
   useEffect(() => {
-    if (!active) return;
+    if (pointerIndex === null) return;
     const dismiss = (event: PointerEvent) => {
-      if (!hostRef.current?.contains(event.target as Node)) setActive(null);
+      if (!hostRef.current?.contains(event.target as Node))
+        setPointerIndex(null);
     };
     document.addEventListener("pointerdown", dismiss);
     return () => document.removeEventListener("pointerdown", dismiss);
-  }, [active]);
+  }, [pointerIndex]);
 
   return (
     <div className="rank-chart" ref={hostRef}>
+      {geometry && (
+        <input
+          type="range"
+          className="sr-only"
+          aria-label={tr("Global rank")}
+          aria-valuetext={dayLabel ? `${rankLabel} · ${dayLabel}` : rankLabel}
+          min={0}
+          max={lastIndex}
+          value={selectedIndex}
+          onFocus={() => {
+            setPointerIndex(null);
+            setKeyboardIndex(lastIndex);
+          }}
+          onChange={(event) => {
+            setPointerIndex(null);
+            setKeyboardIndex(event.currentTarget.valueAsNumber);
+          }}
+          onBlur={() => setKeyboardIndex(null)}
+        />
+      )}
       {geometry ? (
         <svg
           className="rank-chart-svg"
           viewBox={`0 0 ${width} ${height}`}
           width={width}
           height={height}
-          role="img"
-          aria-label={`${tr("Global rank")}: #${number(points[points.length - 1].rank)}`}
+          aria-hidden="true"
           onPointerMove={(event) => pick(event.clientX)}
           onPointerDown={(event) => pick(event.clientX)}
           onPointerLeave={(event) => {
             // Touch releases the pointer after every tap; a mouse leaving is
             // the only real "stop inspecting" signal.
-            if (event.pointerType !== "touch") setActive(null);
+            if (event.pointerType !== "touch") setPointerIndex(null);
           }}
-          onPointerCancel={() => setActive(null)}
+          onPointerCancel={() => setPointerIndex(null)}
         >
           <defs>
             <linearGradient id={gradientId} x1="0" x2="0" y1="0" y2="1">
@@ -243,10 +273,8 @@ export function RankChart({
             top: geometry.toY(activePoint.rank),
           }}
         >
-          <strong>#{number(activePoint.rank)}</strong>
-          {formattedDay(activePoint.day) && (
-            <span>{formattedDay(activePoint.day)}</span>
-          )}
+          <strong>{rankLabel}</strong>
+          {dayLabel && <span>{dayLabel}</span>}
         </div>
       )}
     </div>

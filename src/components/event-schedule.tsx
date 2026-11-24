@@ -39,6 +39,12 @@ export function EventSchedule({
     { id: "knockout", label: tr("Double elimination") },
     ...(hasExhibition ? [{ id: "exhibition", label: tr("Exhibition") }] : []),
   ];
+  function openingPhase() {
+    if (phases) return phases[0]?.id ?? "";
+    if (hasExhibition && stages.size === 1) return "exhibition";
+    if (groups.length) return "group";
+    return phaseOptions.find(({ id }) => stages.has(id))?.id ?? "group";
+  }
   const fragment = useUrlFragment();
   const linkedMatch = matches.find(
     (match) =>
@@ -49,9 +55,7 @@ export function EventSchedule({
     phaseOptions.find(
       (option) => fragment === `#${encodeURIComponent(option.id)}`,
     )?.id ??
-    (!phases && hasExhibition && stages.size === 1
-      ? "exhibition"
-      : (phaseOptions[0]?.id ?? ""));
+    openingPhase();
   useEffect(() => {
     if (linkedMatch && fragment.startsWith("#match-"))
       document

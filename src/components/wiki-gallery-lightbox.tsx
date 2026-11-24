@@ -111,7 +111,7 @@ export default function WikiGalleryLightbox({
             aria-label={cardLabel}
             title={cardLabel}
             onClick={() => void downloadCard()}
-            disabled={cardDownload === "busy"}
+            aria-disabled={cardDownload === "busy" || undefined}
             aria-busy={cardDownload === "busy"}
           >
             <DownloadCardIcon className="yarl__icon" />

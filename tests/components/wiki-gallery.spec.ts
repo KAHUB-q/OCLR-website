@@ -161,7 +161,11 @@ test("previews in place, restores focus and downloads the current card and artwo
     await readFile("public/mascot/liru/gallery/purple-punk.webp"),
   );
   const cardPromise = page.waitForEvent("download");
-  await nextDialog.getByRole("button", { name: "Download card" }).click();
+  const downloadCard = nextDialog.getByRole("button", {
+    name: "Download card",
+  });
+  await downloadCard.focus();
+  await page.keyboard.press("Enter");
   const card = await cardPromise;
   expect(card.suggestedFilename()).toBe("Purple punk - SR.png");
   const cardImage = sharp((await card.path())!);
@@ -178,7 +182,8 @@ test("previews in place, restores focus and downloads the current card and artwo
   // This point is outside the portrait area but inside the blue SR frame.
   expect(data[3]).toBe(255);
   expect(data[2]).toBeGreaterThan(data[0]);
-  await nextDialog.getByRole("button", { name: "Close" }).click();
+  await expect(downloadCard).toBeFocused();
+  await page.keyboard.press("Escape");
   await expect(nextDialog).toHaveCount(0);
   await expect(trigger).toBeFocused();
   expect(page.url()).toBe(originalUrl);

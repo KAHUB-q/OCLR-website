@@ -239,13 +239,13 @@ describe.skipIf(!url)("authoritative tournament edition storage", () => {
     await create();
     const schedule = [
       {
-        label: "Synthetic group",
+        label: "swiss",
         kind: "group",
         at: "2026-10-29T00:00:00Z",
         endAt: "2026-10-30T00:00:00Z",
       },
-      { label: "Synthetic final", kind: "knockout", at: null, endAt: null },
-      { label: "Legacy event", at: null },
+      { label: "finals", kind: "knockout", at: null, endAt: null },
+      { kind: "draft", label: "draft", at: null },
     ];
     const before = await readTournament("s12");
     const saved = await change(0, "schedule", { schedule });
@@ -266,6 +266,15 @@ describe.skipIf(!url)("authoritative tournament edition storage", () => {
       }),
     ).rejects.toThrow();
     expect((await readTournament("s12"))?.edition.schedule).toEqual(schedule);
+    for (const row of [
+      { label: "Custom milestone", at: null },
+      { kind: "knockout", label: "swiss", at: null },
+      { kind: "group", label: "Custom group", at: null },
+    ]) {
+      await expect(
+        change(saved.revision, "schedule", { schedule: [row] }),
+      ).rejects.toMatchObject({ status: 400 });
+    }
     expect(await auditEvents()).toHaveLength(2);
   });
   it("stores optional appearance defaults with scoped authorization, revisions and audit", async () => {
@@ -667,9 +676,9 @@ describe.skipIf(!url)("authoritative tournament edition storage", () => {
       .set({ lockedAt: new Date(), setupVersion: 9 })
       .where(eq(editionState.slug, "s12"));
     const scheduled = await change(0, "schedule", {
-      schedule: [{ label: "Synthetic milestone", at: null }],
+      schedule: [{ kind: "draft", label: "draft", at: null }],
     });
-    expect(scheduled.edition.schedule[0].label).toBe("Synthetic milestone");
+    expect(scheduled.edition.schedule[0].label).toBe("draft");
     await change(scheduled.revision, "general", {
       ...fields,
       name: "Completed synthetic edition",

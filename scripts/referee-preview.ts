@@ -100,7 +100,7 @@ await db().transaction(async (tx) => {
         },
       ],
     },
-    schedule: [{ label: "淘汰赛", at: null }],
+    schedule: [{ kind: "knockout", label: "quarterfinals", at: null }],
   };
   await tx
     .update(editionState)

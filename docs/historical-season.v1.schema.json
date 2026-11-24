@@ -428,6 +428,7 @@
     "__schema13": {
       "type": "string",
       "enum": [
+        "draft",
         "group",
         "knockout"
       ]

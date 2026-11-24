@@ -1,3 +1,4 @@
+import { milestoneNames } from "./milestone-names";
 import { z } from "zod";
 import { resolveArchiveStaffCommand } from "./archive-staff-identity-model";
 import { editionSchema, editionSlugSchema } from "./editions";
@@ -115,7 +116,24 @@ const commandSchema = z.discriminatedUnion("action", [
     .object({
       ...version,
       action: z.literal("schedule"),
-      schedule: shape.schedule,
+      schedule: z
+        .array(
+          z.discriminatedUnion("kind", [
+            shape.schedule.element.safeExtend({
+              kind: z.literal("draft"),
+              label: z.enum(milestoneNames.draft),
+            }),
+            shape.schedule.element.safeExtend({
+              kind: z.literal("group"),
+              label: z.enum(milestoneNames.group),
+            }),
+            shape.schedule.element.safeExtend({
+              kind: z.literal("knockout"),
+              label: z.enum(milestoneNames.knockout),
+            }),
+          ]),
+        )
+        .max(64),
     })
     .strict(),
   z

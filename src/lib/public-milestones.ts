@@ -1,3 +1,4 @@
+import { isMilestoneName, milestoneName } from "./milestone-names";
 import type { Edition } from "./editions";
 /** Plans remain plans: a passed date alone never establishes that an event happened. */
 export function nextConfirmedMilestone(editions: Edition[], now = new Date()) {
@@ -32,8 +33,14 @@ export function nextConfirmedMilestone(editions: Edition[], now = new Date()) {
             ]
           : []),
         ...e.schedule
-          .filter((s): s is { label: string; at: string } => Boolean(s.at))
-          .map((s) => ({ ...s, kind: "authored" as const, path: "schedule" })),
+          .filter((s): s is typeof s & { at: string } => Boolean(s.at))
+          .map((s) => ({
+            ...s,
+            kind: isMilestoneName(s.kind, s.label)
+              ? ("milestone" as const)
+              : ("authored" as const),
+            path: "schedule",
+          })),
       ].map((s) => ({
         ...s,
         edition: e.name,
@@ -109,6 +116,8 @@ export function milestoneLabel(
   tr: (message: string) => string,
 ) {
   switch (event.kind) {
+    case "milestone":
+      return milestoneName(event.label, tr);
     case "registration_opens":
       return tr("Registration window begins");
     case "registration_closes":

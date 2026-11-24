@@ -260,25 +260,25 @@ test.describe("browser-managed authoritative tournament editions", () => {
         .getByRole("button", { name: "Add milestone", exact: true })
         .click();
       await page
-        .getByLabel("Milestone 1 label", { exact: true })
-        .fill("Synthetic captain announcement");
-      await page
         .getByRole("button", { name: "Add milestone", exact: true })
         .click();
       await page
-        .getByLabel("Milestone 2 label", { exact: true })
-        .fill("Synthetic competition start");
+        .getByLabel("Phase type", { exact: true })
+        .nth(1)
+        .selectOption("group");
       await page
-        .getByLabel("Milestone 2 time: date", { exact: true })
+        .getByLabel("Start time: date", { exact: true })
+        .nth(1)
         .fill("2027-04-20");
       await page
-        .getByLabel("Milestone 2 time: time (HH:mm)", { exact: true })
+        .getByLabel("Start time: time (HH:mm)", { exact: true })
+        .nth(1)
         .fill("20:30");
       await page
         .getByRole("button", { name: "Move milestone 2 up", exact: true })
         .click();
       await expect(
-        page.getByLabel("Milestone 1 time: date", { exact: true }),
+        page.getByLabel("Start time: date", { exact: true }).first(),
       ).toHaveValue("2027-04-20");
       await page
         .getByRole("button", { name: "Save milestones", exact: true })
@@ -289,10 +289,12 @@ test.describe("browser-managed authoritative tournament editions", () => {
       state = await current();
       expect(state.edition.schedule).toEqual([
         {
-          label: "Synthetic competition start",
+          label: "group_stage",
+          kind: "group",
+          endAt: null,
           at: "2027-04-20T12:30:00.000Z",
         },
-        { label: "Synthetic captain announcement", at: null },
+        { label: "draft", kind: "draft", at: null, endAt: null },
       ]);
       await tab("Registration");
       await page
@@ -353,7 +355,7 @@ test.describe("browser-managed authoritative tournament editions", () => {
       ).toBeVisible();
       await guestPage.goto(`/tournaments/${slug}`);
       await expect(guestPage.locator(".stage-scroll")).toContainText(
-        "Synthetic captain announcement",
+        "Draft ceremony",
       );
       await guestPage.goto(`/tournaments/${slug}/register`);
       await expect(

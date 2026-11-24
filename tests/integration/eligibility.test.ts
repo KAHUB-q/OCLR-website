@@ -169,7 +169,7 @@ describe.skipIf(!url)("authoritative registration eligibility", () => {
       action: "schedule",
       expectedRevision: 0,
       confirmed: true,
-      schedule: [{ label: "Synthetic later milestone", at: null }],
+      schedule: [{ kind: "draft", label: "draft", at: null }],
     });
     expect(changed.revision).toBe(1);
 

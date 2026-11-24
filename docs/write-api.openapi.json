@@ -2,7 +2,7 @@
   "openapi": "3.1.0",
   "info": {
     "title": "OCLR write API",
-    "version": "0.6.0",
+    "version": "0.7.0",
     "description": "Incremental documentation of existing OCLR browser and desktop routes. See write-api-inventory.json for coverage."
   },
   "components": {
@@ -657,7 +657,7 @@
                     "type": "string"
                   },
                   "configuration": {
-                    "$ref": "#/components/schemas/Read7b1d7de8924b"
+                    "$ref": "#/components/schemas/Read07023cebb699"
                   },
                   "configurationVersion": {
                     "type": "number"
@@ -1226,17 +1226,17 @@
         ],
         "additionalProperties": false
       },
-      "Read7b1d7de8924b": {
+      "Read07023cebb699": {
         "anyOf": [
           {
             "type": "null"
           },
           {
-            "$ref": "#/components/schemas/Read0d3c249a440f"
+            "$ref": "#/components/schemas/Read023c6ac8e1d9"
           }
         ]
       },
-      "Read0d3c249a440f": {
+      "Read023c6ac8e1d9": {
         "type": "object",
         "properties": {
           "name": {
@@ -1323,7 +1323,7 @@
             "$ref": "#/components/schemas/Readcb41459d5612"
           },
           "schedule": {
-            "$ref": "#/components/schemas/Read53d8bb6b02cb"
+            "$ref": "#/components/schemas/Read611364ce13d2"
           },
           "branding": {
             "$ref": "#/components/schemas/Read5ab2db77dabd"
@@ -3946,13 +3946,13 @@
         ],
         "additionalProperties": false
       },
-      "Read53d8bb6b02cb": {
+      "Read611364ce13d2": {
         "type": "array",
         "items": {
-          "$ref": "#/components/schemas/Read3e69714f262b"
+          "$ref": "#/components/schemas/Readcb308f459c47"
         }
       },
-      "Read3e69714f262b": {
+      "Readcb308f459c47": {
         "type": "object",
         "properties": {
           "label": {
@@ -3981,6 +3981,10 @@
               {
                 "type": "string",
                 "const": "knockout"
+              },
+              {
+                "type": "string",
+                "const": "draft"
               }
             ]
           },
@@ -11378,7 +11382,7 @@
             "$ref": "#/components/schemas/Readab8799e08222"
           },
           "edition": {
-            "$ref": "#/components/schemas/Read3dfcab2ad495"
+            "$ref": "#/components/schemas/Reade8804ecd543d"
           },
           "revision": {
             "type": "number"
@@ -11439,7 +11443,7 @@
         ],
         "additionalProperties": false
       },
-      "Read3dfcab2ad495": {
+      "Reade8804ecd543d": {
         "type": "object",
         "properties": {
           "slug": {
@@ -11503,7 +11507,7 @@
             "$ref": "#/components/schemas/Reade8693424c8e5"
           },
           "schedule": {
-            "$ref": "#/components/schemas/Read53d8bb6b02cb"
+            "$ref": "#/components/schemas/Read611364ce13d2"
           },
           "defaultAppearance": {
             "$ref": "#/components/schemas/Read0cdca1ea8fa1"
@@ -35198,57 +35202,168 @@
                         "maxItems": 64,
                         "type": "array",
                         "items": {
-                          "type": "object",
-                          "properties": {
-                            "label": {
-                              "type": "string",
-                              "minLength": 1,
-                              "maxLength": 200
-                            },
-                            "at": {
-                              "anyOf": [
-                                {
+                          "oneOf": [
+                            {
+                              "type": "object",
+                              "properties": {
+                                "label": {
                                   "type": "string",
-                                  "format": "date-time",
-                                  "pattern": "^(?:(?:\\d\\d[2468][048]|\\d\\d[13579][26]|\\d\\d0[48]|[02468][048]00|[13579][26]00)-02-29|\\d{4}-(?:(?:0[13578]|1[02])-(?:0[1-9]|[12]\\d|3[01])|(?:0[469]|11)-(?:0[1-9]|[12]\\d|30)|(?:02)-(?:0[1-9]|1\\d|2[0-8])))T(?:(?:[01]\\d|2[0-3]):[0-5]\\d:[0-5]\\d(?:\\.\\d+)?(?:Z|([+-](?:[01]\\d|2[0-3]):[0-5]\\d)))$"
+                                  "enum": [
+                                    "draft"
+                                  ]
                                 },
-                                {
-                                  "type": "null"
-                                }
-                              ]
-                            },
-                            "kind": {
-                              "type": "string",
-                              "enum": [
-                                "group",
-                                "knockout"
-                              ]
-                            },
-                            "endAt": {
-                              "anyOf": [
-                                {
+                                "at": {
+                                  "anyOf": [
+                                    {
+                                      "type": "string",
+                                      "format": "date-time",
+                                      "pattern": "^(?:(?:\\d\\d[2468][048]|\\d\\d[13579][26]|\\d\\d0[48]|[02468][048]00|[13579][26]00)-02-29|\\d{4}-(?:(?:0[13578]|1[02])-(?:0[1-9]|[12]\\d|3[01])|(?:0[469]|11)-(?:0[1-9]|[12]\\d|30)|(?:02)-(?:0[1-9]|1\\d|2[0-8])))T(?:(?:[01]\\d|2[0-3]):[0-5]\\d:[0-5]\\d(?:\\.\\d+)?(?:Z|([+-](?:[01]\\d|2[0-3]):[0-5]\\d)))$"
+                                    },
+                                    {
+                                      "type": "null"
+                                    }
+                                  ]
+                                },
+                                "kind": {
                                   "type": "string",
-                                  "format": "date-time",
-                                  "pattern": "^(?:(?:\\d\\d[2468][048]|\\d\\d[13579][26]|\\d\\d0[48]|[02468][048]00|[13579][26]00)-02-29|\\d{4}-(?:(?:0[13578]|1[02])-(?:0[1-9]|[12]\\d|3[01])|(?:0[469]|11)-(?:0[1-9]|[12]\\d|30)|(?:02)-(?:0[1-9]|1\\d|2[0-8])))T(?:(?:[01]\\d|2[0-3]):[0-5]\\d:[0-5]\\d(?:\\.\\d+)?(?:Z|([+-](?:[01]\\d|2[0-3]):[0-5]\\d)))$"
+                                  "const": "draft"
                                 },
-                                {
-                                  "type": "null"
+                                "endAt": {
+                                  "anyOf": [
+                                    {
+                                      "type": "string",
+                                      "format": "date-time",
+                                      "pattern": "^(?:(?:\\d\\d[2468][048]|\\d\\d[13579][26]|\\d\\d0[48]|[02468][048]00|[13579][26]00)-02-29|\\d{4}-(?:(?:0[13578]|1[02])-(?:0[1-9]|[12]\\d|3[01])|(?:0[469]|11)-(?:0[1-9]|[12]\\d|30)|(?:02)-(?:0[1-9]|1\\d|2[0-8])))T(?:(?:[01]\\d|2[0-3]):[0-5]\\d:[0-5]\\d(?:\\.\\d+)?(?:Z|([+-](?:[01]\\d|2[0-3]):[0-5]\\d)))$"
+                                    },
+                                    {
+                                      "type": "null"
+                                    }
+                                  ]
+                                },
+                                "precision": {
+                                  "type": "string",
+                                  "enum": [
+                                    "day",
+                                    "instant"
+                                  ]
                                 }
-                              ]
+                              },
+                              "required": [
+                                "label",
+                                "at",
+                                "kind"
+                              ],
+                              "additionalProperties": false
                             },
-                            "precision": {
-                              "type": "string",
-                              "enum": [
-                                "day",
-                                "instant"
-                              ]
+                            {
+                              "type": "object",
+                              "properties": {
+                                "label": {
+                                  "type": "string",
+                                  "enum": [
+                                    "group_stage",
+                                    "swiss"
+                                  ]
+                                },
+                                "at": {
+                                  "anyOf": [
+                                    {
+                                      "type": "string",
+                                      "format": "date-time",
+                                      "pattern": "^(?:(?:\\d\\d[2468][048]|\\d\\d[13579][26]|\\d\\d0[48]|[02468][048]00|[13579][26]00)-02-29|\\d{4}-(?:(?:0[13578]|1[02])-(?:0[1-9]|[12]\\d|3[01])|(?:0[469]|11)-(?:0[1-9]|[12]\\d|30)|(?:02)-(?:0[1-9]|1\\d|2[0-8])))T(?:(?:[01]\\d|2[0-3]):[0-5]\\d:[0-5]\\d(?:\\.\\d+)?(?:Z|([+-](?:[01]\\d|2[0-3]):[0-5]\\d)))$"
+                                    },
+                                    {
+                                      "type": "null"
+                                    }
+                                  ]
+                                },
+                                "kind": {
+                                  "type": "string",
+                                  "const": "group"
+                                },
+                                "endAt": {
+                                  "anyOf": [
+                                    {
+                                      "type": "string",
+                                      "format": "date-time",
+                                      "pattern": "^(?:(?:\\d\\d[2468][048]|\\d\\d[13579][26]|\\d\\d0[48]|[02468][048]00|[13579][26]00)-02-29|\\d{4}-(?:(?:0[13578]|1[02])-(?:0[1-9]|[12]\\d|3[01])|(?:0[469]|11)-(?:0[1-9]|[12]\\d|30)|(?:02)-(?:0[1-9]|1\\d|2[0-8])))T(?:(?:[01]\\d|2[0-3]):[0-5]\\d:[0-5]\\d(?:\\.\\d+)?(?:Z|([+-](?:[01]\\d|2[0-3]):[0-5]\\d)))$"
+                                    },
+                                    {
+                                      "type": "null"
+                                    }
+                                  ]
+                                },
+                                "precision": {
+                                  "type": "string",
+                                  "enum": [
+                                    "day",
+                                    "instant"
+                                  ]
+                                }
+                              },
+                              "required": [
+                                "label",
+                                "at",
+                                "kind"
+                              ],
+                              "additionalProperties": false
+                            },
+                            {
+                              "type": "object",
+                              "properties": {
+                                "label": {
+                                  "type": "string",
+                                  "enum": [
+                                    "quarterfinals",
+                                    "semifinals",
+                                    "finals",
+                                    "grand_finals"
+                                  ]
+                                },
+                                "at": {
+                                  "anyOf": [
+                                    {
+                                      "type": "string",
+                                      "format": "date-time",
+                                      "pattern": "^(?:(?:\\d\\d[2468][048]|\\d\\d[13579][26]|\\d\\d0[48]|[02468][048]00|[13579][26]00)-02-29|\\d{4}-(?:(?:0[13578]|1[02])-(?:0[1-9]|[12]\\d|3[01])|(?:0[469]|11)-(?:0[1-9]|[12]\\d|30)|(?:02)-(?:0[1-9]|1\\d|2[0-8])))T(?:(?:[01]\\d|2[0-3]):[0-5]\\d:[0-5]\\d(?:\\.\\d+)?(?:Z|([+-](?:[01]\\d|2[0-3]):[0-5]\\d)))$"
+                                    },
+                                    {
+                                      "type": "null"
+                                    }
+                                  ]
+                                },
+                                "kind": {
+                                  "type": "string",
+                                  "const": "knockout"
+                                },
+                                "endAt": {
+                                  "anyOf": [
+                                    {
+                                      "type": "string",
+                                      "format": "date-time",
+                                      "pattern": "^(?:(?:\\d\\d[2468][048]|\\d\\d[13579][26]|\\d\\d0[48]|[02468][048]00|[13579][26]00)-02-29|\\d{4}-(?:(?:0[13578]|1[02])-(?:0[1-9]|[12]\\d|3[01])|(?:0[469]|11)-(?:0[1-9]|[12]\\d|30)|(?:02)-(?:0[1-9]|1\\d|2[0-8])))T(?:(?:[01]\\d|2[0-3]):[0-5]\\d:[0-5]\\d(?:\\.\\d+)?(?:Z|([+-](?:[01]\\d|2[0-3]):[0-5]\\d)))$"
+                                    },
+                                    {
+                                      "type": "null"
+                                    }
+                                  ]
+                                },
+                                "precision": {
+                                  "type": "string",
+                                  "enum": [
+                                    "day",
+                                    "instant"
+                                  ]
+                                }
+                              },
+                              "required": [
+                                "label",
+                                "at",
+                                "kind"
+                              ],
+                              "additionalProperties": false
                             }
-                          },
-                          "required": [
-                            "label",
-                            "at"
-                          ],
-                          "additionalProperties": false
+                          ]
                         }
                       }
                     },
@@ -35832,6 +35947,7 @@
                                 "kind": {
                                   "type": "string",
                                   "enum": [
+                                    "draft",
                                     "group",
                                     "knockout"
                                   ]

@@ -1,3 +1,4 @@
+import { milestoneName, isMilestoneName } from "./milestone-names";
 import { english, type AppTranslator } from "@/i18n/translate";
 import { createHash } from "node:crypto";
 import { enrollmentState, formatDate, type Edition } from "./editions";
@@ -175,12 +176,15 @@ export function projectPublicNews(
     }
     for (const entry of e.schedule)
       if (entry.at) {
+        const label = isMilestoneName(entry.kind, entry.label)
+          ? milestoneName(entry.label, tr)
+          : entry.label;
         add(
           "schedule",
           JSON.stringify([entry.label, entry.at]),
-          tr("Scheduled: {label}", { label: entry.label }),
+          tr("Scheduled: {label}", { label }),
           tr("{label} is scheduled for {time}.", {
-            label: entry.label,
+            label,
             time: publicNewsDate(
               {
                 at: entry.at,

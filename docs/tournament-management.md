@@ -276,23 +276,17 @@ Edition Admins choose a default in General settings. See the [appearance policy]
 
 ## Competition times and milestones (#430)
 
-The Milestones tab in edition settings accepts custom point milestones and typed
-Group stage / Knockout stage intervals in the same versioned schedule array.
-`at` remains the start instant; optional `kind=group|knockout` and `endAt` are
-additive fields. Existing rows remain custom milestones. No schema migration or
-real tournament date edits are required. Registration dates remain in Registration.
+In edition settings, choose Draft ceremony, Group stage or Knockout stage.
+Group milestones offer Group stage and Swiss round. Knockout milestones offer
+Quarter-Finals, Semi-Finals, Finals and Grand Finals. The editor and public
+timeline and news use the visitor’s language for these names. The server
+validates each saved name against its phase. Registration dates are managed
+in Registration settings.
 
-Both interval endpoints are optional. The existing zoned date controls preserve
-instants when reloaded, validate calendar/DST input and show the edition zone.
-An end before a known start is rejected by the server and editor. Names are
-required organizer-authored text and remain literal in all locales.
-
-The public overview derives its stage browser and schedule table from one
-model, including undated custom milestones and competition phases. Exact
-duplicate names/times are suppressed only in presentation; stored content is
-retained. Same-time events with different names remain distinct, since legacy
-free text does not establish semantic identity. Dates sort chronologically,
-with undated group/knockout/custom entries last in that order.
+Start and end are optional. An end before a known start is rejected. Date
+precision and the edition’s IANA time zone apply to both endpoints. The
+overview shows undated phases after dated phases, in draft, group and knockout
+order. Rows of the same phase with different dates remain distinct.
 
 A complete competition interval is current on [start, end); all overlapping
 intervals are shown as current. A gap has no current competition interval.

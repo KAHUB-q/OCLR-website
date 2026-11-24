@@ -117,9 +117,9 @@ async function seed() {
         questions: [],
       },
       schedule: [
-        { label: "演示报名开始", at: day(-14).toISOString() },
-        { label: "演示半决赛", at: day(-1).toISOString() },
-        { label: "演示决赛", at: day(3).toISOString() },
+        { kind: "draft", label: "draft", at: day(-14).toISOString() },
+        { kind: "knockout", label: "semifinals", at: day(-1).toISOString() },
+        { kind: "knockout", label: "finals", at: day(3).toISOString() },
       ],
     });
     const archived = editionSchema.parse({

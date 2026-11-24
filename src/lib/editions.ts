@@ -219,7 +219,7 @@ export const editionSchema = z
           .object({
             label: z.string().trim().min(1).max(200),
             at: instant.nullable(),
-            kind: z.enum(["group", "knockout"]).optional(),
+            kind: z.enum(["draft", "group", "knockout"]).optional(),
             endAt: instant.nullable().optional(),
             precision: z.enum(["day", "instant"]).optional(),
           })

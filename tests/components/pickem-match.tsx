@@ -10,8 +10,10 @@ import type { PickemFixture } from "../../src/lib/pickem-types";
 import en from "../../messages/en.json";
 import "../../src/app/globals.css";
 
-const now = new Date();
-const later = new Date(now.getTime() + 3600000).toISOString();
+const state = new URLSearchParams(location.search);
+const now = new Date(state.get("serverNow") ?? Date.now());
+const hours = state.has("long-window") ? 30 * 24 : 1;
+const later = new Date(now.getTime() + hours * 3_600_000).toISOString();
 const card: PickemFixture = {
   windowId: "fixture-window",
   fixtureId: "fixture",
@@ -34,7 +36,6 @@ const card: PickemFixture = {
   result: null,
   points: null,
 };
-const state = new URLSearchParams(location.search);
 if (state.has("saved")) {
   card.mine = {
     outcomeKey: "away",
@@ -53,7 +54,12 @@ if (state.has("closed") || state.has("ended")) {
       { outcomeKey: "away", count: 0 },
     ];
 }
-const router = { refresh() {} } as AppRouterInstance;
+let refreshes = 0;
+const router = {
+  refresh() {
+    document.documentElement.dataset.refreshes = String(++refreshes);
+  },
+} as AppRouterInstance;
 
 createRoot(document.getElementById("root")!).render(
   <Wrapper>

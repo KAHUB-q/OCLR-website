@@ -6,7 +6,10 @@ import { recordedArchiveMatch } from "./historical-archive";
 import type { ChatSource } from "./chat-retrieval";
 import type { Edition } from "./editions";
 
+import type { FixtureStatus } from "./fixture-status";
+
 type Match = {
+  status?: FixtureStatus;
   id: string;
   label: string;
   teams: string;
@@ -14,6 +17,14 @@ type Match = {
   score: string | null;
   cancelled?: boolean;
 };
+export function isUpcomingMatch(match: Match, now: number) {
+  return (
+    (!match.status || match.status === "scheduled") &&
+    !match.score &&
+    match.time !== null &&
+    Date.parse(match.time) >= now
+  );
+}
 export async function matches(edition: Edition): Promise<Match[]> {
   const archive = edition.archive;
   if (archive) {
@@ -34,6 +45,7 @@ export async function matches(edition: Edition): Promise<Match[]> {
     teams: f.home.label + " / " + f.away.label,
     time: f.scheduledAt,
     score: f.result ? [f.result.homeWins, f.result.awayWins].join("–") : null,
+    status: f.status,
     cancelled: f.status === "cancelled",
   }));
 }

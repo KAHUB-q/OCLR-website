@@ -9,6 +9,7 @@ import type { Locale } from "@/i18n/config";
 import { getAppTranslations } from "@/i18n/server";
 import type { ChatConfiguration } from "./chat-config";
 import type { chatEvidence } from "./chat-sources";
+import { formatSeasonCount } from "./chat-season-counts";
 import { chatProvider } from "./chat-provider";
 import { createChatTrace } from "./chat-trace";
 
@@ -36,15 +37,7 @@ export function chatAnswer({
         const tr = await getAppTranslations();
         const total = evidence.total;
         const text = total
-          ? total.historical
-            ? tr(
-                "The historical roster lists {count, number} players. The total number of applications is unavailable.",
-                { count: total.count },
-              )
-            : tr(
-                "Accepted registrations in the public player directory: {count, number}. The total number of applications is not published.",
-                { count: total.count },
-              )
+          ? formatSeasonCount(total, tr)
           : tr(
               "I couldn’t find an answer in this season’s published information.",
             );
@@ -56,7 +49,7 @@ export function chatAnswer({
             type: "source-url",
             sourceId: "1",
             url: total.source.url,
-            title: tr("Players"),
+            title: tr(total.source.title),
           });
         trace(total ? "local_count" : "no_evidence");
         writer.write({ type: "finish" });

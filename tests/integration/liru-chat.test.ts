@@ -207,6 +207,59 @@ describe.skipIf(!testUrl)("authenticated tournament assistant", () => {
     expect((await ask(["有多少人報名了"], { edition: cup })).status).toBe(404);
     expect(upstream).not.toHaveBeenCalled();
   });
+  it("answers public season counts with matching citations without embedding or generation", async () => {
+    const archive = structuredClone(historicalArchive);
+    const current = "empty-local-counts";
+    await seedEditions([
+      {
+        ...edition,
+        slug: archive.editionSlug,
+        archive,
+        status: "completed",
+        registration: null,
+      },
+      season(current, "Empty edition"),
+    ]);
+    await db()
+      .insert(users)
+      .values({ osuId: 1425071, username: "Local counts" });
+    context.token = (await createSession(1425071)).token;
+    const upstream = vi.fn();
+    vi.stubGlobal("fetch", upstream);
+    vi.stubEnv("OCLR_CHAT_EMBEDDING_MODEL", "synthetic-test");
+    try {
+      for (const [question, answer, path] of [
+        ["本屆有幾支隊伍？", "2 published teams", "teams"],
+        ["比赛有几场？", "1 match.", "schedule"],
+        [
+          "How many matches have published results?",
+          "1 match has a published result",
+          "results",
+        ],
+        ["接下來有幾場比賽？", "0 upcoming matches", "schedule"],
+        [
+          "How many mappools are there this season?",
+          "1 published mappool",
+          "mappools",
+        ],
+        ["图池里有几张图？", "2 map slots", "mappools"],
+      ]) {
+        const reply = await (
+          await ask([question], { edition: archive.editionSlug })
+        ).text();
+        expect(reply).toContain(answer);
+        expect(reply).toContain(
+          "/tournaments/" + archive.editionSlug + "/" + path,
+        );
+      }
+      expect(
+        await (await ask(["本屆有幾支隊伍？"], { edition: current })).text(),
+      ).toContain("0 published teams");
+      expect(upstream).not.toHaveBeenCalled();
+    } finally {
+      vi.stubEnv("OCLR_CHAT_EMBEDDING_MODEL", "");
+    }
+  });
   it("streams cited public evidence through the configured compatible provider and discards client instructions", async () => {
     context.token = (await createSession(1425001)).token;
     await seedEditions([season(slug, "Only after referee approval.")]);

@@ -5153,6 +5153,12 @@
     "m692bceb8b343": "Sitewide image cache",
     "m62e62dc45973": "After a refresh, each image is fetched again the next time it is displayed.",
     "mfc94c5dec269": "The historical roster lists {count, number} players. The total number of applications is unavailable.",
-    "me8a039a2c734": "Accepted registrations in the public player directory: {count, number}. The total number of applications is not published."
+    "me8a039a2c734": "Accepted registrations in the public player directory: {count, number}. The total number of applications is not published.",
+    "m6f6e5a4f4f4c": "This season has {count, plural, one {# published team} other {# published teams}}.",
+    "m5ab4ce819453": "The public schedule lists {count, plural, one {# match} other {# matches}}.",
+    "m8c4f9c435b8e": "{count, plural, one {# match has a published result} other {# matches have published results}}.",
+    "ma94093205cb7": "{count, plural, one {# upcoming match has a scheduled start time} other {# upcoming matches have scheduled start times}}.",
+    "mda64e34a9aa1": "This season has {count, plural, one {# published mappool} other {# published mappools}}.",
+    "m6ae4e2c359a5": "Published mappools contain {count, plural, one {# map slot} other {# map slots}}. A beatmap in multiple slots counts once per slot."
   }
 }

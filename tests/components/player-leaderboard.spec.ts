@@ -63,6 +63,7 @@ test("beatmap sort controls expose the direction of the displayed order", async 
   await expect(first).toHaveAccessibleName("#1 Synthetic map 3");
   await picks.press("Enter");
   await expect(picks).toHaveAccessibleDescription("Sorted ascending");
+  await expect(page.getByRole("status")).toHaveText("Sorted ascending");
   await expect(first).toHaveAccessibleName("#2 Synthetic map 1");
   await plays.press("Enter");
   await expect(plays).toHaveAccessibleDescription("Sorted descending");

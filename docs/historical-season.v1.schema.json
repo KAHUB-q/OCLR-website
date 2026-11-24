@@ -430,7 +430,8 @@
       "enum": [
         "draft",
         "group",
-        "knockout"
+        "knockout",
+        "exhibition"
       ]
     },
     "__schema14": {

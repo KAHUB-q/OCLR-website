@@ -2,7 +2,7 @@
   "openapi": "3.1.0",
   "info": {
     "title": "OCLR write API",
-    "version": "0.7.0",
+    "version": "0.8.0",
     "description": "Incremental documentation of existing OCLR browser and desktop routes. See write-api-inventory.json for coverage."
   },
   "components": {
@@ -657,7 +657,7 @@
                     "type": "string"
                   },
                   "configuration": {
-                    "$ref": "#/components/schemas/Read07023cebb699"
+                    "$ref": "#/components/schemas/Readeb8f3d131c06"
                   },
                   "configurationVersion": {
                     "type": "number"
@@ -1226,17 +1226,17 @@
         ],
         "additionalProperties": false
       },
-      "Read07023cebb699": {
+      "Readeb8f3d131c06": {
         "anyOf": [
           {
             "type": "null"
           },
           {
-            "$ref": "#/components/schemas/Read023c6ac8e1d9"
+            "$ref": "#/components/schemas/Read3e276a2f61fb"
           }
         ]
       },
-      "Read023c6ac8e1d9": {
+      "Read3e276a2f61fb": {
         "type": "object",
         "properties": {
           "name": {
@@ -1323,7 +1323,7 @@
             "$ref": "#/components/schemas/Readcb41459d5612"
           },
           "schedule": {
-            "$ref": "#/components/schemas/Read611364ce13d2"
+            "$ref": "#/components/schemas/Read5f151e532958"
           },
           "branding": {
             "$ref": "#/components/schemas/Read5ab2db77dabd"
@@ -3946,13 +3946,13 @@
         ],
         "additionalProperties": false
       },
-      "Read611364ce13d2": {
+      "Read5f151e532958": {
         "type": "array",
         "items": {
-          "$ref": "#/components/schemas/Readcb308f459c47"
+          "$ref": "#/components/schemas/Read381d43c4f4c2"
         }
       },
-      "Readcb308f459c47": {
+      "Read381d43c4f4c2": {
         "type": "object",
         "properties": {
           "label": {
@@ -3981,6 +3981,10 @@
               {
                 "type": "string",
                 "const": "knockout"
+              },
+              {
+                "type": "string",
+                "const": "exhibition"
               },
               {
                 "type": "string",
@@ -11382,7 +11386,7 @@
             "$ref": "#/components/schemas/Readab8799e08222"
           },
           "edition": {
-            "$ref": "#/components/schemas/Reade8804ecd543d"
+            "$ref": "#/components/schemas/Read5bb0d7d5c7ea"
           },
           "revision": {
             "type": "number"
@@ -11443,7 +11447,7 @@
         ],
         "additionalProperties": false
       },
-      "Reade8804ecd543d": {
+      "Read5bb0d7d5c7ea": {
         "type": "object",
         "properties": {
           "slug": {
@@ -11507,7 +11511,7 @@
             "$ref": "#/components/schemas/Reade8693424c8e5"
           },
           "schedule": {
-            "$ref": "#/components/schemas/Read611364ce13d2"
+            "$ref": "#/components/schemas/Read5f151e532958"
           },
           "defaultAppearance": {
             "$ref": "#/components/schemas/Read0cdca1ea8fa1"
@@ -35362,6 +35366,58 @@
                                 "kind"
                               ],
                               "additionalProperties": false
+                            },
+                            {
+                              "type": "object",
+                              "properties": {
+                                "label": {
+                                  "type": "string",
+                                  "enum": [
+                                    "exhibition"
+                                  ]
+                                },
+                                "at": {
+                                  "anyOf": [
+                                    {
+                                      "type": "string",
+                                      "format": "date-time",
+                                      "pattern": "^(?:(?:\\d\\d[2468][048]|\\d\\d[13579][26]|\\d\\d0[48]|[02468][048]00|[13579][26]00)-02-29|\\d{4}-(?:(?:0[13578]|1[02])-(?:0[1-9]|[12]\\d|3[01])|(?:0[469]|11)-(?:0[1-9]|[12]\\d|30)|(?:02)-(?:0[1-9]|1\\d|2[0-8])))T(?:(?:[01]\\d|2[0-3]):[0-5]\\d:[0-5]\\d(?:\\.\\d+)?(?:Z|([+-](?:[01]\\d|2[0-3]):[0-5]\\d)))$"
+                                    },
+                                    {
+                                      "type": "null"
+                                    }
+                                  ]
+                                },
+                                "kind": {
+                                  "type": "string",
+                                  "const": "exhibition"
+                                },
+                                "endAt": {
+                                  "anyOf": [
+                                    {
+                                      "type": "string",
+                                      "format": "date-time",
+                                      "pattern": "^(?:(?:\\d\\d[2468][048]|\\d\\d[13579][26]|\\d\\d0[48]|[02468][048]00|[13579][26]00)-02-29|\\d{4}-(?:(?:0[13578]|1[02])-(?:0[1-9]|[12]\\d|3[01])|(?:0[469]|11)-(?:0[1-9]|[12]\\d|30)|(?:02)-(?:0[1-9]|1\\d|2[0-8])))T(?:(?:[01]\\d|2[0-3]):[0-5]\\d:[0-5]\\d(?:\\.\\d+)?(?:Z|([+-](?:[01]\\d|2[0-3]):[0-5]\\d)))$"
+                                    },
+                                    {
+                                      "type": "null"
+                                    }
+                                  ]
+                                },
+                                "precision": {
+                                  "type": "string",
+                                  "enum": [
+                                    "day",
+                                    "instant"
+                                  ]
+                                }
+                              },
+                              "required": [
+                                "label",
+                                "at",
+                                "kind"
+                              ],
+                              "additionalProperties": false
                             }
                           ]
                         }
@@ -35949,7 +36005,8 @@
                                   "enum": [
                                     "draft",
                                     "group",
-                                    "knockout"
+                                    "knockout",
+                                    "exhibition"
                                   ]
                                 },
                                 "endAt": {

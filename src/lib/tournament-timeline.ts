@@ -3,7 +3,7 @@ import type { Edition } from "./editions";
 import { formatDate } from "./editions";
 import type { PlannedStage } from "./tournament-stages";
 
-const phaseOrder = { draft: 2, group: 3, knockout: 4 };
+const phaseOrder = { draft: 2, group: 3, knockout: 4, exhibition: 5 };
 
 /** One presentation model for the overview's stage browser and schedule table. */
 export function tournamentTimeline(
@@ -73,7 +73,7 @@ export function tournamentTimeline(
     const label = isMilestoneName(event.kind, event.label)
       ? milestoneName(event.label, tr)
       : event.label;
-    const order = event.kind ? phaseOrder[event.kind] : 5;
+    const order = event.kind ? phaseOrder[event.kind] : 6;
     const detail = event.kind
       ? range(event.at, event.endAt, event.precision)
       : date(event.at, event.precision);

@@ -1140,9 +1140,12 @@ function Schedule({ data, saved }: EditorProps) {
                 <option value="draft">{milestoneName("draft", tr)}</option>
                 <option value="group">{tr("Group stage")}</option>
                 <option value="knockout">{tr("Knockout stage")}</option>
+                <option value="exhibition">
+                  {milestoneName("exhibition", tr)}
+                </option>
               </select>
             </label>
-            {s.kind && s.kind !== "draft" && (
+            {s.kind && milestoneNames[s.kind].length > 1 && (
               <label className="field">
                 <span>{tr("Milestone {number} name", { number: i + 1 })}</span>
                 <select

@@ -301,6 +301,22 @@ test("difficulty choices stay consistent across native/archive cards, tables and
     await page.keyboard.press("Escape");
     await toggle.uncheck();
     await expect(row).toContainText("5.7");
+    const ez = selector.getByRole("button", { name: "EZ", exact: true });
+    await expect(selector.getByRole("button", { pressed: true })).toHaveCount(
+      0,
+    );
+    await toggle.check();
+    await expect(ez).toHaveAttribute("aria-pressed", "true");
+    await expect(row).toContainText("3.1");
+    await toggle.uncheck();
+    await ez.click();
+    await expect(toggle).toBeChecked();
+    await expect(ez).toHaveAttribute("aria-pressed", "true");
+    await expect(row).toContainText("3.1");
+    await ez.click();
+    await expect(toggle).toBeChecked();
+    await expect(ez).toHaveAttribute("aria-pressed", "false");
+    await expect(row).toContainText("5.7");
     expect(
       await page.evaluate(
         () => document.documentElement.scrollWidth <= innerWidth,

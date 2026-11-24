@@ -64,7 +64,15 @@ export async function seasonContent(
           .filter(Boolean)
           .join(" · "),
       );
-      if (archive?.season) add("", e.name, archive.season);
+      if (archive) {
+        if (archive.season) add("", e.name, archive.season);
+        add("", e.name + " · season overview", {
+          teams: archive.teams.length,
+          players: archive.players.length,
+          matches: archive.matches.length,
+          pools: archive.pools.length,
+        });
+      }
       if (!archive) {
         const preview = informationPreview(e.slug);
         const schedule =
@@ -162,6 +170,18 @@ export async function seasonContent(
       break;
     }
     case "matches":
+      for (const m of archive?.matches ?? []) {
+        add("/matches/" + m.id, m.label, {
+          stage: m.stage,
+          referee: m.referee,
+          streamer: m.streamer,
+          commentators: m.commentators,
+          bansA: m.bansA,
+          bansB: m.bansB,
+          mp: m.mpUrls,
+          recording: m.vodUrl,
+        });
+      }
       for (const f of await matches(e))
         add("/matches/" + encodeURIComponent(f.id), f.label + " · " + f.teams, {
           category: "match schedule result",

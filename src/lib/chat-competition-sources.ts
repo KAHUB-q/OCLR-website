@@ -51,6 +51,15 @@ export async function poolSources(edition: Edition): Promise<ChatSource[]> {
             m.beatmapId,
             m.bpm && m.bpm + " BPM",
             m.stars && m.stars + "★",
+            ...Object.entries({
+              AR: m.ar,
+              OD: m.od,
+              CS: m.cs,
+              HP: m.hp,
+              seconds: m.drainSeconds,
+            })
+              .filter(([, v]) => v != null)
+              .map(([k, v]) => k + " " + v),
           ]
             .filter(Boolean)
             .join(" "),
@@ -67,6 +76,17 @@ export async function poolSources(edition: Edition): Promise<ChatSource[]> {
             e.metadata.difficulty,
             e.metadata.mapper,
             e.beatmapId,
+            ...Object.entries({
+              stars: e.metadata.stars,
+              BPM: e.metadata.bpm,
+              seconds: e.metadata.duration,
+              AR: e.metadata.ar,
+              OD: e.metadata.od,
+              CS: e.metadata.cs,
+              HP: e.metadata.hp,
+            })
+              .filter(([, v]) => v != null)
+              .map(([k, v]) => k + " " + v),
           ].join(" "),
         ),
       }));

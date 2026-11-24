@@ -18,6 +18,7 @@ const archived = {
   archive: structuredClone(historicalArchive),
 };
 const calls: string[][] = [];
+let embeddingUnavailable = false;
 beforeAll(async () => {
   if (!url) return;
   assertTestDatabase(url);
@@ -30,6 +31,7 @@ beforeAll(async () => {
     expect(String(address)).toBe("https://synthetic.invalid/v1/embeddings");
     const { input } = JSON.parse(String(opts.body)) as { input: string[] };
     calls.push(input);
+    if (embeddingUnavailable) return new Response(null, { status: 503 });
     return Response.json({
       object: "list",
       data: input.map((text, index) => ({
@@ -56,10 +58,20 @@ it.skipIf(!url)(
   "indexes complete published seasons incrementally, finds semantic hits and suppresses withdrawn sources before refresh",
   async () => {
     const other = { ...edition, slug: "other-test-cup" };
-    await seedEditions([archived, other]);
+    await seedEditions([
+      archived,
+      other,
+      {
+        ...other,
+        slug: "unpublished-index-test",
+        published: false,
+        summary: "PRIVATE-UNRELEASED",
+      },
+    ]);
     const first = await refreshChatIndex();
     expect(first).toMatchObject({ status: "complete", failed: 0 });
     expect(first.updated).toBeGreaterThan(0);
+    expect(calls.flat().join(" ")).not.toContain("PRIVATE-UNRELEASED");
     const stored = await db()
       .select({ collection: vectors.collection })
       .from(vectors)
@@ -94,6 +106,13 @@ it.skipIf(!url)(
         s.text.includes("Historical Title"),
       ),
     ).toBe(false);
+    embeddingUnavailable = true;
+    expect(
+      (await searchSeasonIndex(archived, "Historical Title", "")).some((s) =>
+        s.text.includes("Historical Title"),
+      ),
+    ).toBe(true);
+    embeddingUnavailable = false;
     const changed = structuredClone(archived);
     changed.archive.pools[0].maps[0].title = "Replacement track";
     await seedEditions([changed]);

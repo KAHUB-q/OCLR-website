@@ -133,3 +133,32 @@ test("statistics notes remain visible below title", async ({ page }) => {
     page.getByRole("button", { name: "Notes", exact: true }),
   ).toHaveCount(0);
 });
+
+test("placement ranks and scores keep their units when the map title contains rate", async ({
+  page,
+}) => {
+  await page.goto("/event-statistics?title-only");
+  const rows = page.locator("tbody tr");
+  await expect(
+    rows.first().getByRole("cell", { name: "98%", exact: true }),
+  ).toBeVisible();
+  await expect(
+    rows.first().getByRole("cell", { name: "100%", exact: true }),
+  ).toBeVisible();
+  for (const view of ["Solo placements", "Team placements"]) {
+    await page.getByRole("button", { name: view, exact: true }).click();
+    await expect(
+      page.getByRole("columnheader", {
+        name: "Final · NM1 · Pirate Radio Score",
+      }),
+    ).toBeVisible();
+    await expect(rows.first().locator("td:nth-last-child(-n+2)")).toHaveText([
+      "1",
+      "100",
+    ]);
+    await expect(rows.last().locator("td:nth-last-child(-n+2)")).toHaveText([
+      "2",
+      "50",
+    ]);
+  }
+});

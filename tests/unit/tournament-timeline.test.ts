@@ -17,6 +17,11 @@ const phase = {
 };
 describe("competition timeline", () => {
   it("uses the selected milestone translation in the overview and schedule", () => {
+    const native = createTranslator({ locale: "zh-Hant", messages: hant.ui });
+    const translate = appTranslator(
+      (key, values) => native(key as keyof typeof hant.ui, values),
+      "zh-Hant",
+    );
     const model = tournamentTimeline(
       {
         ...edition,
@@ -27,10 +32,7 @@ describe("competition timeline", () => {
           { kind: "knockout", label: "grand_finals", at: null },
         ],
       },
-      appTranslator(
-        createTranslator({ locale: "zh-Hant", messages: hant.ui }),
-        "zh-Hant",
-      ),
+      translate,
       "zh-Hant",
     );
     expect(model.stages.map((stage) => stage.label)).toEqual([

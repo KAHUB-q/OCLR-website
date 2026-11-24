@@ -112,6 +112,12 @@ export function TimeZonePicker({
               setActive(0);
             }}
             onKeyDown={(event) => {
+              // Some input methods report only keyCode 229 when committing text.
+              if (
+                event.nativeEvent.isComposing ||
+                event.nativeEvent.keyCode === 229
+              )
+                return;
               if (["ArrowDown", "ArrowUp", "Home", "End"].includes(event.key)) {
                 event.preventDefault();
                 if (options.length)

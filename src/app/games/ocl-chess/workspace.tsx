@@ -32,12 +32,17 @@ export function ChessCanvas() {
     writing = useRef(false),
     generation = useRef(0);
   const drag = useRef<{
+    pointerId: number;
     x: number;
     y: number;
     left: number;
     top: number;
     moved: boolean;
+    multipleTouches: boolean;
   } | null>(null);
+  function cancelDrag(pointerId: number) {
+    if (drag.current?.pointerId === pointerId) drag.current = null;
+  }
   useEffect(() => {
     const viewport = view.current;
     if (!viewport) return;
@@ -179,33 +184,46 @@ export function ChessCanvas() {
         ref={view}
         onPointerDown={(e) => {
           if (e.button !== 0) return;
+          if (drag.current) {
+            if (
+              e.pointerType === "touch" &&
+              e.pointerId !== drag.current.pointerId
+            )
+              drag.current.multipleTouches = true;
+            return;
+          }
+          if (!e.isPrimary) return;
           const v = view.current!;
           drag.current = {
+            pointerId: e.pointerId,
             x: e.clientX,
             y: e.clientY,
             left: v.scrollLeft,
             top: v.scrollTop,
             moved: false,
+            multipleTouches: false,
           };
           e.currentTarget.setPointerCapture(e.pointerId);
         }}
         onPointerMove={(e) => {
           const d = drag.current,
             v = view.current;
-          if (!d || !v) return;
+          if (!d || d.pointerId !== e.pointerId || !v) return;
           if (Math.hypot(e.clientX - d.x, e.clientY - d.y) > 5) d.moved = true;
           if (d.moved) {
             v.scrollLeft = d.left + d.x - e.clientX;
             v.scrollTop = d.top + d.y - e.clientY;
           }
         }}
-        onPointerCancel={() => {
-          drag.current = null;
+        onPointerCancel={(e) => cancelDrag(e.pointerId)}
+        onLostPointerCapture={(e) => {
+          if (e.target === e.currentTarget) cancelDrag(e.pointerId);
         }}
         onPointerUp={(e) => {
           const d = drag.current;
+          if (!d || d.pointerId !== e.pointerId) return;
           drag.current = null;
-          if (!d || d.moved || busy || retry) return;
+          if (d.moved || d.multipleTouches || busy || retry) return;
           const rect = canvas.current!.getBoundingClientRect();
           const x = Math.floor((e.clientX - rect.left) / zoom),
             y = Math.floor((e.clientY - rect.top) / zoom);

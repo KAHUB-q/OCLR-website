@@ -5146,6 +5146,7 @@
     "m39e9d836af81": "Your question, recent questions and relevant public tournament information are sent to the configured AI provider.",
     "mc486c16463a2": "I couldn’t find an answer in this season’s published information.",
     "me38c13fd5345": "Sorted ascending",
-    "mf609ea8f2e71": "Sorted descending"
+    "mf609ea8f2e71": "Sorted descending",
+    "ma2df26a7c4d7": "Could not refresh token status. Showing the last available information."
   }
 }

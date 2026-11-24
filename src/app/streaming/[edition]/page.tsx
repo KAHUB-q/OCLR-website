@@ -30,6 +30,7 @@ export default async function Page({
       <div className="container page auth-page api-access-page">
         <PageHeading title={tr("Streaming API access")} />
         <StreamingAccess
+          key={edition}
           editionSlug={edition}
           backend={context.backend}
           origins={context.origins}

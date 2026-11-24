@@ -1,5 +1,5 @@
-import { useState } from "react";
 import { useAppTranslations } from "@/i18n/shared";
+import type { AccessState } from "./use-api-access-history";
 import styles from "./api-access-history.module.css";
 
 type HistoryEntry = {
@@ -11,6 +11,10 @@ type HistoryEntry = {
 };
 
 export function ApiAccessHistory({
+  now,
+  confirmedAt,
+  state,
+  permissionNotice,
   entries,
   emptyMessage,
   expiryText,
@@ -18,6 +22,10 @@ export function ApiAccessHistory({
   activeAction,
   onRevoke,
 }: {
+  now: number;
+  confirmedAt: number;
+  state: AccessState;
+  permissionNotice: string;
   entries: HistoryEntry[];
   emptyMessage: string;
   expiryText: (date: string) => string;
@@ -26,7 +34,17 @@ export function ApiAccessHistory({
   onRevoke: (id: string) => void;
 }) {
   const tr = useAppTranslations();
-  const [openedAt] = useState(Date.now);
+  const blocked = state === "signed-out" || state === "forbidden";
+  const notice =
+    state === "signed-out"
+      ? tr("Sign in with osu! to continue.")
+      : state === "forbidden"
+        ? permissionNotice
+        : state === "stale"
+          ? tr(
+              "Could not refresh token status. Showing the last available information.",
+            )
+          : null;
   const formatter = new Intl.DateTimeFormat(tr.locale, {
     dateStyle: "medium",
     timeStyle: "short",
@@ -38,15 +56,22 @@ export function ApiAccessHistory({
       <p className={styles.hint}>
         {tr("Up to 50 recent entries are shown. Times are in UTC.")}
       </p>
+      {notice && (
+        <p className="notice" role="status">
+          {notice}
+        </p>
+      )}
       {entries.length ? (
         <ul className={styles.list}>
           {entries.slice(0, 50).map((entry) => {
             const expiry = new Date(entry.expiresAt);
             const status = entry.revokedAt
               ? tr("Revoked")
-              : expiry.getTime() <= openedAt
+              : expiry.getTime() <= confirmedAt
                 ? tr("Expired")
-                : null;
+                : blocked || expiry.getTime() <= now
+                  ? tr("Unconfirmed")
+                  : null;
             return (
               <li key={entry.id}>
                 <div className={styles.identity}>

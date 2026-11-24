@@ -1,5 +1,5 @@
 import { developerTokenMisses } from "./developer-token-misses";
-import { and, desc, eq, gt, isNull, sql } from "drizzle-orm";
+import { getTableColumns, and, desc, eq, gt, isNull, sql } from "drizzle-orm";
 import { db } from "@/db";
 import {
   developerApiEvents,
@@ -169,8 +169,15 @@ async function liveBrowserSession(
 export async function listDeveloperTokens(session: BrowserSessionContext) {
   await liveBrowserSession(session, db());
   const rows = await db()
-    .select()
+    .select({
+      ...getTableColumns(developerApiTokens),
+      expiresAt:
+        sql`least(${developerApiTokens.expiresAt}, ${sessions.expiresAt})`.mapWith(
+          developerApiTokens.expiresAt,
+        ),
+    })
     .from(developerApiTokens)
+    .innerJoin(sessions, eq(sessions.tokenHash, developerApiTokens.sessionHash))
     .where(eq(developerApiTokens.userId, session.osuId))
     .orderBy(
       sql`${developerApiTokens.revokedAt} NULLS FIRST`,

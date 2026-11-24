@@ -22,6 +22,10 @@ import {
   type CreateStreamingAccessInput,
 } from "@/lib/streaming-write-contract";
 
+import { useApiAccessHistory } from "./use-api-access-history";
+
+const tokenList = revokeStreamingAccessWrite.response.array();
+
 export function StreamingAccess({
   editionSlug,
   backend,
@@ -39,11 +43,25 @@ export function StreamingAccess({
   const [origin, setOrigin] = useState(
     initialOrigin ?? origins?.[0] ?? "http://127.0.0.1:3001",
   );
-  const [tokens, setTokens] = useState(initialTokens);
-  const [issued, setIssued] = useState<{ id: string; token: string } | null>(
-    null,
+  const {
+    tokens,
+    setTokens,
+    issued,
+    setIssued,
+    pending,
+    beginMutation,
+    handleMutationDenial,
+    finishMutation,
+    now,
+    confirmedAt,
+    state,
+    blocked,
+  } = useApiAccessHistory(
+    initialTokens,
+    `/api/streaming/tokens?edition=${encodeURIComponent(editionSlug)}`,
+    30000,
+    tokenList,
   );
-  const [pending, setPending] = useState(false);
   const [activeAction, setActiveAction] = useState<string | null>(null);
   const [error, setError] = useState("");
   const labels: Record<StreamingApiScope, string> = {
@@ -51,9 +69,9 @@ export function StreamingAccess({
   };
   async function create(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
-    if (pending || !streamingOriginAllowed(origin, origins)) return;
+    if (!streamingOriginAllowed(origin, origins)) return;
+    if (!beginMutation()) return;
     setActiveAction("create");
-    setPending(true);
     setError("");
     setIssued(null);
     try {
@@ -66,7 +84,8 @@ export function StreamingAccess({
       });
       const body: unknown = await response.json();
       if (!response.ok) {
-        setError(createStreamingAccessWrite.error.parse(body).error);
+        const message = createStreamingAccessWrite.error.parse(body).error;
+        if (!handleMutationDenial(response.status, message)) setError(message);
         return;
       }
       const result = createStreamingAccessWrite.response.parse(body);
@@ -77,13 +96,12 @@ export function StreamingAccess({
         "Connection interrupted. Refresh to check the saved state before retrying.",
       );
     } finally {
-      setPending(false);
+      finishMutation();
     }
   }
   async function revoke(id: string) {
-    if (pending) return;
+    if (!beginMutation()) return;
     setActiveAction(id);
-    setPending(true);
     setError("");
     try {
       const response = await fetch(
@@ -95,7 +113,8 @@ export function StreamingAccess({
       );
       const body: unknown = await response.json();
       if (!response.ok) {
-        setError(revokeStreamingAccessWrite.error.parse(body).error);
+        const message = revokeStreamingAccessWrite.error.parse(body).error;
+        if (!handleMutationDenial(response.status, message)) setError(message);
         return;
       }
       const result = revokeStreamingAccessWrite.response.parse(body);
@@ -108,7 +127,7 @@ export function StreamingAccess({
         "Connection interrupted. Refresh to check the saved state before retrying.",
       );
     } finally {
-      setPending(false);
+      finishMutation();
     }
   }
   return (
@@ -144,7 +163,7 @@ export function StreamingAccess({
                   setOrigin(event.target.value);
                   setIssued(null);
                 }}
-                disabled={pending}
+                disabled={blocked || pending}
                 required
                 maxLength={200}
                 autoComplete="off"
@@ -159,7 +178,7 @@ export function StreamingAccess({
                   setOrigin(event.target.value);
                   setIssued(null);
                 }}
-                disabled={pending}
+                disabled={blocked || pending}
                 required
               >
                 {[
@@ -178,7 +197,9 @@ export function StreamingAccess({
             )}
           </label>
           <button
-            disabled={pending || !streamingOriginAllowed(origin, origins)}
+            disabled={
+              blocked || pending || !streamingOriginAllowed(origin, origins)
+            }
             aria-busy={pending && activeAction === "create"}
           >
             {tr("Create token")}
@@ -243,6 +264,10 @@ export function StreamingAccess({
         }))}
         emptyMessage={tr("No streaming API access has been created.")}
         expiryText={(date) => tr("Idle access ends {date}", { date })}
+        now={now}
+        confirmedAt={confirmedAt}
+        state={state}
+        permissionNotice={tr("Streamer access is required for this edition.")}
         pending={pending}
         activeAction={activeAction}
         onRevoke={revoke}

@@ -30,7 +30,8 @@ boundary can precede the last successful GET by less than one minute. Normal
 15-second polling keeps it active. Renewal can never exceed the original browser
 session expiry. Expired access cannot be revived; create a new credential.
 Revocation, role withdrawal and logout take effect on subsequent requests.
-The displayed expiry is a snapshot; reload the access page for the latest lease.
+The access page refreshes lease metadata while visible, when you return to the
+page, and at the displayed expiry. Reading the list does not renew a lease.
 
 Credential issuance/list/revocation uses the existing same-origin browser session:
 `POST /api/streaming/tokens` with `{ editionSlug, origin }`,

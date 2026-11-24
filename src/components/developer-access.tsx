@@ -15,10 +15,15 @@ import {
   type DeveloperApiScope,
   type DeveloperTokenMetadata,
 } from "@/lib/developer-api-model";
-import type {
-  CreateDeveloperTokenInput,
-  DeveloperTokenIssued,
+import {
+  revokeDeveloperTokenWrite,
+  type CreateDeveloperTokenInput,
+  type DeveloperTokenIssued,
 } from "@/lib/developer-token-write-contract";
+
+import { useApiAccessHistory } from "./use-api-access-history";
+
+const tokenList = revokeDeveloperTokenWrite.response.array();
 
 export function DeveloperAccess({
   backend,
@@ -38,11 +43,24 @@ export function DeveloperAccess({
   const [scopes, setScopes] = useState<DeveloperApiScope[]>([
     ...developerApiScopes,
   ]);
-  const [tokens, setTokens] = useState(initialTokens);
-  const [issued, setIssued] = useState<{ id: string; token: string } | null>(
-    null,
+  const {
+    tokens,
+    setTokens,
+    issued,
+    setIssued,
+    pending,
+    beginMutation,
+    handleMutationDenial,
+    finishMutation,
+    now,
+    state,
+    blocked,
+  } = useApiAccessHistory(
+    initialTokens,
+    "/api/developer/tokens",
+    60000,
+    tokenList,
   );
-  const [pending, setPending] = useState(false);
   const [activeAction, setActiveAction] = useState<string | null>(null);
   const [error, setError] = useState("");
   const labels: Record<DeveloperApiScope, string> = {
@@ -76,15 +94,15 @@ export function DeveloperAccess({
   }
   async function create(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
-    if (pending || !ports.length) return;
+    if (!ports.length) return;
     if (portInput.trim()) {
       setPortError(
         tr("Add the entered port to the list before creating a token."),
       );
       return;
     }
+    if (!beginMutation()) return;
     setActiveAction("create");
-    setPending(true);
     setError("");
     setIssued(null);
     try {
@@ -97,7 +115,8 @@ export function DeveloperAccess({
       });
       const result = await response.json();
       if (!response.ok) {
-        setError(result.error);
+        if (!handleMutationDenial(response.status, result.error))
+          setError(result.error);
         return;
       }
       const { access, token } = result as DeveloperTokenIssued;
@@ -108,13 +127,12 @@ export function DeveloperAccess({
         "Connection interrupted. Refresh to check the saved state before retrying.",
       );
     } finally {
-      setPending(false);
+      finishMutation();
     }
   }
   async function revoke(id: string) {
-    if (pending) return;
+    if (!beginMutation()) return;
     setActiveAction(id);
-    setPending(true);
     setError("");
     try {
       const response = await fetch(`/api/developer/tokens/${id}`, {
@@ -123,7 +141,8 @@ export function DeveloperAccess({
       });
       const result = await response.json();
       if (!response.ok) {
-        setError(result.error);
+        if (!handleMutationDenial(response.status, result.error))
+          setError(result.error);
         return;
       }
       const revoked = result as DeveloperTokenMetadata;
@@ -136,7 +155,7 @@ export function DeveloperAccess({
         "Connection interrupted. Refresh to check the saved state before retrying.",
       );
     } finally {
-      setPending(false);
+      finishMutation();
     }
   }
   return (
@@ -155,7 +174,7 @@ export function DeveloperAccess({
       >
         <fieldset
           className={styles.group}
-          disabled={pending || allowedPorts?.length === 0}
+          disabled={blocked || pending || allowedPorts?.length === 0}
         >
           <legend>{tr("Allowed local ports")}</legend>
           <p id="developer-ports-help" className="muted small">
@@ -253,7 +272,7 @@ export function DeveloperAccess({
                 <input
                   type="checkbox"
                   checked={scopes.includes(scope)}
-                  disabled={pending}
+                  disabled={blocked || pending}
                   onChange={(event) =>
                     setScopes((previous) =>
                       event.target.checked
@@ -278,6 +297,7 @@ export function DeveloperAccess({
         <div className="actions">
           <button
             disabled={
+              blocked ||
               pending ||
               !ports.length ||
               !scopes.length ||
@@ -337,6 +357,10 @@ export function DeveloperAccess({
         }))}
         emptyMessage={tr("No developer API access has been created.")}
         expiryText={(date) => tr("Expires {date}", { date })}
+        now={now}
+        confirmedAt={now}
+        state={state}
+        permissionNotice={tr("Developer access is required.")}
         pending={pending}
         activeAction={activeAction}
         onRevoke={revoke}

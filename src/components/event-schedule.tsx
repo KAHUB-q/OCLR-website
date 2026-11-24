@@ -38,11 +38,12 @@ export function EventSchedule({
     { id: "knockout", label: tr("Double elimination") },
     ...(hasExhibition ? [{ id: "exhibition", label: tr("Exhibition") }] : []),
   ];
-  const [phase, setPhase] = useState(
-    !phases && hasExhibition && stages.size === 1
-      ? "exhibition"
-      : (phaseOptions[0]?.id ?? ""),
-  );
+  const [phase, setPhase] = useState(() => {
+    if (phases) return phases[0]?.id ?? "";
+    if (hasExhibition && stages.size === 1) return "exhibition";
+    if (groups.length) return "group";
+    return phaseOptions.find(({ id }) => stages.has(id))?.id ?? "group";
+  });
   const [status, setStatus] = useState(initialStatus);
   const listed = matches.filter(
     (m) => status === "all" || m.recorded === (status === "recorded"),

@@ -116,6 +116,20 @@ On any published tournament overview, the Liru button at the bottom right opens 
 
 Chat reads the current rules, timeline, fixtures and mappools alongside the background season index. Only the index worker writes the search index. Chat is disabled in remote development mode.
 
+### Tracing a chat answer
+
+Ask about a published rule and inspect the browser Network entry for `POST /api/chat`. Copy its `X-OCLR-Chat-Request-Id` response header and look up that turn on the application host.
+
+```sh
+sudo journalctl -u oclr.service --since '15 minutes ago' -o cat --no-pager | grep -F 'PASTE-REQUEST-ID'
+```
+
+`upstream_start` records the attempt to call Chat Completions. `upstream_http` records the HTTP status observed by the website. `answer_received` confirms that the application received answer text and the SDK finished the stream. The browser should show a nonempty `text-delta` followed by `finish`. The website can return HTTP 200 before the upstream responds.
+
+If the upstream returns 401/403, check the provider key and its model permissions. For 404 check the base URL and model ID, and for 429 check the provider quota and rate limits. If there is no upstream HTTP status, check proxy connectivity and the provider's request history at the same time. An HTTP 200 followed by `empty_answer` or `upstream_error` calls for inspecting the provider's streaming Chat Completions response. `timeout` marks the generation deadline and `cancelled` marks a client disconnect. Traces contain the request ID, event, elapsed milliseconds and optionally HTTP status.
+
+`local_count` answers a simple registration count from the current season's public accepted registrations or historical roster. `no_evidence` returns the published-information fallback. Neither calls Chat Completions. Background embedding jobs use the separate `oclr-chat-index.service` journal.
+
 ### Season search and embeddings
 
 The index worker reads the public, edition-scoped projections for overview dates, rules, players, teams, draft picks, matches and results, mappools, statistics, brackets/standings, awards, staff and public predictions. Configure `OCLR_CHAT_EMBEDDING_MODEL` with a model ID supported by the provider’s `/embeddings` endpoint. The worker and queries share the chat base URL, key and proxy. The chat generation model is configured separately. A blank embedding model builds a keyword-only index.

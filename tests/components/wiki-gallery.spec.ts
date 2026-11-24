@@ -2,6 +2,33 @@ import { readFile } from "node:fs/promises";
 import { expect, test } from "@playwright/test";
 import sharp from "sharp";
 
+test("only the last collection card opens when two previews are requested together", async ({
+  page,
+}) => {
+  await page.goto("/wiki-gallery?collection");
+  const collection = page.getByRole("region", { name: "Liru Gallery" });
+  const cards = collection.locator('a[aria-haspopup="dialog"]');
+  await expect(cards).toHaveCount(2);
+  // Activate both rarities of the same artwork before the lightbox can mount.
+  await cards.evaluateAll((links) => {
+    for (const link of links) (link as HTMLAnchorElement).click();
+  });
+  await expect(page.getByRole("dialog", { includeHidden: true })).toHaveCount(
+    1,
+  );
+  const dialog = page.getByRole("dialog", { name: "Elegant maid outfit" });
+  const download = page.waitForEvent("download");
+  await dialog.getByRole("button", { name: "Download card" }).click();
+  expect((await download).suggestedFilename()).toBe(
+    "Elegant maid outfit - SR.png",
+  );
+  await dialog.getByRole("button", { name: "Close" }).click();
+  await expect(page.getByRole("dialog", { includeHidden: true })).toHaveCount(
+    0,
+  );
+  await expect(cards.nth(1)).toBeFocused();
+});
+
 test("shuffling discards a pending request to enlarge the previous card", async ({
   page,
 }) => {

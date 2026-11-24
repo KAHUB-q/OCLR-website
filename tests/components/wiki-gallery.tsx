@@ -1,6 +1,7 @@
 import { createRoot } from "react-dom/client";
 import { NextIntlClientProvider } from "next-intl";
 import { WikiGallery } from "../../src/components/wiki-gallery";
+import { LiruProfileCollection } from "../../src/components/liru-profile-collection";
 import { liruGallery } from "../../src/lib/wiki-articles";
 import { english } from "../../src/i18n/translate";
 import en from "../../messages/en.json";
@@ -19,12 +20,21 @@ createRoot(document.getElementById("root")!).render(
     <main className="themed-site">
       <div className="container page wiki-page information-page">
         <article className="information-document document-typeset">
-          <WikiGallery
-            title={english("Liru Card Showcase")}
-            figures={figures}
-            initialIndex={0}
-            showAnotherLabel="Show another look"
-          />
+          {new URLSearchParams(location.search).has("collection") ? (
+            <LiruProfileCollection
+              cards={[
+                { figure: figures[0], count: 1 },
+                { figure: { ...figures[0], rarity: "SR" }, count: 1 },
+              ]}
+            />
+          ) : (
+            <WikiGallery
+              title={english("Liru Card Showcase")}
+              figures={figures}
+              initialIndex={0}
+              showAnotherLabel="Show another look"
+            />
+          )}
         </article>
       </div>
     </main>

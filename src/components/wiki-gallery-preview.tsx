@@ -1,7 +1,7 @@
 "use client";
 
 import dynamic from "next/dynamic";
-import { useRef, useState } from "react";
+import { useRef } from "react";
 import { useAppTranslations } from "@/i18n/shared";
 import type { WikiGalleryFigure } from "@/lib/wiki-articles";
 import { WikiGalleryCard } from "./wiki-gallery-card";
@@ -12,12 +12,15 @@ const WikiGalleryLightbox = dynamic(() => import("./wiki-gallery-lightbox"));
 export function WikiGalleryPreview({
   figure,
   showHint = false,
+  open,
+  onOpenChange,
 }: {
   figure: WikiGalleryFigure;
   showHint?: boolean;
+  open: boolean;
+  onOpenChange: (open: boolean) => void;
 }) {
   const tr = useAppTranslations();
-  const [previewOpen, setPreviewOpen] = useState(false);
   const cardRef = useRef<SVGSVGElement>(null);
   const enlargeLabel = tr("Click to enlarge");
 
@@ -35,7 +38,7 @@ export function WikiGalleryPreview({
             return;
           event.preventDefault();
           event.currentTarget.focus({ preventScroll: true });
-          setPreviewOpen(true);
+          onOpenChange(true);
         }}
       >
         <WikiGalleryCard figure={figure} cardRef={cardRef} />
@@ -45,11 +48,11 @@ export function WikiGalleryPreview({
           </span>
         )}
       </a>
-      {previewOpen && (
+      {open && (
         <WikiGalleryLightbox
           figure={figure}
           cardRef={cardRef}
-          close={() => setPreviewOpen(false)}
+          close={() => onOpenChange(false)}
         />
       )}
     </>

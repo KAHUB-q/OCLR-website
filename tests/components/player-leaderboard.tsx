@@ -1,6 +1,7 @@
 import { createRoot } from "react-dom/client";
 import { NextIntlClientProvider } from "next-intl";
 import { PlayerLeaderboardCards } from "../../src/components/player-leaderboard-cards";
+import { BeatmapLeaderboardCards } from "../../src/components/beatmap-leaderboard-cards";
 import type { PlayerRankCardData } from "../../src/components/player-rank-card";
 import en from "../../messages/en.json";
 
@@ -45,6 +46,10 @@ const players: PlayerRankCardData[] = [3, 2, 1].map((mra, index) => ({
 }));
 createRoot(document.getElementById("root")!).render(
   <NextIntlClientProvider locale="en" messages={en} timeZone="UTC">
-    <PlayerLeaderboardCards players={players} />
+    {new URLSearchParams(location.search).has("beatmaps") ? (
+      <BeatmapLeaderboardCards maps={[]} />
+    ) : (
+      <PlayerLeaderboardCards players={players} />
+    )}
   </NextIntlClientProvider>,
 );

@@ -13,6 +13,28 @@ test("unranked days retain the dates of earlier ranks", async ({ page }) => {
     await expect(page.locator(".rank-chart-tip")).toContainText("Nov 4, 2026");
   }
 });
+test("the shaded area ends with the last observed rank", async ({ page }) => {
+  for (const unranked of [true, false]) {
+    await page.goto(`/rank-chart?gaps=ended${unranked ? "&unranked" : ""}`);
+    const chart = page.locator(".rank-chart-svg");
+    await expect(chart).toBeVisible();
+    const { lineEnd, fillEnd, plotEnd } = await chart.evaluate((svg) => {
+      function rightEdge(selector: string) {
+        const bounds = svg.querySelector<SVGPathElement>(selector)!.getBBox();
+        return bounds.x + bounds.width;
+      }
+      const grid = svg.querySelector<SVGLineElement>(".rank-chart-grid")!;
+      return {
+        lineEnd: rightEdge(".rank-chart-line"),
+        fillEnd: rightEdge(".rank-chart-area"),
+        plotEnd: grid.x2.baseVal.value,
+      };
+    });
+    expect(fillEnd).toBeCloseTo(lineEnd, 2);
+    if (unranked) expect(lineEnd).toBeLessThan(plotEnd);
+    else expect(lineEnd).toBeCloseTo(plotEnd, 2);
+  }
+});
 test("equal ranks on two observed dates still show a trend", async ({
   page,
 }) => {

@@ -5162,6 +5162,9 @@
     "m6ae4e2c359a5": "公開圖池共列出 {count, number} 個譜面欄位，同一譜面出現在不同欄位時分別計算。",
     "m3da0f6110ec3": "公開圖池共列出 {count, number} 個 {mod} 欄位。",
     "mcbca81eda3e9": "依譜面 ID 去重後，公開圖池共列出 {count, number} 張可識別的譜面。",
-    "m3e33804e3595": "本屆已公布 {count, number} 筆選秀紀錄。"
+    "m3e33804e3595": "本屆已公布 {count, number} 筆選秀紀錄。",
+    "m8d3f1263bd7e": "選手有多少",
+    "mf3c1f543e5dd": "賽程還剩幾場",
+    "ma6c136a0f45a": "圖池裡有幾張 HD 圖"
   }
 }

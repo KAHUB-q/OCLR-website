@@ -65,6 +65,16 @@
   white-space: pre-wrap;
   overflow-wrap: anywhere;
 }
+.suggestions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.375rem;
+}
+.suggestions button {
+  min-height: 2rem;
+  padding: 0.25rem 0.625rem;
+  font-size: var(--text-support);
+}
 .composer textarea {
   width: 100%;
   resize: vertical;

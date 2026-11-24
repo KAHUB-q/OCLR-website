@@ -10,7 +10,14 @@ test("stop a pending turn, retry with sources, and start fresh in another editio
   const editions: string[] = [];
   await page.route("**/api/chat", async (route) => {
     count++;
-    editions.push(route.request().postDataJSON().edition);
+    const body = route.request().postDataJSON();
+    editions.push(body.edition);
+    if (body.edition === "cup-b") {
+      expect(body).toMatchObject({
+        locale: "en",
+        questions: ["How many HD maps are there?"],
+      });
+    }
     if (count === 1) {
       await gate;
       await route.abort().catch(() => {});
@@ -49,6 +56,9 @@ test("stop a pending turn, retry with sources, and start fresh in another editio
   await expect(
     page.getByRole("status").filter({ hasText: "Loading…" }),
   ).toBeVisible();
+  await expect(
+    page.getByRole("button", { name: "How many players are there?" }),
+  ).toBeDisabled();
   await page.getByRole("button", { name: "Stop", exact: true }).click();
   release();
   await expect(page.getByRole("textbox")).toHaveValue("Substitution?");
@@ -75,8 +85,17 @@ test("stop a pending turn, retry with sources, and start fresh in another editio
   await page.getByRole("button", { name: "Switch season" }).click();
   await launcher.click();
   await expect(page.getByRole("log", { includeHidden: true })).toBeEmpty();
-  await page.getByRole("textbox").fill("Next match?");
-  await page.getByRole("button", { name: "Send", exact: true }).click();
+  await page.getByRole("textbox").fill("My next question");
+  await page
+    .getByRole("button", { name: "How many HD maps are there?" })
+    .click();
+  await expect(
+    page.getByRole("log").getByText("How many HD maps are there?"),
+  ).toBeVisible();
+  await expect(
+    page.getByRole("button", { name: "How many upcoming matches are there?" }),
+  ).toBeEnabled();
+  await expect(page.getByRole("textbox")).toHaveValue("My next question");
   await expect
     .poll(() => editions)
     .toEqual(["cup-a", "cup-a", "cup-a", "cup-b"]);

@@ -134,6 +134,8 @@ const commandSchema = z.discriminatedUnion("action", [
             shape.schedule.element.safeExtend({
               kind: z.literal("exhibition"),
               label: z.enum(milestoneNames.exhibition),
+              endAt: z.null().optional(),
+              precision: z.literal("instant").optional(),
             }),
           ]),
         )

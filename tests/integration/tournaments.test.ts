@@ -246,7 +246,9 @@ describe.skipIf(!url)("authoritative tournament edition storage", () => {
       },
       { label: "finals", kind: "knockout", at: null, endAt: null },
       { kind: "draft", label: "draft", at: null },
-      { kind: "exhibition", label: "exhibition", at: null },
+      { kind: "exhibition", label: "exhibition_1", at: "2026-11-08T12:00:00Z" },
+      { kind: "exhibition", label: "exhibition_2", at: null },
+      { kind: "exhibition", label: "exhibition_3", at: null },
     ];
     const before = await readTournament("s12");
     const saved = await change(0, "schedule", { schedule });
@@ -272,6 +274,8 @@ describe.skipIf(!url)("authoritative tournament edition storage", () => {
       { kind: "knockout", label: "swiss", at: null },
       { kind: "group", label: "Custom group", at: null },
       { kind: "exhibition", label: "finals", at: null },
+      { ...schedule[3], precision: "day" },
+      { ...schedule[3], endAt: "2026-11-08T13:00:00Z" },
     ]) {
       await expect(
         change(saved.revision, "schedule", { schedule: [row] }),

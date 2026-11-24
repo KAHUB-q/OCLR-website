@@ -30,7 +30,7 @@ describe("competition timeline", () => {
           { kind: "draft", label: "draft", at: null },
           { kind: "group", label: "swiss", at: null },
           { kind: "knockout", label: "grand_finals", at: null },
-          { kind: "exhibition", label: "exhibition", at: null },
+          { kind: "exhibition", label: "exhibition_3", at: null },
         ],
       },
       translate,
@@ -40,10 +40,28 @@ describe("competition timeline", () => {
       "選秀大會",
       "瑞士輪",
       "總決賽",
-      "表演賽",
+      "表演賽 3",
     ]);
     expect(model.schedule.map((row) => row.event)).toEqual(
       model.stages.map((stage) => stage.label),
+    );
+  });
+  it("shows an exhibition at one local time in the schedule and overview", () => {
+    const model = tournamentTimeline(
+      {
+        ...edition,
+        registration: null,
+        schedule: [{ kind: "exhibition", label: "exhibition_2", at: start }],
+      },
+      tr,
+      "en",
+    );
+    expect(model.schedule[0].event).toBe("Exhibition 2");
+    expect(model.schedule[0].date).toContain("UTC+8");
+    expect(model.schedule[0].date).not.toMatch(/End time|TBA/);
+    expect(model.stages[0].detail).toBe(model.schedule[0].date);
+    expect(tournamentStages(model.stages, null, Date.parse(end))[0].state).toBe(
+      "past",
     );
   });
   it("shows day-precision history without inventing midnight start or end times", () => {

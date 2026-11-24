@@ -74,9 +74,11 @@ export function tournamentTimeline(
       ? milestoneName(event.label, tr)
       : event.label;
     const order = event.kind ? phaseOrder[event.kind] : 6;
-    const detail = event.kind
+    const interval = Boolean(event.kind && event.kind !== "exhibition");
+    const endAt = interval ? event.endAt : undefined;
+    const detail = interval
       ? range(event.at, event.endAt, event.precision)
-      : date(event.at, event.precision);
+      : date(event.at, event.kind === "exhibition" ? "instant" : event.precision);
     // Exact event identity only; authored labels are never interpreted as phase types.
     // Suppress repeated rows at render time without mutating stored milestones.
     if (
@@ -94,7 +96,7 @@ export function tournamentTimeline(
     rows.push({
       event: label,
       date: detail,
-      at: event.at ?? event.endAt,
+      at: event.at ?? endAt,
       order,
     });
     stages.push({
@@ -102,8 +104,8 @@ export function tournamentTimeline(
       label,
       detail,
       at: event.at ?? undefined,
-      endAt: event.endAt,
-      interval: Boolean(event.kind),
+      endAt,
+      interval,
       order,
       authoritative: edition.status === "completed",
       href: `${base}/schedule`,

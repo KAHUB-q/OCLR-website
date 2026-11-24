@@ -1123,10 +1123,20 @@ function Schedule({ data, saved }: EditorProps) {
                 value={s.kind ?? ""}
                 onChange={(e) => {
                   const kind = e.currentTarget.value as MilestoneKind;
+                  if (kind === "exhibition") {
+                    setInvalid((old) => ({ ...old, [s.id * 2 + 1]: false }));
+                  }
                   setSchedule(
                     schedule.map((v, j) =>
                       j === i
-                        ? { ...v, kind, label: milestoneNames[kind][0] }
+                        ? {
+                            ...v,
+                            kind,
+                            label: milestoneNames[kind][0],
+                            ...(kind === "exhibition"
+                              ? { endAt: undefined, precision: undefined }
+                              : {}),
+                          }
                         : v,
                     ),
                   );
@@ -1140,9 +1150,7 @@ function Schedule({ data, saved }: EditorProps) {
                 <option value="draft">{milestoneName("draft", tr)}</option>
                 <option value="group">{tr("Group stage")}</option>
                 <option value="knockout">{tr("Knockout stage")}</option>
-                <option value="exhibition">
-                  {milestoneName("exhibition", tr)}
-                </option>
+                <option value="exhibition">{tr("Exhibition")}</option>
               </select>
             </label>
             {s.kind && milestoneNames[s.kind].length > 1 && (
@@ -1171,30 +1179,36 @@ function Schedule({ data, saved }: EditorProps) {
                 </select>
               </label>
             )}
-            <label className="field">
-              <span>{tr("Date precision")}</span>
-              <select
-                aria-label={tr("Date precision")}
-                value={s.precision ?? "instant"}
-                onChange={(e) =>
-                  setSchedule(
-                    schedule.map((v, j) =>
-                      j === i
-                        ? {
-                            ...v,
-                            precision: e.target.value as "day" | "instant",
-                          }
-                        : v,
-                    ),
-                  )
-                }
-              >
-                <option value="instant">{tr("Date and time")}</option>
-                <option value="day">{tr("Date only")}</option>
-              </select>
-            </label>
+            {s.kind !== "exhibition" && (
+              <label className="field">
+                <span>{tr("Date precision")}</span>
+                <select
+                  aria-label={tr("Date precision")}
+                  value={s.precision ?? "instant"}
+                  onChange={(e) =>
+                    setSchedule(
+                      schedule.map((v, j) =>
+                        j === i
+                          ? {
+                              ...v,
+                              precision: e.target.value as "day" | "instant",
+                            }
+                          : v,
+                      ),
+                    )
+                  }
+                >
+                  <option value="instant">{tr("Date and time")}</option>
+                  <option value="day">{tr("Date only")}</option>
+                </select>
+              </label>
+            )}
             <ZonedDateInput
-              label={tr("Start time")}
+              label={
+                s.kind === "exhibition"
+                  ? tr("Milestone {value0} time", { value0: i + 1 })
+                  : tr("Start time")
+              }
               onValidityChange={(valid) =>
                 setInvalid((old) =>
                   old[s.id * 2] === !valid
@@ -1211,7 +1225,7 @@ function Schedule({ data, saved }: EditorProps) {
                 )
               }
             />
-            {s.kind && (
+            {s.kind && s.kind !== "exhibition" && (
               <>
                 <ZonedDateInput
                   label={tr("End time")}
@@ -1295,6 +1309,7 @@ function Schedule({ data, saved }: EditorProps) {
               !isMilestoneName(s.kind, s.label) ||
               invalid[s.id * 2] ||
               (s.kind &&
+                s.kind !== "exhibition" &&
                 (invalid[s.id * 2 + 1] ||
                   (s.at && s.endAt && Date.parse(s.endAt) < Date.parse(s.at)))),
           )}

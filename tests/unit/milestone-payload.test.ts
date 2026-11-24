@@ -53,3 +53,13 @@ it("retains exact instants and the legacy payload when no precision is supplied"
     },
   ]);
 });
+
+it("saves only the scheduled instant when changing a range to an exhibition", () => {
+  const at = "2026-11-22T20:00:00+08:00";
+  const row = { kind: "exhibition" as const, label: "exhibition_3", at };
+  expect(
+    milestonePayload([
+      { ...row, endAt: "2026-11-23T20:00:00+08:00", precision: "day" },
+    ]),
+  ).toEqual([row]);
+});

@@ -136,6 +136,9 @@ test("stat explanations open by their triggers and fit below the sticky header",
   await page.goto("/player-profile-cover?sticky-header");
   const viewport = page.viewportSize()!;
   const card = page.locator(".bws-card");
+  const desktopSipLayout = await page.evaluate(
+    () => matchMedia("(min-width: 48rem) and (pointer: fine)").matches,
+  );
 
   for (const [label, linkName] of [
     ["pp"],
@@ -172,7 +175,12 @@ test("stat explanations open by their triggers and fit below the sticky header",
     expect(noteBox.x).toBeGreaterThanOrEqual(0);
     expect(noteBox.x + noteBox.width).toBeLessThanOrEqual(viewport.width);
     expect(noteBox.y + noteBox.height).toBeLessThanOrEqual(viewport.height);
-    expect(noteBox.width).toBeLessThanOrEqual(21 * 16);
+    if (label === "SIP" && desktopSipLayout) {
+      // This profile has both the mod and skill breakdowns, shown side by side.
+      expect(noteBox.width).toBeCloseTo(26 * 16, 0);
+    } else {
+      expect(noteBox.width).toBeLessThanOrEqual(21 * 16);
+    }
     expect(triggerBox.x + triggerBox.width / 2).toBeGreaterThanOrEqual(
       noteBox.x,
     );

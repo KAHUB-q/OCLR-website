@@ -14,6 +14,7 @@ import { eventMappoolRows } from "@/lib/archive-mappool-statistics";
 import type { EventScore } from "@/lib/event-statistics";
 import {
   eventGameKey,
+  eventTeamGameKey,
   eventTeamGames,
   eventMapKey,
   eventPlacementRows,
@@ -76,11 +77,6 @@ export function EventStatistics({
   type Row = Record<string, Cell>;
   let columns: string[] = [];
   let rows: Row[] = [];
-  const keys = [
-    ...new Set(
-      plays.map((s) => (view === 3 || view === 4 ? s.teamId : s.osuId)),
-    ),
-  ];
   const poolFixtures = coverage?.poolFixtures;
   const maps = groupEventMaps(view >= 4 ? eligible : plays);
   const placementLabels = new Map<string, string>(
@@ -118,8 +114,26 @@ export function EventStatistics({
       "Mods",
       "Match",
     ];
-    rows = keys.map((id) => {
-      const p = plays.filter((s) => s.osuId === id);
+    const highestByGame = new Map<string, number>();
+    const gamesByTeam = new Map<string, Set<string>>();
+    // MVPs are compared with the entire game, including teams hidden by the filter.
+    for (const play of eligible) {
+      const game = eventGameKey(play);
+      highestByGame.set(
+        game,
+        Math.max(highestByGame.get(game) ?? -Infinity, play.score),
+      );
+      const games = gamesByTeam.get(play.teamId);
+      if (games) games.add(game);
+      else gamesByTeam.set(play.teamId, new Set([game]));
+    }
+    const playsByPlayer = new Map<number, EventScore[]>();
+    for (const play of plays) {
+      const player = playsByPlayer.get(play.osuId);
+      if (player) player.push(play);
+      else playsByPlayer.set(play.osuId, [play]);
+    }
+    rows = [...playsByPlayer.values()].map((p) => {
       const best = [...p].sort(
         (a, b) =>
           b.score - a.score ||
@@ -132,18 +146,9 @@ export function EventStatistics({
         Team: best.team,
         MC: p[0].mc ?? null,
         Played: p.length,
-        "Participation rate":
-          p.length /
-          new Set(
-            eligible.filter((s) => s.teamId === best.teamId).map(eventGameKey),
-          ).size,
+        "Participation rate": p.length / gamesByTeam.get(best.teamId)!.size,
         MVPs: p.filter(
-          (s) =>
-            !eligible.some(
-              (other) =>
-                eventGameKey(other) === eventGameKey(s) &&
-                other.score > s.score,
-            ),
+          (play) => play.score === highestByGame.get(eventGameKey(play)),
         ).length,
         "Average score": avg(p, "score"),
         "Average accuracy": avg(p, "accuracy"),
@@ -248,6 +253,10 @@ export function EventStatistics({
         "Raw MP score",
         "Score multiplier",
       );
+    const teamTotals =
+      view === 3
+        ? new Map(eventTeamGames(plays).map(({ key, total }) => [key, total]))
+        : null;
     rows = plays.map((s) => ({
       _osuId: s.osuId,
       Map: s.slot,
@@ -261,11 +270,7 @@ export function EventStatistics({
       Combo: s.combo,
       Mods: s.mods,
       Match: s.mp,
-      "Team score": plays
-        .filter(
-          (p) => eventGameKey(p) === eventGameKey(s) && p.teamId === s.teamId,
-        )
-        .reduce((n, p) => n + p.score, 0),
+      "Team score": teamTotals?.get(eventTeamGameKey(s)) ?? null,
     }));
   } else if (ranking) {
     columns = ["Player", "Team", "Appearances", "MRA", "ERA", "DRA", "RWS"];

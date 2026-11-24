@@ -147,6 +147,9 @@ describe.skipIf(!testUrl)("authenticated tournament assistant", () => {
       season(cup, "Registration eligibility"),
       season(other, "Other rule"),
     ]);
+    expect(
+      (await chatEvidence(cup, "你可以回答什麼", "")).sources[0].text,
+    ).toContain("Liru can answer");
     const accepted = 1425010;
     const pending = 1425011;
     await db()
@@ -172,10 +175,13 @@ describe.skipIf(!testUrl)("authenticated tournament assistant", () => {
     vi.stubGlobal("fetch", upstream);
     for (const question of [
       "有多少人報名了",
+      "選手有多少",
       "报名人数是多少？",
       "How many people have registered?",
     ]) {
-      const response = await ask([question], { edition: cup });
+      const response = await ask(["你可以回答什麼", question], {
+        edition: cup,
+      });
       const text = await response.text();
       expect(text).toContain("public player directory: 1");
       expect(text).toContain(`/tournaments/${cup}/players`);

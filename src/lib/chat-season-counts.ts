@@ -75,16 +75,22 @@ export function seasonCountIntent(
 
   const subject =
     chinese.match(
-      /^(?:一共|[總总]共|共)?有?(?:多少|[幾几])(?:支|[場场個个張张]|首)?(.+)$/,
+      /^(?:一共|[總总]共|共)?有?(?:多少|[幾几])(?:支|[場场個个張张]|首|位|名)?(.+)$/,
     )?.[1] ??
     chinese.match(
-      /^(.+?)(?:一共|[總总]共|共)?有(?:多少|[幾几])(?:支|[場场個个張张]|首)?$/,
+      /^(.+?)(?:一共|[總总]共|共)?有(?:多少|[幾几])(?:支|[場场個个張张]|首|位|名)?$/,
     )?.[1] ??
     chinese.match(/^(.+?)(?:[數数]量|[總总][數数])(?:是多少)?$/)?.[1] ??
     query.match(
       /^how many (.+?)(?: are there)?(?: (?:in |for )?this season)?$/,
     )?.[1];
   if (!subject) return null;
+  if (
+    /^(?:[選选]手|[參参][賽赛][選选]手|(?:participating )?players?)$/.test(
+      subject,
+    )
+  )
+    return "registration";
   for (const kind of Object.keys(categories) as Category[]) {
     if (categories[kind].subject.test(subject)) return kind;
   }

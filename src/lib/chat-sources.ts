@@ -23,6 +23,23 @@ export async function chatEvidence(
 ) {
   const edition = await getPublicEdition(slug);
   if (!edition) throw new HttpError(404, "Tournament not found.");
+  if (
+    /^(?:(?:請問|请问)?(?:你|莉露)(?:可以|能|會|会)(?:回答|查詢|查询|幫我查|帮我查)(?:些)?(?:什麼|什么|哪些問題|哪些问题)|what can (?:you|liru) (?:answer|do|help (?:me )?with))\s*[?？。!！]*$/i.test(
+      question.trim(),
+    )
+  ) {
+    return {
+      edition: edition.name,
+      total: null,
+      sources: [
+        {
+          title: edition.name,
+          url: "/tournaments/" + slug,
+          text: "Liru can answer questions about published information for this season: rules, dates, players, teams, draft picks, mappools, fixtures, results and statistics. Give two short example questions. Availability depends on what has been published.",
+        },
+      ],
+    };
+  }
   const countIntent = seasonCountIntent(question);
   if (countIntent) {
     const total = await seasonCount(edition, countIntent, now);

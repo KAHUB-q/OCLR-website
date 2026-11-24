@@ -25,7 +25,11 @@ test("stop a pending turn, retry with sources, and start fresh in another editio
         url: "/tournaments/cup-a#rules-1",
       },
       { type: "text-start", id: "a" },
-      { type: "text-delta", id: "a", delta: "Ask the referee." },
+      {
+        type: "text-delta",
+        id: "a",
+        delta: "**Ask the referee.** [1]\n\n- First option\n- Second option",
+      },
       { type: "text-end", id: "a" },
       { type: "finish" },
     ];
@@ -42,6 +46,9 @@ test("stop a pending turn, retry with sources, and start fresh in another editio
   await page.getByRole("textbox").fill("Substitution?");
   await page.getByRole("button", { name: "Send", exact: true }).click();
   await expect.poll(() => count).toBe(1);
+  await expect(
+    page.getByRole("status").filter({ hasText: "Loading…" }),
+  ).toBeVisible();
   await page.getByRole("button", { name: "Stop", exact: true }).click();
   release();
   await expect(page.getByRole("textbox")).toHaveValue("Substitution?");
@@ -50,6 +57,15 @@ test("stop a pending turn, retry with sources, and start fresh in another editio
   await expect(
     page.getByRole("link", { name: "[1] Substitution" }),
   ).toHaveAttribute("href", "/tournaments/cup-a#rules-1");
+  await expect(
+    page.getByRole("listitem").filter({ hasText: "First option" }),
+  ).toBeVisible();
+  await expect(
+    page.getByRole("link", { name: "[1]", exact: true }),
+  ).toHaveAttribute("href", "/tournaments/cup-a#rules-1");
+  await expect(
+    page.getByRole("status").filter({ hasText: "Loading…" }),
+  ).toHaveCount(0);
   await page.keyboard.press("Escape");
   await expect(page.getByRole("dialog")).toBeHidden();
   await launcher.click();

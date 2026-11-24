@@ -1,6 +1,6 @@
 export const milestoneNames = {
   draft: ["draft"],
-  exhibition: ["exhibition"],
+  exhibition: ["exhibition_1", "exhibition_2", "exhibition_3"],
   group: ["group_stage", "swiss"],
   knockout: ["quarterfinals", "semifinals", "finals", "grand_finals"],
 } as const;
@@ -17,8 +17,12 @@ export function milestoneName(name: string, tr: (message: string) => string) {
   switch (name) {
     case "draft":
       return tr("Draft ceremony");
-    case "exhibition":
-      return tr("Exhibition");
+    case "exhibition_1":
+      return tr("Exhibition 1");
+    case "exhibition_2":
+      return tr("Exhibition 2");
+    case "exhibition_3":
+      return tr("Exhibition 3");
     case "group_stage":
       return tr("Group stage");
     case "swiss":

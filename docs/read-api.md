@@ -507,8 +507,9 @@ published fixtures, public identities and eligible game scores together.
 Historical Series use the same published archive statistics release as the
 other statistics views. See [YumuRating](yumu-rating.md).
 
-Contract 1.51.0 adds the `exhibition` milestone kind. The corresponding
-schedule write accepts `exhibition` as its fixed label.
+Contract 1.51.0 adds the `exhibition` milestone kind. The schedule write API
+(v0.9.0) accepts `exhibition_1`, `exhibition_2` or `exhibition_3` as the
+label. Each exhibition has one optional instant (`at`).
 
 Contract 1.50.0 adds the draft phase kind to tournament schedules. The schedule write operation accepts the fixed phase and name pairs documented in [tournament management](tournament-management.md#competition-times-and-milestones-430).
 

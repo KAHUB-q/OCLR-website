@@ -1,6 +1,48 @@
 import { test, expect } from "@playwright/test";
 import AxeBuilder from "@axe-core/playwright";
 
+test("the open season note follows its marker when the timeline resizes", async ({
+  page,
+  isMobile,
+}) => {
+  await page.setViewportSize({ width: 844, height: 390 });
+  await page.goto("/player-timeline");
+  const season = page.getByRole("button", { name: /^S6 ·/ });
+  const note = page.getByRole("note");
+  if (isMobile) await season.tap();
+  else await season.focus();
+  await expect(note).toContainText("S6");
+
+  async function expectNoteAtSeason() {
+    const marker = (await season.boundingBox())!;
+    const center = marker.x + marker.width / 2;
+    const width = page.viewportSize()!.width;
+    await expect
+      .poll(async () => {
+        const box = (await note.boundingBox())!;
+        return (
+          box.x >= 0 &&
+          box.x <= center &&
+          center <= box.x + box.width &&
+          box.x + box.width <= width
+        );
+      })
+      .toBe(true);
+    expect(
+      await page.evaluate(() => document.documentElement.scrollWidth),
+    ).toBeLessThanOrEqual(width);
+  }
+
+  await page.setViewportSize({ width: 390, height: 844 });
+  await expectNoteAtSeason();
+  await page.setViewportSize({ width: 844, height: 390 });
+  await expectNoteAtSeason();
+  await page.locator("main").evaluate((main) => {
+    main.style.maxWidth = "420px";
+  });
+  await expectNoteAtSeason();
+});
+
 for (const theme of ["light", "dark"]) {
   for (const participated of [false, true]) {
     test(`S6 shares the complete season background (${theme}, participated=${participated})`, async ({
@@ -85,13 +127,36 @@ for (const theme of ["light", "dark"]) {
         await s6.focus();
         if (!isMobile) await page.mouse.move(0, 0);
         await page.keyboard.press("Enter");
-        await page.keyboard.press("Escape");
       } else {
         await expect(s6).toHaveAttribute("href", "/tournaments/s6");
       }
-      await s6.blur();
+      await page.keyboard.press("Escape");
+      await expect(s6).toBeFocused();
       await expect(tip).toHaveCount(0);
+      await expect(page.getByRole("status")).toBeEmpty();
+      if (!participated) {
+        await expect(s6).toHaveAttribute("aria-pressed", "false");
+        await s6.press("Enter");
+        await expect(s6).toHaveAttribute("aria-pressed", "true");
+        await expect(tip).toContainText("S6");
+      }
       expect(errors).toEqual([]);
     });
   }
 }
+
+test("Escape dismisses a hovered season without focusing it", async ({
+  page,
+}) => {
+  await page.goto("/player-timeline");
+  const s6 = page.getByRole("button", { name: /^S6 ·/ });
+  const tip = page.getByRole("note");
+  await s6.hover();
+  await expect(tip).toContainText("S6");
+  await page.keyboard.press("Escape");
+  await expect(tip).toHaveCount(0);
+  await expect(s6).not.toBeFocused();
+  await page.mouse.move(0, 0);
+  await s6.hover();
+  await expect(tip).toContainText("S6");
+});

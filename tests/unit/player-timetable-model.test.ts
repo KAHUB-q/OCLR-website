@@ -5,6 +5,7 @@ import {
   paintAvailability,
   weekStart,
   selectableTimetableDate,
+  timetableScrollInstant,
 } from "../../src/lib/player-timetable-model";
 import {
   seasonAvailabilitySchema,
@@ -92,6 +93,26 @@ describe("dated availability painting", () => {
   });
 });
 describe("local dates and real half-hour columns", () => {
+  it("keeps the instant on its own date and carries local time across clock changes", () => {
+    const zone = "America/New_York";
+    for (const anchor of [
+      "2026-11-01T05:30:00.000Z",
+      "2026-11-01T06:30:00.000Z",
+    ])
+      expect(timetableScrollInstant(anchor, "2026-11-01", zone)).toBe(anchor);
+    // Monday after the clock change and the preceding Friday both show 18:00.
+    expect(
+      timetableScrollInstant("2026-11-02T23:00:00Z", "2026-10-30", zone),
+    ).toBe("2026-10-30T22:00:00.000Z");
+    // Cairo jumps directly from 23:59 Thursday to 01:00 Friday.
+    expect(
+      timetableScrollInstant(
+        "2026-04-21T22:30:00Z",
+        "2026-04-24",
+        "Africa/Cairo",
+      ),
+    ).toBe("2026-04-23T22:00:00.000Z");
+  });
   it("converts midnight and week boundaries without changing instants", () => {
     const local = daySlots("2026-11-02", "Asia/Taipei");
     const utc = daySlots("2026-11-01", "UTC");

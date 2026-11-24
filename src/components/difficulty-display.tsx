@@ -21,6 +21,7 @@ export function DifficultyControls({
   hasFM: boolean;
 }) {
   const tr = useAppTranslations();
+  const activeMod = choice.adjusted ? choice.fm : "";
   return (
     <div className={styles.controls}>
       <PublicationSwitch
@@ -37,9 +38,9 @@ export function DifficultyControls({
                 type="button"
                 className="secondary"
                 key={mod}
-                aria-pressed={choice.fm === mod}
+                aria-pressed={activeMod === mod}
                 onClick={() =>
-                  onChange({ adjusted: true, fm: choice.fm === mod ? "" : mod })
+                  onChange({ adjusted: true, fm: activeMod === mod ? "" : mod })
                 }
               >
                 {mod}

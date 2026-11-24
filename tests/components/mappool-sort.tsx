@@ -5,6 +5,8 @@ import { syntheticPublicPools } from "../fixtures/public-mappools";
 import en from "../../messages/en.json";
 
 const pool = syntheticPublicPools[0];
+const params = new URLSearchParams(location.search);
+const entries = params.has("empty") ? [] : pool.entries;
 const titles = ["Zeta", "Alpha", "Middle", "Beta", "Gamma", "Delta"];
 const stars = [2, 8, 4, 6, 5, 3];
 createRoot(document.getElementById("root")!).render(
@@ -13,8 +15,8 @@ createRoot(document.getElementById("root")!).render(
       slug="synthetic"
       pool={{
         ...pool,
-        entries: pool.entries
-          .slice(0, location.search.includes("fm") ? 6 : 4)
+        entries: entries
+          .slice(0, params.has("fm") ? 6 : 4)
           .map((entry, index) => ({
             ...entry,
             metadata: {

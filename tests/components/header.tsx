@@ -65,7 +65,9 @@ const router: AppRouterInstance = {
 };
 function Harness() {
   const [path, setPath] = useState(
-    params.has("tournament") ? "/tournaments/synthetic" : "/",
+    params.has("tournament")
+      ? "/tournaments/synthetic"
+      : (params.get("path") ?? "/"),
   );
   const content = (
     <div

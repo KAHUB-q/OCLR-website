@@ -5,6 +5,7 @@ import { migrate } from "drizzle-orm/node-postgres/migrator";
 import { createServer } from "node:http";
 import { spawn } from "node:child_process";
 import {
+  existsSync,
   mkdtempSync,
   mkdirSync,
   writeFileSync,
@@ -46,7 +47,7 @@ describe.skipIf(!url)("Admin backup PostgreSQL round trip", () => {
     writeFileSync(serviceLog, "");
     writeFileSync(
       join(root, "bin/sudo"),
-      '#!/bin/sh\nprintf "%s\\n" "$*" >> "$OCLR_TEST_SERVICE_LOG"\nexit 0\n',
+      '#!/bin/sh\nprintf "%s\\n" "$*" >> "${0%/*}/../service.log"\nexit 0\n',
       { mode: 0o700 },
     );
     const release = "a".repeat(40);
@@ -78,7 +79,6 @@ describe.skipIf(!url)("Admin backup PostgreSQL round trip", () => {
       OCLR_OPERATOR_HEALTH_URL: `http://127.0.0.1:${port}/api/health`,
       OCLR_MEDIA_DIR: join(root, "media"),
       ADMIN_OSU_IDS: "999001",
-      OCLR_TEST_SERVICE_LOG: serviceLog,
       PATH: join(root, "bin") + ":" + process.env.PATH,
     };
     async function run(
@@ -167,9 +167,48 @@ describe.skipIf(!url)("Admin backup PostgreSQL round trip", () => {
       await c.query(
         "INSERT INTO staff_roles(user_id,role,granted_by) VALUES(999001,'admin',999001) ON CONFLICT DO NOTHING",
       );
+      // The physical database includes heap and index pages that do not
+      // travel in a custom archive. Keep a large, compressible table live.
+      await c.query("CREATE TABLE backup_padding (value text NOT NULL)");
+      await c.query("ALTER TABLE backup_padding ALTER value SET STORAGE PLAIN");
+      await c.query(
+        "INSERT INTO backup_padding SELECT repeat('x', 2048) FROM generate_series(1, 36000)",
+      );
+      expect(
+        (
+          await c.query(
+            "SELECT pg_database_size(current_database()) > 67108864 AS large",
+          )
+        ).rows[0].large,
+      ).toBe(true);
       const backup = await run("backup");
       expect(backup.state).toBe("completed");
       const bytes = readFileSync(join(root, backup.id + ".oclr"));
+      expect(bytes.length).toBeLessThan(64 * 1024 * 1024);
+      // This payload exceeds the limit even after pg_dump compresses it.
+      await c.query("CREATE TABLE backup_noise (value bytea NOT NULL)");
+      await c.query(
+        "INSERT INTO backup_noise SELECT $1::bytea FROM generate_series(1, 65)",
+        [randomBytes(1024 * 1024)],
+      );
+      writeFileSync(serviceLog, "");
+      const oversized = await run("backup");
+      expect(oversized.state).toBe("failed");
+      expect(oversized.recovery).toBe("original-preserved");
+      const failure = readFileSync(join(root, "audit.jsonl"), "utf8")
+        .trim()
+        .split("\n")
+        .map((line) => JSON.parse(line))
+        .find((event) => event.id === oversized.id && event.state === "failed");
+      expect(failure.phase).toBe("archive-size");
+      expect(readFileSync(serviceLog, "utf8").trim().split("\n")).toEqual([
+        "-n /usr/bin/systemctl stop oclr.service",
+        "-n /usr/bin/systemctl start oclr.service",
+      ]);
+      for (const suffix of [".oclr", ".dump"]) {
+        expect(existsSync(join(root, oversized.id + suffix))).toBe(false);
+      }
+      await c.query("DROP TABLE backup_noise");
       const bad = Buffer.from(bytes);
       bad[25] ^= 1;
       expect((await run("import", undefined, bad)).state).toBe("failed");

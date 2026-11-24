@@ -190,19 +190,28 @@ test("gallery composes replies beneath the selected original comment", async ({
   ).toBeVisible();
 });
 
-for (const status of [200, 503]) {
-  test(`a late initial GET (${status}) cannot hide a successful post or change its selection`, async ({
+for (const scenario of ["empty", "unavailable", "history", "includes post"]) {
+  test(`a late initial GET (${scenario}) preserves the new post and available history`, async ({
     page,
   }) => {
     const get = deferred();
     const started = deferred();
+    const posted = { ...original, id: "new-post", text: "Newly saved message" };
+    const history = Array.from({ length: 20 }, (_, i) => ({
+      ...original,
+      id: `old-${i}`,
+      text: `Earlier message ${i}`,
+    }));
     await page.route(`**${endpoint}`, async (route) => {
       if (route.request().method() === "GET") {
         started.resolve();
         await get.promise;
-        await json(route, [], status);
-      } else
-        await json(route, { ...original, text: "Newly saved message" }, 201);
+        if (scenario === "history") return json(route, history);
+        if (scenario === "includes post")
+          return json(route, [posted, ...history.slice(0, 19)]);
+        return json(route, [], scenario === "unavailable" ? 503 : 200);
+      }
+      return json(route, posted, 201);
     });
     await page.goto("/");
     await started.promise;
@@ -216,16 +225,53 @@ for (const status of [200, 503]) {
     await expect(page.locator(".event-message-scroll")).toContainText(
       "Newly saved message",
     );
+    let selectedText = posted.text;
+    if (scenario === "includes post") {
+      selectedText = "Edited before history arrived";
+      await page.route(`**${endpoint}/${posted.id}`, (route) =>
+        json(route, { ...posted, text: selectedText, version: "2" }),
+      );
+      await page.getByRole("button", { name: "Edit message" }).click();
+      await page
+        .getByRole("textbox", { name: "Edit message" })
+        .fill(selectedText);
+      await page.getByRole("button", { name: "Save message" }).click();
+      await expect(page.locator(".event-message-scroll p")).toHaveText(
+        selectedText,
+      );
+    }
     const response = page.waitForResponse(
       (r) => r.request().method() === "GET" && r.url().endsWith(endpoint),
     );
     get.resolve();
     await (await response).finished();
     await settle(page);
-    await expect(page.locator(".event-message-scroll")).toContainText(
-      "Newly saved message",
+    await expect(page.locator(".event-message-scroll p")).toHaveText(
+      selectedText,
     );
     await expect(page.getByRole("alert")).toHaveCount(0);
+    const navigation = page.getByRole("group", { name: "Message navigation" });
+    if (scenario === "history" || scenario === "includes post") {
+      await expect(navigation).toContainText("Recent message 1 of 20");
+      const previous = navigation.getByRole("button", {
+        name: "Previous message",
+      });
+      await previous.click();
+      await expect(page.locator(".event-message-scroll p")).toHaveText(
+        history[18].text,
+      );
+      const next = navigation.getByRole("button", { name: "Next message" });
+      await next.click();
+      await expect(page.locator(".event-message-scroll p")).toHaveText(
+        selectedText,
+      );
+      await next.click();
+      await expect(page.locator(".event-message-scroll p")).toHaveText(
+        history[0].text,
+      );
+    } else {
+      await expect(navigation).toHaveCount(0);
+    }
   });
 }
 

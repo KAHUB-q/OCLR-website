@@ -71,7 +71,7 @@ restarting only the operator when no job is active.
 The worker preflights these exact ledger reads after actor authorization and
 before stopping the website. Missing privileges fail in `database-preflight`
 without calling service control. Subsequent private audit phases distinguish
-`stopping-service`, `inventory` and `database-size`. Installing this worker change
+`stopping-service`, `inventory`, `backup` and `archive-size`. Installing this worker change
 requires the separately reviewed operator upgrade; a website-only update does
 not replace the operator. Existing operators can use the DBA grants immediately.
 
@@ -112,8 +112,13 @@ are operator configuration; database ACLs and ownership are deliberately omitted
 separately. Restore refuses if its exact filenames/content fingerprint differs.
 A database package alone is not a complete website disaster-recovery backup.
 
-Limits are 64 MiB per archive/upload, 20 jobs and at least 256 MiB free package
-disk space; databases larger than 64 MiB are rejected before dumping. Each
+The compressed PostgreSQL custom dump may contain up to 64 MiB. The transport
+also allows space for the authenticated header and encryption overhead. Database
+files can occupy much more disk space because of indexes, empty pages and
+compressible data. The worker bounds pg_dump output during export. If it exceeds
+the limit, the private audit records `archive-size`, the worker attempts to
+restart the original website and the job produces no downloadable package.
+The operator allows 20 jobs and requires at least 256 MiB of free package disk space. Each
 external command has a five-minute timeout. Completed/imported/failed packages
 expire after seven days when another job is submitted; no cleanup runs during
 active work. Operators must monitor disk space and PostgreSQL capacity for a
@@ -227,6 +232,66 @@ the backup/authentication/schema contract still require a separately reviewed
 operator upgrade; do not assume an older operator understands a new credential
 family. The first-install script intentionally refuses to overwrite an existing
 operator installation.
+
+### Updating the backup worker on an existing Rocky installation (#1316)
+
+The website and the operator have separate releases. An operator based on
+`332f6ce7` reports the stop command, database inventory and physical size
+check under the same `stopping-service` audit phase. Check the database name
+and `current_user` on the **operator** connection before changing grants.
+`OCLR_OPERATOR_DATABASE_URL` supplies that login. `OCLR_OPERATOR_RUNTIME_ROLE`
+names the website role that receives application grants after a restore.
+Verify the ledger query above using the operator login in the application database.
+
+For the worker-only fix, the standard Rocky installation can bind the reviewed
+worker file read-only into the backup service. This preserves its installed
+dependencies, service account, sudo policy, package key and old release files.
+Use the commands below from a **clean, trusted installer checkout** after fetching
+canonical main. Run in Bash as the maintainer who owns that checkout and has sudo.
+Use the full commit containing the reviewed fix. The checks below require the
+installed worker and its local imports to match the supported source. If a check
+fails, review the installed operator as a separate release upgrade.
+
+```bash
+(
+  set -euo pipefail
+  read -rp 'Full reviewed fix commit: ' fix
+  [[ $fix =~ ^[0-9a-f]{40}$ ]]
+  git merge-base --is-ancestor "$fix" origin/main
+  run=$(systemctl show oclr-backup.service -p WorkingDirectory --value)
+  [[ $run =~ ^/opt/oclr-backup/releases/([0-9a-f]{40})$ ]]
+  base=${BASH_REMATCH[1]}
+  git merge-base --is-ancestor "$base" "$fix"
+  for file in worker health package; do
+    git show "$base:operator/$file.ts" | cmp - "$run/operator/$file.ts"
+  done
+  git diff --quiet "$base" "$fix" -- operator/health.ts operator/package.ts
+  work=$(mktemp -d)
+  trap 'rm -rf -- "$work"' EXIT
+  git show "$fix:operator/worker.ts" > "$work/worker.ts"
+  grep -Fq 'phase = "archive-size"' "$work/worker.ts"
+  patch=/etc/oclr-backup/worker-$fix.ts
+  dropin=/etc/systemd/system/oclr-backup.service.d/40-backup-worker.conf
+  sudo test ! -e "$dropin"
+  sudo install -o root -g root -m 0644 "$work/worker.ts" "$patch"
+  printf '[Service]\nBindReadOnlyPaths=%s:%s/operator/worker.ts\n' "$patch" "$run" > "$work/dropin"
+  sudo install -d -o root -g root -m 0755 /etc/systemd/system/oclr-backup.service.d
+  sudo flock -n /opt/oclr/.update.lock /bin/bash -ec '
+    install -o root -g root -m 0644 "$1" "$2"
+    systemctl daemon-reload
+    systemctl restart oclr-backup.service
+    systemctl is-active --quiet oclr-backup.service
+  ' bash "$work/dropin" "$dropin"
+)
+```
+
+Schedule this when the operator is idle. Lock contention aborts activation.
+If the backup service cannot start, remove only this drop-in, reload systemd
+and start the previous backup service during the same approved maintenance
+window. Remove the drop-in when installing a full operator upgrade. In the
+Admin page, verify a new backup completes and downloads during a maintenance
+window. The backup itself briefly stops the website. Validate any restore
+rehearsal on a disposable database with its matching media.
 
 ### Repair an existing unreadable release marker
 

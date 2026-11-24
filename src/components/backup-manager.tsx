@@ -1,5 +1,8 @@
 "use client";
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
+import { useFormatter } from "next-intl";
+import { SheetIcon } from "./sheet-icon";
+import styles from "./backup-manager.module.css";
 import { useAppTranslations } from "@/i18n/shared";
 import type { BackupAction } from "@/lib/admin-operations-write-contracts";
 type Job = {
@@ -25,6 +28,9 @@ export function BackupManager() {
     [serviceCode, setServiceCode] = useState("loading"),
     [selected, setSelected] = useState<Job | null>(null),
     [confirmation, setConfirmation] = useState("");
+  const format = useFormatter();
+  const uploadInput = useRef<HTMLInputElement>(null);
+
   function statusLabel(value: string) {
     switch (value) {
       case "queued":
@@ -74,7 +80,12 @@ export function BackupManager() {
         const data = await r.json();
         if (!Array.isArray(data)) throw Error();
         if (active) {
-          setJobs(data);
+          setJobs(
+            data.sort(
+              (a: Job, b: Job) =>
+                Date.parse(b.createdAt) - Date.parse(a.createdAt),
+            ),
+          );
           setReady(true);
           setServiceCode("");
         }
@@ -117,33 +128,45 @@ export function BackupManager() {
     }
   }
   return (
-    <section className="panel spaced">
-      <p>
-        {tr(
-          "Backups contain private site data. Restore replaces the entire database and signs everyone out. All staff grants require reauthorization. Matching media files are required separately.",
-        )}
-      </p>
-      <div className="actions backup-actions">
+    <section className={`panel ${styles.manager}`}>
+      <div className={styles.notice}>
+        <SheetIcon kind="shield" />
+        <p>
+          {tr(
+            "Backups contain private site data. Restore replaces the entire database and signs everyone out. All staff grants require reauthorization. Matching media files are required separately.",
+          )}
+        </p>
+      </div>
+      <div className={styles.toolbar}>
         <button
           className="button"
           disabled={busy || !ready}
           onClick={() => void submit("backup")}
         >
+          <SheetIcon kind="save" />
           {tr("Create backup")}
         </button>
-        <label>
+        <button
+          className="button secondary"
+          disabled={busy || !ready}
+          onClick={() => uploadInput.current?.click()}
+        >
+          <SheetIcon kind="upload" />
           {tr("Upload backup for validation")}
-          <input
-            type="file"
-            accept=".oclr"
-            disabled={busy || !ready}
-            onChange={(e) => {
-              const file = e.target.files?.[0];
-              if (file) void submit("import", file);
-              e.target.value = "";
-            }}
-          />
-        </label>
+        </button>
+        <input
+          hidden
+          ref={uploadInput}
+          type="file"
+          accept=".oclr"
+          aria-label={tr("Upload backup for validation")}
+          disabled={busy || !ready}
+          onChange={(e) => {
+            const file = e.target.files?.[0];
+            if (file) void submit("import", file);
+            e.target.value = "";
+          }}
+        />
       </div>
       {!ready && (
         <p role={serviceCode === "loading" ? "status" : "alert"}>
@@ -151,43 +174,69 @@ export function BackupManager() {
         </p>
       )}
       {error && <p role="alert">{error}</p>}
-      <ul>
-        {jobs.map((job) => (
-          <li key={job.id}>
-            <p className="small">{job.id}</p>
-            <p>
-              {job.createdAt} ·{" "}
-              {job.action === "import"
-                ? tr("Upload backup for validation")
-                : job.action === "restore"
-                  ? tr("Confirm restore")
-                  : tr("Create backup")}{" "}
-              · {statusLabel(job.state)}
-            </p>
-            {job.state === "completed" && (
-              <a
-                className="button secondary"
-                href={"/api/admin/backups?download=" + job.id}
-              >
-                {tr("Download")}
-              </a>
-            )}
-            {job.state === "validated" && (
-              <button
-                className="button secondary"
-                onClick={() => {
-                  setConfirmation("");
-                  setSelected(job);
-                }}
-              >
-                {tr("Review restore")}
-              </button>
-            )}
-          </li>
-        ))}
-      </ul>
+      {(ready || jobs.length > 0) && (
+        <div className={styles.history}>
+          <h2 className={styles.heading}>{tr("Backup history")}</h2>
+          {jobs.length === 0 ? (
+            <p className={styles.empty}>{tr("No backup jobs yet.")}</p>
+          ) : (
+            <ul className={styles.jobs} role="list">
+              {jobs.map((job) => (
+                <li key={job.id} className={styles.job}>
+                  <div className={styles.details}>
+                    <div className={styles.summary}>
+                      <strong>
+                        {job.action === "import"
+                          ? tr("Upload backup for validation")
+                          : job.action === "restore"
+                            ? tr("Confirm restore")
+                            : tr("Create backup")}
+                      </strong>
+                      <span className={styles.status} data-state={job.state}>
+                        {statusLabel(job.state)}
+                      </span>
+                    </div>
+                    <time dateTime={job.createdAt} title={job.createdAt}>
+                      {format.dateTime(new Date(job.createdAt), {
+                        year: "numeric",
+                        month: "short",
+                        day: "numeric",
+                        hour: "2-digit",
+                        minute: "2-digit",
+                        second: "2-digit",
+                        timeZoneName: "short",
+                      })}
+                    </time>
+                    <code className={styles.id}>{job.id}</code>
+                  </div>
+                  {job.state === "completed" && (
+                    <a
+                      className={`button secondary ${styles.rowAction}`}
+                      href={"/api/admin/backups?download=" + job.id}
+                    >
+                      <SheetIcon kind="download" />
+                      {tr("Download")}
+                    </a>
+                  )}
+                  {job.state === "validated" && (
+                    <button
+                      className={`button secondary ${styles.rowAction}`}
+                      onClick={() => {
+                        setConfirmation("");
+                        setSelected(job);
+                      }}
+                    >
+                      {tr("Review restore")}
+                    </button>
+                  )}
+                </li>
+              ))}
+            </ul>
+          )}
+        </div>
+      )}
       {selected && (
-        <section className="panel spaced">
+        <section className={`spaced ${styles.restore}`}>
           <h2>{tr("Confirm full database restore")}</h2>
           <p>
             {selected.manifest?.source} · {selected.manifest?.createdAt}

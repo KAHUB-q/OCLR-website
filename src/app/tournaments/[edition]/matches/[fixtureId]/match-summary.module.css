@@ -1,0 +1,194 @@
+.summary:global(.panel) {
+  --red-ink: light-dark(#8b2142, #ffd6df);
+  --blue-ink: light-dark(#174d83, #d4eaff);
+  --red-wash: light-dark(#fcf0f2, #392631);
+  --blue-wash: light-dark(#edf6ff, #1c304a);
+  display: grid;
+  padding: clamp(0.75rem, 2vw, 1.25rem);
+  gap: 0.75rem;
+  min-width: 0;
+  container-type: inline-size;
+}
+.summary [data-side="home"] {
+  --side-ink: var(--red-ink);
+  --side-wash: var(--red-wash);
+}
+.summary [data-side="away"] {
+  --side-ink: var(--blue-ink);
+  --side-wash: var(--blue-wash);
+}
+
+.scoreboard {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto minmax(0, 1fr);
+  align-items: center;
+  gap: clamp(0.375rem, 2cqi, 1.5rem);
+  padding: 0.85rem clamp(0.5rem, 3cqi, 1.5rem);
+  border-inline: 3px solid;
+  border-inline-color: var(--red-ink) var(--blue-ink);
+  border-radius: 0.5rem;
+  background: linear-gradient(
+    90deg,
+    var(--red-wash),
+    var(--site-surface) 46% 54%,
+    var(--blue-wash)
+  );
+}
+.team {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 0.25rem 0.5rem;
+  color: var(--side-ink);
+  font-size: clamp(1rem, 2.5cqi, 1.4rem);
+  font-weight: 700;
+  line-height: 1.25;
+  overflow-wrap: anywhere;
+}
+.team[data-side="away"] {
+  justify-content: end;
+  text-align: end;
+}
+.team a {
+  color: inherit;
+  text-decoration: underline;
+  text-underline-offset: 0.16em;
+}
+.winner {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.15rem;
+  padding: 0.15rem 0.375rem;
+  border: 1px solid currentColor;
+  border-radius: 1rem;
+  font-size: 0.75rem;
+}
+.winner svg {
+  width: 1em;
+  height: 1em;
+}
+.score {
+  display: flex;
+  align-items: center;
+  gap: 0.25em;
+  color: var(--site-foreground);
+  font-size: clamp(1.5rem, 5cqi, 2.5rem);
+  line-height: 1;
+  font-variant-numeric: tabular-nums;
+}
+.score [data-side] {
+  color: var(--side-ink);
+}
+.separator {
+  color: var(--site-muted);
+  font-size: 0.65em;
+}
+.draw,
+.updated {
+  margin: 0;
+  color: var(--site-muted);
+  font-size: var(--text-small);
+}
+.draw {
+  text-align: center;
+}
+.resources {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 0.375rem 0.5rem;
+  color: var(--site-secondary-text);
+  font-size: var(--text-small);
+}
+.resources time {
+  margin-inline-end: 0.25rem;
+  font-variant-numeric: tabular-nums;
+}
+.resources a {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.25rem;
+  max-width: 100%;
+  min-height: 2rem;
+  padding: 0.25rem 0.625rem;
+  border: 1px solid var(--site-border);
+  border-radius: 0.5rem;
+  color: var(--site-accent);
+  font-weight: 600;
+  line-height: 1.3;
+  overflow-wrap: anywhere;
+  text-decoration: none;
+}
+.resources a:hover,
+.resources a:focus-visible {
+  background: var(--site-raised);
+  border-color: currentColor;
+}
+.resources svg {
+  flex: none;
+}
+.outcomes {
+  border-block-start: 1px solid var(--site-border);
+  padding-block-start: 0.75rem;
+}
+.outcomes h2 {
+  margin: 0 0 0.375rem;
+  font-size: var(--text-body);
+}
+.outcomes ol {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  column-gap: 1.5rem;
+  list-style: none;
+  margin: 0;
+  padding: 0;
+}
+.outcomes li {
+  display: grid;
+  grid-template-columns: auto minmax(0, 1fr) auto;
+  align-items: center;
+  gap: 0.5rem;
+  padding-block: 0.375rem;
+  border-block-end: 1px solid var(--site-border);
+  font-size: var(--text-small);
+}
+.order,
+.updated {
+  color: var(--site-muted);
+  font-variant-numeric: tabular-nums;
+}
+.outcomes a {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  min-height: 1.5rem;
+  color: var(--site-accent);
+  overflow-wrap: anywhere;
+}
+.mod {
+  min-width: 2.25rem;
+  padding: 0.125rem 0.25rem;
+  border-radius: 0.25rem;
+  color: var(--site-secondary-text);
+  background: var(--site-raised);
+  text-align: center;
+  font-size: 0.75rem;
+  font-weight: 700;
+}
+.outcome {
+  max-width: 10rem;
+  color: var(--side-ink, var(--site-secondary-text));
+  background: var(--side-wash, var(--site-raised));
+  border-radius: 0.375rem;
+  padding: 0.125rem 0.5rem;
+  font-weight: 650;
+  overflow-wrap: anywhere;
+}
+@container (max-width: 38rem) {
+  .outcomes ol {
+    grid-template-columns: 1fr;
+  }
+  .outcome {
+    max-width: 7rem;
+  }
+}

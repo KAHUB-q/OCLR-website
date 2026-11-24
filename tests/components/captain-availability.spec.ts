@@ -1,4 +1,4 @@
-import { expect, test } from "@playwright/test";
+import { expect, test, type Locator } from "@playwright/test";
 test.use({ timezoneId: "Asia/Taipei" });
 const slot = (hour: string) =>
   `button[data-start="2026-11-01T${hour}:00.000Z"]`;
@@ -392,6 +392,91 @@ test("cycles every state, paints backwards and retries the same save", async ({
     .click();
   await expect(page.getByRole("status")).toContainText("Saved");
   expect(writes[0]).toEqual(writes[1]);
+});
+
+test.describe("touch input on the timetable", () => {
+  test.use({ hasTouch: true });
+
+  async function point(button: Locator, id: number) {
+    const box = (await button.boundingBox())!;
+    return { x: box.x + box.width / 2, y: box.y + box.height / 2, id };
+  }
+
+  test("keeps a two-finger stroke with its first pointer and undoes it once", async ({
+    page,
+  }) => {
+    await page.goto("/schedule-selection?captain");
+    const first = page.locator(slot("10:00"));
+    const last = page.locator(slot("11:00"));
+    const extra = page.locator(slot("11:30"));
+    await last.scrollIntoViewIfNeeded();
+    const start = await point(first, 1);
+    const end = await point(last, 1);
+    const other = await point(extra, 2);
+    const touch = await page.context().newCDPSession(page);
+    await touch.send("Input.dispatchTouchEvent", {
+      type: "touchStart",
+      touchPoints: [start],
+    });
+    await touch.send("Input.dispatchTouchEvent", {
+      type: "touchStart",
+      touchPoints: [start, other],
+    });
+    await touch.send("Input.dispatchTouchEvent", {
+      type: "touchMove",
+      touchPoints: [end, other],
+    });
+    await touch.send("Input.dispatchTouchEvent", {
+      type: "touchEnd",
+      touchPoints: [],
+    });
+    await expect(last).toHaveAccessibleName(/Available$/);
+    await expect(extra).toHaveAccessibleName(/Not filled in$/);
+    const undo = page.getByRole("button", { name: "Undo", exact: true });
+    await undo.click();
+    await expect(first).toHaveAccessibleName(/Available$/);
+    await expect(last).toHaveAccessibleName(/Not filled in$/);
+    await expect(undo).toBeDisabled();
+    await touch.detach();
+  });
+
+  test("only cancelling the active touch rolls back its preview", async ({
+    page,
+  }) => {
+    await page.goto("/schedule-selection?captain");
+    const first = page.locator(slot("10:00"));
+    const last = page.locator(slot("11:00"));
+    await first.click(); // Keep an earlier, unsaved edit when this stroke is cancelled.
+    await last.scrollIntoViewIfNeeded();
+    const touch = await page.context().newCDPSession(page);
+    await touch.send("Input.dispatchTouchEvent", {
+      type: "touchStart",
+      touchPoints: [await point(first, 1)],
+    });
+    await touch.send("Input.dispatchTouchEvent", {
+      type: "touchMove",
+      touchPoints: [await point(last, 1)],
+    });
+    await expect(last).toHaveAccessibleName(/Unsure$/);
+    for (const event of ["pointercancel", "lostpointercapture"]) {
+      await last.dispatchEvent(event, {
+        pointerId: 9999,
+        pointerType: "touch",
+      });
+      await expect(last).toHaveAccessibleName(/Unsure$/);
+    }
+    await touch.send("Input.dispatchTouchEvent", {
+      type: "touchCancel",
+      touchPoints: [],
+    });
+    await expect(last).toHaveAccessibleName(/Not filled in$/);
+    await expect(first).toHaveAccessibleName(/Unsure$/);
+    const undo = page.getByRole("button", { name: "Undo", exact: true });
+    await undo.click();
+    await expect(first).toHaveAccessibleName(/Available$/);
+    await expect(undo).toBeDisabled();
+    await touch.detach();
+  });
 });
 
 test("Friday–Monday shortcuts and overview retain every unsaved instant", async ({

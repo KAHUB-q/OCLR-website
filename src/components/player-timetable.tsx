@@ -1,5 +1,6 @@
 "use client";
 import {
+  type PointerEvent,
   useEffect,
   useMemo,
   useRef,
@@ -199,8 +200,10 @@ export function PlayerTimetable({
     setIntervals(next);
     setValidation("");
   };
-  const cancelDrag = () => {
-    if (drag.current) setIntervals(drag.current.base);
+  const cancelDrag = (event: PointerEvent<HTMLElement>) => {
+    const current = drag.current;
+    if (!current || current.pointer !== event.pointerId) return;
+    setIntervals(current.base);
     drag.current = null;
   };
   const dateLabel = (date: string) =>
@@ -472,6 +475,7 @@ export function PlayerTimetable({
             onPointerDown={(event) => {
               if (
                 disabled ||
+                drag.current ||
                 event.button !== 0 ||
                 !(event.target instanceof Element)
               )

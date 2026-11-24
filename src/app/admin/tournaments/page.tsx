@@ -40,11 +40,7 @@ async function Issue271Page({
         <PageHeading
           eyebrow={tr("OCLR OPERATIONS")}
           title={tr("Tournament management")}
-        >
-          {tr(
-            "Create and configure editions, then open their competition tools.",
-          )}
-        </PageHeading>
+        />
         <div className="actions">
           {data.canCreate && (
             <Action href="/admin/tournaments/new">

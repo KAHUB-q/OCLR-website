@@ -100,7 +100,7 @@ await db().transaction(async (tx) => {
         },
       ],
     },
-    schedule: [{ kind: "knockout", label: "quarterfinals", at: null }],
+    schedule: [{ kind: "knockout" as const, label: "quarterfinals", at: null }],
   };
   await tx
     .update(editionState)

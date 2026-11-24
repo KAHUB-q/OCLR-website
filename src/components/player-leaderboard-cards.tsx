@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useMemo, useRef, useState } from "react";
+import { useEffect, useId, useMemo, useRef, useState } from "react";
 import { useAppTranslations } from "@/i18n/shared";
 import { useLeaderboardSortLayout } from "./use-leaderboard-sort-layout";
 import { classRules, type PlayerClass } from "@/lib/player-class";
@@ -178,6 +178,7 @@ export function PlayerLeaderboardCards({
   const [visibleCount, setVisibleCount] = useState(PAGE_SIZE);
   const sentinelRef = useRef<HTMLDivElement | null>(null);
   const activeSort = sort ?? defaultSort;
+  const sortDescriptionId = useId();
 
   const columns: LeaderboardColumn[] = providedColumns ?? [
     { key: "uid", label: "#" },
@@ -269,6 +270,11 @@ export function PlayerLeaderboardCards({
 
   return (
     <div className={styles.board}>
+      <span id={sortDescriptionId} className="sr-only" role="status">
+        {activeSort.dir === "asc"
+          ? tr("Sorted ascending")
+          : tr("Sorted descending")}
+      </span>
       <div
         ref={sortBarRef}
         className={styles.sortBar}
@@ -292,6 +298,7 @@ export function PlayerLeaderboardCards({
                   className={styles.sortButton}
                   data-active={active || undefined}
                   aria-pressed={active}
+                  aria-describedby={active ? sortDescriptionId : undefined}
                   onClick={() => toggle(column.key)}
                 >
                   <span

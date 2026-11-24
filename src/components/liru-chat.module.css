@@ -28,7 +28,39 @@
   border: 1px solid var(--site-border);
   border-radius: 0.8rem;
 }
-.parts,
+.parts {
+  overflow-wrap: anywhere;
+}
+.pending {
+  color: var(--site-muted);
+  font-size: var(--text-support);
+}
+.markdown {
+  line-height: 1.55;
+  min-width: 0;
+}
+.markdown > :first-child {
+  margin-block-start: 0;
+}
+.markdown > :last-child {
+  margin-block-end: 0;
+}
+.markdown :is(p, ul, ol, pre, blockquote) {
+  margin-block: 0.5rem;
+}
+.markdown :is(h1, h2, h3, h4, h5, h6) {
+  font-size: 1rem;
+  line-height: 1.3;
+  margin-block: 0.75rem 0.25rem;
+}
+.markdown :is(ul, ol) {
+  padding-inline-start: 1.5rem;
+}
+.markdown pre {
+  overflow-x: auto;
+  padding: 0.5rem;
+  background: var(--site-surface);
+}
 .question {
   white-space: pre-wrap;
   overflow-wrap: anywhere;

@@ -1,4 +1,6 @@
 "use client";
+import Markdown from "react-markdown";
+import type { Root, Parents, PhrasingContent } from "mdast";
 import { useMemo } from "react";
 import { useChat } from "@ai-sdk/react";
 import { DefaultChatTransport } from "ai";
@@ -8,6 +10,8 @@ import {
   MessagePrimitive,
   ThreadPrimitive,
   type SourceMessagePartProps,
+  type TextMessagePartProps,
+  useAuiState,
 } from "@assistant-ui/react";
 import { useAISDKRuntime } from "@assistant-ui/ai-sdk";
 import { useAppTranslations } from "@/i18n/shared";
@@ -22,12 +26,76 @@ function Source(part: SourceMessagePartProps) {
     </a>
   );
 }
+// Link numbered references only to sources received for this assistant message.
+function AnswerText({ text }: TextMessagePartProps) {
+  const parts = useAuiState((state) => state.message.parts);
+  const sources = new Map(
+    parts.flatMap((part) =>
+      part.type === "source" && part.sourceType === "url"
+        ? [[part.id, part.url] as const]
+        : [],
+    ),
+  );
+  function citations() {
+    function walk(parent: Parents) {
+      for (let i = parent.children.length - 1; i >= 0; i--) {
+        const child = parent.children[i];
+        if (child.type === "link" || child.type === "linkReference") continue;
+        if ("children" in child) walk(child);
+        if (child.type !== "text") continue;
+        const nodes: PhrasingContent[] = [];
+        let end = 0;
+        for (const match of child.value.matchAll(/\[(\d+)\]/g)) {
+          const url = sources.get(match[1]);
+          if (!url) continue;
+          if (match.index > end)
+            nodes.push({
+              type: "text",
+              value: child.value.slice(end, match.index),
+            });
+          nodes.push({
+            type: "link",
+            url,
+            children: [{ type: "text", value: match[0] }],
+          });
+          end = match.index + match[0].length;
+        }
+        if (end) {
+          nodes.push({ type: "text", value: child.value.slice(end) });
+          parent.children.splice(i, 1, ...nodes);
+        }
+      }
+    }
+    return (tree: Root) => walk(tree);
+  }
+  return (
+    <div className={styles.markdown}>
+      <Markdown
+        skipHtml
+        remarkPlugins={[citations]}
+        components={{
+          img: () => null,
+          a: ({ href, children }) =>
+            href && [...sources.values()].includes(href) ? (
+              <a className="text-link" href={href}>
+                {children}
+              </a>
+            ) : (
+              <>{children}</>
+            ),
+        }}
+      >
+        {text}
+      </Markdown>
+    </div>
+  );
+}
 function AssistantMessage() {
   return (
     <MessagePrimitive.Root className={styles.reply}>
       <LiruChatIcon />
       <div className={styles.parts}>
-        <MessagePrimitive.Parts components={{ Source }} />
+        <MessagePrimitive.Parts components={{ Source, Text: AnswerText }} />
       </div>
     </MessagePrimitive.Root>
   );
@@ -73,6 +141,12 @@ export function LiruChat({ edition }: { edition: string }) {
   const chat = useChat({ id: edition, transport });
   const runtime = useAISDKRuntime(chat);
   const busy = chat.status === "submitted" || chat.status === "streaming";
+  const last = chat.messages.at(-1);
+  const waiting =
+    busy &&
+    (chat.status === "submitted" ||
+      last?.role !== "assistant" ||
+      !last.parts.some((part) => part.type === "text" && part.text.trim()));
   return (
     <AssistantRuntimeProvider runtime={runtime}>
       <ThreadPrimitive.Root className={styles.chat}>
@@ -84,6 +158,11 @@ export function LiruChat({ edition }: { edition: string }) {
           <ThreadPrimitive.Messages
             components={{ AssistantMessage, UserMessage }}
           />
+          {waiting && (
+            <div role="status" className={styles.pending}>
+              {tr("Loading…")}
+            </div>
+          )}
         </ThreadPrimitive.Viewport>
         {chat.error && (
           <div role="alert" className="notice">

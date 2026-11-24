@@ -4,6 +4,7 @@ import { asksRegistrationCount, registrationCount } from "./chat-registration";
 import type { Edition } from "./editions";
 import { recordedArchiveMatch } from "./historical-archive";
 import { publicMappools } from "./mappool-reads";
+import { publicDraft } from "./draft-reads";
 import { publishedTeams } from "./team-reads";
 
 const categories = {
@@ -22,7 +23,7 @@ const categories = {
     title: "Results",
     path: "results",
     subject:
-      /^(?:(?:已公布的?)?(?:[賽赛]果|比[賽赛][結结]果)|比[賽赛](?:已)?(?:公布|有)(?:了)?(?:[賽赛]果|[結结]果)|(?:published )?results|matches (?:with|have) published results)$/,
+      /^(?:(?:(?:已公布|公[開开])的?)?(?:[賽赛]果|比[賽赛][結结]果)|比[賽赛](?:已)?(?:公布|有)(?:了)?(?:[賽赛]果|[結结]果)|(?:published )?results|matches (?:with|have) published results)$/,
   },
   upcoming: {
     title: "Schedule",
@@ -34,6 +35,18 @@ const categories = {
     title: "Mappools",
     path: "mappools",
     subject: /^(?:[圖图]池|曲池|map ?pools?)$/,
+  },
+  uniqueMaps: {
+    title: "Mappools",
+    path: "mappools",
+    subject:
+      /^(?:(?:不同|不重[複复]|去重)(?:的)?(?:[譜谱]面|[圖图])|(?:unique|distinct) (?:beat)?maps?)$/,
+  },
+  draftPicks: {
+    title: "Draft",
+    path: "draft",
+    subject:
+      /^(?:(?:(?:已公布|公[開开])的?)?[選选]秀(?:[紀纪記记][錄录]|順位|顺位|結果|结果)|(?:published )?draft picks?)$/,
   },
   slots: {
     title: "Mappools",
@@ -48,7 +61,7 @@ type Category = keyof typeof categories;
 // accidentally turn a narrower request into a season-wide total.
 export function seasonCountIntent(
   question: string,
-): Category | "registration" | null {
+): Category | "registration" | { mod: string } | null {
   if (asksRegistrationCount(question)) return "registration";
   const query = question
     .normalize("NFKC")
@@ -61,7 +74,7 @@ export function seasonCountIntent(
     "",
   );
   if (
-    /^(?:接下[來来]|[還还]|剩下)(?:有)?(?:多少|[幾几])[場场](?:比[賽赛])?$/.test(
+    /^(?:[賽赛]程)?(?:接下[來来]|[還还]剩(?:下)?|[還还]|剩下)(?:有)?(?:多少|[幾几])[場场](?:比[賽赛])?$/.test(
       chinese,
     )
   )
@@ -73,12 +86,26 @@ export function seasonCountIntent(
   )
     return "slots";
 
+  const mapQuestion = chinese
+    .replace(/\s+/g, "")
+    .replace(/^[圖图]池(?:[裡里內内中])?/, "");
+  const mod =
+    mapQuestion.match(
+      /^(?:一共|[總总]共|共)?有?(?:多少|[幾几])(?:[張张個个首])?\s*(nm|hd|hr|dt|fm|tb|ace)(?:[圖图]|[譜谱]面|[欄栏]位)?$/,
+    )?.[1] ??
+    mapQuestion.match(
+      /^(nm|hd|hr|dt|fm|tb|ace)(?:[圖图]|[譜谱]面|[欄栏]位)?\s*(?:一共|[總总]共|共)?有?(?:多少|[幾几])(?:[張张個个首])?$/,
+    )?.[1] ??
+    query.match(
+      /^how many (nm|hd|hr|dt|fm|tb|ace) (?:maps|beatmaps|slots)(?: are there)?(?: (?:in |for )?this season)?$/,
+    )?.[1];
+  if (mod) return { mod: mod.toUpperCase() };
   const subject =
     chinese.match(
-      /^(?:一共|[總总]共|共)?有?(?:多少|[幾几])(?:支|[場场個个張张]|首|位|名)?(.+)$/,
+      /^(?:一共|[總总]共|共)?有?(?:多少|[幾几])(?:支|[場场個个張张筆笔]|首|位|名)?(.+)$/,
     )?.[1] ??
     chinese.match(
-      /^(.+?)(?:一共|[總总]共|共)?有(?:多少|[幾几])(?:支|[場场個个張张]|首|位|名)?$/,
+      /^(.+?)(?:一共|[總总]共|共)?有?(?:多少|[幾几])(?:支|[場场個个張张筆笔]|首|位|名)?$/,
     )?.[1] ??
     chinese.match(/^(.+?)(?:[數数]量|[總总][數数])(?:是多少)?$/)?.[1] ??
     query.match(
@@ -115,14 +142,53 @@ export async function seasonCount(
   if (kind === "teams") {
     count = (edition.archive?.teams ?? (await publishedTeams(edition.slug)))
       .length;
-  } else if (kind === "pools" || kind === "slots") {
-    const sizes = edition.archive
-      ? edition.archive.pools.map((pool) => pool.maps.length)
-      : (await publicMappools(edition.slug)).map((pool) => pool.entries.length);
+  } else if (kind === "draftPicks") {
+    if (edition.archive?.draftMode === "final-tiers") return null;
+    const picks =
+      edition.archive?.picks ?? (await publicDraft(edition.slug))?.picks;
+    if (!picks) return null;
+    count = picks.length;
+  } else if (
+    kind === "pools" ||
+    kind === "slots" ||
+    kind === "uniqueMaps" ||
+    typeof kind === "object"
+  ) {
+    const pools = edition.archive
+      ? edition.archive.pools.map((pool) =>
+          pool.maps.map((map) => ({
+            id: map.beatmapId,
+            mod: map.slot.replace(/\d+$/, ""),
+          })),
+        )
+      : (await publicMappools(edition.slug)).map((pool) =>
+          pool.entries.map((entry) => ({
+            id: entry.beatmapId,
+            mod: entry.category,
+          })),
+        );
+    const slots = pools.flat();
+    if (typeof kind === "object") {
+      count = slots.filter((slot) => slot.mod === kind.mod).length;
+      return {
+        kind: "modSlots" as const,
+        mod: kind.mod,
+        count,
+        source: {
+          title: categories.slots.title,
+          url: `/tournaments/${edition.slug}/mappools`,
+          text: `${kind.mod} slots: ${count}`,
+        },
+      };
+    }
     count =
       kind === "pools"
-        ? sizes.length
-        : sizes.reduce((sum, size) => sum + size, 0);
+        ? pools.length
+        : kind === "slots"
+          ? slots.length
+          : new Set(
+              slots.flatMap((slot) => (slot.id === null ? [] : [slot.id])),
+            ).size;
   } else if (edition.archive) {
     // The public historical schedule and results both list only recorded matches.
     count =
@@ -169,6 +235,21 @@ export function formatSeasonCount(
     case "registration":
       return tr(
         "Accepted registrations in the public player directory: {count, number}. The total number of applications is not published.",
+        values,
+      );
+    case "modSlots":
+      return tr(
+        "Published mappools list {count, plural, one {# {mod} slot} other {# {mod} slots}}.",
+        { ...values, mod: total.mod },
+      );
+    case "uniqueMaps":
+      return tr(
+        "Published mappools list {count, plural, one {# distinct identifiable beatmap} other {# distinct identifiable beatmaps}} by difficulty ID.",
+        values,
+      );
+    case "draftPicks":
+      return tr(
+        "This season has {count, plural, one {# published draft pick} other {# published draft picks}}.",
         values,
       );
     case "teams":

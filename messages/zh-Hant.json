@@ -5159,6 +5159,9 @@
     "m8c4f9c435b8e": "已有 {count, number} 場比賽公布賽果。",
     "ma94093205cb7": "接下來有 {count, number} 場已排定時間的比賽。",
     "mda64e34a9aa1": "本屆已公布 {count, number} 個圖池。",
-    "m6ae4e2c359a5": "公開圖池共列出 {count, number} 個譜面欄位，同一譜面出現在不同欄位時分別計算。"
+    "m6ae4e2c359a5": "公開圖池共列出 {count, number} 個譜面欄位，同一譜面出現在不同欄位時分別計算。",
+    "m3da0f6110ec3": "公開圖池共列出 {count, number} 個 {mod} 欄位。",
+    "mcbca81eda3e9": "依譜面 ID 去重後，公開圖池共列出 {count, number} 張可識別的譜面。",
+    "m3e33804e3595": "本屆已公布 {count, number} 筆選秀紀錄。"
   }
 }

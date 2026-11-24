@@ -36,7 +36,7 @@ export async function chatEvidence(
         {
           title: edition.name,
           url: "/tournaments/" + slug,
-          text: "Liru can answer questions about published information for this season: rules, dates, players, teams, draft picks, mappools, fixtures, results and statistics. Give two short example questions. Availability depends on what has been published.",
+          text: "Liru can answer questions about published information for this season: rules, dates, players, teams, draft picks, mappools, fixtures, results and statistics. Examples include how many upcoming matches have a start time, how many Hidden (HD) slots the mappools contain, and how many draft picks were published. Availability depends on what has been published.",
         },
       ],
     };

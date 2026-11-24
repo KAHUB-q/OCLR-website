@@ -1,12 +1,11 @@
 import { createHash } from "node:crypto";
 import { embedMany } from "ai";
-import { createOpenAICompatible } from "@ai-sdk/openai-compatible";
+import { chatProvider } from "./chat-provider";
 import { and, eq, sql } from "drizzle-orm";
 import { db } from "@/db";
 import { chatSourceVectors as vectors } from "@/db/schema";
 import type { Edition } from "./editions";
 import { chatConfiguration } from "./chat-config";
-import { chatProxyFetch } from "./chat-proxy";
 import { chatTerms, rankedSources, type ChatSource } from "./chat-retrieval";
 import { seasonContent, type ChatCollection } from "./chat-season-content";
 
@@ -20,17 +19,11 @@ export function embeddingProvider() {
   const config = chatConfiguration();
   const name = process.env.OCLR_CHAT_EMBEDDING_MODEL?.trim();
   if (!config || !name) return null;
-  const provider = createOpenAICompatible({
-    name: "oclr",
-    baseURL: config.baseURL,
-    apiKey: config.apiKey,
-    fetch: chatProxyFetch(config.proxyURL),
-  });
   return {
     key: createHash("sha256")
       .update(JSON.stringify([config.baseURL, name]))
       .digest("hex"),
-    model: provider.embeddingModel(name),
+    model: chatProvider(config).embeddingModel(name),
   };
 }
 

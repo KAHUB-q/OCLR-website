@@ -1,3 +1,4 @@
+import { registrationCount } from "./chat-registration";
 import type { Edition } from "./editions";
 import { publicEditionSummary } from "./editions";
 import { publicPlayerDirectoryModel } from "./public-read-models";
@@ -97,6 +98,8 @@ export async function seasonContent(
       break;
     }
     case "players": {
+      const total = await registrationCount(e);
+      if (total) rows.push(total.source);
       const directory = await publicPlayerDirectoryModel(e.slug);
       for (const player of directory.rows) {
         const p = publicDirectoryPlayer(player);

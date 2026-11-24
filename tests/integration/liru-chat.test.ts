@@ -12,6 +12,7 @@ import { db, closeDb } from "@/db";
 import { users, sessions, registrations, staffRoles } from "@/db/schema";
 import { createSession, revokeSession } from "@/lib/auth/sessions";
 import { hashToken } from "@/lib/auth/tokens";
+import { english } from "@/i18n/translate";
 import { chatEvidence } from "@/lib/chat-sources";
 import { POST } from "@/app/api/chat/route";
 import { seedEditions } from "../fixtures/editions";
@@ -21,7 +22,7 @@ import { assertTestDatabase } from "../database";
 
 const context = vi.hoisted(() => ({ token: "" }));
 vi.mock("@/i18n/server", () => ({
-  getAppTranslations: async () => (message: string) => message,
+  getAppTranslations: async () => english,
 }));
 vi.mock("next/headers.js", () => ({
   headers: async () => new Headers(),
@@ -139,6 +140,73 @@ describe.skipIf(!testUrl)("authenticated tournament assistant", () => {
       ),
     ).toBe(false);
   });
+  it("answers registration totals from currently published data even without an index or provider", async () => {
+    const cup = "count-test-cup";
+    const other = "count-test-other";
+    await seedEditions([
+      season(cup, "Registration eligibility"),
+      season(other, "Other rule"),
+    ]);
+    const accepted = 1425010;
+    const pending = 1425011;
+    await db()
+      .insert(users)
+      .values([
+        { osuId: accepted, username: "Count Accepted" },
+        { osuId: pending, username: "Count Pending" },
+      ]);
+    await db()
+      .insert(registrations)
+      .values([
+        { userId: accepted, editionSlug: cup, answers: {}, status: "accepted" },
+        { userId: pending, editionSlug: cup, answers: {}, status: "pending" },
+        {
+          userId: pending,
+          editionSlug: other,
+          answers: {},
+          status: "accepted",
+        },
+      ]);
+    context.token = (await createSession(accepted)).token;
+    const upstream = vi.fn();
+    vi.stubGlobal("fetch", upstream);
+    for (const question of [
+      "有多少人報名了",
+      "报名人数是多少？",
+      "How many people have registered?",
+    ]) {
+      const response = await ask([question], { edition: cup });
+      const text = await response.text();
+      expect(text).toContain("public player directory: 1");
+      expect(text).toContain(`/tournaments/${cup}/players`);
+      expect(text).not.toContain("eligibility");
+    }
+    await db()
+      .update(registrations)
+      .set({ status: "withdrawn" })
+      .where(eq(registrations.userId, accepted));
+    expect(
+      await (await ask(["有多少人報名了"], { edition: cup })).text(),
+    ).toContain("public player directory: 0");
+    const archive = structuredClone(historicalArchive);
+    await seedEditions([
+      {
+        ...edition,
+        slug: archive.editionSlug,
+        archive,
+        status: "completed",
+        registration: null,
+      },
+    ]);
+    expect(
+      await (
+        await ask(["有多少人報名了"], { edition: archive.editionSlug })
+      ).text(),
+    ).toContain(`historical roster lists ${archive.players.length}`);
+    await seedEditions([{ ...season(cup, "Registration"), published: false }]);
+    expect((await ask(["有多少人報名了"], { edition: cup })).status).toBe(404);
+    expect(upstream).not.toHaveBeenCalled();
+  });
   it("streams cited public evidence through the configured compatible provider and discards client instructions", async () => {
     context.token = (await createSession(1425001)).token;
     await seedEditions([season(slug, "Only after referee approval.")]);
@@ -156,7 +224,12 @@ describe.skipIf(!testUrl)("authenticated tournament assistant", () => {
         "Bearer synthetic-key",
       );
       const body = JSON.parse(init.body);
-      expect(body).toMatchObject({ model: "test-chat", stream: true });
+      expect(body).toMatchObject({
+        model: "test-chat",
+        stream: true,
+        max_tokens: 650,
+      });
+      expect(body).not.toHaveProperty("max_completion_tokens");
       expect(JSON.stringify(body.messages)).toContain(
         "Only after referee approval.",
       );
@@ -184,10 +257,31 @@ describe.skipIf(!testUrl)("authenticated tournament assistant", () => {
     });
     vi.stubGlobal("fetch", upstream);
     expect((await ask(["substitution?"], { tools: {} })).status).toBe(400);
+    const log = vi.spyOn(console, "info");
     const response = await ask();
     const text = await response.text();
     expect(response.headers.get("content-type")).toContain("text/event-stream");
-    expect(text).toContain('"type":"source-url"');
+    const traceId = response.headers.get("X-OCLR-Chat-Request-Id");
+    expect(traceId).toBeTruthy();
+    const events = log.mock.calls
+      .filter(
+        ([tag, value]) =>
+          tag === "[liru-chat]" && JSON.parse(value).requestId === traceId,
+      )
+      .map(([, value]) => JSON.parse(value));
+    expect(events.map((e) => e.event)).toEqual([
+      "upstream_start",
+      "upstream_http",
+      "answer_received",
+    ]);
+    expect(events[1].status).toBe(200);
+    expect(JSON.stringify(events)).not.toMatch(
+      /referee|substitution|synthetic-key/i,
+    );
+    log.mockRestore();
+    expect(text.indexOf('"type":"source-url"')).toBeGreaterThan(
+      text.indexOf("Check with the referee."),
+    );
     expect(text).toContain("Check with the referee.");
     expect(upstream).toHaveBeenCalledTimes(1);
     expect(await (await ask(["zzz"])).text()).toContain("couldn’t find");
@@ -245,6 +339,63 @@ describe.skipIf(!testUrl)("authenticated tournament assistant", () => {
     expect((await ask()).status).toBe(429);
     expect(upstream).not.toHaveBeenCalled();
   });
+  it("sends the official OpenAI limit and logs only recognized invalid request fields", async () => {
+    await db()
+      .insert(users)
+      .values({ osuId: 1425020, username: "Parameter test" });
+    context.token = (await createSession(1425020)).token;
+    await seedEditions([season(slug, "Use a substitute.")]);
+    vi.stubEnv("OCLR_CHAT_BASE_URL", "https://api.openai.com/v1");
+    const log = vi.spyOn(console, "info");
+    const upstream = vi.fn(async (url, init) => {
+      expect(String(url)).toBe("https://api.openai.com/v1/chat/completions");
+      const body = JSON.parse(init.body);
+      expect(body.max_completion_tokens).toBe(650);
+      expect(body).not.toHaveProperty("max_tokens");
+      return Response.json(
+        {
+          error: {
+            code: "unsupported_value",
+            param: "model",
+            message: "private upstream text",
+          },
+        },
+        { status: 400 },
+      );
+    });
+    vi.stubGlobal("fetch", upstream);
+    try {
+      const text = await (await ask()).text();
+      expect(upstream).toHaveBeenCalledOnce();
+      expect(text).toContain("provider-unavailable");
+      const lines = log.mock.calls.map(([, line]) => line).join("\n");
+      expect(lines).toContain(
+        '"event":"invalid_request","status":400,"code":"unsupported_value","param":"model"',
+      );
+      expect(lines + text).not.toMatch(/private upstream text|synthetic-key/);
+    } finally {
+      log.mockRestore();
+      vi.stubEnv("OCLR_CHAT_BASE_URL", "https://provider.example/v1");
+    }
+  });
+  it("reports a reasoning-only completion as an empty answer without attaching citations", async () => {
+    await db()
+      .insert(users)
+      .values({ osuId: 1425012, username: "Empty answer" });
+    context.token = (await createSession(1425012)).token;
+    await seedEditions([season(slug, "Use a substitute.")]);
+    vi.stubGlobal(
+      "fetch",
+      async () =>
+        new Response(
+          'data: {"choices":[{"index":0,"delta":{"reasoning_content":"internal"},"finish_reason":"length"}]}\n\ndata: [DONE]\n\n',
+          { headers: { "content-type": "text/event-stream" } },
+        ),
+    );
+    const text = await (await ask()).text();
+    expect(text).toContain("provider-unavailable");
+    expect(text).not.toMatch(/source-url|internal/);
+  });
   it("suppresses provider error bodies and propagates cancellation", async () => {
     context.token = (await createSession(1425001)).token;
     await seedEditions([season(slug, "Use a substitute.")]);
@@ -252,9 +403,18 @@ describe.skipIf(!testUrl)("authenticated tournament assistant", () => {
       async () => new Response("private upstream diagnostics", { status: 429 }),
     );
     vi.stubGlobal("fetch", upstream);
+    const log = vi.spyOn(console, "info");
     const failed = await (await ask()).text();
+    const logged = log.mock.calls.map(([, line]) => line).join("\n");
+    log.mockRestore();
+    expect(logged).toContain('"event":"upstream_http","status":429');
+    expect(logged).toContain('"event":"upstream_error"');
+    expect(logged).not.toMatch(
+      /private upstream diagnostics|synthetic-key|substitution/,
+    );
     expect(failed).toContain("provider-unavailable");
     expect(failed).not.toContain("private upstream diagnostics");
+    expect(failed).not.toContain('"type":"source-url"');
     const controller = new AbortController();
     let started!: () => void;
     const ready = new Promise<void>((r) => {

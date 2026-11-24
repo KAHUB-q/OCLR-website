@@ -36,3 +36,7 @@ export function chatConfiguration() {
   }
   return { baseURL, model, apiKey, proxyURL };
 }
+
+export type ChatConfiguration = NonNullable<
+  ReturnType<typeof chatConfiguration>
+>;

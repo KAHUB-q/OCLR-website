@@ -1,3 +1,4 @@
+import { asksRegistrationCount, registrationCount } from "./chat-registration";
 import { searchSeasonIndex } from "./chat-vectors";
 import { matches, poolSources } from "./chat-competition-sources";
 import { getPublicEdition } from "./content";
@@ -18,6 +19,14 @@ export async function chatEvidence(
 ) {
   const edition = await getPublicEdition(slug);
   if (!edition) throw new HttpError(404, "Tournament not found.");
+  if (asksRegistrationCount(question)) {
+    const total = await registrationCount(edition);
+    return {
+      edition: edition.name,
+      total,
+      sources: total ? [total.source] : [],
+    };
+  }
   const base = "/tournaments/" + slug;
   const matchIntent =
     /賽程|赛程|比[分賽赛]|賽果|赛果|下一[場场]|對陣|对阵|schedule|match|score|result|fixture|who won/i;
@@ -115,5 +124,5 @@ export async function chatEvidence(
       s,
     ]),
   );
-  return { edition: edition.name, sources: [...unique.values()] };
+  return { edition: edition.name, total: null, sources: [...unique.values()] };
 }

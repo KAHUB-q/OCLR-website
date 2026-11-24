@@ -3104,6 +3104,7 @@ export const osuImagePolicies = pgTable("osu_image_policies", {
     .primaryKey(),
   ttlHours: integer("ttl_hours").notNull(),
   capacityMiB: integer("capacity_mib").notNull(),
+  invalidatedAt: timestamp("invalidated_at", { withTimezone: true }),
   revision: integer("revision").notNull().default(0),
 });
 

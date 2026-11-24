@@ -12,8 +12,9 @@ export function OsuImageSettings({ initial }: { initial: OsuImagePolicy }) {
   const [policy, setPolicy] = useState(initial);
   const [hours, setHours] = useState(String(initial.ttlHours));
   const [capacity, setCapacity] = useState(String(initial.capacityMiB));
-  const [id, setId] = useState("");
-  const [busy, setBusy] = useState(false);
+  const [pending, setPending] = useState<OsuImageCommand["action"] | null>(
+    null,
+  );
   const [feedback, setFeedback] = useState("");
   const [error, setError] = useState("");
   const avatar = initial.kind === "avatar";
@@ -21,8 +22,8 @@ export function OsuImageSettings({ initial }: { initial: OsuImagePolicy }) {
     Number(hours) !== policy.ttlHours ||
     Number(capacity) !== policy.capacityMiB;
   async function submit(command: OsuImageCommand) {
-    if (busy) return;
-    setBusy(true);
+    if (pending) return;
+    setPending(command.action);
     setError("");
     setFeedback("");
     try {
@@ -42,30 +43,42 @@ export function OsuImageSettings({ initial }: { initial: OsuImagePolicy }) {
         command.action === "save"
           ? tr("Cache settings saved.")
           : avatar
-            ? tr("Avatar refreshed for osu! user {id}.", {
-                id: command.imageId,
-              })
-            : tr("Background refreshed for beatmapset {id}.", {
-                id: command.imageId,
-              }),
+            ? tr("All avatars will refresh on their next view.")
+            : tr("All backgrounds will refresh on their next view."),
       );
     } catch {
       setError(tr("This request could not be completed. Please try again."));
     } finally {
-      setBusy(false);
+      setPending(null);
     }
   }
   return (
-    <fieldset
-      className="settings-card form-stack"
-      disabled={busy}
-      aria-busy={busy}
+    <section
+      className="image-cache-row"
+      aria-labelledby={`cache-${initial.kind}`}
+      aria-busy={pending !== null}
     >
-      <legend>
-        {avatar ? tr("osu! avatar cache") : tr("Beatmap background cache")}
-      </legend>
+      <div className="image-cache-row-heading">
+        <h3 id={`cache-${initial.kind}`}>
+          {avatar ? tr("osu! avatars") : tr("Beatmap backgrounds")}
+        </h3>
+        <button
+          className="secondary"
+          type="button"
+          disabled={pending !== null}
+          onClick={() =>
+            void submit({ action: "refreshAll", kind: initial.kind })
+          }
+        >
+          {pending === "refreshAll"
+            ? tr("Refreshing…")
+            : avatar
+              ? tr("Refresh all avatars")
+              : tr("Refresh all backgrounds")}
+        </button>
+      </div>
       <form
-        className="actions"
+        className="image-cache-policy"
         onSubmit={(event) => {
           event.preventDefault();
           void submit({
@@ -80,6 +93,7 @@ export function OsuImageSettings({ initial }: { initial: OsuImagePolicy }) {
         <label className="field">
           {tr("Cache lifetime (hours)")}
           <input
+            disabled={pending !== null}
             required
             type="number"
             min={1}
@@ -91,6 +105,7 @@ export function OsuImageSettings({ initial }: { initial: OsuImagePolicy }) {
         <label className="field">
           {tr("Capacity limit (MiB)")}
           <input
+            disabled={pending !== null}
             required
             type="number"
             min={8}
@@ -99,34 +114,8 @@ export function OsuImageSettings({ initial }: { initial: OsuImagePolicy }) {
             onChange={(e) => setCapacity(e.target.value)}
           />
         </label>
-        <button type="submit" disabled={!dirty}>
-          {tr("Save")}
-        </button>
-      </form>
-      <form
-        className="actions"
-        onSubmit={(event) => {
-          event.preventDefault();
-          void submit({
-            action: "refresh",
-            kind: initial.kind,
-            imageId: Number(id),
-          });
-        }}
-      >
-        <label className="field">
-          {avatar ? tr("osu! user ID") : tr("Beatmapset ID")}
-          <input
-            required
-            type="number"
-            min={1}
-            max={2147483647}
-            value={id}
-            onChange={(e) => setId(e.target.value)}
-          />
-        </label>
-        <button className="secondary" type="submit" disabled={!id}>
-          {avatar ? tr("Refresh this avatar") : tr("Refresh this background")}
+        <button type="submit" disabled={!dirty || pending !== null}>
+          {pending === "save" ? tr("Saving…") : tr("Save settings")}
         </button>
       </form>
       {feedback && (
@@ -139,6 +128,6 @@ export function OsuImageSettings({ initial }: { initial: OsuImagePolicy }) {
           {error}
         </p>
       )}
-    </fieldset>
+    </section>
   );
 }

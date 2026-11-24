@@ -187,14 +187,13 @@ export const manageOsuImagesWrite = {
       expectedRevision: cacheRevision,
     }),
     z.strictObject({
-      action: z.literal("refresh"),
+      action: z.literal("refreshAll"),
       kind: cacheKind,
-      imageId: z.number().int().positive().max(2147483647),
     }),
   ]),
   summary: "Manage osu! image caching",
   description:
-    "A global Admin can save the lifetime and capacity of one image category or refresh one official avatar or beatmapset background. A refreshed background also invalidates its cached list thumbnail.",
+    "A global Admin can save the lifetime and capacity of one image category or mark all cached images in that category stale sitewide. Each image refreshes on its next request. Backgrounds include covers and list thumbnails.",
   successStatus: 200,
   successDescription: "The current policy for the selected image category.",
   successHeaders: noStore,
@@ -206,10 +205,8 @@ export const manageOsuImagesWrite = {
   }),
   errors: {
     ...errors,
-    400: "Invalid cache policy or image ID.",
-    404: "Image not found.",
+    400: "Invalid image cache command.",
     409: "Conflicting policy revision.",
-    502: "Official image unavailable.",
   },
   consumers: ["src/components/osu-image-settings.tsx"],
 } as const satisfies WriteApiOperation;

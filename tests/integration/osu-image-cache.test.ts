@@ -10,7 +10,12 @@ import {
 } from "vitest";
 import { eq, sql } from "drizzle-orm";
 import { db, closeDb } from "@/db";
-import { osuCachedImages, osuImagePolicies, users } from "@/db/schema";
+import {
+  osuCachedImages,
+  osuImageEvents,
+  osuImagePolicies,
+  users,
+} from "@/db/schema";
 import { manageOsuImages, readOsuImage } from "@/lib/osu-image-cache";
 import {
   cachedImageUrl,
@@ -59,27 +64,27 @@ describe.skipIf(!url)("osu! image cache", () => {
     vi.stubEnv("ADMIN_OSU_IDS", String(admin.osuId));
     await db().insert(users).values(admin).onConflictDoNothing();
   });
-  beforeEach(async () => {
+  async function resetCache() {
     await db().execute(sql`truncate osu_cached_images, osu_image_events`);
+    await db().update(osuImagePolicies).set({ invalidatedAt: null });
     await db()
       .update(osuImagePolicies)
       .set({ revision: 0, ttlHours: 24, capacityMiB: 64 })
       .where(eq(osuImagePolicies.kind, "avatar"));
+  }
+  beforeEach(async () => {
+    await resetCache();
     download.mockReset().mockImplementation(async () => image(1));
     vi.stubGlobal("fetch", download);
   });
   afterEach(() => vi.unstubAllGlobals());
   afterAll(async () => {
-    await db().execute(sql`truncate osu_cached_images, osu_image_events`);
-    await db()
-      .update(osuImagePolicies)
-      .set({ revision: 0, ttlHours: 24, capacityMiB: 64 })
-      .where(eq(osuImagePolicies.kind, "avatar"));
+    await resetCache();
     await closeDb();
     vi.unstubAllEnvs();
   });
 
-  it("refreshes only one image and revalidates its browser ETag", async () => {
+  it("refreshes every avatar on demand and revalidates browser ETags", async () => {
     const first = await get("avatar", 11);
     const etag = first.headers.get("etag")!;
     expect(first.status).toBe(200);
@@ -90,16 +95,16 @@ describe.skipIf(!url)("osu! image cache", () => {
     expect(download).toHaveBeenCalledTimes(3);
     download.mockImplementation(async () => image(2));
     await manageOsuImages(admin, {
-      action: "refresh",
+      action: "refreshAll",
       kind: "avatar",
-      imageId: 11,
     });
+    expect(download).toHaveBeenCalledTimes(3);
     const refreshed = await get("avatar", 11, etag);
     expect(refreshed.status).toBe(200);
     expect(await refreshed.bytes()).toEqual(new Uint8Array([255, 216, 255, 2]));
-    expect((await get("avatar", 22, etag)).status).toBe(304);
+    expect((await get("avatar", 22, etag)).status).toBe(200);
     expect((await get("cover", 11, etag)).status).toBe(304);
-    expect(download).toHaveBeenCalledTimes(4);
+    expect(download).toHaveBeenCalledTimes(5);
   });
 
   it("deduplicates misses, reloads expired images, and retains old bytes when refreshing fails", async () => {
@@ -112,32 +117,45 @@ describe.skipIf(!url)("osu! image cache", () => {
     const result = await readOsuImage("cover", 55);
     expect(result?.data.at(-1)).toBe(3);
     download.mockImplementation(async () => new Response("<html/>"));
-    await expect(
-      manageOsuImages(admin, {
-        action: "refresh",
-        kind: "background",
-        imageId: 55,
-      }),
-    ).rejects.toMatchObject({ status: 502 });
-    await db().execute(
-      sql`update osu_cached_images set fetched_at = now() - interval '1 year'`,
-    );
+    await manageOsuImages(admin, { action: "refreshAll", kind: "background" });
     expect((await readOsuImage("cover", 55))?.etag).toBe(result?.etag);
   });
 
-  it("invalidates the selected set's list thumbnail alongside its cover", async () => {
+  it("invalidates covers and thumbnails across sets and audits the category", async () => {
+    await readOsuImage("cover", 81);
     await readOsuImage("list", 81);
     await readOsuImage("list", 82);
     download.mockImplementation(async () => image(4));
     await manageOsuImages(admin, {
-      action: "refresh",
+      action: "refreshAll",
       kind: "background",
-      imageId: 81,
     });
     expect((await readOsuImage("cover", 81))?.data.at(-1)).toBe(4);
-    expect((await readOsuImage("list", 82))?.data.at(-1)).toBe(1);
+    expect((await readOsuImage("list", 82))?.data.at(-1)).toBe(4);
     expect((await readOsuImage("list", 81))?.data.at(-1)).toBe(4);
-    expect(download).toHaveBeenCalledTimes(4);
+    expect(download).toHaveBeenCalledTimes(6);
+    expect(await db().select().from(osuImageEvents)).toMatchObject([
+      { actorId: admin.osuId, kind: "background", operation: "refreshAll" },
+    ]);
+  });
+
+  it("revalidates a download that was in flight during a sitewide refresh", async () => {
+    const started = Promise.withResolvers<void>();
+    const response = Promise.withResolvers<Response>();
+    download.mockImplementationOnce(() => {
+      started.resolve();
+      return response.promise;
+    });
+    const first = readOsuImage("avatar", 77);
+    await started.promise;
+    try {
+      await manageOsuImages(admin, { action: "refreshAll", kind: "avatar" });
+    } finally {
+      response.resolve(image(9));
+    }
+    expect((await first)?.data.at(-1)).toBe(9);
+    expect((await readOsuImage("avatar", 77))?.data.at(-1)).toBe(1);
+    expect(download).toHaveBeenCalledTimes(2);
   });
 
   it("applies the selected capacity immediately and enforces permission and revision", async () => {

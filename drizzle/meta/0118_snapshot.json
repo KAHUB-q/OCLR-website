@@ -1,5 +1,5 @@
 {
-  "id": "a212d56d-83a2-4a1c-8d62-9e147777c962",
+  "id": "b7b23dad-f8d2-4c1c-9240-70c263861a5a",
   "prevId": "0a8177e7-90f5-41e7-bd73-65b7e563b3f3",
   "version": "7",
   "dialect": "postgresql",
@@ -2639,111 +2639,6 @@
         }
       },
       "compositePrimaryKeys": {},
-      "uniqueConstraints": {},
-      "policies": {},
-      "checkConstraints": {},
-      "isRLSEnabled": false
-    },
-    "public.chat_source_vectors": {
-      "name": "chat_source_vectors",
-      "schema": "",
-      "columns": {
-        "edition_slug": {
-          "name": "edition_slug",
-          "type": "text",
-          "primaryKey": false,
-          "notNull": true
-        },
-        "digest": {
-          "name": "digest",
-          "type": "text",
-          "primaryKey": false,
-          "notNull": true
-        },
-        "collection": {
-          "name": "collection",
-          "type": "text",
-          "primaryKey": false,
-          "notNull": true
-        },
-        "title": {
-          "name": "title",
-          "type": "text",
-          "primaryKey": false,
-          "notNull": true
-        },
-        "url": {
-          "name": "url",
-          "type": "text",
-          "primaryKey": false,
-          "notNull": true
-        },
-        "content": {
-          "name": "content",
-          "type": "text",
-          "primaryKey": false,
-          "notNull": true
-        },
-        "model": {
-          "name": "model",
-          "type": "text",
-          "primaryKey": false,
-          "notNull": false
-        },
-        "keywords": {
-          "name": "keywords",
-          "type": "text[]",
-          "primaryKey": false,
-          "notNull": true
-        },
-        "embedding": {
-          "name": "embedding",
-          "type": "double precision[]",
-          "primaryKey": false,
-          "notNull": false
-        }
-      },
-      "indexes": {
-        "chat_source_keywords_idx": {
-          "name": "chat_source_keywords_idx",
-          "columns": [
-            {
-              "expression": "keywords",
-              "isExpression": false,
-              "asc": true,
-              "nulls": "last"
-            }
-          ],
-          "isUnique": false,
-          "concurrently": false,
-          "method": "gin",
-          "with": {}
-        }
-      },
-      "foreignKeys": {
-        "chat_source_vectors_edition_slug_edition_state_slug_fk": {
-          "name": "chat_source_vectors_edition_slug_edition_state_slug_fk",
-          "tableFrom": "chat_source_vectors",
-          "tableTo": "edition_state",
-          "columnsFrom": [
-            "edition_slug"
-          ],
-          "columnsTo": [
-            "slug"
-          ],
-          "onDelete": "cascade",
-          "onUpdate": "no action"
-        }
-      },
-      "compositePrimaryKeys": {
-        "chat_source_vectors_edition_slug_digest_pk": {
-          "name": "chat_source_vectors_edition_slug_digest_pk",
-          "columns": [
-            "edition_slug",
-            "digest"
-          ]
-        }
-      },
       "uniqueConstraints": {},
       "policies": {},
       "checkConstraints": {},
@@ -7614,6 +7509,12 @@
           "type": "integer",
           "primaryKey": false,
           "notNull": true
+        },
+        "invalidated_at": {
+          "name": "invalidated_at",
+          "type": "timestamp with time zone",
+          "primaryKey": false,
+          "notNull": false
         },
         "revision": {
           "name": "revision",

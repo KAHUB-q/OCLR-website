@@ -1,5 +1,8 @@
+import { OsuImageSettings } from "@/components/osu-image-settings";
+import { imagePoliciesForAdmin } from "@/lib/osu-image-cache";
 import { SiteAppearanceForm } from "@/components/site-appearance-form";
-import { PageHeading } from "@/components/ui";
+import { canManageBackups } from "@/lib/admin-backups";
+import { Action, PageHeading } from "@/components/ui";
 import { getAppTranslations } from "@/i18n/server";
 import { authorizedPage } from "@/lib/auth/page";
 import { requireUser } from "@/lib/auth/user";
@@ -13,17 +16,30 @@ export async function generateMetadata() {
 async function Issue271Page() {
   return authorizedPage(async () => {
     const tr = await getAppTranslations();
-    const settings = await siteSettingsForAdmin(await requireUser());
+    const actor = await requireUser();
+    const settings = await siteSettingsForAdmin(actor);
+    const showBackups = await canManageBackups(actor);
+    const policies = await imagePoliciesForAdmin(actor);
     return (
       <>
         <PageHeading
           eyebrow={tr("ADMINISTRATION")}
           title={tr("Site settings")}
         />
+        {showBackups && (
+          <div className="actions">
+            <Action href="/admin/backups" secondary>
+              {tr("Database backups")}
+            </Action>
+          </div>
+        )}
         <SiteAppearanceForm
           initialAppearance={settings.defaultAppearance}
           revision={settings.revision}
         />
+        {policies.map((policy) => (
+          <OsuImageSettings key={policy.kind} initial={policy} />
+        ))}
       </>
     );
   });

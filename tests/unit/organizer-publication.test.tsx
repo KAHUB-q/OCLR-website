@@ -12,6 +12,9 @@ vi.mock("../../src/i18n/server", () => ({
   getAppTranslations: async () => translator,
 }));
 vi.mock("../../src/i18n/shared", () => ({ useAppTranslations: () => english }));
+vi.mock("../../src/lib/contributors", () => ({
+  publicContributors: async () => [],
+}));
 vi.mock("../../src/lib/public-staff", () => ({ publicStaff: vi.fn() }));
 vi.mock("../../src/lib/auth/config", () => ({ privacyContact: () => null }));
 async function render() {
@@ -152,7 +155,7 @@ describe("organizer directory publication", () => {
     )?.[0];
     expect(section).toContain("Published Developer");
     expect(section).toContain('href="https://osu.ppy.sh/users/4243"');
-    expect(section).toContain('src="https://a.ppy.sh/4243"');
+    expect(section).toContain('src="/api/osu-images/avatar/4243"');
     expect(section).toContain("All editions");
     expect(section).not.toContain("Not announced");
     expect(html).not.toContain("Kite");

@@ -11,6 +11,65 @@ import hant from "../../messages/zh-Hant.json";
 beforeEach(() => vi.stubGlobal("React", React));
 afterEach(() => vi.unstubAllGlobals());
 
+it.each([
+  { stages: ["knockout"], selected: "Double elimination" },
+  { stages: ["exhibition", "knockout"], selected: "Double elimination" },
+  { stages: ["knockout", "group"], selected: "Group stage / Swiss" },
+  { stages: ["knockout"], standings: true, selected: "Group stage / Swiss" },
+  { stages: ["exhibition"], standings: true, selected: "Exhibition" },
+  { stages: [], selected: "Group stage / Swiss" },
+  {
+    stages: ["knockout"],
+    phases: [
+      { id: "archive", label: "Opening phase" },
+      { id: "knockout", label: "Finals" },
+    ],
+    selected: "Opening phase",
+  },
+])(
+  "opens $selected for stages $stages",
+  ({ stages, standings, phases, selected }) => {
+    const html = renderToStaticMarkup(
+      <NextIntlClientProvider locale="en" messages={en} timeZone="UTC">
+        <EventSchedule
+          edition="synthetic"
+          phases={phases}
+          groups={
+            standings
+              ? [
+                  {
+                    key: "A",
+                    name: "Group A",
+                    version: "1",
+                    rows: [],
+                    rankingPending: true,
+                    criteria: null,
+                    rulesVersions: [],
+                  },
+                ]
+              : []
+          }
+          matches={stages.map((stage) => ({
+            id: stage,
+            stage,
+            round: "R1",
+            pool: "Pool",
+            time: "—",
+            red: "Aurora",
+            blue: "Comets",
+            score: null,
+          }))}
+        />
+      </NextIntlClientProvider>,
+    );
+    expect(html).toContain(`aria-pressed="true">${selected}</button>`);
+    if (selected === "Double elimination") {
+      expect(html).toContain('data-match-id="knockout"');
+      expect(html).not.toContain("No matches in this view.");
+    }
+  },
+);
+
 it("registers the schedule array labels and first-pick branches for extraction", () => {
   const messages = sourceMessages();
   for (const label of [

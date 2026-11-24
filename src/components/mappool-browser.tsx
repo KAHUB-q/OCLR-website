@@ -360,7 +360,7 @@ export function MappoolBrowser({
         role="tabpanel"
         aria-labelledby={`${tabId}-${category}`}
       >
-        {view === "compact" ? (
+        {view === "compact" && entries.length > 0 && (
           <MappoolView
             pool={{ ...pool, entries }}
             headingLevel={headingLevel}
@@ -369,7 +369,8 @@ export function MappoolBrowser({
             preserveEntryOrder={sort !== "slot"}
             getDifficulty={difficulty}
           />
-        ) : (
+        )}
+        {view === "cards" && (
           <>
             {pool.entries.some((e) => e.category === "FM") && (
               <p className="map-values-note muted small">
@@ -427,7 +428,11 @@ export function MappoolBrowser({
           </>
         )}
         {!entries.length && (
-          <p className="notice">{tr("No beatmaps match these filters.")}</p>
+          <p className="notice">
+            {pool.entries.length
+              ? tr("No beatmaps match these filters.")
+              : tr("No beatmaps have been released for this pool.")}
+          </p>
         )}
       </div>
       {active && (

@@ -155,18 +155,21 @@ export function PublicMatches({
   const [search, setSearch] = useState("");
   const [view, setView] = useState<"cards" | "compact">("cards");
   const stages = [...new Set(fixtures.map((f) => f.stage))];
+  const stageFixtures = fixtures.filter((f) => !stage || f.stage === stage);
   const rounds = [
-    ...new Map(
-      fixtures
-        .filter((f) => !stage || f.stage === stage)
-        .map((f) => [f.roundId, f.roundName]),
-    ).entries(),
+    ...new Map(stageFixtures.map((f) => [f.roundId, f.roundName])).entries(),
   ];
-  const selectedGroup = groups.find((g) => g.key === group);
+  const hasGroupFixtures = (roundId: string) =>
+    stageFixtures.some(
+      (f) => f.stage === "group" && (!roundId || f.roundId === roundId),
+    );
+  const showGroupFilter = groups.length > 0 && hasGroupFixtures(round);
+  const selectedGroup = showGroupFilter
+    ? groups.find((g) => g.key === group)
+    : undefined;
   const term = search.trim().toLocaleLowerCase();
-  const matches = fixtures.filter(
+  const matches = stageFixtures.filter(
     (f) =>
-      (!stage || f.stage === stage) &&
       (!round || f.roundId === round) &&
       (!selectedGroup ||
         (f.stage === "group" &&
@@ -238,7 +241,14 @@ export function PublicMatches({
         {rounds.length > 1 && (
           <label className="field">
             <span>{tr("Competition round")}</span>
-            <select value={round} onChange={(e) => setRound(e.target.value)}>
+            <select
+              value={round}
+              onChange={(e) => {
+                const next = e.target.value;
+                setRound(next);
+                if (!hasGroupFixtures(next)) setGroup("");
+              }}
+            >
               <option value="">{tr("All rounds")}</option>
               {rounds.map(([id, name]) => (
                 <option key={id} value={id}>
@@ -248,7 +258,7 @@ export function PublicMatches({
             </select>
           </label>
         )}
-        {groups.length > 0 && stage !== "knockout" && (
+        {showGroupFilter && (
           <label className="field">
             <span>{tr("Group")}</span>
             <select value={group} onChange={(e) => setGroup(e.target.value)}>

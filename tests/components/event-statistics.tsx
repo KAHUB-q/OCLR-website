@@ -3,6 +3,7 @@ import { NextIntlClientProvider } from "next-intl";
 import { EventStatistics } from "../../src/components/event-statistics";
 import type { EventScore } from "../../src/lib/event-statistics";
 import en from "../../messages/en.json";
+const titleOnly = new URLSearchParams(location.search).has("title-only");
 const score: EventScore = {
   osuId: 11,
   teamId: "X",
@@ -10,8 +11,8 @@ const score: EventScore = {
   team: "Same team",
   round: "Final",
   slot: "NM1",
-  title: "Synthetic map",
-  mapId: 1001,
+  title: titleOnly ? "Pirate Radio" : "Synthetic map",
+  mapId: titleOnly ? null : 1001,
   score: 100,
   accuracy: 0.98,
   combo: 100,
@@ -20,12 +21,16 @@ const score: EventScore = {
   game: "1",
   fixture: "one",
 };
+const params = new URLSearchParams(location.search);
 const scores = [
   score,
   { ...score, osuId: 22, teamId: "Y", score: 50 },
-  { ...score, player: "Old name", game: "2", score: 80 },
+  { ...score, player: "Old name", game: "2", score: 80, combo: 1234 },
+  ...(params.has("rounds")
+    ? [{ ...score, round: "Semifinal", fixture: "semi", mapId: 2002 }]
+    : []),
 ];
-if (new URLSearchParams(location.search).has("two-played-maps")) {
+if (params.has("two-played-maps")) {
   const hd = { ...score, slot: "HD1", mapId: 1002, game: "3" };
   scores.push(hd, { ...hd, osuId: 22, teamId: "Y", score: 900 });
 }
@@ -39,7 +44,7 @@ const coverage = {
     { id: "X", name: "Same team" },
     { id: "Y", name: "Same team" },
   ],
-  stages: ["Final"],
+  stages: [...new Set(scores.map((play) => play.round))],
   fixtures: [],
   poolFixtures: [
     {
@@ -49,7 +54,7 @@ const coverage = {
       teamIds: ["X", "Y"],
       maps: [
         score,
-        ...(new URLSearchParams(location.search).has("unplayed")
+        ...(params.has("unplayed")
           ? [{ ...score, slot: "HD1", mapId: 1002, title: "Unplayed map" }]
           : []),
       ],

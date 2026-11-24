@@ -29,6 +29,33 @@ export function groupEventMaps(scores: EventScore[]) {
   return [...maps.values()];
 }
 
+function rankMapPlays(plays: EventScore[], by: "team" | "player") {
+  const best = new Map<string | number, number>();
+  function recordBest(id: string | number, score: number) {
+    const previous = best.get(id);
+    if (previous === undefined || score > previous) best.set(id, score);
+  }
+  if (by === "team") {
+    for (const game of eventTeamGames(plays))
+      recordBest(game.teamId, game.total);
+  } else {
+    for (const play of plays) recordBest(play.osuId, play.score);
+  }
+
+  const placements = new Map<
+    string | number,
+    { rank: number; score: number }
+  >();
+  const sorted = [...best].sort((a, b) => b[1] - a[1]);
+  let rank = 0;
+  sorted.forEach(([id, score], index) => {
+    // Equal scores share a rank, and the next rank skips the tied competitors.
+    if (index === 0 || score !== sorted[index - 1][1]) rank = index + 1;
+    placements.set(id, { rank, score });
+  });
+  return placements;
+}
+
 // Scores already reflect the selected round/map scope. Team selection only
 // controls visible rows; every participant in that scope remains a competitor.
 export function eventPlacementRows(
@@ -37,18 +64,21 @@ export function eventPlacementRows(
   team = "",
 ) {
   const identity = by === "team" ? "teamId" : "osuId";
-  const keys = [...new Set(scores.map((score) => score[identity]))].sort(
-    (a, b) => String(a).localeCompare(String(b)),
-  );
-  const maps = groupEventMaps(scores);
-  const visible = new Set(
-    scores
-      .filter((score) => !team || score.teamId === team)
-      .map((score) => score[identity]),
-  );
-  return keys
-    .map((id) => {
-      const plays = scores.filter((score) => score[identity] === id);
+  const maps = groupEventMaps(scores).map(({ key, plays }) => ({
+    key,
+    placements: rankMapPlays(plays, by),
+  }));
+  const participants = new Map<string | number, EventScore[]>();
+  for (const score of scores) {
+    const id = score[identity];
+    const plays = participants.get(id);
+    if (plays) plays.push(score);
+    else participants.set(id, [score]);
+  }
+  return [...participants]
+    .filter(([, plays]) => !team || plays.some((play) => play.teamId === team))
+    .sort(([a], [b]) => String(a).localeCompare(String(b)))
+    .map(([id, plays]) => {
       const name = plays.map((score) => score[by]).sort()[0];
       const row: Record<string, string | number | null> = {
         _identity: id,
@@ -63,58 +93,34 @@ export function eventPlacementRows(
       };
       const ranks: number[] = [];
       for (const map of maps) {
-        const values = keys
-          .map((key) => {
-            const matching = map.plays.filter(
-              (score) => score[identity] === key,
-            );
-            if (!matching.length) return { name: key, value: null };
-            const games = [...new Set(matching.map(eventGameKey))];
-            return {
-              name: key,
-              value:
-                by === "team"
-                  ? Math.max(
-                      ...games.map((game) =>
-                        matching
-                          .filter((score) => eventGameKey(score) === game)
-                          .reduce((total, score) => total + score.score, 0),
-                      ),
-                    )
-                  : Math.max(...matching.map((score) => score.score)),
-            };
-          })
-          .filter((value) => value.value !== null)
-          .sort((a, b) => b.value! - a.value!);
-        const index = values.findIndex((value) => value.name === id);
-        // Competition ranking, matching standings: equal scores share a rank
-        // and the next rank skips tied competitors (1, 1, 3).
-        const rank =
-          index < 0
-            ? null
-            : values.findIndex((value) => value.value === values[index].value) +
-              1;
-        row[`${map.key}:rank`] = rank;
-        row[`${map.key}:score`] = index < 0 ? null : values[index].value;
-        if (rank !== null) ranks.push(rank);
+        const placement = map.placements.get(id);
+        row[`${map.key}:rank`] = placement?.rank ?? null;
+        row[`${map.key}:score`] = placement?.score ?? null;
+        if (placement) ranks.push(placement.rank);
       }
       row["Average placement"] = ranks.length
         ? ranks.reduce((total, rank) => total + rank, 0) / ranks.length
         : null;
       return row;
-    })
-    .filter((row) => visible.has(row._identity as string | number));
+    });
 }
 
 export function eventGameKey(score: Pick<EventScore, "fixture" | "game">) {
   return JSON.stringify([score.fixture, score.game]);
 }
+export function eventTeamGameKey(
+  score: Pick<EventScore, "fixture" | "game" | "teamId">,
+) {
+  return JSON.stringify([score.fixture, score.game, score.teamId]);
+}
 /** Team/game identity never depends on display names or delimiter concatenation. */
 export function eventTeamGames(plays: EventScore[]) {
   const groups = new Map<string, EventScore[]>();
   for (const score of plays) {
-    const key = JSON.stringify([score.fixture, score.game, score.teamId]);
-    groups.set(key, [...(groups.get(key) ?? []), score]);
+    const key = eventTeamGameKey(score);
+    const group = groups.get(key);
+    if (group) group.push(score);
+    else groups.set(key, [score]);
   }
   return [...groups]
     .map(([key, scores]) => ({

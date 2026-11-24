@@ -224,7 +224,12 @@ describe.skipIf(!testUrl)("authenticated tournament assistant", () => {
         "Bearer synthetic-key",
       );
       const body = JSON.parse(init.body);
-      expect(body).toMatchObject({ model: "test-chat", stream: true });
+      expect(body).toMatchObject({
+        model: "test-chat",
+        stream: true,
+        max_tokens: 650,
+      });
+      expect(body).not.toHaveProperty("max_completion_tokens");
       expect(JSON.stringify(body.messages)).toContain(
         "Only after referee approval.",
       );
@@ -333,6 +338,45 @@ describe.skipIf(!testUrl)("authenticated tournament assistant", () => {
       ).toBe(404);
     expect((await ask()).status).toBe(429);
     expect(upstream).not.toHaveBeenCalled();
+  });
+  it("sends the official OpenAI limit and logs only recognized invalid request fields", async () => {
+    await db()
+      .insert(users)
+      .values({ osuId: 1425020, username: "Parameter test" });
+    context.token = (await createSession(1425020)).token;
+    await seedEditions([season(slug, "Use a substitute.")]);
+    vi.stubEnv("OCLR_CHAT_BASE_URL", "https://api.openai.com/v1");
+    const log = vi.spyOn(console, "info");
+    const upstream = vi.fn(async (url, init) => {
+      expect(String(url)).toBe("https://api.openai.com/v1/chat/completions");
+      const body = JSON.parse(init.body);
+      expect(body.max_completion_tokens).toBe(650);
+      expect(body).not.toHaveProperty("max_tokens");
+      return Response.json(
+        {
+          error: {
+            code: "unsupported_value",
+            param: "model",
+            message: "private upstream text",
+          },
+        },
+        { status: 400 },
+      );
+    });
+    vi.stubGlobal("fetch", upstream);
+    try {
+      const text = await (await ask()).text();
+      expect(upstream).toHaveBeenCalledOnce();
+      expect(text).toContain("provider-unavailable");
+      const lines = log.mock.calls.map(([, line]) => line).join("\n");
+      expect(lines).toContain(
+        '"event":"invalid_request","status":400,"code":"unsupported_value","param":"model"',
+      );
+      expect(lines + text).not.toMatch(/private upstream text|synthetic-key/);
+    } finally {
+      log.mockRestore();
+      vi.stubEnv("OCLR_CHAT_BASE_URL", "https://provider.example/v1");
+    }
   });
   it("reports a reasoning-only completion as an empty answer without attaching citations", async () => {
     await db()

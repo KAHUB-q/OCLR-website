@@ -1,4 +1,57 @@
 import { test, expect } from "@playwright/test";
+
+test("shows canvas and sign-in status only after the first successful read", async ({
+  page,
+}) => {
+  await page.clock.install();
+  const firstRead = Promise.withResolvers<void>();
+  let reads = 0;
+  await page.route("**/api/games/ocl-chess", async (route) => {
+    reads++;
+    if (reads === 1) await firstRead.promise;
+    if (reads !== 2) return route.abort();
+    return route.fulfill({
+      json: {
+        pixels: "0".repeat(16384),
+        revision: 0,
+        enabled: true,
+        nextAt: 0,
+        serverTime: Date.now(),
+        signedIn: true,
+        admin: false,
+      },
+    });
+  });
+  await page.goto("/ocl-chess");
+  const status = page.locator('p[role="status"]');
+  const signIn = page.getByRole("link", {
+    name: "Sign in with osu! to continue.",
+  });
+  const paused = page.getByText("Canvas paused", { exact: true });
+  const confirm = page.getByRole("button", { name: "Confirm pixel" });
+  const offline = "Canvas connection lost. Your selection is preserved.";
+  await expect(status).toHaveText("Loading…");
+  await expect(paused).toHaveCount(0);
+  await expect(signIn).toHaveCount(0);
+  await expect(page.locator("output")).toHaveCount(0);
+  await expect(confirm).toBeDisabled();
+
+  firstRead.resolve();
+  await expect(status).toHaveText(offline);
+  await expect(paused).toHaveCount(0);
+  await expect(signIn).toHaveCount(0);
+  await expect(page.locator("output")).toHaveCount(0);
+  await page.clock.fastForward(3000);
+  const open = page.getByText("Canvas open", { exact: true });
+  await expect(open).toBeVisible();
+  await expect(page.locator("output")).toHaveText("Ready");
+  await expect(signIn).toHaveCount(0);
+  await expect(confirm).toBeEnabled();
+  await page.clock.fastForward(3000);
+  await expect(status).toHaveText(offline);
+  await expect(open).toBeVisible();
+});
+
 test("selects without writing and confirms a saved pixel", async ({ page }) => {
   let writes = 0;
   const state = {

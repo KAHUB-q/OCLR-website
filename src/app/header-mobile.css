@@ -19,6 +19,14 @@
     transform: translateY(calc(-100% - 1px));
     pointer-events: none;
   }
+  /* Keep the sticky dashboard header in place while the phone toolbar resizes. */
+  .site-header[data-player-dashboard] {
+    transition: none;
+  }
+  .site-header[data-player-dashboard][data-scroll-hidden="true"] {
+    transform: none;
+    opacity: 0;
+  }
   .public-tournament .event-context {
     transition: top 180ms ease-out;
   }

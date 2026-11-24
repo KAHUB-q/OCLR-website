@@ -279,6 +279,7 @@ export function Header({
     <header
       className="site-header"
       ref={header}
+      data-player-dashboard={path === "/dashboard" || undefined}
       data-scroll-hidden={scrollHidden && !open}
     >
       <div className="nav-wrap">

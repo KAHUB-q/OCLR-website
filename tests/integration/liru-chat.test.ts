@@ -112,6 +112,33 @@ describe.skipIf(!testUrl)("authenticated tournament assistant", () => {
       status: 404,
     });
   });
+  it("retrieves the published overview dates for natural time questions and refreshes changed dates", async () => {
+    const e = season(slug, "Substitutes need approval.");
+    const schedule = [{ label: "Opening round", at: "2030-05-09T02:00:00Z" }];
+    await seedEditions([{ ...e, schedule }]);
+    for (const question of [
+      "什麼時候開始",
+      "什么时候开始",
+      "When does this season start?",
+    ]) {
+      const { sources } = await chatEvidence(slug, question, "");
+      const dates = sources.filter(
+        (s) => s.url === "/tournaments/" + slug + "#schedule",
+      );
+      expect(dates.map((s) => s.title)).toEqual(
+        expect.arrayContaining(["Registration opens", "Opening round"]),
+      );
+      expect(dates.find((s) => s.title === "Opening round")!.text).toMatch(
+        /2030.*Asia\/Taipei/,
+      );
+    }
+    await seedEditions([{ ...e, registration: null, schedule: [] }]);
+    expect(
+      (await chatEvidence(slug, "什麼時候開始", "")).sources.some((s) =>
+        s.url.endsWith("#schedule"),
+      ),
+    ).toBe(false);
+  });
   it("streams cited public evidence through the configured compatible provider and discards client instructions", async () => {
     context.token = (await createSession(1425001)).token;
     await seedEditions([season(slug, "Only after referee approval.")]);
@@ -165,14 +192,12 @@ describe.skipIf(!testUrl)("authenticated tournament assistant", () => {
     expect(upstream).toHaveBeenCalledTimes(1);
     expect(await (await ask(["zzz"])).text()).toContain("couldn’t find");
     expect(upstream).toHaveBeenCalledTimes(1);
-    await db()
-      .insert(staffRoles)
-      .values({
-        userId: 1425001,
-        grantedBy: 1425001,
-        role: "referee",
-        editionSlug: slug,
-      });
+    await db().insert(staffRoles).values({
+      userId: 1425001,
+      grantedBy: 1425001,
+      role: "referee",
+      editionSlug: slug,
+    });
     const staffReply = await (await ask()).text();
     expect(staffReply).toContain("Check with the referee.");
     expect(staffReply).not.toMatch(

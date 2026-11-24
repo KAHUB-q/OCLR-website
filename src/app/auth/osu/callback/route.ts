@@ -56,7 +56,7 @@ export async function GET(request: NextRequest) {
           )
         : null;
       const edition = chatEdition(consumed.chatReturnEdition);
-      const chatReturn = edition ? `/tournaments/${edition}/chat` : null;
+      const chatReturn = edition ? `/tournaments/${edition}#ask-liru` : null;
       response = NextResponse.redirect(
         `${origin}${consumed.desktopRequestId ? `/desktop/authorize?request_id=${consumed.desktopRequestId}` : (streamingReturn ?? pickemReturnPath(consumed.pickemReturnTo) ?? chatReturn ?? "/dashboard")}`,
         303,

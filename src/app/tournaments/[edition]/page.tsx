@@ -8,7 +8,7 @@ import { getAppTranslations } from "@/i18n/server";
 import { notFound } from "next/navigation";
 import { chatConfiguration } from "@/lib/chat-config";
 import { currentUser } from "@/lib/auth/user";
-import { LiruChatIcon } from "@/components/liru-chat-icon";
+import { LiruChatLauncher } from "@/components/liru-chat-launcher";
 import { getPublicEdition } from "@/lib/content";
 import { publicEditionSummary } from "@/lib/editions";
 import {
@@ -206,23 +206,14 @@ export default function Overview(props: Parameters<typeof OverviewContent>[0]) {
     const content = await OverviewContent(props);
     if (!chatConfiguration()) return content;
     const { edition } = await props.params;
-    const tr = await getAppTranslations();
     const user = await currentUser();
     return (
       <>
-        <div className="actions">
-          <a
-            className="button secondary"
-            href={
-              user
-                ? `/tournaments/${edition}/chat`
-                : `/auth/osu?chat_edition=${encodeURIComponent(edition)}`
-            }
-          >
-            <LiruChatIcon size={24} />{" "}
-            {user ? tr("Ask Liru") : tr("Sign in to ask Liru")}
-          </a>
-        </div>
+        <LiruChatLauncher
+          key={edition}
+          edition={edition}
+          signedIn={Boolean(user)}
+        />
         {content}
       </>
     );

@@ -76,7 +76,7 @@ export function LiruChat({ edition }: { edition: string }) {
   return (
     <AssistantRuntimeProvider runtime={runtime}>
       <ThreadPrimitive.Root className={styles.chat}>
-        <div
+        <ThreadPrimitive.Viewport
           className={styles.history}
           role="log"
           aria-label={tr("Conversation")}
@@ -84,7 +84,7 @@ export function LiruChat({ edition }: { edition: string }) {
           <ThreadPrimitive.Messages
             components={{ AssistantMessage, UserMessage }}
           />
-        </div>
+        </ThreadPrimitive.Viewport>
         {chat.error && (
           <div role="alert" className="notice">
             {chat.error.message === "401" ? (

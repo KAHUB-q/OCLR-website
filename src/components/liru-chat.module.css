@@ -37,3 +37,67 @@
   width: 100%;
   resize: vertical;
 }
+
+.popup {
+  position: fixed;
+  inset: auto calc(1rem + env(safe-area-inset-right, 0px))
+    calc(4.75rem + env(safe-area-inset-bottom, 0px)) auto;
+  width: min(
+    26rem,
+    calc(
+      100vw - 2rem - env(safe-area-inset-left, 0px) -
+        env(safe-area-inset-right, 0px)
+    )
+  );
+  max-height: calc(
+    100dvh - 6rem - env(safe-area-inset-top, 0px) -
+      env(safe-area-inset-bottom, 0px)
+  );
+  box-sizing: border-box;
+  margin: 0;
+  padding: 1rem;
+  overflow-y: auto;
+  overscroll-behavior: contain;
+  border: 1px solid var(--site-control-border);
+  border-radius: 1rem;
+  background: var(--site-surface);
+  color: var(--site-foreground);
+  box-shadow: 0 8px 28px var(--site-shadow);
+}
+.popup:popover-open,
+.popupHeader,
+.popupHeader h2 {
+  display: flex;
+  gap: 0.75rem;
+}
+.popup:popover-open {
+  flex-direction: column;
+}
+.popupHeader {
+  align-items: center;
+  justify-content: space-between;
+}
+.popupHeader h2 {
+  margin: 0;
+  align-items: center;
+  font-size: var(--text-heading);
+}
+.popupHeader button {
+  min-width: 44px;
+  min-height: 44px;
+}
+.disclosure {
+  margin: 0;
+  color: var(--site-muted);
+  font-size: var(--text-support);
+}
+.popup .chat {
+  min-height: 0;
+  grid-template-rows: minmax(0, 1fr) auto;
+}
+.popup .history {
+  overflow-y: auto;
+  min-height: 0;
+  max-height: 45dvh;
+  overscroll-behavior: contain;
+}

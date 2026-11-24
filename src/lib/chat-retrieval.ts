@@ -19,6 +19,16 @@ const concepts = [
     "substitutions",
     "roster change",
   ],
+  ["選手", "选手", "隊員", "队员", "player", "players"],
+  ["隊伍", "队伍", "戰隊", "战队", "team", "teams"],
+  ["隊長", "队长", "captain"],
+  ["統計", "统计", "數據", "数据", "statistics", "rating"],
+  ["排名", "排行", "積分", "积分", "standings", "leaderboard", "rank"],
+  ["預測", "预测", "pickem"],
+  ["賽果", "赛果", "比分", "result", "score"],
+  ["獎項", "奖项", "獎勵", "奖励", "awards"],
+  ["工作人員", "工作人员", "staff"],
+  ["對陣", "对阵", "bracket"],
   ["報名", "报名", "register", "registration"],
   ["資格", "资格", "eligibility", "eligible"],
   ["選秀", "选秀", "draft"],
@@ -35,7 +45,7 @@ const ignored = new Set(
     " ",
   ),
 );
-function terms(text: string) {
+export function chatTerms(text: string) {
   const input = text.normalize("NFKC").toLowerCase();
   const result = new Set<string>();
   for (const [word] of input.matchAll(/[a-z0-9]+|[\p{Script=Han}]+/gu)) {
@@ -105,13 +115,13 @@ export function ruleExcerpts(
   });
 }
 
-export function rankedSources(
-  sources: ChatSource[],
+export function rankedSources<T extends ChatSource>(
+  sources: T[],
   question: string,
   limit: number,
   allowFallback = false,
 ) {
-  const keywords = terms(question);
+  const keywords = chatTerms(question);
   return sources
     .map((source) => {
       const heading = source.title.normalize("NFKC").toLowerCase();

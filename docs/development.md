@@ -116,6 +116,8 @@ On any published tournament overview, the Liru button at the bottom right opens 
 
 Chat reads the current rules, timeline, fixtures and mappools alongside the background season index. Only the index worker writes the search index. Chat is disabled in remote development mode.
 
+The backend follows the provider and streaming separation used by the [Vercel Chatbot template](https://github.com/vercel/chatbot). The `/api/chat` route checks the osu! session, origin, rate limit and request, then retrieves published evidence for that edition. `chat-answer.ts` turns this evidence into an AI SDK UI message stream for assistant-ui. Both generation and embeddings use `chat-provider.ts` for the configured endpoint, key and proxy.
+
 ### Tracing a chat answer
 
 Ask about a published rule and inspect the browser Network entry for `POST /api/chat`. Copy its `X-OCLR-Chat-Request-Id` response header and look up that turn on the application host.

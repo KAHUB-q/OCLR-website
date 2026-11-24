@@ -1,0 +1,94 @@
+"use client";
+
+import { lazy, Suspense, useEffect, useId, useRef, useState } from "react";
+import { useAppTranslations } from "@/i18n/shared";
+import { LiruChatIcon } from "./liru-chat-icon";
+import styles from "./liru-chat.module.css";
+
+const Chat = lazy(() =>
+  import("./liru-chat").then(({ LiruChat }) => ({ default: LiruChat })),
+);
+
+export function LiruChatLauncher({
+  edition,
+  signedIn,
+}: {
+  edition: string;
+  signedIn: boolean;
+}) {
+  const tr = useAppTranslations();
+  const id = useId();
+  const [opened, setOpened] = useState(false);
+  const panel = useRef<HTMLElement>(null);
+  useEffect(() => {
+    if (window.location.hash === "#ask-liru") {
+      panel.current?.showPopover();
+      window.history.replaceState(
+        window.history.state,
+        "",
+        window.location.pathname + window.location.search,
+      );
+    }
+  }, []);
+  const label = tr("Ask Liru");
+  return (
+    <>
+      <button
+        type="button"
+        className="liru-chat-launcher"
+        popoverTarget={id}
+        aria-haspopup="dialog"
+        aria-label={label}
+        title={label}
+      >
+        <LiruChatIcon size={32} />
+      </button>
+      <section
+        ref={panel}
+        id={id}
+        onToggle={(event) => {
+          if (event.newState === "open") setOpened(true);
+        }}
+        popover="auto"
+        role="dialog"
+        aria-labelledby={id + "-title"}
+        className={styles.popup}
+      >
+        <header className={styles.popupHeader}>
+          <h2 id={id + "-title"}>
+            <LiruChatIcon size={24} /> {label}
+          </h2>
+          <button
+            type="button"
+            popoverTarget={id}
+            popoverTargetAction="hide"
+            aria-label={tr("Close")}
+          >
+            ×
+          </button>
+        </header>
+        {signedIn ? (
+          <>
+            <p className={styles.disclosure}>
+              {tr(
+                "Your question, recent questions and relevant public tournament information are sent to the configured AI provider.",
+              )}
+            </p>
+            {opened && (
+              <Suspense fallback={<p role="status">{tr("Loading…")}</p>}>
+                <Chat edition={edition} />
+              </Suspense>
+            )}
+          </>
+        ) : (
+          <a
+            className="button"
+            href={`/auth/osu?chat_edition=${encodeURIComponent(edition)}`}
+          >
+            {tr("Sign in to ask Liru")}
+          </a>
+        )}
+      </section>
+    </>
+  );
+}

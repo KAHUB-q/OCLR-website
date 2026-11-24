@@ -1,6 +1,9 @@
+import { milestoneName, isMilestoneName } from "./milestone-names";
 import type { Edition } from "./editions";
 import { formatDate } from "./editions";
 import type { PlannedStage } from "./tournament-stages";
+
+const phaseOrder = { draft: 2, group: 3, knockout: 4 };
 
 /** One presentation model for the overview's stage browser and schedule table. */
 export function tournamentTimeline(
@@ -67,6 +70,10 @@ export function tournamentTimeline(
     });
   }
   edition.schedule.forEach((event, index) => {
+    const label = isMilestoneName(event.kind, event.label)
+      ? milestoneName(event.label, tr)
+      : event.label;
+    const order = event.kind ? phaseOrder[event.kind] : 5;
     const detail = event.kind
       ? range(event.at, event.endAt, event.precision)
       : date(event.at, event.precision);
@@ -75,7 +82,7 @@ export function tournamentTimeline(
     if (
       rows.some(
         (row) =>
-          row.event === event.label &&
+          row.event === label &&
           (row.date === detail ||
             (!event.kind &&
               row.at &&
@@ -85,19 +92,19 @@ export function tournamentTimeline(
     )
       return;
     rows.push({
-      event: event.label,
+      event: label,
       date: detail,
       at: event.at ?? event.endAt,
-      order: event.kind === "group" ? 2 : event.kind === "knockout" ? 3 : 4,
+      order,
     });
     stages.push({
       id: `schedule-${index}`,
-      label: event.label,
+      label,
       detail,
       at: event.at ?? undefined,
       endAt: event.endAt,
       interval: Boolean(event.kind),
-      order: event.kind === "group" ? 2 : event.kind === "knockout" ? 3 : 4,
+      order,
       authoritative: edition.status === "completed",
       href: `${base}/schedule`,
       action: tr("View schedule"),

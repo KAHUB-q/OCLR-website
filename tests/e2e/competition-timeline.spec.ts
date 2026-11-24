@@ -32,8 +32,8 @@ test.describe("competition times and overview synchronization #430", () => {
     await page
       .getByRole("button", { name: "Add milestone", exact: true })
       .click();
-    await page.getByLabel("Milestone 1 label").fill("Synthetic group");
     await page.getByLabel("Phase type", { exact: true }).selectOption("group");
+    await page.getByLabel("Milestone 1 name").selectOption("swiss");
     await page
       .getByLabel("Start time: date", { exact: true })
       .fill("2027-02-01");
@@ -47,11 +47,11 @@ test.describe("competition times and overview synchronization #430", () => {
     await page
       .getByRole("button", { name: "Add milestone", exact: true })
       .click();
-    await page.getByLabel("Milestone 2 label").fill("Synthetic knockout");
     await page
       .getByLabel("Phase type", { exact: true })
       .nth(1)
       .selectOption("knockout");
+    await page.getByLabel("Milestone 2 name").selectOption("quarterfinals");
     await page
       .getByRole("button", { name: "Save milestones", exact: true })
       .click();
@@ -72,22 +72,22 @@ test.describe("competition times and overview synchronization #430", () => {
     await page.goto(`/tournaments/${slug}`);
     const rows = page.locator("#schedule tbody tr");
     await expect(rows).toHaveCount(4);
-    await expect(rows.filter({ hasText: "Synthetic group" })).toContainText(
+    await expect(rows.filter({ hasText: "Swiss round" })).toContainText(
       "20:00",
     );
-    await expect(rows.filter({ hasText: "Synthetic knockout" })).toContainText(
+    await expect(rows.filter({ hasText: "Quarter-Finals" })).toContainText(
       "TBA",
     );
     await expect(
-      page.locator("#stages li").filter({ hasText: "Synthetic group" }),
+      page.locator("#stages li").filter({ hasText: "Swiss round" }),
     ).toContainText("20:00");
     await expect(
-      page.locator("#stages li").filter({ hasText: "Synthetic knockout" }),
+      page.locator("#stages li").filter({ hasText: "Quarter-Finals" }),
     ).toContainText("TBA");
     await expect(page.locator("#stages [aria-current=step]")).toHaveCount(0);
     await page
       .locator("#stages li")
-      .filter({ hasText: "Synthetic group" })
+      .filter({ hasText: "Swiss round" })
       .getByRole("link")
       .focus();
     await page.evaluate(() => window.scrollTo(0, 0));
@@ -102,7 +102,7 @@ test.describe("competition times and overview synchronization #430", () => {
           },
         ]);
         await page.reload();
-        await expect(rows.filter({ hasText: "Synthetic group" })).toContainText(
+        await expect(rows.filter({ hasText: "Swiss round" })).toContainText(
           "20:00",
         );
         expect(

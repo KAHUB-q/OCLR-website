@@ -1,6 +1,12 @@
 "use client";
 import { ezScoreMultiplierSchema } from "@/lib/statistics-score";
 import { coachingEnabled } from "@/lib/editions";
+import {
+  isMilestoneName,
+  milestoneName,
+  milestoneNames,
+  type MilestoneKind,
+} from "@/lib/milestone-names";
 import { milestonePayload } from "@/lib/milestone-payload";
 
 import { InfoNote } from "@/components/info-note";
@@ -1111,50 +1117,57 @@ function Schedule({ data, saved }: EditorProps) {
               {i + 1}
             </legend>
             <label className="field">
-              <span>
-                {tr("Milestone ")}
-                {i + 1} {tr(" label")}
-              </span>
-              <input
-                maxLength={200}
-                value={s.label}
-                onChange={(e) =>
-                  setSchedule(
-                    schedule.map((v, j) =>
-                      j === i ? { ...v, label: e.target.value } : v,
-                    ),
-                  )
-                }
-              />
-            </label>
-            <label className="field">
               <span>{tr("Phase type")}</span>
               <select
                 aria-label={tr("Phase type")}
-                value={s.kind ?? "custom"}
-                onChange={(e) =>
+                value={s.kind ?? ""}
+                onChange={(e) => {
+                  const kind = e.currentTarget.value as MilestoneKind;
                   setSchedule(
                     schedule.map((v, j) =>
                       j === i
-                        ? {
-                            ...v,
-                            kind:
-                              e.target.value === "custom"
-                                ? undefined
-                                : (e.target.value as "group" | "knockout"),
-                            endAt:
-                              e.target.value === "custom" ? undefined : v.endAt,
-                          }
+                        ? { ...v, kind, label: milestoneNames[kind][0] }
                         : v,
                     ),
-                  )
-                }
+                  );
+                }}
               >
-                <option value="custom">{tr("Custom milestone")}</option>
+                {!s.kind && (
+                  <option value="" disabled>
+                    {tr("Select a phase")}
+                  </option>
+                )}
+                <option value="draft">{milestoneName("draft", tr)}</option>
                 <option value="group">{tr("Group stage")}</option>
                 <option value="knockout">{tr("Knockout stage")}</option>
               </select>
             </label>
+            {s.kind && s.kind !== "draft" && (
+              <label className="field">
+                <span>{tr("Milestone {number} name", { number: i + 1 })}</span>
+                <select
+                  aria-label={tr("Milestone {number} name", { number: i + 1 })}
+                  value={s.label}
+                  onChange={(e) => {
+                    const label = e.currentTarget.value;
+                    setSchedule(
+                      schedule.map((v, j) => (j === i ? { ...v, label } : v)),
+                    );
+                  }}
+                >
+                  {!isMilestoneName(s.kind, s.label) && (
+                    <option value={s.label} disabled>
+                      {s.label}
+                    </option>
+                  )}
+                  {milestoneNames[s.kind].map((name) => (
+                    <option key={name} value={name}>
+                      {milestoneName(name, tr)}
+                    </option>
+                  ))}
+                </select>
+              </label>
+            )}
             <label className="field">
               <span>{tr("Date precision")}</span>
               <select
@@ -1178,11 +1191,7 @@ function Schedule({ data, saved }: EditorProps) {
               </select>
             </label>
             <ZonedDateInput
-              label={
-                s.kind
-                  ? tr("Start time")
-                  : tr("Milestone {value0} time", { value0: i + 1 })
-              }
+              label={tr("Start time")}
               onValidityChange={(valid) =>
                 setInvalid((old) =>
                   old[s.id * 2] === !valid
@@ -1260,7 +1269,12 @@ function Schedule({ data, saved }: EditorProps) {
           onClick={() =>
             setSchedule([
               ...schedule,
-              { label: "", at: null, id: nextId.current++ },
+              {
+                kind: "draft",
+                label: milestoneNames.draft[0],
+                at: null,
+                id: nextId.current++,
+              },
             ])
           }
         >
@@ -1275,7 +1289,7 @@ function Schedule({ data, saved }: EditorProps) {
           }}
           disabled={schedule.some(
             (s) =>
-              !s.label.trim() ||
+              !isMilestoneName(s.kind, s.label) ||
               invalid[s.id * 2] ||
               (s.kind &&
                 (invalid[s.id * 2 + 1] ||

@@ -1,3 +1,6 @@
+import { createTranslator } from "next-intl";
+import hant from "../../messages/zh-Hant.json";
+import { appTranslator } from "../../src/i18n/translate";
 import { describe, expect, it } from "vitest";
 import { editionSchema } from "../../src/lib/editions";
 import { tournamentTimeline } from "../../src/lib/tournament-timeline";
@@ -13,6 +16,34 @@ const phase = {
   endAt: end,
 };
 describe("competition timeline", () => {
+  it("uses the selected milestone translation in the overview and schedule", () => {
+    const native = createTranslator({ locale: "zh-Hant", messages: hant.ui });
+    const translate = appTranslator(
+      (key, values) => native(key as keyof typeof hant.ui, values),
+      "zh-Hant",
+    );
+    const model = tournamentTimeline(
+      {
+        ...edition,
+        registration: null,
+        schedule: [
+          { kind: "draft", label: "draft", at: null },
+          { kind: "group", label: "swiss", at: null },
+          { kind: "knockout", label: "grand_finals", at: null },
+        ],
+      },
+      translate,
+      "zh-Hant",
+    );
+    expect(model.stages.map((stage) => stage.label)).toEqual([
+      "選秀大會",
+      "瑞士輪",
+      "總決賽",
+    ]);
+    expect(model.schedule.map((row) => row.event)).toEqual(
+      model.stages.map((stage) => stage.label),
+    );
+  });
   it("shows day-precision history without inventing midnight start or end times", () => {
     const schedule = editionSchema.shape.schedule.parse([
       {

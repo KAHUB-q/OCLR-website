@@ -37,7 +37,7 @@ test.describe("compact zoned date and 24-hour time editing", () => {
         slug,
         timeZone: "Asia/Hong_Kong",
         registration: original,
-        schedule: [{ label: "Synthetic milestone", at: original.opensAt }],
+        schedule: [{ kind: "draft", label: "draft", at: original.opensAt }],
       },
     ]);
     const headers = { origin: "http://127.0.0.1:3100" };
@@ -162,16 +162,16 @@ test.describe("compact zoned date and 24-hour time editing", () => {
     await page.goto(`/admin/tournaments/${slug}/settings?section=schedule`);
     await save("Save milestones");
     expect((await current()).edition.schedule[0].at).toBe(original.opensAt);
-    await date("Milestone 1 time").fill("2026-10-12");
-    await time("Milestone 1 time").fill("15:10");
+    await date("Start time").fill("2026-10-12");
+    await time("Start time").fill("15:10");
     await save("Save milestones");
     expect((await current()).edition.schedule[0].at).toBe(
       "2026-10-12T07:10:00.000Z",
     );
     await zone("America/New_York");
     await page.reload();
-    await date("Milestone 1 time").fill("2026-03-08");
-    await time("Milestone 1 time").fill("02:30");
+    await date("Start time").fill("2026-03-08");
+    await time("Start time").fill("02:30");
     await expect(
       page.locator(".zoned-date-input").getByRole("alert"),
     ).toContainText("does not exist");
@@ -181,8 +181,8 @@ test.describe("compact zoned date and 24-hour time editing", () => {
     expect((await current()).edition.schedule[0].at).toBe(
       "2026-10-12T07:10:00.000Z",
     );
-    await date("Milestone 1 time").fill("2026-11-01");
-    await time("Milestone 1 time").fill("01:30");
+    await date("Start time").fill("2026-11-01");
+    await time("Start time").fill("01:30");
     await expect(
       page.locator(".zoned-date-input").getByRole("alert"),
     ).toContainText("occurs twice");
@@ -190,7 +190,7 @@ test.describe("compact zoned date and 24-hour time editing", () => {
       page.getByRole("button", { name: "Save milestones", exact: true }),
     ).toBeDisabled();
     await page
-      .getByLabel("Milestone 1 time: clock-change offset", { exact: true })
+      .getByLabel("Start time: clock-change offset", { exact: true })
       .selectOption("2026-11-01T06:30:00.000Z");
     await save("Save milestones");
     expect((await current()).edition.schedule[0].at).toBe(
@@ -198,7 +198,7 @@ test.describe("compact zoned date and 24-hour time editing", () => {
     );
     await page.reload();
     await expect(
-      page.getByLabel("Milestone 1 time: clock-change offset", { exact: true }),
+      page.getByLabel("Start time: clock-change offset", { exact: true }),
     ).toHaveValue("2026-11-01T06:30:00.000Z");
     await save("Save milestones");
     expect((await current()).edition.schedule[0].at).toBe(
@@ -206,7 +206,7 @@ test.describe("compact zoned date and 24-hour time editing", () => {
     );
     await page
       .getByRole("button", {
-        name: "Clear Milestone 1 time",
+        name: "Clear Start time",
         exact: true,
       })
       .click();
@@ -344,7 +344,7 @@ test.describe("compact zoned date and 24-hour time editing", () => {
           opensAt: instant,
           withdrawUntil: null,
         },
-        schedule: [{ label: "Synthetic milestone", at: instant }],
+        schedule: [{ kind: "draft", label: "draft", at: instant }],
       },
     ]);
     const endpoint = `/api/admin/tournaments/${slug}`;
@@ -397,12 +397,12 @@ test.describe("compact zoned date and 24-hour time editing", () => {
     ).toBe(instant);
     await tab("Milestones");
     await expect(
-      page.getByLabel("Milestone 1 time: time (HH:mm)", { exact: true }),
+      page.getByLabel("Start time: time (HH:mm)", { exact: true }),
     ).toHaveValue("23:10");
     await expect(
       page
         .getByRole("group", {
-          name: "Milestone 1 time (optional)",
+          name: "Start time (optional)",
           exact: true,
         })
         .locator(".zoned-date-zone"),

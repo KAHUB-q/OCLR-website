@@ -379,7 +379,7 @@ describe.skipIf(!url)("unused blank tournament draft deletion", () => {
         action: "schedule",
         expectedRevision: 0,
         confirmed: true,
-        schedule: [{ label: "Concurrent milestone", at: null }],
+        schedule: [{ kind: "draft", label: "draft", at: null }],
       }),
     ]);
     expect(

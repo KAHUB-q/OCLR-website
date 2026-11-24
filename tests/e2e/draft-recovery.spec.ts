@@ -90,8 +90,8 @@ test.describe("editable tournament and explicit draft recovery", () => {
       .toBe(100);
     await page.goto(`/admin/tournaments/${slug}/settings?section=schedule`);
     await page
-      .getByLabel("Milestone 1 label", { exact: true })
-      .fill("Updated synthetic milestone");
+      .getByLabel("Phase type", { exact: true })
+      .selectOption("knockout");
     await page
       .getByRole("button", { name: "Save milestones", exact: true })
       .click();
@@ -105,7 +105,7 @@ test.describe("editable tournament and explicit draft recovery", () => {
               .where(eq(editionState.slug, slug))
           )[0].configuration!.schedule[0].label,
       )
-      .toBe("Updated synthetic milestone");
+      .toBe("quarterfinals");
     expect(await db().select().from(registrations)).toEqual(before);
     const state = (
       await db().select().from(editionState).where(eq(editionState.slug, slug))

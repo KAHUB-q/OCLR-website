@@ -98,7 +98,7 @@ describe.skipIf(!url)(
       const configuration = (await readTournament(slug))!;
       await edit({
         action: "schedule",
-        schedule: [{ label: "Revised synthetic milestone", at: null }],
+        schedule: [{ kind: "draft", label: "draft", at: null }],
       });
       await edit({
         action: "rules",

@@ -199,12 +199,12 @@ describe.skipIf(!url)("remaining historical JSONB paths (#929)", () => {
         action: "schedule",
         expectedRevision: 0,
         confirmed: true,
-        schedule: [{ label: "Synthetic updated schedule", at: null }],
+        schedule: [{ kind: "draft", label: "draft", at: null }],
       }),
     );
     expect(meta.sourceArchives).toBe(0);
     expect((await readTournament("s7"))!.edition.schedule[0].label).toBe(
-      "Synthetic updated schedule",
+      "draft",
     );
     expect(
       (await db().select().from(historicalStatisticsRevisions)).length,

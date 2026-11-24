@@ -19,9 +19,11 @@ export function WikiGallery({
 }) {
   const headingId = useId();
   const [index, setIndex] = useState(initialIndex);
+  const [previewOpen, setPreviewOpen] = useState(false);
   const figure = figures[index];
 
   function showAnother() {
+    setPreviewOpen(false);
     // Draw from one fewer slot, then skip the currently displayed index.
     const draw = Math.floor(Math.random() * (figures.length - 1));
     setIndex((current) => (draw < current ? draw : draw + 1));
@@ -34,7 +36,13 @@ export function WikiGallery({
       headingId={headingId}
     >
       <figure className="wiki-gallery-layout">
-        <WikiGalleryPreview key={figure.src} figure={figure} showHint />
+        <WikiGalleryPreview
+          key={figure.src}
+          figure={figure}
+          showHint
+          open={previewOpen}
+          onOpenChange={setPreviewOpen}
+        />
         <div className="wiki-gallery-controls">
           <button
             className="wiki-gallery-shuffle"

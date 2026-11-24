@@ -26,8 +26,14 @@
   box-shadow: none;
 }
 
-.wiki-gallery-lightbox .yarl__button:not(:disabled):hover {
+.wiki-gallery-lightbox
+  .yarl__button:not(:disabled, [aria-disabled="true"]):hover {
   background: var(--site-tint);
+}
+
+.wiki-gallery-lightbox .yarl__button[aria-disabled="true"] {
+  color: var(--yarl__color_button_disabled);
+  cursor: default;
 }
 
 .wiki-gallery-lightbox .yarl__button:focus-visible {

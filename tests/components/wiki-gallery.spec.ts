@@ -2,6 +2,33 @@ import { readFile } from "node:fs/promises";
 import { expect, test } from "@playwright/test";
 import sharp from "sharp";
 
+test("only the last collection card opens when two previews are requested together", async ({
+  page,
+}) => {
+  await page.goto("/wiki-gallery?collection");
+  const collection = page.getByRole("region", { name: "Liru Gallery" });
+  const cards = collection.locator('a[aria-haspopup="dialog"]');
+  await expect(cards).toHaveCount(2);
+  // Activate both rarities of the same artwork before the lightbox can mount.
+  await cards.evaluateAll((links) => {
+    for (const link of links) (link as HTMLAnchorElement).click();
+  });
+  await expect(page.getByRole("dialog", { includeHidden: true })).toHaveCount(
+    1,
+  );
+  const dialog = page.getByRole("dialog", { name: "Elegant maid outfit" });
+  const download = page.waitForEvent("download");
+  await dialog.getByRole("button", { name: "Download card" }).click();
+  expect((await download).suggestedFilename()).toBe(
+    "Elegant maid outfit - SR.png",
+  );
+  await dialog.getByRole("button", { name: "Close" }).click();
+  await expect(page.getByRole("dialog", { includeHidden: true })).toHaveCount(
+    0,
+  );
+  await expect(cards.nth(1)).toBeFocused();
+});
+
 test("shuffling discards a pending request to enlarge the previous card", async ({
   page,
 }) => {
@@ -134,7 +161,11 @@ test("previews in place, restores focus and downloads the current card and artwo
     await readFile("public/mascot/liru/gallery/purple-punk.webp"),
   );
   const cardPromise = page.waitForEvent("download");
-  await nextDialog.getByRole("button", { name: "Download card" }).click();
+  const downloadCard = nextDialog.getByRole("button", {
+    name: "Download card",
+  });
+  await downloadCard.focus();
+  await page.keyboard.press("Enter");
   const card = await cardPromise;
   expect(card.suggestedFilename()).toBe("Purple punk - SR.png");
   const cardImage = sharp((await card.path())!);
@@ -151,7 +182,8 @@ test("previews in place, restores focus and downloads the current card and artwo
   // This point is outside the portrait area but inside the blue SR frame.
   expect(data[3]).toBe(255);
   expect(data[2]).toBeGreaterThan(data[0]);
-  await nextDialog.getByRole("button", { name: "Close" }).click();
+  await expect(downloadCard).toBeFocused();
+  await page.keyboard.press("Escape");
   await expect(nextDialog).toHaveCount(0);
   await expect(trigger).toBeFocused();
   expect(page.url()).toBe(originalUrl);

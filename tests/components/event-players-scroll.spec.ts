@@ -80,6 +80,39 @@ test("a shared rank sort stays selected in a season without ranks", async ({
   await expect(rows).toHaveText(["Subset Player 001", "Subset Player 002"]);
 });
 
+test("shared team and role filters stay selected when absent from the season", async ({
+  page,
+}) => {
+  await page.goto(
+    "/event-players?unranked=1&team=Former%20team&role=captain&q=002",
+  );
+  const rows = page.locator(".event-player-row h3");
+  await expect(page.getByText("No players match your search.")).toBeVisible();
+  const filters = page.getByRole("button", { name: /^Filters/ });
+  if (await filters.isVisible()) await filters.click();
+  const team = page.getByRole("combobox", { name: "Team", exact: true });
+  const role = page.getByRole("combobox", { name: "Role", exact: true });
+  await expect(team).toHaveValue("Former team");
+  await expect(team.locator("option:checked")).toHaveText("Former team");
+  await expect(role).toHaveValue("captain");
+  await expect(role.locator("option:checked")).toHaveText("Captain");
+  await team.selectOption("");
+  await expect(team.getByRole("option", { name: "Former team" })).toHaveCount(
+    0,
+  );
+  await expect(role).toHaveValue("captain");
+  await expect(rows).toHaveCount(0);
+  await role.selectOption("");
+  await expect(role).toHaveCount(0);
+  await expect(rows).toHaveText(["Subset Player 002"]);
+  await page.goBack();
+  await expect(role).toHaveValue("captain");
+  await expect(team).toHaveValue("");
+  await page.goBack();
+  await expect(team).toHaveValue("Former team");
+  await expect(rows).toHaveCount(0);
+});
+
 test("scrolling appends successive batches and retains the existing player rows", async ({
   page,
 }) => {

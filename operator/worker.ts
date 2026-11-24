@@ -76,8 +76,15 @@ function tool(command: string, args: string[], target = database) {
       PGSSLROOTCERT: url.searchParams.get("sslrootcert") || undefined,
     },
     timeout: 300000,
-    maxBuffer: MAX_BYTES + 16384,
+    maxBuffer: command === "pg_dump" ? MAX_BYTES : MAX_BYTES + 16384,
   });
+  if (
+    command === "pg_dump" &&
+    (result.error as NodeJS.ErrnoException)?.code === "ENOBUFS"
+  ) {
+    phase = "archive-size";
+    throw Error("Dump exceeds package limit");
+  }
   if (result.status !== 0 || result.error)
     throw Error("Operator command failed");
   return result.stdout;
@@ -255,36 +262,14 @@ try {
     const schema = createHash("sha256")
       .update(JSON.stringify(inv.ledger))
       .digest("hex");
-    phase = "database-size";
-    if (
-      Number(
-        await (async () => {
-          const sizeClient = await connection();
-          try {
-            return (
-              await sizeClient.query(
-                "SELECT pg_database_size(current_database())::text n",
-              )
-            ).rows[0].n;
-          } finally {
-            await sizeClient.end();
-          }
-        })(),
-      ) > MAX_BYTES
-    )
-      throw Error("Database exceeds package limit");
     phase = "backup";
     const fingerprint = media();
+    // pg_dump writes a compressed custom archive to stdout. Bound the bytes
+    // while they are produced, before creating a scratch file or package.
+    const dump = tool("pg_dump", ["--format=custom", "--no-owner", "--no-acl"]);
     const dumpPath = join(root, id + ".dump");
-    tool("pg_dump", [
-      "--format=custom",
-      "--no-owner",
-      "--no-acl",
-      "--file",
-      dumpPath,
-    ]);
+    writeFileSync(dumpPath, dump, { mode: 0o600 });
     tool("pg_restore", ["--file=/dev/null", dumpPath]);
-    const dump = readFileSync(dumpPath);
     const backup = seal(
       dump,
       {

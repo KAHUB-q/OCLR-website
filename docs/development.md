@@ -114,7 +114,7 @@ To route model requests through a forward proxy, add `OCLR_CHAT_PROXY_URL='http:
 
 On any published tournament overview, the Liru button at the bottom right opens the assistant-ui chat window. Closing and reopening it preserves the conversation on that page. Visitors sign in with osu! and return to the open window for that edition. The dedicated `/tournaments/[edition]/chat` page is also available. The assistant uses the same public sources for every signed-in account. The browser keeps the conversation in memory. Each request sends up to four recent questions and selected public excerpts to the configured provider. The app stores no conversation transcripts. The API allows eight requests per account per minute per server process, limits questions to 1,500 characters, and cancels model generation on disconnect or after 30 seconds.
 
-Rules are split into overlapping excerpts with links to the original chapters. The edition-specific index in `chat_rule_indexes` is rebuilt on demand when the current published source fingerprint changes. To rebuild from scratch, delete that edition's derived row in a maintenance session. Its next question recreates it from the published page data. Fixtures, published scores and mappools are read at request time. These live lookups complement the background season index described below. Chat is disabled in remote development mode.
+Chat reads the current rules, timeline, fixtures and mappools alongside the background season index. Only the index worker writes the search index. Chat is disabled in remote development mode.
 
 ### Season search and embeddings
 

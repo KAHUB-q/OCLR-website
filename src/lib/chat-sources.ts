@@ -1,9 +1,5 @@
 import { searchSeasonIndex } from "./chat-vectors";
 import { matches, poolSources } from "./chat-competition-sources";
-import { createHash } from "node:crypto";
-import { and, eq } from "drizzle-orm";
-import { db } from "@/db";
-import { chatRuleIndexes } from "@/db/schema";
 import { getPublicEdition } from "./content";
 import { HttpError } from "./http-error";
 import {
@@ -13,35 +9,6 @@ import {
 } from "./chat-retrieval";
 import { informationPreview } from "./tournament-information";
 import { tournamentTimeline } from "./tournament-timeline";
-import type { Edition } from "./editions";
-
-async function indexedRules(edition: Edition) {
-  const chapters = publishedRuleChapters(edition);
-  const fingerprint = createHash("sha256")
-    .update("excerpts-v1\n")
-    .update(JSON.stringify(chapters))
-    .digest("hex");
-  const [hit] = await db()
-    .select({ sections: chatRuleIndexes.sections })
-    .from(chatRuleIndexes)
-    .where(
-      and(
-        eq(chatRuleIndexes.editionSlug, edition.slug),
-        eq(chatRuleIndexes.fingerprint, fingerprint),
-      ),
-    );
-  if (hit) return hit.sections;
-  const sources = ruleExcerpts(chapters);
-  await db()
-    .insert(chatRuleIndexes)
-    .values({ editionSlug: edition.slug, fingerprint, sections: sources })
-    .onConflictDoUpdate({
-      target: chatRuleIndexes.editionSlug,
-      set: { fingerprint, sections: sources },
-    });
-  return sources;
-}
-
 export async function chatEvidence(
   slug: string,
   question: string,
@@ -63,7 +30,7 @@ export async function chatEvidence(
     matchIntent.test(question) || poolIntent.test(question)
       ? question
       : questionWithContext;
-  const rules = await indexedRules(edition);
+  const rules = ruleExcerpts(publishedRuleChapters(edition));
   const sources = rankedSources(rules, question, 3);
   if (!sources.length && previous)
     sources.push(...rankedSources(rules, questionWithContext, 2));

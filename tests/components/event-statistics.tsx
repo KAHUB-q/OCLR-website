@@ -20,10 +20,14 @@ const score: EventScore = {
   game: "1",
   fixture: "one",
 };
+const params = new URLSearchParams(location.search);
 const scores = [
   score,
   { ...score, osuId: 22, teamId: "Y", score: 50 },
   { ...score, player: "Old name", game: "2", score: 80 },
+  ...(params.has("rounds")
+    ? [{ ...score, round: "Semifinal", fixture: "semi", mapId: 2002 }]
+    : []),
 ];
 const coverage = {
   slug: "synthetic",
@@ -35,7 +39,7 @@ const coverage = {
     { id: "X", name: "Same team" },
     { id: "Y", name: "Same team" },
   ],
-  stages: ["Final"],
+  stages: [...new Set(scores.map((play) => play.round))],
   fixtures: [],
   poolFixtures: [
     {
@@ -45,7 +49,7 @@ const coverage = {
       teamIds: ["X", "Y"],
       maps: [
         score,
-        ...(new URLSearchParams(location.search).has("unplayed")
+        ...(params.has("unplayed")
           ? [{ ...score, slot: "HD1", mapId: 1002, title: "Unplayed map" }]
           : []),
       ],

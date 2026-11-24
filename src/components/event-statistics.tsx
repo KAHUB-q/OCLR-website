@@ -346,13 +346,41 @@ export function EventStatistics({
           );
     return value;
   }
+  function mapOptions(index: number, selectedRound: string) {
+    if (index === SERIES_VIEW)
+      return seriesOptions.maps.filter(
+        (m) => !selectedRound || m.round === selectedRound,
+      );
+    if (index === 1)
+      return eventMappoolRows(scores, poolFixtures, selectedRound).map(
+        ({ key, map }) => ({
+          value: key,
+          label: `${map.round} · ${map.slot} · ${map.mapId ?? map.title}`,
+        }),
+      );
+    const roundScores = selectedRound
+      ? scores.filter((s) => s.round === selectedRound)
+      : scores;
+    return groupEventMaps(roundScores).map(({ key, label }) => ({
+      value: key,
+      label,
+    }));
+  }
   function filters(index: number) {
     const isSeries = index === SERIES_VIEW;
     return [
       {
         label: "Rounds",
         value: round,
-        set: setRound,
+        set: (next: string) => {
+          setRound(next);
+          if (
+            next &&
+            slot &&
+            !mapOptions(index, next).some((m) => m.value === slot)
+          )
+            setSlot("");
+        },
         options: isSeries
           ? seriesOptions.rounds
           : (coverage?.stages ?? [...new Set(scores.map((s) => s.round))]).map(
@@ -378,15 +406,7 @@ export function EventStatistics({
         label: "Map",
         value: slot,
         set: setSlot,
-        options: isSeries
-          ? seriesOptions.maps.filter((m) => !round || m.round === round)
-          : (index === 1
-              ? eventMappoolRows(scores, poolFixtures).map(({ key, map }) => ({
-                  key,
-                  label: `${map.round} · ${map.slot} · ${map.mapId ?? map.title}`,
-                }))
-              : groupEventMaps(scores)
-            ).map((m) => ({ value: m.key, label: m.label })),
+        options: mapOptions(index, round),
       },
     ];
   }
@@ -501,23 +521,7 @@ export function EventStatistics({
         {filters(view).map(({ label, value, set, options }) => (
           <label key={label}>
             {tr(label)}
-            <select
-              value={value}
-              onChange={(e) => {
-                const next = e.target.value;
-                set(next);
-                if (
-                  showSeries &&
-                  label === "Rounds" &&
-                  next &&
-                  slot &&
-                  !seriesOptions.maps.some(
-                    (m) => m.round === next && m.value === slot,
-                  )
-                )
-                  setSlot("");
-              }}
-            >
+            <select value={value} onChange={(e) => set(e.target.value)}>
               <option value="">{tr("All")}</option>
               {options.map((o) => (
                 <option key={o.value} value={o.value}>

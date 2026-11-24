@@ -507,6 +507,11 @@ published fixtures, public identities and eligible game scores together.
 Historical Series use the same published archive statistics release as the
 other statistics views. See [YumuRating](yumu-rating.md).
 
+Contract 1.49.0 adds optional `exMode` to public game outcomes and played-map
+details. Referee results use the declarations at their published referee revision.
+An MP-reviewed game uses its saved per-game EX flag. The field is omitted for
+ordinary games and when a raw MP game cannot be matched unambiguously.
+
 Contract 1.46.0 adds optional `summary.performance` to staff `replayList`
 attachments. It includes the stored score and full-combo flag, plus the
 accuracy fraction and letter grade calculated from the replay's recorded hits.

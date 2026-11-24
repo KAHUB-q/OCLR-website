@@ -28,6 +28,7 @@ const publicMatchResult = z.strictObject({
   draw: flag,
   games: z.array(
     z.strictObject({
+      exMode: flag.optional(),
       gameId: number,
       beatmapId: nullableNumber,
       beatmap: z.union([
@@ -55,6 +56,7 @@ const publicMatchResult = z.strictObject({
       z.strictObject({
         beatmapId: number,
         category: text,
+        exMode: flag.optional(),
         winnerTeamId: nullableString,
       }),
     )

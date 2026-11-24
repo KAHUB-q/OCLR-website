@@ -60,6 +60,7 @@ function MapResultSummary({
             {tr("MAP ")}
             {index + 1}
           </span>
+          {game.exMode && <span className="badge">{tr("EX mode")}</span>}
           {!mpRecordOnly && (
             <span className={styles.mapStatus}>
               {game.included

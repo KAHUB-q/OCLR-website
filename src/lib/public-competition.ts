@@ -10,11 +10,22 @@ import {
   matchResults,
   resultRevisions,
   resultAuditEvents,
+  refereeEvents,
   teams,
   tournamentRounds,
   tournamentStages,
 } from "@/db/schema";
-import { and, asc, desc, eq, isNotNull, isNull, lte, sql } from "drizzle-orm";
+import {
+  and,
+  asc,
+  desc,
+  eq,
+  isNotNull,
+  isNull,
+  lte,
+  or,
+  sql,
+} from "drizzle-orm";
 import type { RatingReader } from "./approved-rating-games";
 import {
   groupConfigurationSchema,
@@ -34,6 +45,7 @@ import { ratingIdentities } from "./rating-data";
 import { ratingSnapshot } from "./rating-snapshot";
 import {
   reviewedMatchDetails,
+  uniqueBeatmap,
   withStatisticsScores,
   type MatchDetails,
 } from "./match-details-model";
@@ -105,6 +117,41 @@ function publishedMpEvidence(tx: RatingReader) {
       number | null
     >`coalesce(${matchImports.externalMatchId}, ${room})`.mapWith(Number),
   };
+}
+
+/** A replay's attempt ID differs from the pick on which EX was declared. */
+async function publishedExAttempts(
+  tx: RatingReader,
+  revisions: { fixtureId: string; revision: number }[],
+) {
+  const enabled = new Set<string>();
+  if (!revisions.length) return enabled;
+  const events = await tx
+    .select({ id: refereeEvents.id, payload: refereeEvents.payload })
+    .from(refereeEvents)
+    .where(
+      and(
+        sql`${refereeEvents.payload}->>'type' in ('ex_declared', 'attempt_replayed')`,
+        or(
+          ...revisions.map(({ fixtureId, revision }) =>
+            and(
+              eq(refereeEvents.fixtureId, fixtureId),
+              lte(refereeEvents.ordinal, revision),
+            ),
+          ),
+        ),
+      ),
+    )
+    .orderBy(refereeEvents.ordinal);
+  for (const { id, payload } of events) {
+    if (payload.type === "attempt_replayed" && enabled.has(payload.pickId))
+      enabled.add(id);
+    if (payload.type === "ex_declared") {
+      if (payload.enabled) enabled.add(payload.pickId);
+      else enabled.delete(payload.pickId);
+    }
+  }
+  return enabled;
 }
 
 async function databasePublicCompetition(
@@ -213,6 +260,20 @@ async function databasePublicCompetition(
         asc(tournamentRounds.position),
         asc(fixtures.position),
       );
+    const proposals = new Map(
+      rows.map((row) => {
+        const parsed = reviewedResultSchema.safeParse(row.proposal);
+        return [row.fixture.id, parsed.success ? parsed.data : null] as const;
+      }),
+    );
+    const exAttempts = await publishedExAttempts(
+      tx,
+      Array.from(proposals).flatMap(([fixtureId, proposal]) =>
+        proposal?.referee
+          ? [{ fixtureId, revision: proposal.referee.revision }]
+          : [],
+      ),
+    );
     const cache = new Map<string, PublicFixture | null>();
     const visiting = new Set<string>();
     function project(id: string): PublicFixture | null {
@@ -289,8 +350,7 @@ async function databasePublicCompetition(
         home.team.id === homeId &&
         away.team.id === awayId,
       );
-      const parsed = reviewedResultSchema.safeParse(row.proposal);
-      const p = parsed.success ? parsed.data : null;
+      const p = proposals.get(id);
       const aligned =
         p &&
         (p.rulesSnapshot !== null || row.stage === "exhibition") &&
@@ -313,6 +373,7 @@ async function databasePublicCompetition(
               winnerTeamId: p!.series.winnerTeamId,
               draw: p!.series.draw,
               games: p!.games.map((g) => ({
+                ...(g.exMode && { exMode: true }),
                 gameId: g.gameId,
                 beatmapId: g.beatmapId,
                 beatmap: g.beatmap,
@@ -331,7 +392,8 @@ async function databasePublicCompetition(
               ...(p!.referee
                 ? {
                     refereeGames: p!.referee.games.map(
-                      ({ beatmapId, category, winnerTeamId }) => ({
+                      ({ attemptId, beatmapId, category, winnerTeamId }) => ({
+                        ...(exAttempts.has(attemptId) && { exMode: true }),
                         beatmapId,
                         category,
                         winnerTeamId,
@@ -557,7 +619,17 @@ async function databasePublicFixture(
         openExhibition && rawMp,
       );
       played.sources[0].complete = source.data.complete;
-      if (rawMp) return { ...fixture, details: played };
+      if (rawMp) {
+        // A repeated beatmap alone cannot identify which MP game was the scored attempt.
+        const outcomes = fixture.result.refereeGames ?? [];
+        for (const outcome of outcomes) {
+          if (outcome.exMode && uniqueBeatmap(outcomes, outcome.beatmapId)) {
+            const game = uniqueBeatmap(played.games, outcome.beatmapId);
+            if (game) game.exMode = true;
+          }
+        }
+        return { ...fixture, details: played };
+      }
       const ezScoreMultiplier = proposal.data.rulesSnapshot
         ? ((await readTournament(slug, tx, true))?.edition.ezScoreMultiplier ??
           1)

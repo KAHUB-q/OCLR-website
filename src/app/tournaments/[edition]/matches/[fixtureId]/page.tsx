@@ -154,6 +154,9 @@ async function Issue271Page({
                           href={`https://osu.ppy.sh/beatmaps/${game.beatmapId}`}
                         >
                           <span className={styles.mod}>{game.category}</span>
+                          {game.exMode && (
+                            <span className="badge">{tr("EX mode")}</span>
+                          )}
                           <span>
                             {tr("Beatmap {value0}", { value0: game.beatmapId })}
                           </span>

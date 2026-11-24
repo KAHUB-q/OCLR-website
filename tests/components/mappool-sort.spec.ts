@@ -1,5 +1,42 @@
 import { test, expect } from "@playwright/test";
 
+const noMatches = "No beatmaps match these filters.";
+const noReleases = "No beatmaps have been released for this pool.";
+
+test("an unmatched search shows one filter notice and clearing it restores the maps", async ({
+  page,
+}) => {
+  await page.route("https://assets.ppy.sh/**", (route) => route.abort());
+  await page.goto("/mappool-sort");
+  const search = page.getByRole("searchbox");
+  await search.fill("No such synthetic track");
+  await expect(page.getByText(noMatches, { exact: true })).toBeVisible();
+  await expect(page.getByText(noReleases, { exact: true })).toHaveCount(0);
+  await page
+    .getByRole("button", { name: "Compact table", exact: true })
+    .click();
+  await expect(page.getByText(noMatches, { exact: true })).toBeVisible();
+  await expect(page.getByText(noReleases, { exact: true })).toHaveCount(0);
+  await expect(page.locator(".pool-summary")).toContainText("0 / 4");
+  await search.fill("");
+  await expect(page.locator("tbody tr")).toHaveCount(4);
+  await expect(page.getByText(noMatches, { exact: true })).toHaveCount(0);
+  await expect(page.getByText(noReleases, { exact: true })).toHaveCount(0);
+});
+
+test("a pool with no released maps shows the release notice in either view", async ({
+  page,
+}) => {
+  await page.goto("/mappool-sort?empty");
+  await expect(page.getByText(noReleases, { exact: true })).toBeVisible();
+  await expect(page.getByText(noMatches, { exact: true })).toHaveCount(0);
+  await page
+    .getByRole("button", { name: "Compact table", exact: true })
+    .click();
+  await expect(page.getByText(noReleases, { exact: true })).toBeVisible();
+  await expect(page.getByText(noMatches, { exact: true })).toHaveCount(0);
+});
+
 for (const sort of ["stars", "title"]) {
   test(`compact view preserves ${sort} order and detail navigation`, async ({
     page,

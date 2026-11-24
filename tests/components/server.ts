@@ -28,6 +28,7 @@ const tournamentArtwork = new Set([
 
 const bundle = await build({
   entryPoints: [
+    "tests/components/pickem-admin.tsx",
     "tests/components/pickem-match.tsx",
     "tests/components/wiki-gallery.tsx",
     "tests/components/team-coach-draft.tsx",
@@ -277,8 +278,10 @@ createServer((request, response) => {
                       : request.url?.startsWith("/player-leaderboard")
                         ? "player-leaderboard"
                         : entry;
-    const fixtureName = request.url?.startsWith("/pickem-match")
-      ? "pickem-match"
+    const path = request.url?.split("?")[0];
+    const isPickem = path === "/pickem-match" || path === "/pickem-admin";
+    const fixtureName = isPickem
+      ? path.slice(1)
       : request.url?.startsWith("/wiki-gallery")
         ? "wiki-gallery"
         : request.url?.startsWith("/player-reactions")

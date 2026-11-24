@@ -90,6 +90,8 @@ export function BeatmapLeaderboardCards({
   const sortBarRef = useRef<HTMLDivElement | null>(null);
   const sortWidthsRef = useRef<number[] | null>(null);
   const activeSort = sort ?? defaultSort;
+  const sortDescription =
+    activeSort.dir === "asc" ? tr("Sorted ascending") : tr("Sorted descending");
 
   const columns: BeatmapLeaderboardColumn[] = providedColumns ?? [
     { key: "title", label: tr("Beatmap") },
@@ -253,6 +255,7 @@ export function BeatmapLeaderboardCards({
                   className={styles.sortButton}
                   data-active={active || undefined}
                   aria-pressed={active}
+                  aria-description={active ? sortDescription : undefined}
                   onClick={() => toggle(column.key)}
                 >
                   <span

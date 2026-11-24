@@ -181,6 +181,8 @@ export function PlayerLeaderboardCards({
   const sortBarRef = useRef<HTMLDivElement | null>(null);
   const sortWidthsRef = useRef<number[] | null>(null);
   const activeSort = sort ?? defaultSort;
+  const sortDescription =
+    activeSort.dir === "asc" ? tr("Sorted ascending") : tr("Sorted descending");
 
   const columns: LeaderboardColumn[] = providedColumns ?? [
     { key: "uid", label: "#" },
@@ -357,6 +359,7 @@ export function PlayerLeaderboardCards({
                   className={styles.sortButton}
                   data-active={active || undefined}
                   aria-pressed={active}
+                  aria-description={active ? sortDescription : undefined}
                   onClick={() => toggle(column.key)}
                 >
                   <span

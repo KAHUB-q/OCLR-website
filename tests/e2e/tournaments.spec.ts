@@ -268,11 +268,9 @@ test.describe("browser-managed authoritative tournament editions", () => {
         .selectOption("group");
       await page
         .getByLabel("Start time: date", { exact: true })
-        .nth(1)
         .fill("2027-04-20");
       await page
         .getByLabel("Start time: time (HH:mm)", { exact: true })
-        .nth(1)
         .fill("20:30");
       await page
         .getByRole("button", { name: "Move milestone 2 up", exact: true })
@@ -294,7 +292,7 @@ test.describe("browser-managed authoritative tournament editions", () => {
           endAt: null,
           at: "2027-04-20T12:30:00.000Z",
         },
-        { label: "draft", kind: "draft", at: null, endAt: null },
+        { label: "draft", kind: "draft", at: null },
       ]);
       await tab("Registration");
       await page

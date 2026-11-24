@@ -7,6 +7,10 @@ export const milestoneNames = {
 
 export type MilestoneKind = keyof typeof milestoneNames;
 
+export function isSingleTimeMilestone(kind: MilestoneKind | undefined) {
+  return kind === "draft" || kind === "exhibition";
+}
+
 export function isMilestoneName(kind: MilestoneKind | undefined, name: string) {
   return (
     kind !== undefined && milestoneNames[kind].some((value) => value === name)

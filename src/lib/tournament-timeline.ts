@@ -1,4 +1,8 @@
-import { milestoneName, isMilestoneName } from "./milestone-names";
+import {
+  milestoneName,
+  isMilestoneName,
+  isSingleTimeMilestone,
+} from "./milestone-names";
 import type { Edition } from "./editions";
 import { formatDate } from "./editions";
 import type { PlannedStage } from "./tournament-stages";
@@ -74,11 +78,12 @@ export function tournamentTimeline(
       ? milestoneName(event.label, tr)
       : event.label;
     const order = event.kind ? phaseOrder[event.kind] : 6;
-    const interval = Boolean(event.kind && event.kind !== "exhibition");
+    const singleTime = isSingleTimeMilestone(event.kind);
+    const interval = Boolean(event.kind && !singleTime);
     const endAt = interval ? event.endAt : undefined;
     const detail = interval
       ? range(event.at, event.endAt, event.precision)
-      : date(event.at, event.kind === "exhibition" ? "instant" : event.precision);
+      : date(event.at, singleTime ? "instant" : event.precision);
     // Exact event identity only; authored labels are never interpreted as phase types.
     // Suppress repeated rows at render time without mutating stored milestones.
     if (

@@ -277,16 +277,15 @@ Edition Admins choose a default in General settings. See the [appearance policy]
 ## Competition times and milestones (#430)
 
 In edition settings, choose Draft ceremony, Group stage, Knockout stage or Exhibition.
-Draft ceremony uses its phase name. Choose Exhibition 1, Exhibition 2 or
-Exhibition 3 and enter one date and time in the edition’s time zone. Leave it
-blank for TBA. The overview and public schedule show this single time.
+Draft ceremony, Exhibition 1, Exhibition 2 and Exhibition 3 each take one
+date and time in the edition’s time zone. Leave it blank for TBA. The overview and public schedule show this single time.
 Group milestones offer Group stage and Swiss round. Knockout milestones offer
 Quarter-Finals, Semi-Finals, Finals and Grand Finals. The editor and public
 timeline and news use the visitor’s language for these names. The server
 validates each saved name against its phase. Registration dates are managed
 in Registration settings.
 
-For draft, group and knockout milestones, start and end are optional. An end before a known start is rejected. Date
+For group and knockout milestones, start and end are optional. An end before a known start is rejected. Date
 precision and the edition’s IANA time zone apply to both endpoints. The
 overview shows undated phases after dated phases, in draft, group, knockout and
 exhibition order. Rows of the same phase with different dates remain distinct.

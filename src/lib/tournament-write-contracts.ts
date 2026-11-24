@@ -11,6 +11,10 @@ import { defaultJsonBodyLimit } from "./request-body-limits";
 import type { WriteApiOperation } from "./write-api-contract";
 
 const shape = editionSchema.shape;
+const singleTimeFields = {
+  endAt: z.null().optional(),
+  precision: z.literal("instant").optional(),
+};
 const identity = {
   name: shape.name,
   season: shape.season,
@@ -122,6 +126,7 @@ const commandSchema = z.discriminatedUnion("action", [
             shape.schedule.element.safeExtend({
               kind: z.literal("draft"),
               label: z.enum(milestoneNames.draft),
+              ...singleTimeFields,
             }),
             shape.schedule.element.safeExtend({
               kind: z.literal("group"),
@@ -134,8 +139,7 @@ const commandSchema = z.discriminatedUnion("action", [
             shape.schedule.element.safeExtend({
               kind: z.literal("exhibition"),
               label: z.enum(milestoneNames.exhibition),
-              endAt: z.null().optional(),
-              precision: z.literal("instant").optional(),
+              ...singleTimeFields,
             }),
           ]),
         )

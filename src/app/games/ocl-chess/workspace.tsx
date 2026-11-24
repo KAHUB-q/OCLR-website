@@ -177,7 +177,9 @@ export function ChessCanvas() {
         >
           +
         </button>
-        <span>{state?.enabled ? tr("Canvas open") : tr("Canvas paused")}</span>
+        {state && (
+          <span>{state.enabled ? tr("Canvas open") : tr("Canvas paused")}</span>
+        )}
       </div>
       <div
         className="chess-viewport"
@@ -336,12 +338,16 @@ export function ChessCanvas() {
                 ? tr("Retry pixel")
                 : tr("Confirm pixel")}
           </button>
-          <output>{remaining > 0 ? `${remaining}s` : tr("Ready")}</output>
+          {state && (
+            <output>{remaining > 0 ? `${remaining}s` : tr("Ready")}</output>
+          )}
         </div>
-        {!state?.signedIn && (
+        {state && !state.signedIn && (
           <a href="/login">{tr("Sign in with osu! to continue.")}</a>
         )}
-        <p role="status">{offline ? connectionError : error}</p>
+        <p role="status">
+          {offline ? connectionError : state ? error : tr("Loading…")}
+        </p>
         {state?.admin && (
           <details className="chess-administration">
             <summary>{tr("Canvas administration")}</summary>

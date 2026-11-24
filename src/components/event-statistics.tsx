@@ -2,6 +2,7 @@
 import { selectFragment, useUrlFragment } from "./url-fragment";
 import { StatisticsNotice } from "./statistics-notice";
 import { useMemo, useState } from "react";
+import { useFormatter } from "next-intl";
 import {
   rateSeasonSeries,
   seasonSeriesOptions,
@@ -73,8 +74,9 @@ export function EventStatistics({
   const coverageFixtures = coverage?.fixtures.filter(
     (f) => !round || f.stage === round,
   );
-  const number = (v: number, d = 0) =>
-    v.toLocaleString(tr.locale, { maximumFractionDigits: d });
+  const format = useFormatter();
+  const number = (value: number, maximumFractionDigits = 0) =>
+    format.number(value, { maximumFractionDigits });
   const avg = (s: EventScore[], key: "score" | "accuracy") => {
     const values = s.flatMap((p) => (p[key] === null ? [] : [p[key]!]));
     return values.length
@@ -298,14 +300,18 @@ export function EventStatistics({
     ];
     rows = eventPlacementRows(eligible, view === 4 ? "team" : "player", team);
   }
+  const needle = query.trim().toLowerCase();
   rows = rows.filter(
     (row) =>
       showSeries ||
+      !needle ||
       columns.some((column) => {
         const value = row[column];
-        return String(value ?? "")
-          .toLowerCase()
-          .includes(query.toLowerCase());
+        const raw = String(value ?? "").toLowerCase();
+        if (raw.includes(needle)) return true;
+        if (typeof value !== "number") return false;
+        const displayed = cell(column, value, row);
+        return typeof displayed === "string" && displayed.includes(needle);
       }),
   );
   rows.sort((a, b) => {

@@ -77,6 +77,38 @@ test("all six statistics views preserve identity and same-name team filters", as
   await expect(rows.locator("td").nth(10)).toHaveText("50");
 });
 
+test("statistics search matches displayed numbers and raw values", async ({
+  page,
+}) => {
+  await page.goto("/event-statistics");
+  await page
+    .getByRole("button", { name: "Individual leaderboard", exact: true })
+    .click();
+  const rows = page.locator("tbody tr");
+  const search = page.getByRole("textbox", { name: "Search" });
+  await expect(
+    rows.getByRole("cell", { name: "98%", exact: true }),
+  ).toHaveCount(3);
+  await search.fill("98%");
+  await expect(rows).toHaveCount(3);
+  await search.fill("0.98");
+  await expect(rows).toHaveCount(3);
+  await search.fill("1,234");
+  await expect(rows).toHaveCount(1);
+  await expect(rows.getByRole("link", { name: "Old name" })).toBeVisible();
+  await search.fill("  OLD NAME  ");
+  await expect(rows).toHaveCount(1);
+  await search.fill("   ");
+  await expect(rows).toHaveCount(3);
+  await page
+    .getByRole("button", { name: "Mappool statistics", exact: true })
+    .click();
+  await search.fill("1,001");
+  await expect(rows).toHaveCount(0);
+  await search.fill("1001");
+  await expect(rows.getByRole("link", { name: "1001 ↗" })).toBeVisible();
+});
+
 test("statistics notes remain visible below title", async ({ page }) => {
   await page.goto("/event-statistics");
   const panel = page.getByRole("region", { name: "Notes", exact: true });

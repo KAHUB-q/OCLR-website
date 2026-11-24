@@ -30,6 +30,10 @@ const scores = [
     ? [{ ...score, round: "Semifinal", fixture: "semi", mapId: 2002 }]
     : []),
 ];
+if (params.has("two-played-maps")) {
+  const hd = { ...score, slot: "HD1", mapId: 1002, game: "3" };
+  scores.push(hd, { ...hd, osuId: 22, teamId: "Y", score: 900 });
+}
 const coverage = {
   slug: "synthetic",
   players: [

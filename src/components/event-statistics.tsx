@@ -65,8 +65,8 @@ export function EventStatistics({
     [slot, setSlot] = useState(""),
     [query, setQuery] = useState("");
   const showSeries = view === SERIES_VIEW;
-  const [sort, setSort] = useState(views[view].sort),
-    [descending, setDescending] = useState(true);
+  const [selectedSort, setSort] = useState(views[view].sort),
+    [selectedDescending, setDescending] = useState(true);
   const seriesOptions = useMemo(() => seasonSeriesOptions(series), [series]);
   const ranking = useMemo(
     () => (showSeries ? rateSeasonSeries(series, round, slot) : null),
@@ -326,6 +326,8 @@ export function EventStatistics({
         return typeof displayed === "string" && displayed.includes(needle);
       }),
   );
+  const sort = columns.includes(selectedSort) ? selectedSort : views[view].sort;
+  const descending = sort === selectedSort ? selectedDescending : true;
   rows.sort((a, b) => {
     const x = a[sort],
       y = b[sort];

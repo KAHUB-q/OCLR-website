@@ -23,7 +23,7 @@ const score: EventScore = {
 const scores = [
   score,
   { ...score, osuId: 22, teamId: "Y", score: 50 },
-  { ...score, player: "Old name", game: "2", score: 80 },
+  { ...score, player: "Old name", game: "2", score: 80, combo: 1234 },
 ];
 const coverage = {
   slug: "synthetic",

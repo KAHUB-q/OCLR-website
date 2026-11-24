@@ -30,6 +30,7 @@ describe("competition timeline", () => {
           { kind: "draft", label: "draft", at: null },
           { kind: "group", label: "swiss", at: null },
           { kind: "knockout", label: "grand_finals", at: null },
+          { kind: "exhibition", label: "exhibition", at: null },
         ],
       },
       translate,
@@ -39,6 +40,7 @@ describe("competition timeline", () => {
       "選秀大會",
       "瑞士輪",
       "總決賽",
+      "表演賽",
     ]);
     expect(model.schedule.map((row) => row.event)).toEqual(
       model.stages.map((stage) => stage.label),

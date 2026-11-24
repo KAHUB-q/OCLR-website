@@ -131,6 +131,10 @@ const commandSchema = z.discriminatedUnion("action", [
               kind: z.literal("knockout"),
               label: z.enum(milestoneNames.knockout),
             }),
+            shape.schedule.element.safeExtend({
+              kind: z.literal("exhibition"),
+              label: z.enum(milestoneNames.exhibition),
+            }),
           ]),
         )
         .max(64),

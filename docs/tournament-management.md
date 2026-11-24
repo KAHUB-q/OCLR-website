@@ -276,7 +276,8 @@ Edition Admins choose a default in General settings. See the [appearance policy]
 
 ## Competition times and milestones (#430)
 
-In edition settings, choose Draft ceremony, Group stage or Knockout stage.
+In edition settings, choose Draft ceremony, Group stage, Knockout stage or Exhibition.
+Draft ceremony and Exhibition each use their phase name as the milestone name.
 Group milestones offer Group stage and Swiss round. Knockout milestones offer
 Quarter-Finals, Semi-Finals, Finals and Grand Finals. The editor and public
 timeline and news use the visitor’s language for these names. The server
@@ -285,8 +286,8 @@ in Registration settings.
 
 Start and end are optional. An end before a known start is rejected. Date
 precision and the edition’s IANA time zone apply to both endpoints. The
-overview shows undated phases after dated phases, in draft, group and knockout
-order. Rows of the same phase with different dates remain distinct.
+overview shows undated phases after dated phases, in draft, group, knockout and
+exhibition order. Rows of the same phase with different dates remain distinct.
 
 A complete competition interval is current on [start, end); all overlapping
 intervals are shown as current. A gap has no current competition interval.

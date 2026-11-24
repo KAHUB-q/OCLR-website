@@ -246,6 +246,7 @@ describe.skipIf(!url)("authoritative tournament edition storage", () => {
       },
       { label: "finals", kind: "knockout", at: null, endAt: null },
       { kind: "draft", label: "draft", at: null },
+      { kind: "exhibition", label: "exhibition", at: null },
     ];
     const before = await readTournament("s12");
     const saved = await change(0, "schedule", { schedule });
@@ -270,6 +271,7 @@ describe.skipIf(!url)("authoritative tournament edition storage", () => {
       { label: "Custom milestone", at: null },
       { kind: "knockout", label: "swiss", at: null },
       { kind: "group", label: "Custom group", at: null },
+      { kind: "exhibition", label: "finals", at: null },
     ]) {
       await expect(
         change(saved.revision, "schedule", { schedule: [row] }),

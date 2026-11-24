@@ -841,6 +841,13 @@
       "when": 1795545040190,
       "tag": "0119_chat_source_vectors",
       "breakpoints": true
+    },
+    {
+      "idx": 120,
+      "version": "7",
+      "when": 1795562443595,
+      "tag": "0120_chat_artwork_captions",
+      "breakpoints": true
     }
   ]
 }

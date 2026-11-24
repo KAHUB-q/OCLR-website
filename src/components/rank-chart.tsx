@@ -105,7 +105,9 @@ export function RankChart({
           `${index ? "L" : "M"}${toX(point.day).toFixed(2)} ${toY(point.rank).toFixed(2)}`,
       )
       .join(" ");
-    const area = `${line} L${toX(0).toFixed(2)} ${PAD.top + innerHeight} L${toX(minDay).toFixed(2)} ${PAD.top + innerHeight} Z`;
+    const lastDay = points[points.length - 1].day;
+    const baseline = PAD.top + innerHeight;
+    const area = `${line} L${toX(lastDay).toFixed(2)} ${baseline} L${toX(minDay).toFixed(2)} ${baseline} Z`;
     return {
       lo,
       hi,

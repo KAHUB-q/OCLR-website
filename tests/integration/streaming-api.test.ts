@@ -1293,6 +1293,12 @@ describe.skipIf(!url)("streaming read channel #540", () => {
       })
       .where(eq(streamingApiTokens.id, accessId));
     const before = await tokenRow();
+    const listing = await listStreamingTokens(subject!, slug);
+    expect(listing.tokens[0]).toMatchObject({
+      lastUsedAt: before.lastUsedAt.toISOString(),
+      expiresAt: before.expiresAt.toISOString(),
+    });
+    expect(await tokenRow()).toEqual(before);
     expect((await read(request("HEAD"))).status).toBe(200);
     expect((await tokenRow()).expiresAt).toEqual(before.expiresAt);
     expect((await read(request("GET", "?invalid=1"))).status).toBe(400);
@@ -1319,6 +1325,12 @@ describe.skipIf(!url)("streaming read channel #540", () => {
         expiresAt: new Date(Date.now() + 600_000),
       })
       .where(eq(streamingApiTokens.id, accessId));
+    const sibling = await readSessionContext(
+      (await createSession(subject!.osuId)).token,
+    );
+    expect(
+      (await listStreamingTokens(sibling!, slug)).tokens[0].expiresAt,
+    ).toBe(cap.toISOString());
     expect((await read()).status).toBe(200);
     expect((await tokenRow()).expiresAt).toEqual(cap);
     await db()

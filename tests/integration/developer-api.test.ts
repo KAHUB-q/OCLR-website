@@ -179,6 +179,16 @@ describe.skipIf(!url)("Developer API credentials (isolated PostgreSQL)", () => {
       .update(sessions)
       .set({ expiresAt: new Date(Date.now() + 120_000) })
       .where(eq(sessions.tokenHash, owner!.tokenHash));
+    const sibling = await readSessionContext(
+      (await createSession(owner!.osuId)).token,
+    );
+    const [listed] = (await listDeveloperTokens(sibling!)).tokens;
+    expect(Date.parse(listed.expiresAt)).toBeLessThan(
+      Date.parse(credential.access.expiresAt),
+    );
+    expect((await db().select().from(developerApiTokens))[0].expiresAt).toEqual(
+      stored.expiresAt,
+    );
     const capped = await issued();
     expect(
       Date.parse(capped.access.expiresAt) - Date.now(),

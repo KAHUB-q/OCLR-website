@@ -1,5 +1,15 @@
 import { getEditions } from "./content";
-import { and, desc, eq, gt, isNull, lt, or, sql } from "drizzle-orm";
+import {
+  getTableColumns,
+  and,
+  desc,
+  eq,
+  gt,
+  isNull,
+  lt,
+  or,
+  sql,
+} from "drizzle-orm";
 import { db } from "@/db";
 import {
   streamingApiEvents,
@@ -152,8 +162,15 @@ export async function listStreamingTokens(
     );
   await assertStreamer(session.osuId, editionSlug);
   const rows = await db()
-    .select()
+    .select({
+      ...getTableColumns(streamingApiTokens),
+      expiresAt:
+        sql`least(${streamingApiTokens.expiresAt}, ${sessions.expiresAt})`.mapWith(
+          streamingApiTokens.expiresAt,
+        ),
+    })
     .from(streamingApiTokens)
+    .innerJoin(sessions, eq(sessions.tokenHash, streamingApiTokens.sessionHash))
     .where(
       and(
         eq(streamingApiTokens.userId, session.osuId),

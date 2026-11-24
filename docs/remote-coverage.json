@@ -3633,6 +3633,20 @@
       "requiredVerification": "Browser interaction/polling + API snapshot immutability"
     },
     {
+      "file": "src/components/use-api-access-history.ts",
+      "kind": "client",
+      "authority": "static-or-local-interaction",
+      "operations": [],
+      "commands": "Denied in remote mode; connection management and preference cookies remain separate",
+      "metadata": "Inherited or static",
+      "services": [],
+      "test": "remote-e2e/interactions.spec.ts + existing e2e interaction tests",
+      "authorization": "Existing publication/subject boundaries",
+      "adapter": "no database; repository content/navigation/preferences",
+      "media": "Existing public assets",
+      "requiredVerification": "Browser interaction/polling + API snapshot immutability"
+    },
+    {
       "file": "src/components/use-poll.ts",
       "kind": "client",
       "authority": "static-or-local-interaction",

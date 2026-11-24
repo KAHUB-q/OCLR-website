@@ -16,6 +16,8 @@ import { TeamAvatar } from "./team-avatar";
 import { PickemNamedPredictions } from "./pickem-named-predictions";
 import styles from "./pickem.module.css";
 
+type ScoreSelection = { homeWins: number; awayWins: number | null } | null;
+
 function ScoreFields({
   card,
   outcome,
@@ -25,12 +27,12 @@ function ScoreFields({
 }: {
   card: PickemFixture;
   outcome: PickemOutcome;
-  score: PickemScore | null;
+  score: ScoreSelection;
   disabled: boolean;
-  onChange: (score: PickemScore | null) => void;
+  onChange: (score: ScoreSelection) => void;
 }) {
   const tr = useAppTranslations();
-  const [home, setHome] = useState<number | null>(score?.homeWins ?? null);
+  const home = score?.homeWins ?? null;
   const rules = card.scoreRules!;
   const max =
     rules.series.type === "first_to" ? rules.series.wins : rules.series.count;
@@ -51,8 +53,9 @@ function ScoreFields({
           onChange={(event) => {
             const chosen =
               event.target.value === "" ? null : Number(event.target.value);
-            setHome(chosen);
-            onChange(null);
+            onChange(
+              chosen === null ? null : { homeWins: chosen, awayWins: null },
+            );
           }}
         >
           <option value="">{tr("Map wins")}</option>
@@ -69,11 +72,12 @@ function ScoreFields({
           value={score?.awayWins ?? ""}
           disabled={home === null}
           onChange={(event) => {
-            onChange(
-              home === null || event.target.value === ""
-                ? null
-                : { homeWins: home, awayWins: Number(event.target.value) },
-            );
+            if (home === null) return;
+            const value = event.target.value;
+            onChange({
+              homeWins: home,
+              awayWins: value === "" ? null : Number(value),
+            });
           }}
         >
           <option value="">{tr("Map wins")}</option>
@@ -125,9 +129,13 @@ export function PickemMatchCard({
   const [outcome, setOutcome] = useState<PickemOutcome | null>(
     card.mine?.outcomeKey ?? null,
   );
-  const [score, setScore] = useState<PickemScore | null>(
+  const [selection, setSelection] = useState<ScoreSelection>(
     card.mine?.score ?? null,
   );
+  const score: PickemScore | null =
+    selection?.awayWins != null
+      ? { homeWins: selection.homeWins, awayWins: selection.awayWins }
+      : null;
   const [sending, setSending] = useState(false);
   const [notice, setNotice] = useState("");
   const [problem, setProblem] = useState("");
@@ -167,24 +175,24 @@ export function PickemMatchCard({
 
   useEffect(() => {
     if (!draftKey || card.status !== "open") return;
-    try {
-      const raw = window.sessionStorage.getItem(draftKey);
-      if (!raw) return;
-      window.sessionStorage.removeItem(draftKey);
-      const draft = JSON.parse(raw) as {
-        outcome: PickemOutcome;
-        score: PickemScore | null;
-      };
-      const handle = window.setTimeout(() => {
+    const handle = window.setTimeout(() => {
+      try {
+        const raw = window.sessionStorage.getItem(draftKey);
+        if (!raw) return;
+        window.sessionStorage.removeItem(draftKey);
+        const draft = JSON.parse(raw) as {
+          outcome: PickemOutcome;
+          score: PickemScore | null;
+        };
         if (card.outcomes.includes(draft.outcome)) {
           setOutcome(draft.outcome);
-          setScore(draft.score);
+          setSelection(draft.score);
         }
-      }, 0);
-      return () => window.clearTimeout(handle);
-    } catch {
-      // An unavailable storage device does not prevent normal picking.
-    }
+      } catch {
+        // An unavailable storage device does not prevent normal picking.
+      }
+    }, 0);
+    return () => window.clearTimeout(handle);
   }, [card.outcomes, card.status, draftKey]);
 
   async function submit() {
@@ -299,7 +307,7 @@ export function PickemMatchCard({
                   checked={key === outcome}
                   onChange={() => {
                     setOutcome(key);
-                    setScore(null);
+                    setSelection(null);
                     setNotice("");
                   }}
                 />
@@ -310,12 +318,11 @@ export function PickemMatchCard({
           </fieldset>
           {outcome && card.scoreRules && (
             <ScoreFields
-              key={outcome}
               card={card}
-              score={score}
+              score={selection}
               outcome={outcome}
               disabled={!editable || sending}
-              onChange={setScore}
+              onChange={setSelection}
             />
           )}
           <p className={styles.muted} id={disclosureId}>

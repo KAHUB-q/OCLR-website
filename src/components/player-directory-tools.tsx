@@ -19,6 +19,7 @@ import {
 import styles from "./player-directory-tools.module.css";
 
 const changeEvent = "oclr-player-directory-change";
+const filterKeys = directoryKeys.filter((key) => key !== "group");
 function subscribe(callback: () => void) {
   window.addEventListener("popstate", callback);
   window.addEventListener(changeEvent, callback);
@@ -49,7 +50,7 @@ export function usePlayerDirectory<T extends DirectoryPlayer>(
   function update(values: Partial<typeof state>, reset = false) {
     const next = new URLSearchParams(query);
     // Retain edition/preview context and unrelated legacy display parameters.
-    if (reset) directoryKeys.forEach((key) => next.delete(key));
+    if (reset) filterKeys.forEach((key) => next.delete(key));
     for (const [key, value] of Object.entries(values)) {
       if (value) next.set(key, value);
       else next.delete(key);
@@ -125,11 +126,8 @@ export function PlayerDirectoryTools({
     coach: tr("Coach"),
     free_agent: tr("Free agent"),
   };
-  const active = directoryKeys.filter(
-    (key) =>
-      !["group"].includes(key) &&
-      state[key] &&
-      !(key === "sort" && state.sort === "default"),
+  const active = filterKeys.filter(
+    (key) => state[key] && !(key === "sort" && state.sort === "default"),
   );
   const rangeActive = Object.keys(rangeLabels).filter(
     (key) => state[key as DirectoryRangeKey],
@@ -413,7 +411,6 @@ export function PlayerDirectoryTools({
                     role: tr("Role"),
                     sort: tr("Sort players"),
                     ...rangeLabels,
-                    group: "",
                   }[key]
                 }
                 {`: ${key === "sort" ? (labels[state.sort as keyof typeof labels] ?? state.sort) : key === "team" ? (options.teams.find((t) => t.id === state.team)?.name ?? (state.team === "free_agent" ? tr("Free agent") : state.team)) : key === "role" ? (roleLabels[state.role] ?? state.role) : state[key]}`}{" "}

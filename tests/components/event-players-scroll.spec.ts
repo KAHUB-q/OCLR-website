@@ -7,6 +7,40 @@ test.beforeEach(async ({ page }) => {
   await page.route("**/api/osu-images/avatar/*", (route) => route.abort());
 });
 
+test("clearing filters keeps the selected registration list", async ({
+  page,
+}) => {
+  await page.goto("/event-players?theme=light#players");
+  const list = page.getByRole("button", { name: "Registration list" });
+  const search = page.getByRole("searchbox", { name: "Search players" });
+  await list.click();
+  const listUrl = page.url();
+  for (const query of ["Subset", "missing-player-name"]) {
+    await search.fill(query);
+    const filteredUrl = page.url();
+    const clear = page.getByRole("button", { name: "Clear filters" });
+    if (query === "Subset") {
+      await clear.click();
+    } else {
+      await page
+        .locator(".notice")
+        .getByRole("button", { name: "Clear filters" })
+        .click();
+    }
+    await expect(page).toHaveURL(listUrl);
+    await expect(list).toHaveAttribute("aria-pressed", "true");
+    await expect(search).toHaveValue("");
+    await expect(
+      page.getByText("105 / 105 Players", { exact: true }),
+    ).toBeVisible();
+    await page.goBack();
+    await expect(page).toHaveURL(filteredUrl);
+    await expect(search).toHaveValue(query);
+    await page.goForward();
+    await expect(page).toHaveURL(listUrl);
+  }
+});
+
 test("a shared range stays editable when its last digit is erased", async ({
   page,
 }) => {

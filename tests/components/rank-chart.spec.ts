@@ -13,6 +13,40 @@ test("unranked days retain the dates of earlier ranks", async ({ page }) => {
     await expect(page.locator(".rank-chart-tip")).toContainText("Nov 4, 2026");
   }
 });
+test("equal ranks on two observed dates still show a trend", async ({
+  page,
+}) => {
+  await page.goto("/rank-chart?gaps=flat");
+  const chart = page.locator(".rank-chart-svg");
+  await expect(chart).toBeVisible();
+  const box = (await chart.boundingBox())!;
+  for (const [x, date] of [
+    [10, "Nov 1, 2026"],
+    [box.width - 10, "Nov 4, 2026"],
+  ] as const) {
+    await page.mouse.move(box.x + x, box.y + box.height / 2);
+    await expect(page.locator(".rank-chart-tip")).toContainText("#15,000");
+    await expect(page.locator(".rank-chart-tip")).toContainText(date);
+  }
+});
+
+test("a single rank date keeps the profile statistics in one column", async ({
+  page,
+}) => {
+  for (const query of [
+    "gaps=today",
+    "gaps=trailing&unranked",
+    "gaps=trailing&legacy",
+    "gaps=empty",
+  ]) {
+    await page.goto(`/rank-chart?${query}`);
+    await expect(
+      page.locator(".profile-body--single .profile-statistics"),
+    ).toBeVisible();
+    await expect(page.locator(".rank-chart-card")).toHaveCount(0);
+  }
+});
+
 test("snapshot dates stay fixed across midnight and repeated pointer visits", async ({
   page,
 }) => {

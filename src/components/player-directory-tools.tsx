@@ -134,12 +134,18 @@ export function PlayerDirectoryTools({
   const rangeActive = Object.keys(rangeLabels).filter(
     (key) => state[key as DirectoryRangeKey],
   ).length;
+  const revealFilters = errors.length > 0 || rangeActive > 0;
+  const [expanded, setExpanded] = useState(revealFilters);
+  const [advancedOpen, setAdvancedOpen] = useState(revealFilters);
+  const [editingMetric, setEditingMetric] = useState<
+    (typeof directoryMetrics)[number] | null
+  >(null);
   const visibleMetrics = directoryMetrics.filter(
     (metric) =>
-      options[metric] || state[`${metric}Min`] || state[`${metric}Max`],
-  );
-  const [expanded, setExpanded] = useState(
-    () => errors.length > 0 || rangeActive > 0,
+      options[metric] ||
+      state[`${metric}Min`] ||
+      state[`${metric}Max`] ||
+      metric === editingMetric,
   );
   const reset = () => update({}, true);
   const field = (
@@ -254,7 +260,8 @@ export function PlayerDirectoryTools({
         {visibleMetrics.length > 0 && (
           <details
             className={styles.advanced}
-            open={errors.length > 0 || rangeActive > 0 || undefined}
+            open={advancedOpen}
+            onToggle={(event) => setAdvancedOpen(event.currentTarget.open)}
           >
             <summary>
               <svg
@@ -291,7 +298,15 @@ export function PlayerDirectoryTools({
             </summary>
             <div className={styles.ranges}>
               {visibleMetrics.map((metric) => (
-                <fieldset key={metric} className={styles.rangeGroup}>
+                <fieldset
+                  key={metric}
+                  className={styles.rangeGroup}
+                  onFocus={() => setEditingMetric(metric)}
+                  onBlur={(event) => {
+                    if (!event.currentTarget.contains(event.relatedTarget))
+                      setEditingMetric(null);
+                  }}
+                >
                   <legend>{metricLabels[metric]}</legend>
                   <div className={styles.rangeFields}>
                     {field(metric, "Min")}

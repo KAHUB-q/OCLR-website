@@ -7,6 +7,54 @@ test.beforeEach(async ({ page }) => {
   await page.route("https://a.ppy.sh/**", (route) => route.abort());
 });
 
+test("a shared range stays editable when its last digit is erased", async ({
+  page,
+}) => {
+  await page.goto("/event-players?group=list&rankMin=7");
+  const minimum = page.getByRole("textbox", {
+    name: "Global rank minimum (number)",
+  });
+  const summary = page
+    .locator("summary")
+    .filter({ hasText: "Advanced filters" });
+  await minimum.press("End");
+  await page.keyboard.press("Backspace");
+  await expect(minimum).toBeFocused();
+  await expect(page).not.toHaveURL(/rankMin=/);
+  await page.keyboard.type("42");
+  await expect(minimum).toHaveValue("42");
+  await expect(
+    page.getByRole("status").filter({ hasText: "64 / 105 Players" }),
+  ).toBeVisible();
+  await page.goBack();
+  await expect(minimum).toHaveValue("4");
+  await page.goForward();
+  await expect(minimum).toHaveValue("42");
+  await summary.press("Enter");
+  await expect(minimum).toBeHidden();
+  await summary.press("Enter");
+  await expect(minimum).toBeVisible();
+});
+
+test("a shared range without season data stays available until focus leaves its fields", async ({
+  page,
+}) => {
+  await page.goto("/event-players?unranked=1&rankMin=7");
+  const minimum = page.getByRole("textbox", {
+    name: "Global rank minimum (number)",
+  });
+  const maximum = page.getByRole("textbox", {
+    name: "Global rank maximum (number)",
+  });
+  await minimum.press("End");
+  await page.keyboard.press("Backspace");
+  await expect(minimum).toBeFocused();
+  await page.keyboard.press("Tab");
+  await expect(maximum).toBeFocused();
+  await page.getByRole("searchbox", { name: "Search players" }).focus();
+  await expect(minimum).toHaveCount(0);
+});
+
 test("a shared rank sort stays selected in a season without ranks", async ({
   page,
 }) => {

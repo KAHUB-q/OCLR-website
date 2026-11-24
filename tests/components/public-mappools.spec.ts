@@ -1,7 +1,7 @@
 import { test, expect } from "@playwright/test";
 
 test.beforeEach(async ({ page }) => {
-  await page.route("https://assets.ppy.sh/**", (route) =>
+  await page.route("**/api/osu-images/{cover,list}/*", (route) =>
     route.fulfill({
       contentType: "image/svg+xml",
       body: '<svg xmlns="http://www.w3.org/2000/svg" width="400" height="180"><rect width="400" height="180" fill="#6b417f"/></svg>',
@@ -300,6 +300,22 @@ test("difficulty choices stay consistent across native/archive cards, tables and
     await expect(dialog).not.toContainText("6.80 ★");
     await page.keyboard.press("Escape");
     await toggle.uncheck();
+    await expect(row).toContainText("5.7");
+    const ez = selector.getByRole("button", { name: "EZ", exact: true });
+    await expect(selector.getByRole("button", { pressed: true })).toHaveCount(
+      0,
+    );
+    await toggle.check();
+    await expect(ez).toHaveAttribute("aria-pressed", "true");
+    await expect(row).toContainText("3.1");
+    await toggle.uncheck();
+    await ez.click();
+    await expect(toggle).toBeChecked();
+    await expect(ez).toHaveAttribute("aria-pressed", "true");
+    await expect(row).toContainText("3.1");
+    await ez.click();
+    await expect(toggle).toBeChecked();
+    await expect(ez).toHaveAttribute("aria-pressed", "false");
     await expect(row).toContainText("5.7");
     expect(
       await page.evaluate(

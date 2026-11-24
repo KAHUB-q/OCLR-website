@@ -163,13 +163,24 @@ export function PickemMatchCard({
 
   useEffect(() => {
     if (card.status !== "open") return;
-    const timeout = window.setTimeout(
-      () => {
-        setChecking(true);
-        router.refresh();
-      },
-      Math.min(Math.max(deadline - Date.parse(serverNow), 0) + 100, 2147483647),
-    );
+    const delay = Math.max(deadline - Date.parse(serverNow), 0) + 100;
+    const checkAt = performance.now() + delay;
+    let timeout: number;
+    function schedule(remaining: number) {
+      timeout = window.setTimeout(
+        () => {
+          const left = Math.ceil(checkAt - performance.now());
+          if (left > 0) {
+            schedule(left);
+            return;
+          }
+          setChecking(true);
+          router.refresh();
+        },
+        Math.min(remaining, 2_147_483_647),
+      );
+    }
+    schedule(delay);
     return () => window.clearTimeout(timeout);
   }, [card.status, deadline, router, serverNow]);
 

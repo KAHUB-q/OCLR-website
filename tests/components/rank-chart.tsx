@@ -21,6 +21,7 @@ const samples: Record<string, (number | null)[]> = {
   one: [16200, null, 15500, 15000],
   two: [16200, null, null, 15000],
   trailing: [16200, null, null, null],
+  ended: [16200, 15000, null, null],
   flat: [15000, null, null, null],
   today: [null, null, null, 16200],
   empty: [],

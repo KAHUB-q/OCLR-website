@@ -4,7 +4,41 @@ test.beforeEach(async ({ page }) => {
   await page.route("**/api/tournaments/synthetic/players/*/messages", (route) =>
     route.fulfill({ json: [] }),
   );
-  await page.route("https://a.ppy.sh/**", (route) => route.abort());
+  await page.route("**/api/osu-images/avatar/*", (route) => route.abort());
+});
+
+test("clearing filters keeps the selected registration list", async ({
+  page,
+}) => {
+  await page.goto("/event-players?theme=light#players");
+  const list = page.getByRole("button", { name: "Registration list" });
+  const search = page.getByRole("searchbox", { name: "Search players" });
+  await list.click();
+  const listUrl = page.url();
+  for (const query of ["Subset", "missing-player-name"]) {
+    await search.fill(query);
+    const filteredUrl = page.url();
+    const clear = page.getByRole("button", { name: "Clear filters" });
+    if (query === "Subset") {
+      await clear.click();
+    } else {
+      await page
+        .locator(".notice")
+        .getByRole("button", { name: "Clear filters" })
+        .click();
+    }
+    await expect(page).toHaveURL(listUrl);
+    await expect(list).toHaveAttribute("aria-pressed", "true");
+    await expect(search).toHaveValue("");
+    await expect(
+      page.getByText("105 / 105 Players", { exact: true }),
+    ).toBeVisible();
+    await page.goBack();
+    await expect(page).toHaveURL(filteredUrl);
+    await expect(search).toHaveValue(query);
+    await page.goForward();
+    await expect(page).toHaveURL(listUrl);
+  }
 });
 
 test("a shared range stays editable when its last digit is erased", async ({
@@ -78,6 +112,39 @@ test("a shared rank sort stays selected in a season without ranks", async ({
   await page.goBack();
   await expect(sort).toHaveValue("rank-asc");
   await expect(rows).toHaveText(["Subset Player 001", "Subset Player 002"]);
+});
+
+test("shared team and role filters stay selected when absent from the season", async ({
+  page,
+}) => {
+  await page.goto(
+    "/event-players?unranked=1&team=Former%20team&role=captain&q=002",
+  );
+  const rows = page.locator(".event-player-row h3");
+  await expect(page.getByText("No players match your search.")).toBeVisible();
+  const filters = page.getByRole("button", { name: /^Filters/ });
+  if (await filters.isVisible()) await filters.click();
+  const team = page.getByRole("combobox", { name: "Team", exact: true });
+  const role = page.getByRole("combobox", { name: "Role", exact: true });
+  await expect(team).toHaveValue("Former team");
+  await expect(team.locator("option:checked")).toHaveText("Former team");
+  await expect(role).toHaveValue("captain");
+  await expect(role.locator("option:checked")).toHaveText("Captain");
+  await team.selectOption("");
+  await expect(team.getByRole("option", { name: "Former team" })).toHaveCount(
+    0,
+  );
+  await expect(role).toHaveValue("captain");
+  await expect(rows).toHaveCount(0);
+  await role.selectOption("");
+  await expect(role).toHaveCount(0);
+  await expect(rows).toHaveText(["Subset Player 002"]);
+  await page.goBack();
+  await expect(role).toHaveValue("captain");
+  await expect(team).toHaveValue("");
+  await page.goBack();
+  await expect(team).toHaveValue("Former team");
+  await expect(rows).toHaveCount(0);
 });
 
 test("scrolling appends successive batches and retains the existing player rows", async ({

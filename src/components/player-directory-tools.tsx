@@ -19,6 +19,7 @@ import {
 import styles from "./player-directory-tools.module.css";
 
 const changeEvent = "oclr-player-directory-change";
+const filterKeys = directoryKeys.filter((key) => key !== "group");
 function subscribe(callback: () => void) {
   window.addEventListener("popstate", callback);
   window.addEventListener(changeEvent, callback);
@@ -49,7 +50,7 @@ export function usePlayerDirectory<T extends DirectoryPlayer>(
   function update(values: Partial<typeof state>, reset = false) {
     const next = new URLSearchParams(query);
     // Retain edition/preview context and unrelated legacy display parameters.
-    if (reset) directoryKeys.forEach((key) => next.delete(key));
+    if (reset) filterKeys.forEach((key) => next.delete(key));
     for (const [key, value] of Object.entries(values)) {
       if (value) next.set(key, value);
       else next.delete(key);
@@ -87,6 +88,13 @@ export function PlayerDirectoryTools({
   const id = useId();
   const { state, update, rows, total, options, errors, waitingForRating } =
     directory;
+  const teamLabels = new Map(options.teams.map((team) => [team.id, team.name]));
+  if (options.freeAgent || state.team === "free_agent")
+    teamLabels.set("free_agent", tr("Free agent"));
+  if (state.team && !teamLabels.has(state.team))
+    teamLabels.set(state.team, state.team);
+  const roles = new Set(options.roles);
+  if (state.role) roles.add(state.role);
   const labels = {
     default: tr("Default order"),
     "name-asc": tr("Username A–Z"),
@@ -125,11 +133,8 @@ export function PlayerDirectoryTools({
     coach: tr("Coach"),
     free_agent: tr("Free agent"),
   };
-  const active = directoryKeys.filter(
-    (key) =>
-      !["group"].includes(key) &&
-      state[key] &&
-      !(key === "sort" && state.sort === "default"),
+  const active = filterKeys.filter(
+    (key) => state[key] && !(key === "sort" && state.sort === "default"),
   );
   const rangeActive = Object.keys(rangeLabels).filter(
     (key) => state[key as DirectoryRangeKey],
@@ -148,6 +153,8 @@ export function PlayerDirectoryTools({
       metric === editingMetric,
   );
   const reset = () => update({}, true);
+  const roleLabel = (role: string) =>
+    Object.hasOwn(roleLabels, role) ? roleLabels[role] : role;
   const field = (
     metric: (typeof directoryMetrics)[number],
     bound: "Min" | "Max",
@@ -220,7 +227,7 @@ export function PlayerDirectoryTools({
         id={`${id}-filters`}
         className={`${styles.filters} ${expanded ? styles.expanded : ""}`}
       >
-        {(options.teams.length > 0 || options.freeAgent) && (
+        {teamLabels.size > 0 && (
           <label className="field">
             <span>{tr("Team")}</span>
             <select
@@ -229,18 +236,15 @@ export function PlayerDirectoryTools({
               onChange={(e) => update({ team: e.target.value })}
             >
               <option value="">{tr("All teams")}</option>
-              {options.teams.map((t) => (
-                <option key={t.id} value={t.id}>
-                  {t.name}
+              {[...teamLabels].map(([value, label]) => (
+                <option key={value} value={value}>
+                  {label}
                 </option>
               ))}
-              {options.freeAgent && (
-                <option value="free_agent">{tr("Free agent")}</option>
-              )}
             </select>
           </label>
         )}
-        {options.roles.length > 1 && (
+        {(roles.size > 1 || state.role !== "") && (
           <label className="field">
             <span>{tr("Role")}</span>
             <select
@@ -249,9 +253,9 @@ export function PlayerDirectoryTools({
               onChange={(e) => update({ role: e.target.value })}
             >
               <option value="">{tr("All roles")}</option>
-              {options.roles.map((role) => (
+              {[...roles].map((role) => (
                 <option key={role} value={role}>
-                  {roleLabels[role] ?? role}
+                  {roleLabel(role)}
                 </option>
               ))}
             </select>
@@ -413,10 +417,9 @@ export function PlayerDirectoryTools({
                     role: tr("Role"),
                     sort: tr("Sort players"),
                     ...rangeLabels,
-                    group: "",
                   }[key]
                 }
-                {`: ${key === "sort" ? (labels[state.sort as keyof typeof labels] ?? state.sort) : key === "team" ? (options.teams.find((t) => t.id === state.team)?.name ?? (state.team === "free_agent" ? tr("Free agent") : state.team)) : key === "role" ? (roleLabels[state.role] ?? state.role) : state[key]}`}{" "}
+                {`: ${key === "sort" ? (labels[state.sort as keyof typeof labels] ?? state.sort) : key === "team" ? teamLabels.get(state.team) : key === "role" ? roleLabel(state.role) : state[key]}`}{" "}
                 <span aria-hidden="true">×</span>
                 <span className="sr-only"> {tr("Remove filter")}</span>
               </button>

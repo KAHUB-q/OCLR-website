@@ -55,7 +55,7 @@ for (const theme of ["light", "dark"]) {
 test("only Friday through the following Monday are offered across week navigation and Today", async ({
   page,
 }) => {
-  await page.clock.install({ time: new Date("2026-11-03T04:00:00Z") });
+  await page.clock.install({ time: new Date("2026-11-03T10:00:00Z") });
   await page.goto("/schedule-selection?captain");
   const shortcuts = page.getByRole("group", { name: "Week", exact: true });
   expect(
@@ -99,6 +99,14 @@ test("only Friday through the following Monday are offered across week navigatio
   await date.fill("2026-11-02");
   await page.getByRole("button", { name: "Today", exact: true }).click();
   await expect(date).toHaveValue("2026-11-06");
+  const fridayEvening = page.locator(
+    '[data-day="2026-11-06"] th[data-start="2026-11-06T10:00:00.000Z"]',
+  );
+  await expect(fridayEvening).toBeInViewport({ ratio: 1 });
+  await shortcuts
+    .getByRole("button", { name: "Overview", exact: true })
+    .click();
+  await expect(fridayEvening).toBeInViewport({ ratio: 1 });
 });
 test("hidden midweek records survive saving the four-day timetable", async ({
   page,

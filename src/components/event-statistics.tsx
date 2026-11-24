@@ -1,6 +1,8 @@
 "use client";
+import { selectFragment, useUrlFragment } from "./url-fragment";
 import { StatisticsNotice } from "./statistics-notice";
 import { useMemo, useState } from "react";
+import { useFormatter } from "next-intl";
 import {
   rateSeasonSeries,
   seasonSeriesOptions,
@@ -14,21 +16,33 @@ import { eventMappoolRows } from "@/lib/archive-mappool-statistics";
 import type { EventScore } from "@/lib/event-statistics";
 import {
   eventGameKey,
+  eventTeamGameKey,
   eventTeamGames,
   eventMapKey,
   eventPlacementRows,
   groupEventMaps,
 } from "@/lib/event-statistics-model";
 const views = [
-  "Performance scores",
-  "Mappool statistics",
-  "Individual leaderboard",
-  "Team leaderboard",
-  "Team placements",
-  "Solo placements",
-  "YumuRating Series",
+  { id: "performance", label: "Performance scores", sort: "Average score" },
+  { id: "mappools", label: "Mappool statistics", sort: "Map" },
+  {
+    id: "individual-leaderboard",
+    label: "Individual leaderboard",
+    sort: "Score",
+  },
+  { id: "team-leaderboard", label: "Team leaderboard", sort: "Team score" },
+  { id: "team-placements", label: "Team placements", sort: "Average score" },
+  { id: "solo-placements", label: "Solo placements", sort: "Average score" },
+  { id: "yumu-rating-series", label: "YumuRating Series", sort: "MRA" },
 ];
 const SERIES_VIEW = views.length - 1;
+const percentageColumns = new Set([
+  "Accuracy",
+  "Average accuracy",
+  "Participation rate",
+  "Pick rate",
+  "Ban rate",
+]);
 export function EventStatistics({
   scores,
   coverage,
@@ -41,13 +55,17 @@ export function EventStatistics({
   edition?: string;
 }) {
   const tr = useAppTranslations();
-  const [view, setView] = useState(!scores.length && series ? SERIES_VIEW : 0),
-    [round, setRound] = useState(""),
+  const fragment = useUrlFragment();
+  const selected = views.findIndex(({ id }) => fragment === `#${id}`);
+  const view =
+    selected >= 0 ? selected : !scores.length && series ? SERIES_VIEW : 0;
+  const [previousView, setPreviousView] = useState(view);
+  const [round, setRound] = useState(""),
     [team, setTeam] = useState(""),
     [slot, setSlot] = useState(""),
     [query, setQuery] = useState("");
   const showSeries = view === SERIES_VIEW;
-  const [sort, setSort] = useState(showSeries ? "MRA" : "Average score"),
+  const [sort, setSort] = useState(views[view].sort),
     [descending, setDescending] = useState(true);
   const seriesOptions = useMemo(() => seasonSeriesOptions(series), [series]);
   const ranking = useMemo(
@@ -64,8 +82,9 @@ export function EventStatistics({
   const coverageFixtures = coverage?.fixtures.filter(
     (f) => !round || f.stage === round,
   );
-  const number = (v: number, d = 0) =>
-    v.toLocaleString(tr.locale, { maximumFractionDigits: d });
+  const format = useFormatter();
+  const number = (value: number, maximumFractionDigits = 0) =>
+    format.number(value, { maximumFractionDigits });
   const avg = (s: EventScore[], key: "score" | "accuracy") => {
     const values = s.flatMap((p) => (p[key] === null ? [] : [p[key]!]));
     return values.length
@@ -76,11 +95,6 @@ export function EventStatistics({
   type Row = Record<string, Cell>;
   let columns: string[] = [];
   let rows: Row[] = [];
-  const keys = [
-    ...new Set(
-      plays.map((s) => (view === 3 || view === 4 ? s.teamId : s.osuId)),
-    ),
-  ];
   const poolFixtures = coverage?.poolFixtures;
   const maps = groupEventMaps(view >= 4 ? eligible : plays);
   const placementLabels = new Map<string, string>(
@@ -118,8 +132,26 @@ export function EventStatistics({
       "Mods",
       "Match",
     ];
-    rows = keys.map((id) => {
-      const p = plays.filter((s) => s.osuId === id);
+    const highestByGame = new Map<string, number>();
+    const gamesByTeam = new Map<string, Set<string>>();
+    // MVPs are compared with the entire game, including teams hidden by the filter.
+    for (const play of eligible) {
+      const game = eventGameKey(play);
+      highestByGame.set(
+        game,
+        Math.max(highestByGame.get(game) ?? -Infinity, play.score),
+      );
+      const games = gamesByTeam.get(play.teamId);
+      if (games) games.add(game);
+      else gamesByTeam.set(play.teamId, new Set([game]));
+    }
+    const playsByPlayer = new Map<number, EventScore[]>();
+    for (const play of plays) {
+      const player = playsByPlayer.get(play.osuId);
+      if (player) player.push(play);
+      else playsByPlayer.set(play.osuId, [play]);
+    }
+    rows = [...playsByPlayer.values()].map((p) => {
       const best = [...p].sort(
         (a, b) =>
           b.score - a.score ||
@@ -132,18 +164,9 @@ export function EventStatistics({
         Team: best.team,
         MC: p[0].mc ?? null,
         Played: p.length,
-        "Participation rate":
-          p.length /
-          new Set(
-            eligible.filter((s) => s.teamId === best.teamId).map(eventGameKey),
-          ).size,
+        "Participation rate": p.length / gamesByTeam.get(best.teamId)!.size,
         MVPs: p.filter(
-          (s) =>
-            !eligible.some(
-              (other) =>
-                eventGameKey(other) === eventGameKey(s) &&
-                other.score > s.score,
-            ),
+          (play) => play.score === highestByGame.get(eventGameKey(play)),
         ).length,
         "Average score": avg(p, "score"),
         "Average accuracy": avg(p, "accuracy"),
@@ -248,6 +271,10 @@ export function EventStatistics({
         "Raw MP score",
         "Score multiplier",
       );
+    const teamTotals =
+      view === 3
+        ? new Map(eventTeamGames(plays).map(({ key, total }) => [key, total]))
+        : null;
     rows = plays.map((s) => ({
       _osuId: s.osuId,
       Map: s.slot,
@@ -261,11 +288,7 @@ export function EventStatistics({
       Combo: s.combo,
       Mods: s.mods,
       Match: s.mp,
-      "Team score": plays
-        .filter(
-          (p) => eventGameKey(p) === eventGameKey(s) && p.teamId === s.teamId,
-        )
-        .reduce((n, p) => n + p.score, 0),
+      "Team score": teamTotals?.get(eventTeamGameKey(s)) ?? null,
     }));
   } else if (ranking) {
     columns = ["Player", "Team", "Appearances", "MRA", "ERA", "DRA", "RWS"];
@@ -289,14 +312,18 @@ export function EventStatistics({
     ];
     rows = eventPlacementRows(eligible, view === 4 ? "team" : "player", team);
   }
+  const needle = query.trim().toLowerCase();
   rows = rows.filter(
     (row) =>
       showSeries ||
+      !needle ||
       columns.some((column) => {
         const value = row[column];
-        return String(value ?? "")
-          .toLowerCase()
-          .includes(query.toLowerCase());
+        const raw = String(value ?? "").toLowerCase();
+        if (raw.includes(needle)) return true;
+        if (typeof value !== "number") return false;
+        const displayed = cell(column, value, row);
+        return typeof displayed === "string" && displayed.includes(needle);
       }),
   );
   rows.sort((a, b) => {
@@ -335,16 +362,11 @@ export function EventStatistics({
       );
     if (key === "Map ID" && typeof value === "number")
       return <a href={`https://osu.ppy.sh/b/${value}`}>{value} ↗</a>;
-    if (typeof value === "number" && ["MRA", "ERA", "DRA", "RWS"].includes(key))
+    if (typeof value !== "number") return value;
+    if (percentageColumns.has(key)) return `${number(value * 100, 2)}%`;
+    if (["MRA", "ERA", "DRA", "RWS", "Score multiplier"].includes(key))
       return number(value, 4);
-    if (typeof value === "number")
-      return /accuracy|rate/i.test(key)
-        ? `${number(value * 100, 2)}%`
-        : number(
-            value,
-            key === "Score multiplier" ? 4 : /MC|placement/.test(key) ? 3 : 0,
-          );
-    return value;
+    return number(value, key === "MC" || key === "Average placement" ? 3 : 0);
   }
   function filters(index: number) {
     const isSeries = index === SERIES_VIEW;
@@ -389,6 +411,14 @@ export function EventStatistics({
             ).map((m) => ({ value: m.key, label: m.label })),
       },
     ];
+  }
+  if (view !== previousView) {
+    setPreviousView(view);
+    setSort(views[view].sort);
+    if (showSeries) setDescending(true);
+    for (const { value, set, options } of filters(view)) {
+      if (value && !options.some((option) => option.value === value)) set("");
+    }
   }
   return (
     <section className="event-statistics">
@@ -468,30 +498,11 @@ export function EventStatistics({
         </section>
       )}
       <div className="event-tabs">
-        {views.map((label, i) => (
+        {views.map(({ id, label }, i) => (
           <button
-            key={label}
+            key={id}
             aria-pressed={view === i}
-            onClick={() => {
-              setView(i);
-              for (const { value, set, options } of filters(i)) {
-                if (value && !options.some((o) => o.value === value)) set("");
-              }
-              if (i === SERIES_VIEW) {
-                setSort("MRA");
-                setDescending(true);
-              } else {
-                setSort(
-                  i === 1
-                    ? "Map"
-                    : i === 2
-                      ? "Score"
-                      : i === 3
-                        ? "Team score"
-                        : "Average score",
-                );
-              }
-            }}
+            onClick={() => selectFragment(`#${id}`)}
           >
             {tr(label)}
           </button>
@@ -532,7 +543,7 @@ export function EventStatistics({
           <input value={query} onChange={(e) => setQuery(e.target.value)} />
         </label>
       </div>
-      <h2>{tr(views[view])}</h2>
+      <h2>{tr(views[view].label)}</h2>
       {ranking && (
         <>
           <p className="muted">
@@ -562,7 +573,7 @@ export function EventStatistics({
         className="event-table-scroll"
         tabIndex={0}
         role="region"
-        aria-label={tr(views[view])}
+        aria-label={tr(views[view].label)}
       >
         <table className="event-table">
           <thead>

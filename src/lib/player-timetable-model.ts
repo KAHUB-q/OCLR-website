@@ -1,4 +1,4 @@
-import { localDateTime } from "./edition-time";
+import { localDateTime, zonedInstants } from "./edition-time";
 import {
   normalizeSeasonAvailability,
   type AvailabilityState,
@@ -71,6 +71,26 @@ export function daySlots(date: string, timeZone: string) {
     dayCache.set(key, makeDaySlots(date, timeZone));
   }
   return dayCache.get(key)!;
+}
+
+export function timetableScrollInstant(
+  anchor: string,
+  date: string,
+  timeZone: string,
+) {
+  const local = localDateTime(anchor, timeZone);
+  // Both occurrences of a repeated hour share the same wall time.
+  if (local.slice(0, 10) === date) return anchor;
+  const time = local.slice(11);
+  const [instant] = zonedInstants(`${date}T${time}`, timeZone);
+  if (instant) return instant;
+  // A clock change can skip the requested time on the displayed date.
+  const slots = daySlots(date, timeZone);
+  return (
+    slots.find((slot) => slot.time >= time)?.start ??
+    slots.at(-1)?.start ??
+    anchor
+  );
 }
 
 /** Partial old ranges remain intact until the user deliberately paints them. */

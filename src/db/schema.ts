@@ -1,6 +1,7 @@
 import { sql } from "drizzle-orm";
 import { fixtureStatuses } from "../lib/fixture-status";
 import {
+  customType,
   pgEnum,
   doublePrecision,
   check,
@@ -178,6 +179,7 @@ export const oauthStates = pgTable(
     stateHash: text("state_hash").primaryKey(),
     desktopRequestId: uuid("desktop_request_id"),
     pickemReturnTo: text("pickem_return_to"),
+    chatReturnEdition: text("chat_return_edition"),
     expiresAt: timestamp("expires_at", { withTimezone: true }).notNull(),
   },
   (table) => [index("oauth_states_expiry_idx").on(table.expiresAt)],
@@ -3095,3 +3097,60 @@ export const pickemVisibility = pgTable(
   },
   (t) => [primaryKey({ columns: [t.editionSlug, t.userId] })],
 );
+
+export const osuImagePolicies = pgTable("osu_image_policies", {
+  kind: text("kind")
+    .$type<import("../lib/osu-image-urls").ImageKind>()
+    .primaryKey(),
+  ttlHours: integer("ttl_hours").notNull(),
+  capacityMiB: integer("capacity_mib").notNull(),
+  revision: integer("revision").notNull().default(0),
+});
+
+const imageBytes = customType<{ data: Buffer; driverData: Buffer }>({
+  dataType: () => "bytea",
+});
+export const osuCachedImages = pgTable(
+  "osu_cached_images",
+  {
+    variant: text("variant")
+      .$type<import("../lib/osu-image-urls").ImageVariant>()
+      .notNull(),
+    imageId: integer("image_id").notNull(),
+    kind: text("kind")
+      .notNull()
+      .references(() => osuImagePolicies.kind),
+    contentType: text("content_type").notNull(),
+    data: imageBytes("data").notNull(),
+    byteSize: integer("byte_size").notNull(),
+    etag: text("etag").notNull(),
+    fetchedAt: timestamp("fetched_at", { withTimezone: true }).notNull(),
+  },
+  (t) => [
+    primaryKey({ columns: [t.variant, t.imageId] }),
+    index("osu_images_eviction_idx").on(t.kind, t.fetchedAt),
+  ],
+);
+
+export const osuImageEvents = pgTable("osu_image_events", {
+  id: uuid("id").defaultRandom().primaryKey(),
+  actorId: bigint("actor_id", { mode: "number" })
+    .notNull()
+    .references(() => users.osuId),
+  kind: text("kind").notNull(),
+  operation: text("operation").notNull(),
+  details: jsonb("details").notNull(),
+  createdAt: timestamp("created_at", { withTimezone: true })
+    .notNull()
+    .defaultNow(),
+});
+
+export const chatRuleIndexes = pgTable("chat_rule_indexes", {
+  editionSlug: text("edition_slug")
+    .primaryKey()
+    .references(() => editionState.slug, { onDelete: "cascade" }),
+  fingerprint: text("fingerprint").notNull(),
+  sections: jsonb("sections")
+    .$type<import("../lib/chat-retrieval").ChatSource[]>()
+    .notNull(),
+});

@@ -11,7 +11,10 @@ export function SheetIcon({
     | "expand"
     | "check"
     | "ban"
-    | "copy";
+    | "copy"
+    | "upload"
+    | "download"
+    | "shield";
 }) {
   return (
     <svg
@@ -26,7 +29,14 @@ export function SheetIcon({
       aria-hidden="true"
       focusable="false"
     >
-      {kind === "reload" ? (
+      {kind === "shield" ? (
+        <path d="M12 3 4 6v5c0 5 3 8 8 10 5-2 8-5 8-10V6Z M12 8v4m0 3h.01" />
+      ) : kind === "upload" || kind === "download" ? (
+        <>
+          <path d="M4 16v4h16v-4M12 4v11" />
+          <path d={kind === "upload" ? "m7 9 5-5 5 5" : "m7 10 5 5 5-5"} />
+        </>
+      ) : kind === "reload" ? (
         <>
           <path d="M20 7v5h-5M4 17v-5h5" />
           <path d="M6.1 7a7 7 0 0 1 11.6-1L20 9M4 15l2.3 3A7 7 0 0 0 17.9 17" />

@@ -1,0 +1,160 @@
+.manager {
+  container-type: inline-size;
+  min-width: 0;
+}
+
+.notice {
+  display: flex;
+  align-items: flex-start;
+  gap: 0.75rem;
+  padding: 0.875rem 1rem;
+  border-inline-start: 3px solid var(--color-accent);
+  border-radius: 0.5rem;
+  background: color-mix(in srgb, var(--color-accent) 7%, var(--color-surface));
+}
+
+.notice svg {
+  flex: none;
+  margin-top: 0.2rem;
+  color: var(--color-accent);
+}
+
+.notice p {
+  margin: 0;
+  font-size: var(--text-support);
+  line-height: 1.65;
+}
+
+.toolbar {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.625rem;
+  margin-top: 1rem;
+}
+
+.toolbar button,
+.job .rowAction {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.5rem;
+}
+
+.toolbar svg,
+.rowAction svg {
+  flex: none;
+}
+
+.manager > p,
+.empty {
+  margin: 1rem 0 0;
+}
+
+.history,
+.restore {
+  margin-top: 1.5rem;
+  border-top: 1px solid var(--color-border);
+  padding-top: 1.25rem;
+}
+
+.heading {
+  margin: 0;
+  font-size: 1.125rem;
+}
+
+.jobs {
+  margin: 0.25rem 0 0;
+  padding: 0;
+  list-style: none;
+}
+
+.job {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  flex-wrap: wrap;
+  gap: 0.625rem 1rem;
+  padding-block: 1rem;
+}
+
+.job + .job {
+  border-top: 1px solid var(--color-border);
+}
+
+.job:last-child {
+  padding-bottom: 0;
+}
+
+.details {
+  min-width: 0;
+  display: grid;
+  gap: 0.25rem;
+}
+
+.summary {
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 0.375rem 0.625rem;
+}
+
+.status {
+  --tone: var(--color-muted);
+  display: inline-flex;
+  align-items: center;
+  gap: 0.375rem;
+  padding: 0.125rem 0.5rem;
+  border-radius: 999px;
+  background: color-mix(in srgb, var(--tone) 10%, var(--color-surface));
+  color: var(--tone);
+  font-size: var(--text-label);
+  font-weight: 650;
+}
+
+.status::before {
+  content: "";
+  width: 0.375rem;
+  height: 0.375rem;
+  border-radius: 50%;
+  background: currentColor;
+}
+
+.status:is([data-state="completed"], [data-state="validated"]) {
+  --tone: var(--color-success);
+}
+
+.status[data-state="failed"] {
+  --tone: var(--color-danger);
+}
+
+.status[data-state="running"] {
+  --tone: var(--color-accent);
+}
+
+.details time,
+.id,
+.empty {
+  color: var(--color-muted);
+  font-size: var(--text-support);
+}
+
+.id {
+  font-family: ui-monospace, monospace;
+  font-size: var(--text-label);
+  overflow-wrap: anywhere;
+}
+
+.restore {
+  overflow-wrap: anywhere;
+}
+
+@container (max-width: 27rem) {
+  .toolbar {
+    display: grid;
+  }
+
+  .job {
+    align-items: flex-start;
+    flex-direction: column;
+  }
+}

@@ -14,6 +14,8 @@ import {
   ruleExcerpts,
   type ChatSource,
 } from "./chat-retrieval";
+import { informationPreview } from "./tournament-information";
+import { tournamentTimeline } from "./tournament-timeline";
 import type { Edition } from "./editions";
 
 async function indexedRules(edition: Edition) {
@@ -114,7 +116,9 @@ export async function chatEvidence(
   if (!edition) throw new HttpError(404, "Tournament not found.");
   const base = "/tournaments/" + slug;
   const matchIntent =
-    /賽程|赛程|比[分賽赛]|賽果|赛果|下一[場场]|幾點|几点|對陣|对阵|schedule|match|score|result|fixture|when|who won/i;
+    /賽程|赛程|比[分賽赛]|賽果|赛果|下一[場场]|對陣|对阵|schedule|match|score|result|fixture|who won/i;
+  const timingIntent =
+    /時候|时候|[時时]間|时间|[幾几][點点號号月日]|哪[天日]|何[時时]|[開开]始|[開开][打賽赛放]|截止|[結结]束|日期|[賽赛]程|\b(?:when|start(?:s|ing)?|begins?|dates?|deadlines?|schedule|what time)\b/i;
   const poolIntent =
     /[圖图]池|曲池|mappool|map pool|beatmap|\b(?:nm|hd|hr|dt|fm|tb)\d*\b/i;
   const questionWithContext = question + " " + previous;
@@ -126,7 +130,24 @@ export async function chatEvidence(
   const sources = rankedSources(rules, question, 3);
   if (!sources.length && previous)
     sources.push(...rankedSources(rules, questionWithContext, 2));
-  if (matchIntent.test(intentText)) {
+  const timing = timingIntent.test(intentText);
+  if (timing && !edition.archive) {
+    const preview = informationPreview(slug);
+    const rows =
+      preview?.schedule ??
+      tournamentTimeline(edition, (label) => label, "en").schedule;
+    const zone = preview?.timeZone ?? edition.timeZone;
+    const timeline = rows.map((row) => ({
+      title: row.event,
+      url: base + "#schedule",
+      text: row.event + " · " + row.date + " (" + zone + ")",
+    }));
+    sources.push(...rankedSources(timeline, questionWithContext, 8, true));
+  }
+  if (
+    matchIntent.test(intentText) ||
+    (timing && (edition.archive || !sources.length))
+  ) {
     let fixtures = await matches(edition);
     const next = /下一[場场]|\bnext\b/i.test(intentText);
     if (next)
@@ -135,6 +156,10 @@ export async function chatEvidence(
           (f) =>
             f.time && Date.parse(f.time) >= now && !f.score && !f.cancelled,
         )
+        .sort((a, b) => Date.parse(a.time!) - Date.parse(b.time!));
+    else if (timing && edition.archive && !matchIntent.test(intentText))
+      fixtures = fixtures
+        .filter((f) => f.time && !f.cancelled)
         .sort((a, b) => Date.parse(a.time!) - Date.parse(b.time!));
     else
       fixtures.sort(

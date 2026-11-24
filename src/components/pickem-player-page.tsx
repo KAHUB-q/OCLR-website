@@ -15,6 +15,16 @@ import styles from "./pickem.module.css";
 type View = "matches" | "mine" | "leaderboard";
 type Query = Record<string, string | string[] | undefined>;
 
+const pageSize = 25;
+
+function displayPage<T>(rows: T[], requestedCursor: number) {
+  const cursor =
+    requestedCursor < rows.length
+      ? requestedCursor
+      : Math.floor(Math.max(0, rows.length - 1) / pageSize) * pageSize;
+  return { ...pickemPage(rows, cursor, pageSize), cursor };
+}
+
 export async function PickemPlayerPage({
   slug,
   view,
@@ -51,7 +61,7 @@ export async function PickemPlayerPage({
     .nonnegative()
     .max(100000)
     .safeParse(query.cursor);
-  const cursor = parsedCursor.success ? parsedCursor.data : 0;
+  const requestedCursor = parsedCursor.success ? parsedCursor.data : 0;
   const inRound = data.cards.filter(
     (card) => !round || card.roundId === round.id,
   );
@@ -95,12 +105,12 @@ export async function PickemPlayerPage({
   };
   const board = scope === "round" ? data.leaderboard : data.seasonLeaderboard;
   const myPlace = board.findIndex((row) => row.mine);
-  const boardPage = pickemPage(board, cursor);
-  const history = pickemPage(
+  const boardPage = displayPage(board, requestedCursor);
+  const history = displayPage(
     inRound.filter((card) => card.mine),
-    cursor,
+    requestedCursor,
   );
-  const visibleCards = pickemPage(
+  const visibleCards = displayPage(
     inRound.filter(
       (card) =>
         !status ||
@@ -108,7 +118,7 @@ export async function PickemPlayerPage({
         (status === "closed" && card.status === "pending") ||
         (status === "settled" && card.status === "void"),
     ),
-    cursor,
+    requestedCursor,
   );
   const relevantPage =
     view === "leaderboard"
@@ -399,17 +409,21 @@ export async function PickemPlayerPage({
           {list(boardPage.rows)}
           {myPlace >= 0 && (
             <Link
-              href={`${withQuery({ cursor: Math.floor(myPlace / 25) * 25 })}#my-rank`}
+              href={`${withQuery({ cursor: Math.floor(myPlace / pageSize) * pageSize })}#my-rank`}
             >
               {tr("Find my rank")}
             </Link>
           )}
         </section>
       )}
-      {(cursor > 0 || relevantPage.nextCursor !== null) && (
+      {(relevantPage.cursor > 0 || relevantPage.nextCursor !== null) && (
         <nav className={styles.filters} aria-label={tr("Pagination")}>
-          {cursor > 0 && (
-            <Link href={withQuery({ cursor: Math.max(0, cursor - 25) })}>
+          {relevantPage.cursor > 0 && (
+            <Link
+              href={withQuery({
+                cursor: Math.max(0, relevantPage.cursor - pageSize),
+              })}
+            >
               {tr("Previous")}
             </Link>
           )}

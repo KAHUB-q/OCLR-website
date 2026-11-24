@@ -1,0 +1,1 @@
+ALTER TABLE "osu_image_policies" ADD COLUMN "invalidated_at" timestamp with time zone;

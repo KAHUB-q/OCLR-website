@@ -45060,7 +45060,7 @@
       "post": {
         "operationId": "manageOsuImages",
         "summary": "Manage osu! image caching",
-        "description": "A global Admin can save the lifetime and capacity of one image category or refresh one official avatar or beatmapset background. A refreshed background also invalidates its cached list thumbnail.",
+        "description": "A global Admin can save the lifetime and capacity of one image category or mark all cached images in that category stale sitewide. Each image refreshes on its next request. Backgrounds include covers and list thumbnails.",
         "security": [
           {
             "browserSession": []
@@ -45131,7 +45131,7 @@
                     "properties": {
                       "action": {
                         "type": "string",
-                        "const": "refresh"
+                        "const": "refreshAll"
                       },
                       "kind": {
                         "type": "string",
@@ -45139,17 +45139,11 @@
                           "avatar",
                           "background"
                         ]
-                      },
-                      "imageId": {
-                        "type": "integer",
-                        "exclusiveMinimum": 0,
-                        "maximum": 2147483647
                       }
                     },
                     "required": [
                       "action",
-                      "kind",
-                      "imageId"
+                      "kind"
                     ],
                     "additionalProperties": false
                   }
@@ -45209,7 +45203,7 @@
             }
           },
           "400": {
-            "description": "Invalid cache policy or image ID.",
+            "description": "Invalid image cache command.",
             "content": {
               "application/json": {
                 "schema": {
@@ -45230,16 +45224,6 @@
           },
           "403": {
             "description": "Origin, authentication channel, or required staff permission rejected.",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/BrowserWriteError"
-                }
-              }
-            }
-          },
-          "404": {
-            "description": "Image not found.",
             "content": {
               "application/json": {
                 "schema": {
@@ -45280,16 +45264,6 @@
           },
           "500": {
             "description": "Unexpected failure.",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/BrowserWriteError"
-                }
-              }
-            }
-          },
-          "502": {
-            "description": "Official image unavailable.",
             "content": {
               "application/json": {
                 "schema": {

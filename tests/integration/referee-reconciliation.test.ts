@@ -20,9 +20,11 @@ import {
   mappools,
   fixtures,
   resultAuditEvents,
+  tournamentRounds,
 } from "../../src/db/schema";
 import {
   seedRefereeFixture,
+  syntheticRefereePolicy,
   refereeTestAdmin as admin,
   refereeTestUser as actor,
 } from "../fixtures/referee";
@@ -34,7 +36,10 @@ import {
   publicFixture,
 } from "../../src/lib/public-competition";
 import { refereeCommand } from "../../src/lib/referee";
-import { type RefereeWorkspace } from "../../src/lib/referee-workspace";
+import {
+  refereeWorkspace,
+  type RefereeWorkspace,
+} from "../../src/lib/referee-workspace";
 import {
   refereeReconciliation,
   reconcileRefereeAttempt,
@@ -82,31 +87,43 @@ describe.skipIf(!url)("saved referee MP reconciliation boundaries", () => {
     vi.stubEnv("APP_URL", origin);
     vi.stubEnv("ADMIN_OSU_IDS", String(admin.osuId));
   });
+  async function refereeStep(extra: Record<string, unknown>, user = actor) {
+    w = (
+      await refereeCommand(user, "test-cup", fixtureId, {
+        ...extra,
+        requestKey: randomUUID(),
+        expectedRevision: w.session?.revision ?? 0,
+        dependencyFingerprint: w.dependencyFingerprint,
+      })
+    ).workspace;
+  }
   async function prepareFixture(openExhibition = false) {
     await db().execute(sql`TRUNCATE edition_state,users CASCADE`);
-    const setup = await seedRefereeFixture(true, openExhibition);
+    const setup = await seedRefereeFixture(false, openExhibition);
     fixtureId = setup.fixtureId;
-    w = setup.workspace;
-    async function run(extra: Record<string, unknown>) {
-      w = (
-        await refereeCommand(actor, "test-cup", fixtureId, {
-          ...extra,
-          requestKey: randomUUID(),
-          expectedRevision: w.session?.revision ?? 0,
-          dependencyFingerprint: w.dependencyFingerprint,
-        })
-      ).workspace;
-    }
-    await run({
+    await db()
+      .update(tournamentRounds)
+      .set({ scoringRules: { ...setup.workspace.rules!, exPlayersPerTeam: 1 } })
+      .where(eq(tournamentRounds.id, setup.workspace.fixture.roundId));
+    w = await refereeWorkspace(admin, "test-cup", fixtureId);
+    await refereeStep(
+      {
+        action: "configure_policy",
+        policy: syntheticRefereePolicy,
+        expectedPolicyRevision: 0,
+      },
+      admin,
+    );
+    await refereeStep({
       action: "set_order",
       firstBanTeamId: w.teams[0].id,
       firstPickTeamId: w.teams[1].id,
     });
-    await run({
+    await refereeStep({
       action: "record_selection",
       entryId: w.maps.find((m) => m.beatmapId === 10004)!.id,
     });
-    await run({
+    await refereeStep({
       action: "record_selection",
       entryId: w.maps.find((m) => m.beatmapId === 10001)!.id,
     });
@@ -143,20 +160,10 @@ describe.skipIf(!url)("saved referee MP reconciliation boundaries", () => {
       .delete(matchImports)
       .where(eq(matchImports.id, result.latestImportId!));
 
-    async function record(payload: Record<string, unknown>) {
-      w = (
-        await refereeCommand(actor, "test-cup", fixtureId, {
-          ...payload,
-          requestKey: randomUUID(),
-          expectedRevision: w.session!.revision,
-          dependencyFingerprint: w.dependencyFingerprint,
-        })
-      ).workspace;
-    }
     const home = w.teams[0].id;
     const away = w.teams[1].id;
     const resolve = (winnerTeamId: string | null) =>
-      record({
+      refereeStep({
         action: "resolve_attempt",
         pickId: w.projection.lastSelectionId,
         status: winnerTeamId ? "completed" : "aborted",
@@ -178,17 +185,22 @@ describe.skipIf(!url)("saved referee MP reconciliation boundaries", () => {
     await expect(
       resultCommand(actor, "test-cup", fixtureId, submit(incomplete)),
     ).rejects.toMatchObject({ status: 409 });
+    await refereeStep({
+      action: "declare_ex",
+      pickId: w.projection.lastSelectionId,
+      enabled: true,
+    });
     await resolve(null);
-    await record({
+    await refereeStep({
       action: "replay_attempt",
       pickId: w.projection.lastSelectionId,
     });
     await resolve(home);
-    await record({
+    await refereeStep({
       action: "record_selection",
       entryId: w.maps.find((m) => m.beatmapId === 10005)!.id,
     });
-    await record({
+    await refereeStep({
       action: "record_selection",
       entryId: w.maps.find((m) => m.beatmapId === 10002)!.id,
     });
@@ -247,10 +259,11 @@ describe.skipIf(!url)("saved referee MP reconciliation boundaries", () => {
       mpUrl: null,
       games: [],
       refereeGames: [
-        { beatmapId: 10001, winnerTeamId: home },
+        { beatmapId: 10001, winnerTeamId: home, exMode: true },
         { beatmapId: 10002, winnerTeamId: home },
       ],
     });
+    expect(published?.result?.refereeGames?.[1].exMode).toBeUndefined();
     expect(published?.details).toBeNull();
     expect(await db().select().from(resultGameClaims)).toHaveLength(0);
     await resolve(away);
@@ -295,6 +308,11 @@ describe.skipIf(!url)("saved referee MP reconciliation boundaries", () => {
             detail: { matchId: syntheticMatchId },
           });
       }
+      await refereeStep({
+        action: "declare_ex",
+        pickId: w.projection.lastSelectionId,
+        enabled: true,
+      });
       const winner = w.teams[1].id;
       await refereeCommand(actor, "test-cup", fixtureId, {
         action: "resolve_attempt",
@@ -402,7 +420,7 @@ describe.skipIf(!url)("saved referee MP reconciliation boundaries", () => {
         homeWins: 0,
         awayWins: 1,
         games: [],
-        refereeGames: [{ winnerTeamId: winner }],
+        refereeGames: [{ winnerTeamId: winner, exMode: true }],
       });
       const detail = await publicFixture("test-cup", fixtureId);
       expect(detail?.result).toEqual(summary);
@@ -413,6 +431,11 @@ describe.skipIf(!url)("saved referee MP reconciliation boundaries", () => {
         expect(detail?.details?.games[0].scores[0].total).toBe(
           saved.games[0].scores[0].total,
         );
+        expect(detail?.details?.games.map((g) => g.exMode)).toEqual([
+          true,
+          undefined,
+          undefined,
+        ]);
         expect(detail?.details?.rating).toBeNull();
         if (evidence === "bound exhibition room") {
           expect(detail?.details?.games[2].scores).toContainEqual(

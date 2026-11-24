@@ -34,6 +34,7 @@ export type MatchDetailScore = {
   };
 };
 export type MatchDetailGame = {
+  exMode?: boolean;
   mpId: number;
   gameId: number;
   revision: string;
@@ -58,7 +59,7 @@ export type MatchDetailGame = {
   effectiveTotals: [number | null, number | null];
 };
 
-function uniqueBeatmap<T extends { beatmapId: number | null }>(
+export function uniqueBeatmap<T extends { beatmapId: number | null }>(
   entries: readonly T[],
   beatmapId: number | null,
 ): T | undefined {
@@ -267,6 +268,7 @@ export function reviewedMatchDetails(
       scores,
       proposal.teamIds,
     );
+    if (reviewed?.exMode) result.exMode = true;
     if (reviewed)
       result.effectiveTotals = [reviewed.homeScore, reviewed.awayScore];
     if (publicPool && snapshot?.poolId === publicPool.id) {

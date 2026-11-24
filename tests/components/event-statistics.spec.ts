@@ -32,6 +32,12 @@ test("all six statistics views preserve identity and same-name team filters", as
   await expect(rows).toHaveCount(2);
   await expect(player(11)).toContainText("90");
   await expect(player(22)).toContainText("50");
+  const mvps = page.getByRole("columnheader", { name: "MVPs", exact: true });
+  const mvpColumn = await mvps.evaluate(
+    (th: HTMLTableCellElement) => th.cellIndex,
+  );
+  await expect(player(11).locator("td").nth(mvpColumn)).toHaveText("2");
+  await expect(player(22).locator("td").nth(mvpColumn)).toHaveText("0");
   await expect(
     page.getByText("Players with data").locator("..").locator("strong"),
   ).toHaveText("2");
@@ -70,6 +76,8 @@ test("all six statistics views preserve identity and same-name team filters", as
     .click();
   await expect(rows).toHaveCount(1);
   await expect(player(22)).toContainText("50");
+  // Filtering out the winner must not award another team an MVP.
+  await expect(player(22).locator("td").nth(mvpColumn)).toHaveText("0");
   await page
     .getByRole("button", { name: "Mappool statistics", exact: true })
     .click();

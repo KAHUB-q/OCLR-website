@@ -109,12 +109,19 @@ export function eventPlacementRows(
 export function eventGameKey(score: Pick<EventScore, "fixture" | "game">) {
   return JSON.stringify([score.fixture, score.game]);
 }
+export function eventTeamGameKey(
+  score: Pick<EventScore, "fixture" | "game" | "teamId">,
+) {
+  return JSON.stringify([score.fixture, score.game, score.teamId]);
+}
 /** Team/game identity never depends on display names or delimiter concatenation. */
 export function eventTeamGames(plays: EventScore[]) {
   const groups = new Map<string, EventScore[]>();
   for (const score of plays) {
-    const key = JSON.stringify([score.fixture, score.game, score.teamId]);
-    groups.set(key, [...(groups.get(key) ?? []), score]);
+    const key = eventTeamGameKey(score);
+    const group = groups.get(key);
+    if (group) group.push(score);
+    else groups.set(key, [score]);
   }
   return [...groups]
     .map(([key, scores]) => ({

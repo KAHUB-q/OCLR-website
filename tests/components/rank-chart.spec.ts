@@ -1,4 +1,31 @@
 import { test, expect } from "@playwright/test";
+
+test("keyboard users can inspect observed ranks and leave the chart", async ({
+  page,
+}) => {
+  await page.goto("/rank-chart?gaps=one");
+  const slider = page.getByRole("slider", { name: "Global rank" });
+  const tip = page.locator(".rank-chart-tip");
+  await expect(slider).toHaveCount(1);
+  await slider.focus();
+  await expect(tip).toContainText("Nov 4, 2026");
+  await slider.press("Home");
+  await expect(tip).toContainText("Nov 1, 2026");
+  await slider.press("ArrowRight");
+  await expect(slider).toHaveAttribute("aria-valuetext", /15,500.*Nov 3, 2026/);
+  await expect(tip).toContainText("#15,500");
+  await slider.press("End");
+  await slider.press("ArrowRight");
+  await expect(tip).toContainText("Nov 4, 2026");
+  await slider.press("ArrowLeft");
+  await expect(tip).toContainText("Nov 3, 2026");
+  await slider.press("Tab");
+  await expect(tip).toHaveCount(0);
+  await page.keyboard.press("Shift+Tab");
+  await expect(slider).toBeFocused();
+  await expect(tip).toContainText("Nov 4, 2026");
+});
+
 test("unranked days retain the dates of earlier ranks", async ({ page }) => {
   for (const gaps of ["none", "one", "two", "trailing"]) {
     await page.goto(`/rank-chart?gaps=${gaps}`);
@@ -96,6 +123,9 @@ test("undated history shows ranks without inventing a calendar date", async ({
   await page.mouse.move(box.x + box.width - 10, box.y + box.height / 2);
   await expect(page.locator(".rank-chart-tip")).toContainText("#12,345");
   await expect(page.locator(".rank-chart-tip span")).toHaveCount(0);
+  await expect(
+    page.getByRole("slider", { name: "Global rank" }),
+  ).toHaveAttribute("aria-valuetext", "#12,345");
 });
 for (const theme of ["light", "dark"]) {
   test(`rank chart renders and inspects points (${theme})`, async ({

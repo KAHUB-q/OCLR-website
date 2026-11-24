@@ -3363,6 +3363,10 @@ html[data-appearance]
 .rank-chart-blank {
   height: 184px;
 }
+.rank-chart input:focus-visible + .rank-chart-svg {
+  outline: 3px solid var(--site-accent, var(--color-accent));
+  outline-offset: 2px;
+}
 .rank-chart-grid {
   stroke: var(--site-border, var(--color-border));
   stroke-width: 1;

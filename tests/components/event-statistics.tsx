@@ -25,6 +25,10 @@ const scores = [
   { ...score, osuId: 22, teamId: "Y", score: 50 },
   { ...score, player: "Old name", game: "2", score: 80 },
 ];
+if (new URLSearchParams(location.search).has("two-played-maps")) {
+  const hd = { ...score, slot: "HD1", mapId: 1002, game: "3" };
+  scores.push(hd, { ...hd, osuId: 22, teamId: "Y", score: 900 });
+}
 const coverage = {
   slug: "synthetic",
   players: [

@@ -20,13 +20,13 @@ import {
   groupEventMaps,
 } from "@/lib/event-statistics-model";
 const views = [
-  "Performance scores",
-  "Mappool statistics",
-  "Individual leaderboard",
-  "Team leaderboard",
-  "Team placements",
-  "Solo placements",
-  "YumuRating Series",
+  { label: "Performance scores", defaultSort: "Average score" },
+  { label: "Mappool statistics", defaultSort: "Map" },
+  { label: "Individual leaderboard", defaultSort: "Score" },
+  { label: "Team leaderboard", defaultSort: "Team score" },
+  { label: "Team placements", defaultSort: "Average score" },
+  { label: "Solo placements", defaultSort: "Average score" },
+  { label: "YumuRating Series", defaultSort: "MRA" },
 ];
 const SERIES_VIEW = views.length - 1;
 export function EventStatistics({
@@ -47,8 +47,8 @@ export function EventStatistics({
     [slot, setSlot] = useState(""),
     [query, setQuery] = useState("");
   const showSeries = view === SERIES_VIEW;
-  const [sort, setSort] = useState(showSeries ? "MRA" : "Average score"),
-    [descending, setDescending] = useState(true);
+  const [selectedSort, setSort] = useState(views[view].defaultSort),
+    [selectedDescending, setDescending] = useState(true);
   const seriesOptions = useMemo(() => seasonSeriesOptions(series), [series]);
   const ranking = useMemo(
     () => (showSeries ? rateSeasonSeries(series, round, slot) : null),
@@ -299,6 +299,10 @@ export function EventStatistics({
           .includes(query.toLowerCase());
       }),
   );
+  const sort = columns.includes(selectedSort)
+    ? selectedSort
+    : views[view].defaultSort;
+  const descending = sort === selectedSort ? selectedDescending : true;
   rows.sort((a, b) => {
     const x = a[sort],
       y = b[sort];
@@ -468,7 +472,7 @@ export function EventStatistics({
         </section>
       )}
       <div className="event-tabs">
-        {views.map((label, i) => (
+        {views.map(({ label, defaultSort }, i) => (
           <button
             key={label}
             aria-pressed={view === i}
@@ -477,20 +481,8 @@ export function EventStatistics({
               for (const { value, set, options } of filters(i)) {
                 if (value && !options.some((o) => o.value === value)) set("");
               }
-              if (i === SERIES_VIEW) {
-                setSort("MRA");
-                setDescending(true);
-              } else {
-                setSort(
-                  i === 1
-                    ? "Map"
-                    : i === 2
-                      ? "Score"
-                      : i === 3
-                        ? "Team score"
-                        : "Average score",
-                );
-              }
+              setSort(defaultSort);
+              setDescending(i === SERIES_VIEW || descending);
             }}
           >
             {tr(label)}
@@ -532,7 +524,7 @@ export function EventStatistics({
           <input value={query} onChange={(e) => setQuery(e.target.value)} />
         </label>
       </div>
-      <h2>{tr(views[view])}</h2>
+      <h2>{tr(views[view].label)}</h2>
       {ranking && (
         <>
           <p className="muted">
@@ -562,7 +554,7 @@ export function EventStatistics({
         className="event-table-scroll"
         tabIndex={0}
         role="region"
-        aria-label={tr(views[view])}
+        aria-label={tr(views[view].label)}
       >
         <table className="event-table">
           <thead>

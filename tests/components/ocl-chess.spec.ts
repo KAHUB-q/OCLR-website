@@ -179,3 +179,70 @@ for (const saved of [true, false]) {
       );
   });
 }
+
+test.describe("canvas touch gestures", () => {
+  test.use({ hasTouch: true });
+
+  test("adding a second finger cannot select a cell while exploring", async ({
+    page,
+  }) => {
+    const writes: string[] = [];
+    await page.route("**/api/games/ocl-chess", (route) => {
+      if (route.request().method() !== "GET")
+        writes.push(route.request().method());
+      return route.fulfill({
+        json: {
+          pixels: "0".repeat(16384),
+          revision: 0,
+          enabled: true,
+          signedIn: true,
+          serverTime: Date.now(),
+          nextAt: 0,
+          admin: false,
+        },
+      });
+    });
+    await page.goto("/ocl-chess");
+    await expect(
+      page.getByRole("button", { name: "Confirm pixel" }),
+    ).toBeEnabled();
+    await page.getByRole("button", { name: "Zoom in" }).click();
+    const viewport = page.locator(".chess-viewport");
+    await viewport.scrollIntoViewIfNeeded();
+    const box = (await viewport.boundingBox())!;
+    const start = { x: box.x + 180, y: box.y + 100, id: 1 };
+    const moved = { ...start, x: start.x - 50 };
+    const other = { x: box.x + 60, y: box.y + 50, id: 2 };
+    const touch = await page.context().newCDPSession(page);
+    const send = (
+      type: "touchStart" | "touchMove" | "touchEnd",
+      touchPoints: (typeof start)[],
+    ) => touch.send("Input.dispatchTouchEvent", { type, touchPoints });
+    const x = page.getByLabel("X", { exact: true });
+    const y = page.getByLabel("Y", { exact: true });
+    const scrollLeft = () => viewport.evaluate((el) => el.scrollLeft);
+
+    await send("touchStart", [start]);
+    await send("touchMove", [moved]);
+    await expect.poll(scrollLeft).toBeGreaterThan(0);
+    const firstPan = await scrollLeft();
+    await send("touchStart", [moved, other]);
+    await send("touchMove", [{ ...moved, x: moved.x - 20 }, other]);
+    await expect.poll(scrollLeft).toBeGreaterThan(firstPan);
+    await send("touchEnd", []);
+    await expect(x).toHaveValue("0");
+    await expect(y).toHaveValue("0");
+
+    await send("touchStart", [start]);
+    await send("touchStart", [start, other]);
+    await send("touchEnd", []);
+    await expect(x).toHaveValue("0");
+    await expect(y).toHaveValue("0");
+
+    await page.touchscreen.tap(other.x, other.y);
+    await expect(x).not.toHaveValue("0");
+    await expect(y).not.toHaveValue("0");
+    expect(writes).toEqual([]);
+    await touch.detach();
+  });
+});

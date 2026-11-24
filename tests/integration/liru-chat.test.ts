@@ -284,6 +284,7 @@ describe.skipIf(!testUrl)("authenticated tournament assistant", () => {
       ["DT譜面共有幾張？", 0, "mappools"],
       ["已公布的選秀紀錄有幾筆？", 1, "draft"],
       ["賽程還剩幾場？", 0, "schedule"],
+      ["公開的賽果有幾場？", 1, "results"],
     ] as const) {
       const { total } = await chatEvidence(slug, question, "");
       expect(total, question).toMatchObject({

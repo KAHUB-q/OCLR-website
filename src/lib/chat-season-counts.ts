@@ -23,7 +23,7 @@ const categories = {
     title: "Results",
     path: "results",
     subject:
-      /^(?:(?:已公布的?)?(?:[賽赛]果|比[賽赛][結结]果)|比[賽赛](?:已)?(?:公布|有)(?:了)?(?:[賽赛]果|[結结]果)|(?:published )?results|matches (?:with|have) published results)$/,
+      /^(?:(?:(?:已公布|公[開开])的?)?(?:[賽赛]果|比[賽赛][結结]果)|比[賽赛](?:已)?(?:公布|有)(?:了)?(?:[賽赛]果|[結结]果)|(?:published )?results|matches (?:with|have) published results)$/,
   },
   upcoming: {
     title: "Schedule",
@@ -46,7 +46,7 @@ const categories = {
     title: "Draft",
     path: "draft",
     subject:
-      /^(?:(?:已公布的?)?[選选]秀(?:[紀纪記记][錄录]|順位|顺位|結果|结果)|(?:published )?draft picks?)$/,
+      /^(?:(?:(?:已公布|公[開开])的?)?[選选]秀(?:[紀纪記记][錄录]|順位|顺位|結果|结果)|(?:published )?draft picks?)$/,
   },
   slots: {
     title: "Mappools",

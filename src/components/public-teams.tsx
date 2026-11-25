@@ -1,19 +1,71 @@
 "use client";
 
-import { TeamAvatar } from "./team-avatar";
-import { useAppTranslations } from "@/i18n/shared";
-
-import Link from "./pending-link";
 import { useState } from "react";
-import type { publishedTeams } from "@/lib/team-reads";
+import { useAppTranslations } from "@/i18n/shared";
 import type { PublicGroup } from "@/lib/public-competition";
+import type { publishedTeams } from "@/lib/team-reads";
+import Link from "./pending-link";
+import { PlayerCard } from "./player-card";
 import { GroupStandings } from "./public-matches";
+import { TeamAvatar } from "./team-avatar";
+
+type PublishedTeam = Awaited<ReturnType<typeof publishedTeams>>[number];
+
+function TeamSection({
+  team,
+  slug,
+  groupName,
+}: {
+  team: PublishedTeam;
+  slug: string;
+  groupName?: string;
+}) {
+  const tr = useAppTranslations();
+  const captain = { osuId: team.captainId, username: team.captainName };
+  const members = team.members ?? [];
+  const coaches = team.members ? team.coaches : [];
+  const coachIds = new Set(coaches.map((coach) => coach.osuId));
+  const players = new Map(
+    [captain, ...members, ...coaches].map((person) => [person.osuId, person]),
+  );
+
+  return (
+    <section className="archive-team-section">
+      <h2 className="team-directory-heading">
+        {team.avatarKey && <TeamAvatar team={team} />}
+        <Link href={`/tournaments/${slug}/teams/${team.id}`}>{team.name}</Link>
+        {groupName && <span className="badge">{groupName}</span>}
+      </h2>
+      <ul className="archive-player-grid">
+        {Array.from(players.values(), (person) => {
+          const isCaptain = person.osuId === team.captainId;
+          const isCoach = coachIds.has(person.osuId);
+          const roles = [isCaptain && "Captain", isCoach && tr("Coach")];
+          return (
+            <PlayerCard
+              key={person.osuId}
+              osuId={person.osuId}
+              username={person.username}
+              profileHref={`/players/${person.osuId}?edition=${slug}`}
+              roleCode={isCaptain ? "captain" : isCoach ? "coach" : "player"}
+              roleLabel={roles.filter(Boolean).join(" · ")}
+            />
+          );
+        })}
+      </ul>
+      {team.members === null && (
+        <p className="muted small">{tr("Roster awaiting publication")}</p>
+      )}
+    </section>
+  );
+}
+
 export function PublicTeams({
   teams,
   groups,
   slug,
 }: {
-  teams: Awaited<ReturnType<typeof publishedTeams>>;
+  teams: PublishedTeam[];
   groups: PublicGroup[];
   slug: string;
 }) {
@@ -31,7 +83,7 @@ export function PublicTeams({
           t.name,
           t.captainName,
           t.captainId,
-          ...t.coaches.flatMap((c) => [c.username, c.osuId]),
+          ...(t.members ? t.coaches : []).flatMap((c) => [c.username, c.osuId]),
           ...(t.members ?? []).flatMap((m) => [m.username, m.osuId]),
         ]
           .join(" ")
@@ -78,47 +130,18 @@ export function PublicTeams({
       <div
         className={`public-team-workspace${groups.length ? " with-standings" : ""}`}
       >
-        <div>
-          <div className="public-team-grid">
-            {filtered.map((t) => {
-              const assigned = groups.find((g) =>
-                g.rows.some((r) => r.team.id === t.id),
-              );
-              return (
-                <article className="panel public-team-card" key={t.id}>
-                  <div className="public-team-heading">
-                    <TeamAvatar team={t} />
-                    <div>
-                      <h2>
-                        <Link
-                          className="context-link"
-                          href={`/tournaments/${slug}/teams/${t.id}`}
-                        >
-                          {t.name}
-                        </Link>
-                      </h2>
-                      {assigned && (
-                        <span className="badge">{assigned.name}</span>
-                      )}
-                    </div>
-                  </div>
-                  <p className="muted small">
-                    {t.members
-                      ? tr("{value0} published roster members", {
-                          value0: t.members.length,
-                        })
-                      : tr("Roster awaiting publication")}
-                  </p>
-                  <Link
-                    className="context-link"
-                    href={`/tournaments/${slug}/teams/${t.id}`}
-                  >
-                    {tr("View team")}
-                  </Link>
-                </article>
-              );
-            })}
-          </div>
+        <div className="stack">
+          {filtered.map((team) => (
+            <TeamSection
+              key={team.id}
+              team={team}
+              slug={slug}
+              groupName={
+                groups.find((g) => g.rows.some((r) => r.team.id === team.id))
+                  ?.name
+              }
+            />
+          ))}
           {!filtered.length && (
             <p className="notice">{tr("No teams match this search.")}</p>
           )}

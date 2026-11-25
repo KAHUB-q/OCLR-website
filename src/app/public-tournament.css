@@ -1682,7 +1682,13 @@ body:has(dialog[open].map-dialog) {
 .public-team-workspace.with-standings {
   grid-template-columns: minmax(0, 2fr) minmax(280px, 1fr);
 }
-.public-team-grid,
+.team-directory-heading {
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 0.75rem;
+  overflow-wrap: anywhere;
+}
 .public-roster-grid {
   display: grid;
   grid-template-columns: repeat(2, minmax(0, 1fr));
@@ -1784,7 +1790,6 @@ body:has(dialog[open].map-dialog) {
   }
 }
 @media (max-width: 760px) {
-  .public-team-grid,
   .public-roster-grid {
     grid-template-columns: minmax(0, 1fr);
   }

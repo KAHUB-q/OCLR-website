@@ -1,7 +1,27 @@
-import { useLayoutEffect, useRef, useState } from "react";
+import {
+  Fragment,
+  useLayoutEffect,
+  useRef,
+  useState,
+  type ReactNode,
+} from "react";
 import { fitSortRows } from "@/lib/leaderboard-sort";
+import styles from "./player-leaderboard-cards.module.css";
 
-export function useLeaderboardSortLayout(labelKey: string) {
+export function LeaderboardSortToolbar<
+  T extends { key: string; label: string; trophy?: string },
+>({
+  columns,
+  label,
+  children,
+}: {
+  columns: T[];
+  label: string;
+  children: (column: T) => ReactNode;
+}) {
+  const labelKey = JSON.stringify(
+    columns.map(({ key, label, trophy }) => [key, label, trophy]),
+  );
   const sortBarRef = useRef<HTMLDivElement>(null);
   const [sortRowSizes, setSortRowSizes] = useState<number[] | null>(null);
 
@@ -13,8 +33,6 @@ export function useLeaderboardSortLayout(labelKey: string) {
     let cancelled = false;
 
     const update = () => {
-      const row = bar.firstElementChild;
-      if (!(row instanceof HTMLElement)) return;
       const buttons = [...bar.querySelectorAll("button")];
       if (!widths || widths.length !== buttons.length) {
         // Settled rows stretch each button. Measure its natural width instead.
@@ -31,8 +49,8 @@ export function useLeaderboardSortLayout(labelKey: string) {
           return;
         }
       }
-      const gap = Number.parseFloat(getComputedStyle(row).columnGap) || 0;
-      const next = fitSortRows(widths, gap, bar.clientWidth);
+      const gap = Number.parseFloat(getComputedStyle(bar).columnGap) || 0;
+      const next = fitSortRows(widths, gap, bar.getBoundingClientRect().width);
       setSortRowSizes((current) =>
         current?.length === next.length &&
         current.every((size, index) => size === next[index])
@@ -64,5 +82,28 @@ export function useLeaderboardSortLayout(labelKey: string) {
     };
   }, [labelKey]);
 
-  return { sortBarRef, sortRowSizes };
+  const rowStarts = new Set<number>();
+  let offset = 0;
+  for (const size of sortRowSizes ?? []) {
+    offset += size;
+    rowStarts.add(offset);
+  }
+  return (
+    <div
+      ref={sortBarRef}
+      className={styles.sortBar}
+      role="toolbar"
+      aria-label={label}
+      data-measuring={sortRowSizes ? undefined : true}
+    >
+      {columns.map((column, index) => (
+        <Fragment key={column.key}>
+          {rowStarts.has(index) && (
+            <span className={styles.sortBreak} aria-hidden="true" />
+          )}
+          {children(column)}
+        </Fragment>
+      ))}
+    </div>
+  );
 }

@@ -328,6 +328,14 @@ describe.skipIf(!testUrl)("authenticated tournament assistant", () => {
         max_tokens: 650,
       });
       expect(body).not.toHaveProperty("max_completion_tokens");
+      const instructions = body.messages.find(
+        (message: { role: string }) => message.role === "system",
+      )?.content;
+      expect(instructions).toContain("Liru (LR-chan)");
+      expect(instructions).toContain("first-year university student");
+      expect(instructions).toContain("One more round!");
+      expect(instructions).toContain("Lead with the answer");
+      expect(instructions).toContain("using the supplied public evidence");
       expect(JSON.stringify(body.messages)).toContain(
         "Only after referee approval.",
       );

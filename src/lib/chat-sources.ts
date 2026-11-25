@@ -1,4 +1,5 @@
 import { chatRequestBlockReason } from "./chat-request-filter";
+import { chatPlayerProfile } from "./chat-player-profile";
 import { artworkQuery } from "./chat-artwork";
 import { seasonCount, seasonCountIntent } from "./chat-season-counts";
 import { searchSeasonIndex } from "./chat-vectors";
@@ -82,6 +83,14 @@ export async function chatEvidence(
       sources: total ? [total.source] : [],
     };
   }
+  const player = await chatPlayerProfile(edition, question, previous);
+  if (player)
+    return {
+      edition: edition.name,
+      playerProfile: true as const,
+      total: null,
+      sources: [player],
+    };
   const base = "/tournaments/" + slug;
   const matchIntent =
     /賽程|赛程|比[分賽赛]|賽果|赛果|下一[場场]|對陣|对阵|schedule|match|score|result|fixture|who won/i;

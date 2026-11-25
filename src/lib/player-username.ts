@@ -10,9 +10,7 @@ const addressableName = /^[^/\\?#%]{1,64}$/;
 
 export function addressableUsername(value: string) {
   return (
-    value.length > 0 &&
-    value.trim() === value &&
-    addressableName.test(value)
+    value.length > 0 && value.trim() === value && addressableName.test(value)
   );
 }
 
@@ -52,8 +50,15 @@ export async function databaseUsernameOwner(name: string) {
           row.username.toLowerCase() === name.toLowerCase(),
       );
       // Only participants in the public directory are addressable.
-      if (!match || !(await publicPlayer(osuId)).length) continue;
-      owners.push({ osuId, username: match.username });
+      const listed = await publicPlayer(osuId);
+      if (!listed.length) continue;
+      // Accepted registrations can publicly list the current name before any
+      // provider snapshot is saved. Former account-only names stay private.
+      const username =
+        match?.username ??
+        listed.find((row) => row.username.toLowerCase() === name.toLowerCase())
+          ?.username;
+      if (username) owners.push({ osuId, username });
     }
     return chooseUsernameOwner(owners);
   });

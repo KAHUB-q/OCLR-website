@@ -15,18 +15,22 @@ import {
   registrations,
   staffRoles,
   chatPromptSettings,
+  userProfileCache,
 } from "@/db/schema";
 import { createSession, revokeSession } from "@/lib/auth/sessions";
 import { hashToken } from "@/lib/auth/tokens";
 import { english } from "@/i18n/translate";
 import { seasonCountIntent } from "@/lib/chat-season-counts";
 import { chatRequestBlockReason } from "@/lib/chat-request-filter";
+import { normalizeOsuProfile } from "@/lib/osu-profile-model";
 import { chatEvidence } from "@/lib/chat-sources";
 import { POST } from "@/app/api/chat/route";
 import { seedEditions } from "../fixtures/editions";
 import { edition } from "../fixtures/edition";
 import { historicalArchive } from "../fixtures/historical-archive";
 import { assertTestDatabase } from "../database";
+
+vi.mock("server-only", () => ({}));
 
 const context = vi.hoisted(() => ({ token: "" }));
 vi.mock("@/i18n/server", () => ({
@@ -439,6 +443,105 @@ describe.skipIf(!testUrl)("authenticated tournament assistant", () => {
       ],
     ])
       expect(chatRequestBlockReason(question), question).toBe(reason);
+  });
+
+  it("looks up the current public player profile without embeddings and distinguishes season participation", async () => {
+    const cup = "profile-query-cup";
+    const other = "profile-query-history";
+    await seedEditions([season(cup, "Current"), season(other, "Previous")]);
+    const player = { osuId: 1425290, username: "Synthetic Lookup" };
+    const applicant = { osuId: 1425291, username: "Hidden Applicant" };
+    await db().insert(users).values([player, applicant]);
+    await db()
+      .insert(registrations)
+      .values([
+        {
+          userId: player.osuId,
+          editionSlug: cup,
+          answers: {},
+          status: "accepted",
+        },
+        {
+          userId: player.osuId,
+          editionSlug: other,
+          answers: {},
+          status: "accepted",
+        },
+        {
+          userId: applicant.osuId,
+          editionSlug: cup,
+          answers: {},
+          status: "pending",
+        },
+      ]);
+    const profile = normalizeOsuProfile(
+      {
+        id: player.osuId,
+        username: player.username,
+        country: { code: "CN", name: "China" },
+        statistics: { global_rank: 9876, pp: 5432.1 },
+      },
+      player.osuId,
+      "osu",
+      "2026-11-01T00:00:00Z",
+    );
+    await db()
+      .insert(userProfileCache)
+      .values({
+        osuId: player.osuId,
+        mode: "osu",
+        profile,
+        attemptedAt: new Date(0),
+        retryAt: new Date(0),
+      })
+      .onConflictDoUpdate({
+        target: [userProfileCache.osuId, userProfileCache.mode],
+        set: { profile },
+      });
+
+    const question = "Synthetic Lookup是誰";
+    const path = `/players/${player.osuId}`;
+    const upstream = vi.fn(async (url: unknown, init: RequestInit) => {
+      expect(String(url)).toBe("https://provider.example/v1/chat/completions");
+      const { messages } = JSON.parse(String(init.body));
+      const input = JSON.parse(messages.at(-1).content);
+      expect(input.currentQuestion).toBe("是的");
+      expect(input.evidence).toHaveLength(1);
+      expect(JSON.parse(input.evidence[0].text)).toMatchObject({
+        username: player.username,
+        selectedEditionParticipation: [{ editionSlug: cup }],
+        otherPublishedParticipation: [{ editionSlug: other }],
+        savedOsuProfile: { globalRank: 9876, pp: 5432.1 },
+      });
+      return completion("A public OCLR player.");
+    });
+    vi.stubGlobal("fetch", upstream);
+    for (const query of [question, "Who is synthetic lookup?", path]) {
+      expect((await chatEvidence(cup, query, "")).sources).toEqual([
+        expect.objectContaining({ url: path, title: player.username }),
+      ]);
+    }
+    for (const query of [
+      "Hidden Applicant是誰",
+      `/players/${applicant.osuId}`,
+    ]) {
+      expect((await chatEvidence(cup, query, "")).sources).toEqual([]);
+    }
+    expect(upstream).not.toHaveBeenCalled();
+    context.token = (await createSession(player.osuId)).token;
+    const response = await ask([question, "是的"], { edition: cup });
+    expect(await response.text()).toContain(path);
+    expect(upstream).toHaveBeenCalledOnce();
+
+    await db()
+      .update(registrations)
+      .set({ status: "withdrawn" })
+      .where(eq(registrations.editionSlug, cup));
+    const otherSeasons = await chatEvidence(cup, question, "");
+    expect(JSON.parse(otherSeasons.sources[0].text)).toMatchObject({
+      selectedEditionParticipation: [],
+      otherPublishedParticipation: [{ editionSlug: other }],
+    });
   });
 
   it("forwards standalone greetings to the model without retrieving season facts", async () => {

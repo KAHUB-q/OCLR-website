@@ -69,8 +69,13 @@ test("stop a pending turn, retry with sources, and start fresh in another editio
   await page.getByRole("button", { name: "Send", exact: true }).click();
   await expect.poll(() => count).toBe(1);
   const history = page.getByRole("log");
-  const avatar = history.locator('img[src="/api/osu-images/avatar/1425010"]');
+  const avatar = history.locator('img[src$="/api/osu-images/avatar/1425010"]');
   await expect(avatar).toBeVisible();
+  await expect
+    .poll(() =>
+      avatar.evaluate((image: HTMLImageElement) => image.naturalWidth),
+    )
+    .toBeGreaterThan(0);
   const question = await history
     .getByText("Substitution?", { exact: true })
     .boundingBox();

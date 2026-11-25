@@ -34,5 +34,17 @@ export function searchTimeZones(zones: string[], query: string) {
   const normalize = (text: string) =>
     text.toLowerCase().replace(/[\s_/-]+/g, "");
   const term = normalize(query);
-  return zones.filter((zone) => normalize(timeZoneLabel(zone)).includes(term));
+  const matches = zones.filter((zone) =>
+    normalize(timeZoneLabel(zone)).includes(term),
+  );
+  const identifier = query.trim();
+  if (
+    !identifier ||
+    matches.some((zone) => zone.toLowerCase() === identifier.toLowerCase())
+  )
+    return matches;
+
+  // Intl's enumerable list omits valid aliases and fixed-offset IANA names.
+  const parsed = editionSchema.shape.timeZone.safeParse(identifier);
+  return parsed.success ? [...matches, parsed.data] : matches;
 }

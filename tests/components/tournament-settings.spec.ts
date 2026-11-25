@@ -161,6 +161,34 @@ test("general settings preserve unsaved state on failure and save the current re
   await general
     .getByRole("textbox", { name: "Tournament name", exact: true })
     .fill("Updated synthetic edition");
+  const zone = general.getByRole("button", { name: "Time zone", exact: true });
+  await zone.click();
+  const search = general.getByRole("combobox", { name: "Search time zones" });
+  await search.fill("Hongkong");
+  const alias = general.getByRole("option", {
+    name: "Hongkong — Hongkong",
+    exact: true,
+  });
+  const city = general.getByRole("option", {
+    name: "Hong Kong — Asia/Hong_Kong",
+    exact: true,
+  });
+  await expect(alias).toBeVisible();
+  await expect(search).toHaveAttribute(
+    "aria-activedescendant",
+    (await alias.getAttribute("id"))!,
+  );
+  await search.press("ArrowUp");
+  await expect(search).toHaveAttribute(
+    "aria-activedescendant",
+    (await city.getAttribute("id"))!,
+  );
+  await search.fill("US/Eastern");
+  await expect(
+    general.getByRole("option", { name: /US\/Eastern/ }),
+  ).toBeVisible();
+  await search.press("Enter");
+  await expect(zone).toContainText("US/Eastern");
   await expect(bar.locator("p").first()).toHaveText("Unsaved changes");
   const save = bar.getByRole("button", {
     name: "Save general settings",
@@ -183,6 +211,7 @@ test("general settings preserve unsaved state on failure and save the current re
       expectedRevision: 4,
       confirmed: true,
       name: "Updated synthetic edition",
+      timeZone: "US/Eastern",
       branding: {
         logo: "/oclr-s11-square-logo.webp",
         background: "/oclr-s11-website-background.webp",

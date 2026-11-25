@@ -25,7 +25,7 @@ export function TimeZonePicker({
   const [open, setOpen] = useState(false);
   const [zones, setZones] = useState<string[]>([]);
   const [query, setQuery] = useState("");
-  const [active, setActive] = useState(0);
+  const [navigatedIndex, setNavigatedIndex] = useState<number | null>(null);
   const preferred = [...new Set([value, ...commonTimeZones])];
   const options = searchTimeZones(
     [
@@ -36,6 +36,14 @@ export function TimeZonePicker({
   );
   const common = options.filter((zone) => preferred.includes(zone));
   const other = options.filter((zone) => !preferred.includes(zone));
+  // Enter selects an exact identifier until the user navigates to another match.
+  const identifier = query.trim().toLowerCase();
+  const active =
+    navigatedIndex ??
+    Math.max(
+      0,
+      options.findIndex((zone) => zone.toLowerCase() === identifier),
+    );
   useEffect(() => {
     if (!open) return;
     input.current?.focus();
@@ -76,7 +84,7 @@ export function TimeZonePicker({
         onClick={() => {
           setZones(availableTimeZones(value));
           setQuery("");
-          setActive(0);
+          setNavigatedIndex(null);
           setOpen(!open);
         }}
         onKeyDown={(event) => {
@@ -84,7 +92,7 @@ export function TimeZonePicker({
             event.preventDefault();
             setZones(availableTimeZones(value));
             setQuery("");
-            setActive(0);
+            setNavigatedIndex(null);
             setOpen(true);
           }
         }}
@@ -109,7 +117,7 @@ export function TimeZonePicker({
             value={query}
             onChange={(event) => {
               setQuery(event.target.value);
-              setActive(0);
+              setNavigatedIndex(null);
             }}
             onKeyDown={(event) => {
               // Some input methods report only keyCode 229 when committing text.
@@ -121,7 +129,7 @@ export function TimeZonePicker({
               if (["ArrowDown", "ArrowUp", "Home", "End"].includes(event.key)) {
                 event.preventDefault();
                 if (options.length)
-                  setActive(
+                  setNavigatedIndex(
                     event.key === "Home"
                       ? 0
                       : event.key === "End"

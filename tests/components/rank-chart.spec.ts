@@ -1,5 +1,31 @@
 import { test, expect } from "@playwright/test";
 
+test("the selected rank stays readable when scrolling to either viewport edge", async ({
+  page,
+}) => {
+  await page.setViewportSize({ width: 390, height: 200 });
+  await page.goto("/rank-chart?gaps=one");
+  const slider = page.getByRole("slider", { name: "Global rank" });
+  await slider.focus();
+  await slider.press("End");
+  const tip = page.locator(".rank-chart-tip");
+  await expect(tip).toContainText("Nov 4, 2026");
+  const dot = page.locator(".rank-chart-dot");
+  const inset = 12;
+  for (const y of [inset, page.viewportSize()!.height - inset]) {
+    const actualY = await dot.evaluate((el, targetY) => {
+      const center = () => {
+        const { top, bottom } = el.getBoundingClientRect();
+        return (top + bottom) / 2;
+      };
+      window.scrollBy(0, center() - targetY);
+      return center();
+    }, y);
+    expect(Math.abs(actualY - y)).toBeLessThan(2);
+    await expect(tip).toBeInViewport({ ratio: 0.99 });
+  }
+});
+
 test("keyboard users can inspect observed ranks and leave the chart", async ({
   page,
 }) => {

@@ -76,9 +76,25 @@ test("stop a pending turn, retry with sources, and start fresh in another editio
       avatar.evaluate((image: HTMLImageElement) => image.naturalWidth),
     )
     .toBeGreaterThan(0);
-  const question = await history
-    .getByText("Substitution?", { exact: true })
-    .boundingBox();
+  const questionText = history
+    .locator("p")
+    .filter({ hasText: /^Substitution\?$/ });
+  const spacing = await questionText.evaluate((text) => {
+    const bubble = text.parentElement!;
+    const textBox = text.getBoundingClientRect();
+    const bubbleBox = bubble.getBoundingClientRect();
+    const padding = Number.parseFloat(
+      getComputedStyle(bubble).paddingBlockStart,
+    );
+    return {
+      top: textBox.top - bubbleBox.top,
+      bottom: bubbleBox.bottom - textBox.bottom,
+      padding,
+    };
+  });
+  expect(spacing.top).toBeCloseTo(spacing.padding, 0);
+  expect(spacing.bottom).toBeCloseTo(spacing.padding, 0);
+  const question = await questionText.boundingBox();
   const profile = await avatar.boundingBox();
   expect(profile!.x).toBeGreaterThanOrEqual(question!.x + question!.width);
   await expect(

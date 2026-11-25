@@ -5165,6 +5165,13 @@
     "m3e33804e3595": "This season has {count, plural, one {# published draft pick} other {# published draft picks}}.",
     "m8d3f1263bd7e": "How many players are there?",
     "mf3c1f543e5dd": "How many upcoming matches are there?",
-    "ma6c136a0f45a": "How many HD maps are there?"
+    "ma6c136a0f45a": "How many HD maps are there?",
+    "m74f3d1686f6e": "How many teams are there?",
+    "mb5d8b9c06f8c": "How many matches are there?",
+    "m12e657540b06": "How many matches have published results?",
+    "m7a3ce763f3d2": "How many mappools are there?",
+    "m2fe4308f34ca": "How many map slots are there?",
+    "m8503801744aa": "How many unique beatmaps are there?",
+    "m4465f63e81c5": "How many draft picks are there?"
   }
 }

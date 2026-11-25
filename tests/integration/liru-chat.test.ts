@@ -302,7 +302,12 @@ describe.skipIf(!testUrl)("authenticated tournament assistant", () => {
   });
   it("streams cited public evidence through the configured compatible provider and discards client instructions", async () => {
     context.token = (await createSession(1425001)).token;
-    await seedEditions([season(slug, "Only after referee approval.")]);
+    const published = season(slug, "Only after referee approval.");
+    published.rules.sections.push({
+      heading: "Substitution form",
+      body: "Submit the substitution form.",
+    });
+    await seedEditions([published]);
     await db()
       .insert(registrations)
       .values({
@@ -326,6 +331,9 @@ describe.skipIf(!testUrl)("authenticated tournament assistant", () => {
       expect(JSON.stringify(body.messages)).toContain(
         "Only after referee approval.",
       );
+      expect(JSON.stringify(body.messages)).toContain(
+        "Submit the substitution form.",
+      );
       expect(JSON.stringify(body.messages)).not.toContain("Beta ruling");
       expect(JSON.stringify(body.messages)).not.toMatch(
         /Synthetic private answer|Synthetic staff note/,
@@ -335,9 +343,14 @@ describe.skipIf(!testUrl)("authenticated tournament assistant", () => {
           choices: [
             {
               index: 0,
-              delta: { content: "Check with the referee." },
+              delta: { content: "Check with the referee. [" },
               finish_reason: null,
             },
+          ],
+        },
+        {
+          choices: [
+            { index: 0, delta: { content: "1]" }, finish_reason: null },
           ],
         },
         { choices: [{ index: 0, delta: {}, finish_reason: "stop" }] },
@@ -376,6 +389,8 @@ describe.skipIf(!testUrl)("authenticated tournament assistant", () => {
       text.indexOf("Check with the referee."),
     );
     expect(text).toContain("Check with the referee.");
+    expect(text.match(/"type":"source-url"/g)).toHaveLength(1);
+    expect(text).toContain('"sourceId":"1"');
     expect(upstream).toHaveBeenCalledTimes(1);
     expect(await (await ask(["zzz"])).text()).toContain("couldn’t find");
     expect(upstream).toHaveBeenCalledTimes(1);

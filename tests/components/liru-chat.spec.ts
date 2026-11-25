@@ -71,15 +71,24 @@ test("stop a pending turn, retry with sources, and start fresh in another editio
   await expect(page.getByRole("textbox")).toHaveValue("Substitution?");
   await page.getByRole("button", { name: "Send", exact: true }).click();
   await expect(page.getByText("Ask the referee.")).toBeVisible();
+  const sourceToggle = page.getByText("Source", { exact: true });
+  const sourceLink = page.getByRole("link", { name: "Substitution" });
+  await expect(sourceToggle).toBeVisible();
+  await expect(sourceLink).toBeHidden();
   await expect(
-    page.getByRole("link", { name: "[1] Substitution" }),
-  ).toHaveAttribute("href", "/tournaments/cup-a#rules-1");
+    page.getByRole("log").getByText("[1]", { exact: true }),
+  ).toHaveCount(0);
+  await sourceToggle.press("Enter");
+  await expect(sourceLink).toBeVisible();
+  await expect(sourceLink).toHaveAttribute(
+    "href",
+    "/tournaments/cup-a#rules-1",
+  );
+  await sourceToggle.press("Enter");
+  await expect(sourceLink).toBeHidden();
   await expect(
     page.getByRole("listitem").filter({ hasText: "First option" }),
   ).toBeVisible();
-  await expect(
-    page.getByRole("link", { name: "[1]", exact: true }),
-  ).toHaveAttribute("href", "/tournaments/cup-a#rules-1");
   await expect(
     page.getByRole("status").filter({ hasText: "Loading…" }),
   ).toHaveCount(0);

@@ -48,7 +48,11 @@ export function LiruChatLauncher({
         ref={panel}
         id={id}
         onToggle={(event) => {
-          if (signedIn && event.newState === "open")
+          if (
+            signedIn &&
+            event.target === event.currentTarget &&
+            event.newState === "open"
+          )
             setSuggestions(pickLiruSuggestions(tr));
         }}
         popover="auto"
@@ -62,6 +66,7 @@ export function LiruChatLauncher({
           </h2>
           <button
             type="button"
+            className={styles.close}
             popoverTarget={id}
             popoverTargetAction="hide"
             aria-label={tr("Close")}
@@ -77,7 +82,13 @@ export function LiruChatLauncher({
               )}
             </p>
             {suggestions && (
-              <Suspense fallback={<p role="status">{tr("Loading…")}</p>}>
+              <Suspense
+                fallback={
+                  <p className={styles.disclosure} role="status">
+                    {tr("Loading…")}
+                  </p>
+                }
+              >
                 <Chat edition={edition} suggestions={suggestions} />
               </Suspense>
             )}

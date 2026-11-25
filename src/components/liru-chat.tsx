@@ -1,6 +1,6 @@
 "use client";
-import Markdown from "react-markdown";
-import type { Root, Parents, PhrasingContent } from "mdast";
+import Markdown, { defaultUrlTransform } from "react-markdown";
+import type { Root, Parents } from "mdast";
 import { useMemo } from "react";
 import { useChat } from "@ai-sdk/react";
 import { DefaultChatTransport } from "ai";
@@ -9,7 +9,6 @@ import {
   ComposerPrimitive,
   MessagePrimitive,
   ThreadPrimitive,
-  type SourceMessagePartProps,
   type TextMessagePartProps,
   useAuiState,
 } from "@assistant-ui/react";
@@ -18,52 +17,49 @@ import { useAppTranslations } from "@/i18n/shared";
 import { LiruChatIcon } from "./liru-chat-icon";
 import styles from "./liru-chat.module.css";
 
-function Source(part: SourceMessagePartProps) {
-  if (part.sourceType !== "url") return null;
+function useAnswerSources() {
+  const parts = useAuiState((state) => state.message.parts);
+  return parts
+    .filter((part) => part.type === "source" && part.sourceType === "url")
+    .filter((part) => defaultUrlTransform(part.url));
+}
+
+function AnswerSources() {
+  const tr = useAppTranslations();
+  const sources = useAnswerSources();
+  if (!sources.length) return null;
+  const label = tr("Source");
   return (
-    <a className="text-link" href={part.url}>
-      [{part.id}] {part.title}
-    </a>
+    <details className={styles.sources}>
+      <summary>{label}</summary>
+      <ul aria-label={label}>
+        {sources.map((part) => (
+          <li key={part.id}>
+            <a className={styles.sourceLink} href={part.url}>
+              <span>{part.title || part.url}</span>
+              <span className={styles.sourceArrow} aria-hidden="true" />
+            </a>
+          </li>
+        ))}
+      </ul>
+    </details>
   );
 }
-// Link numbered references only to sources received for this assistant message.
+
 function AnswerText({ text }: TextMessagePartProps) {
-  const parts = useAuiState((state) => state.message.parts);
-  const sources = new Map(
-    parts.flatMap((part) =>
-      part.type === "source" && part.sourceType === "url"
-        ? [[part.id, part.url] as const]
-        : [],
-    ),
-  );
+  const sources = useAnswerSources();
+  const ids = new Set(sources.map((part) => part.id));
+  const urls = new Set(sources.map((part) => part.url));
   function citations() {
     function walk(parent: Parents) {
-      for (let i = parent.children.length - 1; i >= 0; i--) {
-        const child = parent.children[i];
+      for (const child of parent.children) {
         if (child.type === "link" || child.type === "linkReference") continue;
         if ("children" in child) walk(child);
-        if (child.type !== "text") continue;
-        const nodes: PhrasingContent[] = [];
-        let end = 0;
-        for (const match of child.value.matchAll(/\[(\d+)\]/g)) {
-          const url = sources.get(match[1]);
-          if (!url) continue;
-          if (match.index > end)
-            nodes.push({
-              type: "text",
-              value: child.value.slice(end, match.index),
-            });
-          nodes.push({
-            type: "link",
-            url,
-            children: [{ type: "text", value: match[0] }],
-          });
-          end = match.index + match[0].length;
-        }
-        if (end) {
-          nodes.push({ type: "text", value: child.value.slice(end) });
-          parent.children.splice(i, 1, ...nodes);
-        }
+        if (child.type === "text")
+          child.value = child.value.replace(
+            /[ \t]*\[(\d+)\]/g,
+            (marker, id: string) => (ids.has(id) ? "" : marker),
+          );
       }
     }
     return (tree: Root) => walk(tree);
@@ -76,7 +72,7 @@ function AnswerText({ text }: TextMessagePartProps) {
         components={{
           img: () => null,
           a: ({ href, children }) =>
-            href && [...sources.values()].includes(href) ? (
+            href && urls.has(href) ? (
               <a className="text-link" href={href}>
                 {children}
               </a>
@@ -93,9 +89,14 @@ function AnswerText({ text }: TextMessagePartProps) {
 function AssistantMessage() {
   return (
     <MessagePrimitive.Root className={styles.reply}>
-      <LiruChatIcon />
+      <span className={styles.avatar}>
+        <LiruChatIcon size={26} />
+      </span>
       <div className={styles.parts}>
-        <MessagePrimitive.Parts components={{ Source, Text: AnswerText }} />
+        <MessagePrimitive.Parts
+          components={{ Source: () => null, Text: AnswerText }}
+        />
+        <AnswerSources />
       </div>
     </MessagePrimitive.Root>
   );
@@ -199,29 +200,33 @@ export function LiruChat({
               </ThreadPrimitive.Suggestion>
             ))}
           </div>
-          <ComposerPrimitive.Input
-            aria-label={tr("Ask Liru")}
-            placeholder={tr("Ask about this season…")}
-            maxLength={1500}
-            rows={2}
-          />
-          <div className="actions">
-            {busy ? (
-              <ComposerPrimitive.Cancel>{tr("Stop")}</ComposerPrimitive.Cancel>
-            ) : (
-              <ComposerPrimitive.Send>{tr("Send")}</ComposerPrimitive.Send>
-            )}
-            {!busy &&
-              chat.messages.length > 0 &&
-              chat.error?.message !== "401" && (
-                <button
-                  type="button"
-                  className="secondary"
-                  onClick={() => void chat.regenerate()}
-                >
-                  {tr("Try again")}
-                </button>
+          <div className={styles.inputBox}>
+            <ComposerPrimitive.Input
+              aria-label={tr("Ask Liru")}
+              placeholder={tr("Ask about this season…")}
+              maxLength={1500}
+              rows={2}
+            />
+            <div className={styles.actions}>
+              {busy ? (
+                <ComposerPrimitive.Cancel>
+                  {tr("Stop")}
+                </ComposerPrimitive.Cancel>
+              ) : (
+                <ComposerPrimitive.Send>{tr("Send")}</ComposerPrimitive.Send>
               )}
+              {!busy &&
+                chat.messages.length > 0 &&
+                chat.error?.message !== "401" && (
+                  <button
+                    type="button"
+                    className={styles.retry}
+                    onClick={() => void chat.regenerate()}
+                  >
+                    {tr("Try again")}
+                  </button>
+                )}
+            </div>
           </div>
         </ComposerPrimitive.Root>
       </ThreadPrimitive.Root>

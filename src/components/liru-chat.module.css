@@ -35,12 +35,12 @@
   max-inline-size: 100%;
 }
 .avatar {
-  display: grid;
-  place-items: center;
-  aspect-ratio: 1;
+  display: block;
+  inline-size: var(--chat-avatar-size);
+  block-size: var(--chat-avatar-size);
   border-radius: 50%;
   background: var(--site-tint);
-  color: var(--site-accent);
+  object-fit: cover;
 }
 .question {
   align-self: flex-end;

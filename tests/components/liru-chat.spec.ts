@@ -109,6 +109,16 @@ test("stop a pending turn, retry with sources, and start fresh in another editio
   await expect(page.getByRole("textbox")).toHaveValue("Substitution?");
   await page.getByRole("button", { name: "Send", exact: true }).click();
   await expect(page.getByText("Ask the referee.")).toBeVisible();
+  const portrait = history.locator(
+    'img[src$="/mascot/liru/chat-headset.webp"]',
+  );
+  await expect(portrait).toBeVisible();
+  await expect
+    .poll(() =>
+      portrait.evaluate((image: HTMLImageElement) => image.naturalWidth),
+    )
+    .toBe(160);
+  await expect(launcher.locator("svg")).toHaveCount(1);
   const sourceToggle = page.getByText("Source", { exact: true });
   const sourceLink = page.getByRole("link", { name: "Substitution" });
   await expect(sourceToggle).toBeVisible();

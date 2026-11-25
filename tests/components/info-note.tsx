@@ -1,5 +1,6 @@
 import { createRoot } from "react-dom/client";
 import { NextIntlClientProvider } from "next-intl";
+import { InfoHint } from "../../src/components/info-hint";
 import { InfoNote } from "../../src/components/info-note";
 import { PageNotes } from "../../src/components/page-notes";
 import en from "../../messages/en.json";
@@ -16,6 +17,9 @@ createRoot(document.getElementById("root")!).render(
       <PageNotes>
         <p>Coverage details</p>
       </PageNotes>
+      <InfoHint label="Player statistics explanation">
+        Team results use recorded scores.
+      </InfoHint>
       <button id="target">Outside</button>
     </main>
   </NextIntlClientProvider>,

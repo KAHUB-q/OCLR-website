@@ -1,4 +1,30 @@
 import { test, expect } from "@playwright/test";
+
+test("player hint stays open while either focus or hover remains", async ({
+  page,
+}) => {
+  await page.goto("/info-note");
+  const outside = page.getByRole("button", { name: "Outside" });
+  const hint = page.getByLabel("Player statistics explanation");
+  const note = page.getByText("Team results use recorded scores.");
+  await outside.focus();
+  await outside.press("Shift+Tab");
+  await expect(hint).toBeFocused();
+  await expect(note).toBeVisible();
+  const focusTop = await note.evaluate((element) => element.style.top);
+  await hint.hover();
+  await page.mouse.move(0, 0);
+  await expect(hint).toBeFocused();
+  await expect(note).toBeVisible();
+  await expect(note).toHaveCSS("top", focusTop);
+
+  await hint.hover();
+  await hint.press("Tab");
+  await expect(outside).toBeFocused();
+  await expect(note).toBeVisible();
+  await page.mouse.move(0, 0);
+  await expect(note).toBeHidden();
+});
 for (const theme of ["light", "dark"]) {
   test(`notes remain visible in separate boxes (${theme})`, async ({
     page,

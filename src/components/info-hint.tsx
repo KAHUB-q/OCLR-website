@@ -19,6 +19,8 @@ export function InfoHint({
   const id = useId();
   const triggerRef = useRef<HTMLSpanElement>(null);
   const panelRef = useRef<HTMLSpanElement>(null);
+  const hoveredRef = useRef(false);
+  const focusedRef = useRef(false);
   const [anchor, setAnchor] = useState<Anchor | null>(null);
 
   const place = (x: number, y: number) => {
@@ -50,11 +52,27 @@ export function InfoHint({
         tabIndex={0}
         aria-label={label}
         aria-describedby={id}
-        onPointerEnter={(event) => place(event.clientX, event.clientY)}
+        onPointerEnter={(event) => {
+          hoveredRef.current = true;
+          place(event.clientX, event.clientY);
+        }}
         onPointerMove={(event) => place(event.clientX, event.clientY)}
-        onPointerLeave={() => setAnchor(null)}
-        onFocus={showForFocus}
-        onBlur={() => setAnchor(null)}
+        onPointerLeave={() => {
+          hoveredRef.current = false;
+          if (focusedRef.current) {
+            showForFocus();
+          } else {
+            setAnchor(null);
+          }
+        }}
+        onFocus={() => {
+          focusedRef.current = true;
+          if (!hoveredRef.current) showForFocus();
+        }}
+        onBlur={() => {
+          focusedRef.current = false;
+          if (!hoveredRef.current) setAnchor(null);
+        }}
       >
         i
       </span>

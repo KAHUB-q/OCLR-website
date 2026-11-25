@@ -26,6 +26,17 @@ export async function chatEvidence(
   const edition = await getPublicEdition(slug);
   if (!edition) throw new HttpError(404, "Tournament not found.");
   if (
+    /^(?:(?:莉露[，,\s]*)?(?:你好|您好|嗨|哈[囉啰]|早安|早上好|午安|晚安)(?:[，,\s]*莉露)?|(?:hello|hi|hey|good morning|good afternoon|good evening)(?:[,\s]+liru)?)\s*[?!.，,。？！]*$/i.test(
+      question.trim().normalize("NFKC"),
+    )
+  )
+    return {
+      edition: edition.name,
+      greeting: true as const,
+      total: null,
+      sources: [],
+    };
+  if (
     /^(?:(?:請問|请问)?(?:你|莉露)(?:可以|能|會|会)(?:回答|查詢|查询|幫我查|帮我查)(?:些)?(?:什麼|什么|哪些問題|哪些问题)|what can (?:you|liru) (?:answer|do|help (?:me )?with))\s*[?？。!！]*$/i.test(
       question.trim(),
     )

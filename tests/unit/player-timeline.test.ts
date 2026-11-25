@@ -123,6 +123,20 @@ describe("readSeasonWindows", () => {
     expect(window.end).toBeNull();
   });
 
+  it("rejects impossible calendar dates before converting the time zone", () => {
+    const windows = readSeasonWindows({
+      seasons: [
+        { season: 1, start: "2025-02-29", end: "2025-04-31T23:00:00-02:00" },
+        { season: 2, start: "2024-02-29", end: "2024-02-29T23:00:00-02:00" },
+      ],
+    });
+    expect(windows[0]).toMatchObject({ start: null, end: null });
+    expect(windows[1]).toMatchObject({
+      start: "2024-02-29T00:00:00.000Z",
+      end: "2024-03-01T01:00:00.000Z",
+    });
+  });
+
   it("drops one bad row without hiding the rest", () => {
     const windows = readSeasonWindows({
       seasons: [

@@ -47,7 +47,7 @@ export function logAxisFraction(
   );
 }
 
-const dateOnly = /^\d{4}-\d{2}-\d{2}$/;
+const calendarDate = z.iso.date();
 const zonedTime = /(?:Z|[+-]\d{2}:?\d{2})$/i;
 
 /** A `YYYY-MM-DD` bound covers that whole UTC day; an instant must carry a zone. */
@@ -55,11 +55,14 @@ function boundary(value: string | null | undefined, edge: "start" | "end") {
   if (typeof value !== "string") return null;
   const text = value.trim();
   if (!text) return null;
-  const iso = dateOnly.test(text)
-    ? `${text}T${edge === "end" ? "23:59:59.999" : "00:00:00.000"}Z`
-    : zonedTime.test(text)
-      ? text
-      : null;
+  const datePrefix = /^\d{4}-\d{2}-\d{2}/.exec(text)?.[0];
+  if (datePrefix && !calendarDate.safeParse(datePrefix).success) return null;
+  const iso =
+    text === datePrefix
+      ? `${text}T${edge === "end" ? "23:59:59.999" : "00:00:00.000"}Z`
+      : zonedTime.test(text)
+        ? text
+        : null;
   if (iso === null) return null;
   const time = Date.parse(iso);
   return Number.isFinite(time) ? new Date(time).toISOString() : null;

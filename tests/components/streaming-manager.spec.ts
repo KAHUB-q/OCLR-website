@@ -375,3 +375,63 @@ test("manages the recording of an ended fixture without offering to cancel the s
     }),
   ]);
 });
+
+test("preserves the pending streamer when saving commentators", async ({
+  page,
+}) => {
+  const writes: Record<string, unknown>[] = [];
+  const commentator = {
+    userId: 2001,
+    username: "Synthetic Commentator",
+    source: "staff",
+    assignedBy: 999,
+    assignedByName: "Synthetic Organizer",
+    assignedAt: "2030-01-01T00:00:00Z",
+    eligible: true,
+    needsConfirmation: false,
+    conflicts: [],
+  };
+  await page.route("**/synthetic-streaming-state", (route) =>
+    route.fulfill({
+      json: {
+        streamRevision: 8 + writes.length,
+        commentators: writes.length ? [commentator] : [],
+      },
+    }),
+  );
+  await page.route(
+    "**/api/admin/tournaments/synthetic/streaming/*",
+    (route) => {
+      writes.push(route.request().postDataJSON());
+      return route.fulfill({ json: { saved: true } });
+    },
+  );
+  await page.goto("/streaming-manager?refresh");
+  const picker = page.getByRole("combobox", { name: "Assign Streamer" });
+  await picker.selectOption("1002");
+  const commentary = page.getByRole("region", {
+    name: "Commentators",
+    exact: true,
+  });
+  await commentary.getByText("Choose Commentators", { exact: true }).click();
+  await commentary
+    .getByRole("checkbox", { name: /Synthetic Commentator/ })
+    .check();
+  await commentary.getByRole("button", { name: "Assign Commentator" }).click();
+  const confirm = page
+    .getByRole("dialog")
+    .getByRole("button", { name: "Confirm", exact: true });
+  await confirm.click();
+  await expect(
+    commentary.getByRole("group", { name: "Synthetic Commentator" }),
+  ).toBeVisible();
+  await expect(picker).toHaveValue("1002");
+  await page.getByRole("button", { name: "Reassign Streamer" }).click();
+  await confirm.click();
+  await expect.poll(() => writes.length).toBe(2);
+  expect(writes[1]).toMatchObject({
+    action: "assign",
+    userId: 1002,
+    expectedRevision: 9,
+  });
+});

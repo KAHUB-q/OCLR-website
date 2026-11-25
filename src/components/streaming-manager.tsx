@@ -475,7 +475,7 @@ function StreamingTask({
       </div>
       <div className={styles.bookings}>
         <BroadcastBookings
-          key={`${f.streamRevision}:${f.version}`}
+          key={f.assignment?.userId ?? "unassigned"}
           slug={slug}
           fixture={f}
           data={data}

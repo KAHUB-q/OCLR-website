@@ -53,8 +53,17 @@ function ScoreFields({
           onChange={(event) => {
             const chosen =
               event.target.value === "" ? null : Number(event.target.value);
+            const away = score?.awayWins;
             onChange(
-              chosen === null ? null : { homeWins: chosen, awayWins: null },
+              chosen === null
+                ? null
+                : {
+                    homeWins: chosen,
+                    awayWins:
+                      away != null && awayFor(chosen).includes(away)
+                        ? away
+                        : null,
+                  },
             );
           }}
         >

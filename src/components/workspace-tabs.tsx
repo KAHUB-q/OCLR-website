@@ -23,12 +23,18 @@ export function WorkspaceTabs<T extends string>({
     const tab = document.getElementById(`${id}-${value}`);
     const strip = tab?.parentElement;
     if (!tab || !strip) return;
-    const itemBounds = tab.getBoundingClientRect();
-    const stripBounds = strip.getBoundingClientRect();
-    if (itemBounds.left < stripBounds.left)
-      strip.scrollLeft += itemBounds.left - stripBounds.left;
-    else if (itemBounds.right > stripBounds.right)
-      strip.scrollLeft += itemBounds.right - stripBounds.right;
+    const reveal = () => {
+      const itemBounds = tab.getBoundingClientRect();
+      const stripBounds = strip.getBoundingClientRect();
+      if (itemBounds.left < stripBounds.left)
+        strip.scrollLeft += itemBounds.left - stripBounds.left;
+      else if (itemBounds.right > stripBounds.right)
+        strip.scrollLeft += itemBounds.right - stripBounds.right;
+    };
+    reveal();
+    const observer = new ResizeObserver(reveal);
+    observer.observe(strip);
+    return () => observer.disconnect();
   }, [id, value]);
   return (
     <div

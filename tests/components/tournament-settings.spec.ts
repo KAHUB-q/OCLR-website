@@ -1,5 +1,19 @@
 import { expect, test } from "@playwright/test";
 
+test("narrowing the settings strip keeps the selected tab in view", async ({
+  page,
+}) => {
+  await page.setViewportSize({ width: 844, height: 390 });
+  await page.goto("/tournament-settings?section=publication");
+  const tab = page.getByRole("tab", { name: "Publication", exact: true });
+  await expect(tab).toHaveAttribute("aria-selected", "true");
+  await expect(tab).toBeInViewport({ ratio: 0.99 });
+  const scrollY = await page.evaluate(() => window.scrollY);
+  await page.setViewportSize({ width: 320, height: 844 });
+  await expect(tab).toBeInViewport({ ratio: 0.99 });
+  expect(await page.evaluate(() => window.scrollY)).toBe(scrollY);
+});
+
 test("confirming input method text leaves the time zone choice open", async ({
   page,
 }) => {

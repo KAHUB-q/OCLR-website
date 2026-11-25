@@ -15,6 +15,8 @@ import { assertReadCapability } from "./auth/staff";
 import { captainAppointment } from "./captain-reads";
 import { getEdition, getPublicEdition } from "./content";
 import { remoteMode } from "./data-source";
+import { teamsInPickOrder } from "./draft-order";
+import { releasedDraftData } from "./draft-reads";
 import { draftSetupProtection } from "./draft-setup";
 import {
   coachingEnabled,
@@ -163,93 +165,103 @@ export async function ownTeam(userId: number, slug: string): Promise<OwnTeam> {
 
 async function databasePublishedTeams(slug: string): Promise<PublishedTeams> {
   if (!(await getPublicEdition(slug)) || !process.env.DATABASE_URL) return [];
-  return db().transaction(
-    async (tx) => {
-      const rows = await tx
-        .select({
-          id: teams.id,
-          name: teams.name,
-          avatarKey: teams.avatarKey,
-          captainId: teams.captainId,
-          captainName: users.username,
-          finalizedAt: teams.finalizedAt,
-          rosterPublished: teams.rosterPublished,
-        })
-        .from(teams)
-        .innerJoin(
-          captains,
-          and(
-            eq(captains.editionSlug, teams.editionSlug),
-            eq(captains.userId, teams.captainId),
-          ),
-        )
-        .innerJoin(users, eq(users.osuId, teams.captainId))
-        .where(
-          and(
-            eq(teams.editionSlug, slug),
-            eq(teams.identityPublished, true),
-            eq(captains.published, true),
-            isNull(teams.archivedAt),
-          ),
-        )
-        .orderBy(teams.name);
-      const published: PublishedTeams = [];
-      for (const team of rows) {
-        const members =
-          team.finalizedAt && team.rosterPublished
-            ? await tx
-                .select({
-                  osuId: memberships.userId,
-                  username: users.username,
-                  countryCode: sql<
-                    string | null
-                  >`${userProfileCache.profile}->>'countryCode'`,
-                  countryName: sql<
-                    string | null
-                  >`${userProfileCache.profile}->>'countryName'`,
-                })
-                .from(memberships)
-                .innerJoin(users, eq(users.osuId, memberships.userId))
-                .leftJoin(
-                  userProfileCache,
-                  and(
-                    eq(userProfileCache.osuId, memberships.userId),
-                    eq(userProfileCache.mode, "osu"),
-                    sql`${userProfileCache.errorStatus} IS DISTINCT FROM 404`,
-                  ),
-                )
-                .where(
-                  and(
-                    eq(memberships.teamId, team.id),
-                    isNull(memberships.leftAt),
-                  ),
-                )
-                .orderBy(memberships.joinedAt)
-            : null;
-        const coaches =
-          team.finalizedAt && team.rosterPublished
-            ? await tx
-                .select({ osuId: users.osuId, username: users.username })
-                .from(teamCoaches)
-                .innerJoin(users, eq(users.osuId, teamCoaches.userId))
-                .where(eq(teamCoaches.teamId, team.id))
-                .orderBy(users.username)
-            : [];
-        published.push({
-          coaches,
-          id: team.id,
-          name: team.name,
-          avatarKey: team.avatarKey,
-          captainId: team.captainId,
-          captainName: team.captainName,
-          finalized: Boolean(team.finalizedAt),
-          members,
-        });
-      }
-      return published;
-    },
-    { isolationLevel: "repeatable read" },
-  );
+  return readOnlyData(async () => {
+    const tx = db();
+    const rows = await tx
+      .select({
+        id: teams.id,
+        name: teams.name,
+        avatarKey: teams.avatarKey,
+        captainId: teams.captainId,
+        captainName: users.username,
+        finalizedAt: teams.finalizedAt,
+        rosterPublished: teams.rosterPublished,
+      })
+      .from(teams)
+      .innerJoin(
+        captains,
+        and(
+          eq(captains.editionSlug, teams.editionSlug),
+          eq(captains.userId, teams.captainId),
+        ),
+      )
+      .innerJoin(users, eq(users.osuId, teams.captainId))
+      .where(
+        and(
+          eq(teams.editionSlug, slug),
+          eq(teams.identityPublished, true),
+          eq(captains.published, true),
+          isNull(teams.archivedAt),
+        ),
+      )
+      .orderBy(captains.position);
+    const published: PublishedTeams = [];
+    for (const team of rows) {
+      const members =
+        team.finalizedAt && team.rosterPublished
+          ? await tx
+              .select({
+                osuId: memberships.userId,
+                username: users.username,
+                countryCode: sql<
+                  string | null
+                >`${userProfileCache.profile}->>'countryCode'`,
+                countryName: sql<
+                  string | null
+                >`${userProfileCache.profile}->>'countryName'`,
+              })
+              .from(memberships)
+              .innerJoin(users, eq(users.osuId, memberships.userId))
+              .leftJoin(
+                userProfileCache,
+                and(
+                  eq(userProfileCache.osuId, memberships.userId),
+                  eq(userProfileCache.mode, "osu"),
+                  sql`${userProfileCache.errorStatus} IS DISTINCT FROM 404`,
+                ),
+              )
+              .where(
+                and(
+                  eq(memberships.teamId, team.id),
+                  isNull(memberships.leftAt),
+                ),
+              )
+              .orderBy(memberships.joinedAt)
+          : null;
+      const coaches =
+        team.finalizedAt && team.rosterPublished
+          ? await tx
+              .select({ osuId: users.osuId, username: users.username })
+              .from(teamCoaches)
+              .innerJoin(users, eq(users.osuId, teamCoaches.userId))
+              .where(eq(teamCoaches.teamId, team.id))
+              .orderBy(users.username)
+          : [];
+      published.push({
+        coaches,
+        id: team.id,
+        name: team.name,
+        avatarKey: team.avatarKey,
+        captainId: team.captainId,
+        captainName: team.captainName,
+        finalized: Boolean(team.finalizedAt),
+        members,
+      });
+    }
+    if (published.length < 2) return published;
+    const draft = await releasedDraftData(slug, true);
+    if (!draft) return published;
+    // Older snapshots stored rosters in captain order. If a newer revision
+    // is held back, only the released picks, current turn and rosters apply.
+    const order = draft.turnSequence.length
+      ? draft.turnSequence
+      : [
+          ...draft.snapshot.picks.map((pick) => pick.team.id),
+          ...(draft.snapshot.activeTeam ? [draft.snapshot.activeTeam.id] : []),
+          ...draft.snapshot.rosters.map((roster) => roster.team.id),
+        ];
+    return teamsInPickOrder(published, order, (team) => team.id);
+  });
 }
 export async function publishedTeams(slug: string): Promise<PublishedTeams> {
   if (remoteMode()) {

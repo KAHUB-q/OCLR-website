@@ -126,9 +126,9 @@ test("gallery displays the full history and edits older messages in place", asyn
   const authorLink = rows
     .first()
     .getByRole("link", { name: history[0].author, exact: true });
-  await expect(authorLink.locator("img")).toHaveAttribute(
+  await expect(authorLink.locator("img")).toHaveJSProperty(
     "src",
-    `/api/osu-images/avatar/${history[0].authorId}`,
+    new URL(`/api/osu-images/avatar/${history[0].authorId}`, page.url()).href,
   );
   await expect(authorLink.locator("img")).toHaveJSProperty("naturalWidth", 32);
   await rows.last().scrollIntoViewIfNeeded();

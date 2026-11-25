@@ -172,7 +172,7 @@ export function ZonedDateInput({
             <option value="">{tr("Choose UTC offset")}</option>
             {result.candidates.map((instant) => (
               <option key={instant} value={instant}>
-                {new Intl.DateTimeFormat("en", {
+                {new Intl.DateTimeFormat(tr.locale, {
                   timeZone,
                   timeZoneName: "longOffset",
                   hour: "2-digit",

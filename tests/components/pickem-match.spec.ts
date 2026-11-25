@@ -113,7 +113,7 @@ for (const strict of [false, true]) {
     const save = page.getByRole("button", { name: "Save prediction" });
     await expect(home).toHaveValue("2");
     await home.selectOption("3");
-    await away.selectOption("5");
+    await expect(away).toHaveValue("5");
     await save.click();
     await expect(page.getByRole("alert")).toContainText(
       "Your sign-in has expired.",

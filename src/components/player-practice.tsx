@@ -44,6 +44,10 @@ function PracticeTabs({
   onChange: (id: string) => void;
 }) {
   const root = useRef<HTMLDivElement>(null);
+  const [focusedId, setFocusedId] = useState<string | null>(null);
+  const tabStop = items.some((item) => item.id === focusedId)
+    ? focusedId
+    : value;
   return (
     <div
       ref={root}
@@ -80,7 +84,9 @@ function PracticeTabs({
           id={`${id}-${item.id}`}
           aria-selected={value === item.id}
           aria-controls={panel(item.id)}
-          tabIndex={value === item.id ? 0 : -1}
+          tabIndex={tabStop === item.id ? 0 : -1}
+          onFocus={() => setFocusedId(item.id)}
+          onBlur={() => setFocusedId(null)}
           onClick={() => onChange(item.id)}
         >
           {item.label}

@@ -358,3 +358,22 @@ for (const theme of ["light", "dark"]) {
     ).toHaveCount(0);
   });
 }
+
+test("leaves the Mod tabs without activating an arrow-focused tab", async ({
+  page,
+}) => {
+  await page.goto("/practice-records?locale=en");
+  const mods = page.getByRole("tablist", { name: "Mods" });
+  const hd = mods.getByRole("tab", { name: "HD", exact: true });
+  const nm = mods.getByRole("tab", { name: "NM", exact: true });
+  await hd.press("Enter");
+  await hd.press("ArrowLeft");
+  await expect(nm).toBeFocused();
+  await expect(hd).toHaveAttribute("aria-selected", "true");
+  await page.keyboard.press("Tab");
+  await expect(
+    page.getByRole("region", { name: "Team practice records · HD" }),
+  ).toBeFocused();
+  await page.keyboard.press("Shift+Tab");
+  await expect(hd).toBeFocused();
+});

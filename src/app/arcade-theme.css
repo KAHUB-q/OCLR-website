@@ -226,7 +226,6 @@ html[data-appearance="retro-arcade"]
   :is(h1:not(.home-wordmark), h2):not(
     .map-detail-identity h2,
     .event-bracket-round h2,
-    .public-team-card h2,
     .news-list h2,
     .prose h1
   ) {
@@ -245,12 +244,7 @@ html[data-appearance="retro-arcade"]
 }
 html[data-appearance="retro-arcade"]
   .themed-site
-  h2:not(
-    .map-detail-identity h2,
-    .event-bracket-round h2,
-    .public-team-card h2,
-    .news-list h2
-  ) {
+  h2:not(.map-detail-identity h2, .event-bracket-round h2, .news-list h2) {
   font-size: var(--text-heading);
 }
 /* Content: body copy, tables, form fields and authored titles also use the

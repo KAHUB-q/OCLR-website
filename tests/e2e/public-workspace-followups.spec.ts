@@ -248,10 +248,14 @@ test.describe("public and operational follow-ups", () => {
         await noOverflow(page);
       }
       await page.goto("/tournaments/test-cup/teams");
-      await expect(
-        page.locator(".public-team-card .public-player-identity"),
-      ).toHaveCount(0);
-      await expect(page.locator(".public-team-card")).toHaveCount(1);
+      const roster = page.locator(".archive-team-section");
+      await expect(roster).toHaveCount(1);
+      await expect(roster.locator(".archive-player-card-link")).toHaveCount(2);
+      for (const id of [seed.captainId, seed.memberId]) {
+        await expect(
+          roster.locator(`a[href="/players/${id}?edition=test-cup"]`),
+        ).toHaveCount(1);
+      }
       await page.goto(`/tournaments/test-cup/teams/${seed.teamId}`);
       await expect(page.locator(".public-roster-grid > li")).toHaveCount(2);
       await expect(

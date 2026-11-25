@@ -176,6 +176,8 @@ test("resizes existing groups without losing stable identities and confirms retu
     .getByRole("button", { name: "Cancel", exact: true })
     .click();
   await expect(page.locator(".group-assignment-card")).toHaveCount(3);
+  const moveNotice = page.locator(".group-assignment-status");
+  await expect(moveNotice).toContainText("Echo moved to C.");
   await page.getByLabel("Group count", { exact: true }).selectOption("2");
   await page
     .getByRole("button", { name: "Apply group count", exact: true })
@@ -189,6 +191,7 @@ test("resizes existing groups without losing stable identities and confirms retu
       .getByRole("region", { name: "Unassigned teams", exact: true })
       .getByRole("button", { name: "Select team Echo", exact: true }),
   ).toBeVisible();
+  await expect(moveNotice).toBeEmpty();
   await page.getByLabel("Group name 1", { exact: true }).fill("Renamed Alpha");
   await page
     .getByRole("button", { name: "Save group assignments", exact: true })

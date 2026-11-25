@@ -14,6 +14,8 @@ import {
 } from "@assistant-ui/react";
 import { useAISDKRuntime } from "@assistant-ui/ai-sdk";
 import { useAppTranslations } from "@/i18n/shared";
+import type { User } from "@/lib/auth/sessions";
+import { Avatar } from "./avatar";
 import { LiruChatIcon } from "./liru-chat-icon";
 import styles from "./liru-chat.module.css";
 
@@ -101,10 +103,13 @@ function AssistantMessage() {
     </MessagePrimitive.Root>
   );
 }
-function UserMessage() {
+function UserMessage({ viewer }: { viewer: User }) {
   return (
     <MessagePrimitive.Root className={styles.question}>
-      <MessagePrimitive.Parts />
+      <div className={styles.questionBubble}>
+        <MessagePrimitive.Parts />
+      </div>
+      <Avatar osuId={viewer.osuId} username={viewer.username} />
     </MessagePrimitive.Root>
   );
 }
@@ -112,9 +117,11 @@ function UserMessage() {
 export function LiruChat({
   edition,
   suggestions,
+  viewer,
 }: {
   edition: string;
   suggestions: readonly string[];
+  viewer: User;
 }) {
   const tr = useAppTranslations();
   const locale = tr.locale;
@@ -162,9 +169,14 @@ export function LiruChat({
           role="log"
           aria-label={tr("Conversation")}
         >
-          <ThreadPrimitive.Messages
-            components={{ AssistantMessage, UserMessage }}
-          />
+          <ThreadPrimitive.Messages>
+            {({ message }) => {
+              if (message.role === "user")
+                return <UserMessage viewer={viewer} />;
+              if (message.role === "assistant") return <AssistantMessage />;
+              return null;
+            }}
+          </ThreadPrimitive.Messages>
           {waiting && (
             <div role="status" className={styles.pending}>
               {tr("Loading…")}

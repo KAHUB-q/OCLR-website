@@ -13,7 +13,11 @@ function Fixture() {
         <LiruChatLauncher
           key={edition}
           edition={edition}
-          signedIn={!location.search.includes("guest")}
+          viewer={
+            location.search.includes("guest")
+              ? null
+              : { osuId: 1425010, username: "Synthetic player" }
+          }
         />
       </main>
     </NextIntlClientProvider>

@@ -15,6 +15,15 @@ test("stop a pending turn, retry with sources, and start fresh in another editio
       return seed / 2147483647;
     };
   });
+  await page.route("**/api/osu-images/avatar/1425010", (route) =>
+    route.fulfill({
+      contentType: "image/gif",
+      body: Buffer.from(
+        "R0lGODlhAQABAIAAAAAAAP///yH5BAEAAAAALAAAAAABAAEAAAIBRAA7",
+        "base64",
+      ),
+    }),
+  );
   const editions: string[] = [];
   await page.route("**/api/chat", async (route) => {
     count++;
@@ -59,6 +68,19 @@ test("stop a pending turn, retry with sources, and start fresh in another editio
   await page.getByRole("textbox").fill("Substitution?");
   await page.getByRole("button", { name: "Send", exact: true }).click();
   await expect.poll(() => count).toBe(1);
+  const history = page.getByRole("log");
+  const avatar = history.locator('img[src$="/api/osu-images/avatar/1425010"]');
+  await expect(avatar).toBeVisible();
+  await expect
+    .poll(() =>
+      avatar.evaluate((image: HTMLImageElement) => image.naturalWidth),
+    )
+    .toBeGreaterThan(0);
+  const question = await history
+    .getByText("Substitution?", { exact: true })
+    .boundingBox();
+  const profile = await avatar.boundingBox();
+  expect(profile!.x).toBeGreaterThanOrEqual(question!.x + question!.width);
   await expect(
     page.getByRole("status").filter({ hasText: "Loading…" }),
   ).toBeVisible();

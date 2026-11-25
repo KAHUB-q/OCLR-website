@@ -33,6 +33,7 @@ export default async function ChatPage({
           <LiruChat
             key={slug}
             edition={slug}
+            viewer={user}
             suggestions={pickLiruSuggestions(tr)}
           />
         </>

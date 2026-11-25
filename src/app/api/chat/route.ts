@@ -56,34 +56,31 @@ export async function POST(request: Request) {
       request.signal,
       (error) => trace("embedding_fallback", undefined, safeChatError(error)),
     );
-    const answerRoute = evidence.total
-      ? "local_count"
-      : evidence.greeting
-        ? "greeting"
+    const evidenceKind = evidence.greeting
+      ? "greeting"
+      : evidence.total
+        ? "verified_count"
         : evidence.sources.length
-          ? "model"
-          : "no_evidence";
+          ? "published"
+          : "none";
     trace("evidence_ready", undefined, {
       edition,
       sourceCount: evidence.sources.length,
       retrievalMs: Math.round(performance.now() - retrievalStarted),
-      route: answerRoute,
+      route: "model",
+      evidenceKind,
     });
     stage = "prompt_settings";
-    const settings =
-      answerRoute === "greeting" || answerRoute === "model"
-        ? await readChatPrompt()
-        : null;
-    if (settings)
-      trace("prompt_ready", undefined, {
-        customPrompt: Boolean(settings.prompt),
-        promptRevision: settings.revision,
-      });
+    const settings = await readChatPrompt();
+    trace("prompt_ready", undefined, {
+      customPrompt: Boolean(settings.prompt),
+      promptRevision: settings.revision,
+    });
     stage = "response";
     request.signal.throwIfAborted();
     return chatAnswer({
       diagnostics,
-      assistantPrompt: settings?.prompt ?? "",
+      assistantPrompt: settings.prompt,
       config,
       evidence,
       locale,

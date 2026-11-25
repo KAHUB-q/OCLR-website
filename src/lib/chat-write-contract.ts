@@ -21,7 +21,7 @@ export const chatWrite = {
   }),
   summary: "Ask Liru about a published tournament",
   description:
-    "Requires an active website session and the same origin. Questions are ordered oldest to newest. The server retrieves published evidence for the selected edition, applies an eight-request per minute account limit and answers simple season totals for registrations, teams, fixtures, published results, upcoming matches, mappools and map slots from public season data. Standalone greetings and other questions with published evidence use the configured model.",
+    "Requires an active website session and the same origin. Questions are ordered oldest to newest. The server retrieves published evidence for the selected edition, applies an eight-request per minute account limit and sends every accepted turn to the configured model. For count questions the server computes the verified total from public season data. The system prompt directs replies to the current edition and explains when published evidence is incomplete.",
   successStatus: 200,
   successDescription:
     "AI SDK UI message stream with text and server-selected source URLs. After streaming begins, provider failures are reported in the stream.",

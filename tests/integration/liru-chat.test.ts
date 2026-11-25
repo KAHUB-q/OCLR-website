@@ -53,6 +53,37 @@ function ask(questions = ["substitution?"], extra = {}, signal?: AbortSignal) {
     }),
   );
 }
+function completion(text: string) {
+  const chunks = [
+    { choices: [{ index: 0, delta: { content: text }, finish_reason: null }] },
+    { choices: [{ index: 0, delta: {}, finish_reason: "stop" }] },
+  ];
+  return new Response(
+    chunks.map((chunk) => "data: " + JSON.stringify(chunk) + "\n\n").join("") +
+      "data: [DONE]\n\n",
+    { headers: { "content-type": "text/event-stream" } },
+  );
+}
+
+function countProvider() {
+  return vi.fn(async (url: unknown, init: RequestInit) => {
+    expect(String(url)).toBe("https://provider.example/v1/chat/completions");
+    const { messages } = JSON.parse(String(init.body));
+    expect(messages[0].content).toContain(
+      "preserve its exact number, scope and qualifications",
+    );
+    const { verifiedCount, evidence } = JSON.parse(messages.at(-1).content);
+    expect(verifiedCount).toMatchObject({
+      count: expect.any(Number),
+      source: 1,
+    });
+    expect(evidence).toHaveLength(1);
+    expect(evidence[0].source).toBe(1);
+    // The client still receives the verified public source if the model omits the citation marker.
+    return completion(verifiedCount.publicAnswer);
+  });
+}
+
 const season = (slug: string, body: string) => ({
   ...edition,
   slug,
@@ -166,7 +197,7 @@ describe.skipIf(!testUrl)("authenticated tournament assistant", () => {
       ),
     ).toBe(false);
   });
-  it("answers registration totals from currently published data even without an index or provider", async () => {
+  it("sends verified registration totals from currently published data to the model without needing an index", async () => {
     const cup = "count-test-cup";
     const other = "count-test-other";
     await seedEditions([
@@ -197,7 +228,7 @@ describe.skipIf(!testUrl)("authenticated tournament assistant", () => {
         },
       ]);
     context.token = (await createSession(accepted)).token;
-    const upstream = vi.fn();
+    const upstream = countProvider();
     vi.stubGlobal("fetch", upstream);
     for (const question of [
       "有多少人報名了",
@@ -237,9 +268,9 @@ describe.skipIf(!testUrl)("authenticated tournament assistant", () => {
     ).toContain(`historical roster lists ${archive.players.length}`);
     await seedEditions([{ ...season(cup, "Registration"), published: false }]);
     expect((await ask(["有多少人報名了"], { edition: cup })).status).toBe(404);
-    expect(upstream).not.toHaveBeenCalled();
+    expect(upstream).toHaveBeenCalledTimes(6);
   });
-  it("answers public season counts with matching citations without embedding or generation", async () => {
+  it("sends public season counts to generation and attaches matching citations without embedding", async () => {
     const archive = structuredClone(historicalArchive);
     const current = "empty-local-counts";
     await seedEditions([
@@ -256,7 +287,7 @@ describe.skipIf(!testUrl)("authenticated tournament assistant", () => {
       .insert(users)
       .values({ osuId: 1425071, username: "Local counts" });
     context.token = (await createSession(1425071)).token;
-    const upstream = vi.fn();
+    const upstream = countProvider();
     vi.stubGlobal("fetch", upstream);
     vi.stubEnv("OCLR_CHAT_EMBEDDING_MODEL", "synthetic-test");
     try {
@@ -287,7 +318,7 @@ describe.skipIf(!testUrl)("authenticated tournament assistant", () => {
       expect(
         await (await ask(["本屆有幾支隊伍？"], { edition: current })).text(),
       ).toContain("0 published teams");
-      expect(upstream).not.toHaveBeenCalled();
+      expect(upstream).toHaveBeenCalledTimes(7);
     } finally {
       vi.stubEnv("OCLR_CHAT_EMBEDDING_MODEL", "");
     }
@@ -388,6 +419,39 @@ describe.skipIf(!testUrl)("authenticated tournament assistant", () => {
     expect(unavailable.status).toBe(404);
     expect(upstream).toHaveBeenCalledTimes(3);
   });
+  it("sends an accepted turn with no evidence to the model with an explicit boundary", async () => {
+    const user = { osuId: 1425097, username: "No evidence test" };
+    await db().insert(users).values(user);
+    context.token = (await createSession(user.osuId)).token;
+    await seedEditions([{ ...season(slug, "Unrelated rule"), rules: null }]);
+    const upstream = vi.fn(async (url: unknown, init: RequestInit) => {
+      expect(String(url)).toBe("https://provider.example/v1/chat/completions");
+      const { messages } = JSON.parse(String(init.body));
+      expect(messages[0].content).toContain(
+        "If evidence is missing or insufficient",
+      );
+      expect(messages[0].content).toContain(
+        "redirect unrelated requests to this tournament",
+      );
+      expect(JSON.parse(messages.at(-1).content)).toMatchObject({
+        currentQuestion: "Is there a published tiebreaker selection order?",
+        evidence: [],
+      });
+      return completion(
+        "I couldn't find a published tiebreaker selection order.",
+      );
+    });
+    vi.stubGlobal("fetch", upstream);
+    const response = await ask([
+      "Is there a published tiebreaker selection order?",
+    ]);
+    const text = await response.text();
+    expect(upstream).toHaveBeenCalledOnce();
+    expect(text).toContain(
+      "couldn't find a published tiebreaker selection order",
+    );
+    expect(text).not.toContain('"type":"source-url"');
+  });
   it("streams cited public evidence through the configured compatible provider and discards client instructions", async () => {
     context.token = (await createSession(1425001)).token;
     const published = season(slug, "Only after referee approval.");
@@ -430,7 +494,7 @@ describe.skipIf(!testUrl)("authenticated tournament assistant", () => {
       expect(instructions).toContain(
         "only for tone, presentation and terminology",
       );
-      expect(instructions).toContain("using the supplied public evidence");
+      expect(instructions).toContain("using only the supplied public evidence");
       expect(JSON.stringify(body.messages)).toContain(
         "Only after referee approval.",
       );
@@ -514,8 +578,6 @@ describe.skipIf(!testUrl)("authenticated tournament assistant", () => {
     expect(text).toContain("Check with the referee.");
     expect(text.match(/"type":"source-url"/g)).toHaveLength(1);
     expect(text).toContain('"sourceId":"1"');
-    expect(upstream).toHaveBeenCalledTimes(1);
-    expect(await (await ask(["zzz"])).text()).toContain("couldn’t find");
     expect(upstream).toHaveBeenCalledTimes(1);
     await db().insert(staffRoles).values({
       userId: 1425001,

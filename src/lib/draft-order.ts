@@ -1,5 +1,22 @@
 export type DraftOrderMode = "snake" | "forward" | "custom";
 export const maxDraftTurns = 4096;
+
+/** Snake and custom sequences can revisit a team. Its first turn sets its place. */
+export function teamsInPickOrder<T>(
+  teams: T[],
+  sequence: string[],
+  teamId: (team: T) => string,
+) {
+  const positions = new Map(
+    [...new Set(sequence)].map((id, index) => [id, index]),
+  );
+  return teams.toSorted(
+    (a, b) =>
+      (positions.get(teamId(a)) ?? positions.size) -
+      (positions.get(teamId(b)) ?? positions.size),
+  );
+}
+
 export function generateTurnSequence(
   teamIds: string[],
   rounds: number,

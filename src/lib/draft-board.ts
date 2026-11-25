@@ -1,3 +1,4 @@
+import { teamsInPickOrder } from "./draft-order";
 import type { DraftData } from "./draft-data";
 import type {
   CaptainBoard,
@@ -86,7 +87,16 @@ export function buildDraftSnapshots(
     eligiblePool: availableDraftPool(data),
   };
   return {
-    publicSnapshot: published ? snapshot : null,
+    publicSnapshot: published
+      ? {
+          ...snapshot,
+          rosters: teamsInPickOrder(
+            snapshot.rosters,
+            session.turnSequence,
+            (roster) => roster.team.id,
+          ),
+        }
+      : null,
     captainSnapshot,
     publicVersion: snapshot.version,
     publishedRevision: published ? session.version : -1,

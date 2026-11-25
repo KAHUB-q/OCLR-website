@@ -15,10 +15,12 @@ function TeamSection({
   team,
   slug,
   groupName,
+  position,
 }: {
   team: PublishedTeam;
   slug: string;
   groupName?: string;
+  position: number;
 }) {
   const tr = useAppTranslations();
   const captain = { osuId: team.captainId, username: team.captainName };
@@ -32,6 +34,7 @@ function TeamSection({
   return (
     <section className="archive-team-section">
       <h2 className="team-directory-heading">
+        <span className="muted">#{position}</span>
         {team.avatarKey && <TeamAvatar team={team} />}
         <Link href={`/tournaments/${slug}/teams/${team.id}`}>{team.name}</Link>
         {groupName && <span className="badge">{groupName}</span>}
@@ -75,21 +78,26 @@ export function PublicTeams({
   const [group, setGroup] = useState("");
   const term = search.trim().toLocaleLowerCase();
   const selected = groups.find((g) => g.key === group);
-  const filtered = teams.filter(
-    (t) =>
-      (!selected || selected.rows.some((r) => r.team.id === t.id)) &&
-      (!term ||
-        [
-          t.name,
-          t.captainName,
-          t.captainId,
-          ...(t.members ? t.coaches : []).flatMap((c) => [c.username, c.osuId]),
-          ...(t.members ?? []).flatMap((m) => [m.username, m.osuId]),
-        ]
-          .join(" ")
-          .toLocaleLowerCase()
-          .includes(term)),
-  );
+  const filtered = teams
+    .map((team, index) => ({ team, position: index + 1 }))
+    .filter(
+      ({ team: t }) =>
+        (!selected || selected.rows.some((r) => r.team.id === t.id)) &&
+        (!term ||
+          [
+            t.name,
+            t.captainName,
+            t.captainId,
+            ...(t.members ? t.coaches : []).flatMap((c) => [
+              c.username,
+              c.osuId,
+            ]),
+            ...(t.members ?? []).flatMap((m) => [m.username, m.osuId]),
+          ]
+            .join(" ")
+            .toLocaleLowerCase()
+            .includes(term)),
+    );
   return (
     <>
       <div className="team-browse-toolbar">
@@ -131,10 +139,11 @@ export function PublicTeams({
         className={`public-team-workspace${groups.length ? " with-standings" : ""}`}
       >
         <div className="stack">
-          {filtered.map((team) => (
+          {filtered.map(({ team, position }) => (
             <TeamSection
               key={team.id}
               team={team}
+              position={position}
               slug={slug}
               groupName={
                 groups.find((g) => g.rows.some((r) => r.team.id === team.id))

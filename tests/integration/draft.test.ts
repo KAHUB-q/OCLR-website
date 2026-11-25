@@ -24,7 +24,12 @@ import {
   memberships,
   teams,
 } from "../../src/db/schema";
-import { captainDraft, publicDraft, staffDraft } from "../../src/lib/draft-reads";
+import { publishedTeams } from "../../src/lib/team-reads";
+import {
+  captainDraft,
+  publicDraft,
+  staffDraft,
+} from "../../src/lib/draft-reads";
 import { draftCommand, pickPlayer } from "../../src/lib/draft";
 import { generateTurnSequence } from "../../src/lib/draft-order";
 import { prepareDraft } from "../fixtures/draft";
@@ -129,9 +134,15 @@ describe.skipIf(!url)(
             turnSequence: sequence,
           },
         });
+        expect((await publishedTeams(edition.slug)).map((t) => t.id)).toEqual(
+          ids,
+        );
         await command("ready");
         await command("start");
         await command("publish");
+        expect((await publishedTeams(edition.slug)).map((t) => t.id)).toEqual([
+          ...new Set(sequence),
+        ]);
         for (let i = 0; i < sequence.length; i++) {
           const active = state.teams.find((t) => t.team.id === sequence[i])!;
           const actor =

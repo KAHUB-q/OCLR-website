@@ -342,7 +342,7 @@ describe.skipIf(!url)(
       );
       await db()
         .update(teams)
-        .set({ finalizedAt: new Date() })
+        .set({ finalizedAt: new Date(), name: "Zulu" })
         .where(eq(teams.id, configured[0].id));
       // An inconsistent saved roster flag cannot release a newly published team.
       await db()

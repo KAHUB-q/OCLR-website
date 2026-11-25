@@ -209,11 +209,7 @@ export default function Overview(props: Parameters<typeof OverviewContent>[0]) {
     const user = await currentUser();
     return (
       <>
-        <LiruChatLauncher
-          key={edition}
-          edition={edition}
-          signedIn={Boolean(user)}
-        />
+        <LiruChatLauncher key={edition} edition={edition} viewer={user} />
         {content}
       </>
     );

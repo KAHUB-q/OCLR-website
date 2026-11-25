@@ -2,6 +2,7 @@
 
 import { lazy, Suspense, useEffect, useId, useRef, useState } from "react";
 import { useAppTranslations } from "@/i18n/shared";
+import type { User } from "@/lib/auth/sessions";
 import { pickLiruSuggestions } from "@/lib/liru-chat-suggestions";
 import { LiruChatIcon } from "./liru-chat-icon";
 import styles from "./liru-chat.module.css";
@@ -12,10 +13,10 @@ const Chat = lazy(() =>
 
 export function LiruChatLauncher({
   edition,
-  signedIn,
+  viewer,
 }: {
   edition: string;
-  signedIn: boolean;
+  viewer: User | null;
 }) {
   const tr = useAppTranslations();
   const id = useId();
@@ -49,7 +50,7 @@ export function LiruChatLauncher({
         id={id}
         onToggle={(event) => {
           if (
-            signedIn &&
+            viewer &&
             event.target === event.currentTarget &&
             event.newState === "open"
           )
@@ -74,7 +75,7 @@ export function LiruChatLauncher({
             ×
           </button>
         </header>
-        {signedIn ? (
+        {viewer ? (
           <>
             <p className={styles.disclosure}>
               {tr(
@@ -89,7 +90,11 @@ export function LiruChatLauncher({
                   </p>
                 }
               >
-                <Chat edition={edition} suggestions={suggestions} />
+                <Chat
+                  edition={edition}
+                  suggestions={suggestions}
+                  viewer={viewer}
+                />
               </Suspense>
             )}
           </>

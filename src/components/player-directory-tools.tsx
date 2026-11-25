@@ -44,13 +44,17 @@ export function usePlayerDirectory<T extends DirectoryPlayer>(
     () => params?.toString() ?? "",
   );
   const state = directoryState(new URLSearchParams(query), grouped);
+  const errors = directoryErrors(state);
   const waitingForRating =
     otrLoading &&
     Boolean(state.otrMin || state.otrMax || state.sort.startsWith("otr-"));
   function update(values: Partial<typeof state>, reset = false) {
     const next = new URLSearchParams(query);
     // Retain edition/preview context and unrelated legacy display parameters.
-    if (reset) filterKeys.forEach((key) => next.delete(key));
+    if (reset) {
+      filterKeys.forEach((key) => next.delete(key));
+      if (errors.includes("filter")) next.delete("group");
+    }
     for (const [key, value] of Object.entries(values)) {
       if (value) next.set(key, value);
       else next.delete(key);
@@ -71,7 +75,7 @@ export function usePlayerDirectory<T extends DirectoryPlayer>(
     update,
     rows: waitingForRating ? [] : selectDirectoryPlayers(players, state),
     options: directoryOptions(players),
-    errors: directoryErrors(state),
+    errors,
     total: new Set(players.map((p) => p.id)).size,
     waitingForRating,
   };
@@ -136,6 +140,7 @@ export function PlayerDirectoryTools({
   const active = filterKeys.filter(
     (key) => state[key] && !(key === "sort" && state.sort === "default"),
   );
+  const canClear = active.length > 0 || errors.includes("filter");
   const rangeActive = Object.keys(rangeLabels).filter(
     (key) => state[key as DirectoryRangeKey],
   ).length;
@@ -394,7 +399,7 @@ export function PlayerDirectoryTools({
             ? tr("Loading o!TR ratings…")
             : `${rows.length} / ${total} ${tr("Players")}`}
         </p>
-        {active.length > 0 && (
+        {canClear && (
           <button type="button" onClick={reset}>
             {tr("Clear filters")}
           </button>
@@ -434,7 +439,7 @@ export function PlayerDirectoryTools({
               ? tr("No public players are available for this season yet.")
               : tr("No players match your search.")}
           </p>
-          {active.length > 0 && (
+          {canClear && (
             <button type="button" onClick={reset}>
               {tr("Clear filters")}
             </button>

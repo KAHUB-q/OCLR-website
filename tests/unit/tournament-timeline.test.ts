@@ -16,6 +16,72 @@ const phase = {
   endAt: end,
 };
 describe("competition timeline", () => {
+  it.each([true, false])(
+    "keeps a point milestone and a phase with the same name and start, phase first: %s",
+    (phaseFirst) => {
+      const group = {
+        kind: "group" as const,
+        label: "group_stage",
+        at: start,
+        endAt: end,
+      };
+      const point = { label: "Group stage", at: start };
+      const schedule = phaseFirst ? [group, point] : [point, group];
+      const model = tournamentTimeline(
+        { ...edition, registration: null, schedule },
+        tr,
+        "en",
+      );
+      expect(model.stages.map((stage) => stage.interval)).toEqual(
+        phaseFirst ? [true, false] : [false, true],
+      );
+      expect(model.schedule.map((row) => row.event)).toEqual([
+        "Group stage",
+        "Group stage",
+      ]);
+    },
+  );
+
+  it("compares instants before formatting them to the displayed minute", () => {
+    const first = { label: "Check-in", at: "2026-10-29T00:00:03Z" };
+    const other = { ...first, at: "2026-10-29T00:00:42Z" };
+    const alias = {
+      ...first,
+      at: "2026-10-29T08:00:03+08:00",
+      precision: "instant" as const,
+    };
+    const model = tournamentTimeline(
+      { ...edition, registration: null, schedule: [first, other, alias] },
+      tr,
+      "en",
+    );
+    expect(model.stages.map((stage) => stage.at)).toEqual([first.at, other.at]);
+    expect(model.schedule).toHaveLength(2);
+  });
+
+  it("keeps one opening row for a matching legacy registration milestone", () => {
+    const model = tournamentTimeline(
+      {
+        ...edition,
+        registration: { opensAt: start, closesAt: end },
+        schedule: [
+          {
+            label: "Registration opens",
+            at: "2026-10-29T08:00:00+08:00",
+            precision: "day",
+          },
+        ],
+      },
+      tr,
+      "en",
+    );
+    expect(model.schedule.map((row) => row.event)).toEqual([
+      "Registration opens",
+      "Registration closes",
+    ]);
+    expect(model.stages.map((stage) => stage.id)).toEqual(["registration"]);
+  });
+
   it("uses the selected milestone translation in the overview and schedule", () => {
     const native = createTranslator({ locale: "zh-Hant", messages: hant.ui });
     const translate = appTranslator(

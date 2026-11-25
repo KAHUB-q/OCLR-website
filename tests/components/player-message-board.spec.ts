@@ -544,3 +544,41 @@ for (const locale of ["zh-Hans", "zh-Hant"]) {
     );
   });
 }
+
+test("restores the oldest visible player message after deleting from a full board", async ({
+  page,
+}) => {
+  const history = Array.from({ length: 20 }, (_, index) => ({
+    ...original,
+    id: `history-${index}`,
+    text: `Earlier message ${index}`,
+    authorId: 190002,
+  }));
+  const added = { ...original, id: "new-message", text: "Newest message" };
+  let saved = [...history];
+  await page.route(`**${endpoint}`, (route) => {
+    if (route.request().method() === "POST") {
+      saved = [added, ...saved];
+      return json(route, added, 201);
+    }
+    return json(route, saved.slice(0, 20));
+  });
+  await page.route(`**${endpoint}/${added.id}`, (route) => {
+    saved = saved.filter((row) => row.id !== added.id);
+    return json(route, {});
+  });
+  await page.goto("/");
+  const nav = page.getByRole("group", { name: "Message navigation" });
+  await expect(nav).toContainText("of 20");
+  await page.getByRole("button", { name: "Leave a message" }).click();
+  await page.getByRole("textbox").fill(added.text);
+  await page.getByRole("button", { name: "Post message" }).click();
+  const board = page.getByRole("region", { name: /Messages for/ });
+  await expect(board).toContainText(added.text);
+  await page.getByRole("button", { name: "Delete message" }).click();
+  await page.getByRole("button", { name: "Confirm delete" }).click();
+  await expect(board).toContainText(history[0].text);
+  await expect(nav).toContainText("Recent message 1 of 20");
+  await nav.getByRole("button", { name: "Previous message" }).click();
+  await expect(board).toContainText(history[19].text);
+});

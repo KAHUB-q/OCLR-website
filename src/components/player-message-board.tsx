@@ -20,8 +20,10 @@ import type {
 
 type MessageChange = (rows: Message[]) => Message[];
 
+const recentMessageLimit = 20;
+
 function limitHistory(rows: Message[], showAll: boolean) {
-  return showAll ? rows : rows.slice(0, 20);
+  return showAll ? rows : rows.slice(0, recentMessageLimit);
 }
 
 export function PlayerMessageBoard({
@@ -265,7 +267,8 @@ export function SignedMessageBoard({
       );
       setCurrentId(nextId);
       close(nextId);
-      if (showAll && !deleting.parentId) await load();
+      if (showAll ? !deleting.parentId : messages.length === recentMessageLimit)
+        await load();
     } catch {
       setError(tr("This request could not be completed. Please try again."));
     } finally {

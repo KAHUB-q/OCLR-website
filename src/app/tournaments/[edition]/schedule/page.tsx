@@ -1,6 +1,8 @@
 import { EventSchedule } from "@/components/event-schedule";
 import { historicalPage } from "@/components/historical-archive";
+import { getAppTranslations } from "@/i18n/server";
 import { getPublicEdition } from "@/lib/content";
+import { formatDate } from "@/lib/editions";
 import { eventPreview, type EventMatch } from "@/lib/event-preview";
 import { publicCompetition } from "@/lib/public-competition";
 import { remotePage } from "@/lib/remote-page";
@@ -27,9 +29,17 @@ async function Issue271Page({
   const preview = eventPreview(slug);
   if (preview)
     return (
-      <EventSchedule edition={slug} matches={preview.matches} seededPreview />
+      <EventSchedule
+        edition={slug}
+        matches={preview.matches}
+        seededPreview
+        timeZone="UTC+8"
+      />
     );
-  const competition = await publicCompetition(slug);
+  const [competition, tr] = await Promise.all([
+    publicCompetition(slug),
+    getAppTranslations(),
+  ]);
   const matches: EventMatch[] = (competition?.fixtures ?? []).map((f) => ({
     id: f.id,
     label: f.label,
@@ -40,9 +50,7 @@ async function Issue271Page({
     pool: f.pool?.name ?? "—",
     time:
       f.confirmed && f.scheduledAt
-        ? new Date(f.scheduledAt)
-            .toLocaleString("sv-SE", { timeZone: "Asia/Shanghai" })
-            .slice(0, 16)
+        ? formatDate(f.scheduledAt, f.timeZone, tr.locale)
         : "—",
     red: f.home.team?.name ?? f.home.label,
     blue: f.away.team?.name ?? f.away.label,

@@ -1,5 +1,7 @@
 import { OsuImageSettings } from "@/components/osu-image-settings";
 import { imagePoliciesForAdmin } from "@/lib/osu-image-cache";
+import { SiteChatPromptForm } from "@/components/site-chat-prompt-form";
+import { chatPromptForAdmin } from "@/lib/chat-prompt-settings";
 import { SiteAppearanceForm } from "@/components/site-appearance-form";
 import { canManageBackups } from "@/lib/admin-backups";
 import { Action, PageHeading } from "@/components/ui";
@@ -18,6 +20,7 @@ async function Issue271Page() {
     const tr = await getAppTranslations();
     const actor = await requireUser();
     const settings = await siteSettingsForAdmin(actor);
+    const chatPrompt = await chatPromptForAdmin(actor);
     const showBackups = await canManageBackups(actor);
     const policies = await imagePoliciesForAdmin(actor);
     return (
@@ -37,6 +40,7 @@ async function Issue271Page() {
           initialAppearance={settings.defaultAppearance}
           revision={settings.revision}
         />
+        {chatPrompt && <SiteChatPromptForm initial={chatPrompt} />}
         {policies.length > 0 && (
           <section
             className="image-cache-settings"

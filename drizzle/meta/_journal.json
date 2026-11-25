@@ -848,6 +848,13 @@
       "when": 1795562443595,
       "tag": "0120_chat_artwork_captions",
       "breakpoints": true
+    },
+    {
+      "idx": 121,
+      "version": "7",
+      "when": 1795571795226,
+      "tag": "0121_chat_prompt_settings",
+      "breakpoints": true
     }
   ]
 }

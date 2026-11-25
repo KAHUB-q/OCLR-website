@@ -3186,3 +3186,31 @@ export const chatArtworkCaptions = pgTable("chat_artwork_captions", {
   caption: text("caption"),
   checkedAt: timestamp("checked_at", { withTimezone: true }).notNull(),
 });
+
+export const chatPromptSettings = pgTable(
+  "chat_prompt_settings",
+  {
+    id: integer("id").primaryKey().default(1),
+    prompt: text("prompt").notNull().default(""),
+    revision: integer("revision").notNull().default(0),
+  },
+  (t) => [
+    check("chat_prompt_settings_singleton", sql`${t.id} = 1`),
+    check("chat_prompt_settings_revision", sql`${t.revision} >= 0`),
+    check("chat_prompt_settings_length", sql`char_length(${t.prompt}) <= 3000`),
+  ],
+);
+
+export const chatPromptEvents = pgTable("chat_prompt_events", {
+  id: uuid("id").primaryKey().defaultRandom(),
+  actorId: bigint("actor_id", { mode: "number" }).references(
+    () => users.osuId,
+    { onDelete: "set null" },
+  ),
+  revision: integer("revision").notNull().unique(),
+  beforeLength: integer("before_length").notNull(),
+  afterLength: integer("after_length").notNull(),
+  createdAt: timestamp("created_at", { withTimezone: true })
+    .notNull()
+    .defaultNow(),
+});

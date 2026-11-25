@@ -61,6 +61,20 @@
     }
   },
   {
+    "route": "/api/admin/settings/chat",
+    "source": "src/app/api/admin/settings/chat/route.ts",
+    "methods": {
+      "PATCH": {
+        "status": "documented",
+        "operationId": "updateChatPrompt",
+        "access": "browser",
+        "consumers": [
+          "src/components/site-chat-prompt-form.tsx"
+        ]
+      }
+    }
+  },
+  {
     "route": "/api/admin/settings/osu-images",
     "source": "src/app/api/admin/settings/osu-images/route.ts",
     "methods": {

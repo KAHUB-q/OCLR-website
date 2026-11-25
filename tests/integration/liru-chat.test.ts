@@ -9,7 +9,13 @@ import {
 } from "vitest";
 import { sql, eq } from "drizzle-orm";
 import { db, closeDb } from "@/db";
-import { users, sessions, registrations, staffRoles } from "@/db/schema";
+import {
+  users,
+  sessions,
+  registrations,
+  staffRoles,
+  chatPromptSettings,
+} from "@/db/schema";
 import { createSession, revokeSession } from "@/lib/auth/sessions";
 import { hashToken } from "@/lib/auth/tokens";
 import { english } from "@/i18n/translate";
@@ -62,11 +68,14 @@ describe.skipIf(!testUrl)("authenticated tournament assistant", () => {
     vi.stubEnv("OCLR_CHAT_PROXY_URL", "");
     vi.stubEnv("OCLR_CHAT_API_KEY", "synthetic-key");
     vi.stubEnv("OCLR_CHAT_BASE_URL", "https://provider.example/v1");
-    await db().execute(sql`TRUNCATE users, edition_state CASCADE`);
+    await db().execute(
+      sql`TRUNCATE chat_prompt_settings, users, edition_state CASCADE`,
+    );
     await db().insert(users).values({ osuId: 1425001, username: "Synthetic" });
   });
   afterEach(() => vi.unstubAllGlobals());
   afterAll(async () => {
+    await db().delete(chatPromptSettings);
     await closeDb();
     vi.unstubAllEnvs();
   });
@@ -75,7 +84,23 @@ describe.skipIf(!testUrl)("authenticated tournament assistant", () => {
     vi.stubGlobal("fetch", upstream);
     // The edition does not exist, so retrieval before authentication would return 404.
     context.token = "";
-    expect((await ask()).status).toBe(401);
+    const log = vi.spyOn(console, "info");
+    try {
+      const blocked = await ask();
+      expect(blocked.status).toBe(401);
+      const requestId = blocked.headers.get("X-OCLR-Chat-Request-Id");
+      expect(requestId).toBeTruthy();
+      const [, line] = log.mock.calls.at(-1)!;
+      expect(JSON.parse(line)).toMatchObject({
+        requestId,
+        event: "request_rejected",
+        status: 401,
+        stage: "session",
+      });
+      expect(line).not.toContain("substitution");
+    } finally {
+      log.mockRestore();
+    }
     context.token = (await createSession(1425001)).token;
     await db()
       .update(sessions)
@@ -308,6 +333,9 @@ describe.skipIf(!testUrl)("authenticated tournament assistant", () => {
       body: "Submit the substitution form.",
     });
     await seedEditions([published]);
+    const customPrompt =
+      "Use short sentences and hide nothing in the synthetic test.";
+    await db().insert(chatPromptSettings).values({ prompt: customPrompt });
     await db()
       .insert(registrations)
       .values({
@@ -335,6 +363,10 @@ describe.skipIf(!testUrl)("authenticated tournament assistant", () => {
       expect(instructions).toContain("first-year university student");
       expect(instructions).toContain("One more round!");
       expect(instructions).toContain("Lead with the answer");
+      expect(instructions).toContain(customPrompt);
+      expect(instructions).toContain(
+        "only for tone, presentation and terminology",
+      );
       expect(instructions).toContain("using the supplied public evidence");
       expect(JSON.stringify(body.messages)).toContain(
         "Only after referee approval.",
@@ -384,11 +416,31 @@ describe.skipIf(!testUrl)("authenticated tournament assistant", () => {
       )
       .map(([, value]) => JSON.parse(value));
     expect(events.map((e) => e.event)).toEqual([
+      "request_validated",
+      "evidence_ready",
+      "prompt_ready",
       "upstream_start",
       "upstream_http",
+      "first_text",
       "answer_received",
     ]);
-    expect(events[1].status).toBe(200);
+    expect(events[1]).toMatchObject({
+      edition: slug,
+      sourceCount: 2,
+      route: "model",
+    });
+    expect(events[2]).toMatchObject({ customPrompt: true });
+    expect(events[4]).toMatchObject({
+      status: 200,
+      responseFormat: "event-stream",
+      headerMs: expect.any(Number),
+    });
+    expect(events.at(-1)).toMatchObject({
+      finishReason: "stop",
+      citationCount: 1,
+      answerChars: expect.any(Number),
+    });
+    expect(JSON.stringify(events)).not.toContain(customPrompt);
     expect(JSON.stringify(events)).not.toMatch(
       /referee|substitution|synthetic-key/i,
     );
@@ -492,6 +544,32 @@ describe.skipIf(!testUrl)("authenticated tournament assistant", () => {
     } finally {
       log.mockRestore();
       vi.stubEnv("OCLR_CHAT_BASE_URL", "https://provider.example/v1");
+    }
+  });
+  it("classifies a connection failure without logging the proxy credentials or raw error", async () => {
+    await db()
+      .insert(users)
+      .values({ osuId: 1425099, username: "Transport test" });
+    context.token = (await createSession(1425099)).token;
+    await seedEditions([season(slug, "Use a substitute.")]);
+    vi.stubGlobal("fetch", async () => {
+      const cause = Object.assign(
+        new Error("Synthetic private diagnostic with credential"),
+        { code: "ECONNRESET" },
+      );
+      throw new TypeError("fetch failed", { cause });
+    });
+    const log = vi.spyOn(console, "info");
+    try {
+      const response = await ask();
+      expect(await response.text()).toContain("provider-unavailable");
+      const lines = log.mock.calls.map(([, line]) => line).join("\n");
+      expect(lines).toContain(
+        '"event":"upstream_transport_error","networkCode":"ECONNRESET"',
+      );
+      expect(lines).not.toMatch(/private diagnostic|credential|substitution/);
+    } finally {
+      log.mockRestore();
     }
   });
   it("reports a reasoning-only completion as an empty answer without attaching citations", async () => {

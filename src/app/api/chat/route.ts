@@ -1,7 +1,9 @@
 import { requireBrowserSession } from "@/lib/auth/user";
 import { apiError, readJson, requireSameOrigin } from "@/lib/http";
 import { chatConfiguration } from "@/lib/chat-config";
+import { readChatPrompt } from "@/lib/chat-prompt-settings";
 import { chatAnswer } from "@/lib/chat-answer";
+import { createChatTrace, safeChatError } from "@/lib/chat-trace";
 import { chatWrite } from "@/lib/chat-write-contract";
 import { chatEvidence } from "@/lib/chat-sources";
 import { DeveloperApiError, DeveloperApiLimiter } from "@/lib/developer-api";
@@ -9,19 +11,42 @@ import { DeveloperApiError, DeveloperApiLimiter } from "@/lib/developer-api";
 const limiter = new DeveloperApiLimiter();
 
 export async function POST(request: Request) {
+  const diagnostics = createChatTrace();
+  const { headers, trace } = diagnostics;
+  let stage = "session";
   try {
     const session = await requireBrowserSession();
+    stage = "origin";
     requireSameOrigin(request);
+    stage = "configuration";
     const config = chatConfiguration();
-    if (!config)
-      return Response.json({ error: "Chat is unavailable." }, { status: 503 });
+    if (!config) {
+      trace("request_rejected", 503, { stage });
+      return Response.json(
+        { error: "Chat is unavailable." },
+        { status: 503, headers },
+      );
+    }
+    stage = "validation";
     const input = chatWrite.request.safeParse(
       await readJson(request, chatWrite.maxBodyBytes),
     );
-    if (!input.success)
-      return Response.json({ error: "Invalid chat request." }, { status: 400 });
+    if (!input.success) {
+      trace("request_rejected", 400, { stage });
+      return Response.json(
+        { error: "Invalid chat request." },
+        { status: 400, headers },
+      );
+    }
     const { edition, locale, questions } = input.data;
+    trace("request_validated", undefined, {
+      locale,
+      questionCount: questions.length,
+    });
+    stage = "rate_limit";
     limiter.take(String(session.osuId), 8);
+    stage = "retrieval";
+    const retrievalStarted = performance.now();
     const question = questions.at(-1)!;
     const evidence = await chatEvidence(
       edition,
@@ -29,9 +54,33 @@ export async function POST(request: Request) {
       questions.at(-2) ?? "",
       Date.now(),
       request.signal,
+      (error) => trace("embedding_fallback", undefined, safeChatError(error)),
     );
+    trace("evidence_ready", undefined, {
+      edition,
+      sourceCount: evidence.sources.length,
+      retrievalMs: Math.round(performance.now() - retrievalStarted),
+      route: evidence.total
+        ? "local_count"
+        : evidence.sources.length
+          ? "model"
+          : "no_evidence",
+    });
+    stage = "prompt_settings";
+    const settings =
+      !evidence.total && evidence.sources.length
+        ? await readChatPrompt()
+        : null;
+    if (settings)
+      trace("prompt_ready", undefined, {
+        customPrompt: Boolean(settings.prompt),
+        promptRevision: settings.revision,
+      });
+    stage = "response";
     request.signal.throwIfAborted();
     return chatAnswer({
+      diagnostics,
+      assistantPrompt: settings?.prompt ?? "",
       config,
       evidence,
       locale,
@@ -39,14 +88,28 @@ export async function POST(request: Request) {
       signal: request.signal,
     });
   } catch (error) {
-    if (error instanceof DeveloperApiError && error.status === 429)
+    if (error instanceof DeveloperApiError && error.status === 429) {
+      trace("request_rejected", 429, { stage });
       return Response.json(
         { error: "Too many chat requests." },
         {
           status: 429,
-          headers: { "Retry-After": "60" },
+          headers: { ...headers, "Retry-After": "60" },
         },
       );
-    return apiError(error);
+    }
+    const response = apiError(error);
+    trace(
+      request.signal.aborted
+        ? "cancelled"
+        : response.status >= 500
+          ? "request_failed"
+          : "request_rejected",
+      response.status,
+      { stage, ...safeChatError(error) },
+    );
+    for (const [name, value] of Object.entries(headers))
+      response.headers.set(name, value);
+    return response;
   }
 }

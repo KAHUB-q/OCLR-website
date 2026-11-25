@@ -3,6 +3,11 @@ import { locales } from "../i18n/config";
 import { chatEditionPattern } from "./chat-edition";
 import type { WriteApiOperation } from "./write-api-contract";
 
+const traceHeaders = {
+  "X-OCLR-Chat-Request-Id": z.uuid(),
+  "Cache-Control": z.literal("no-store"),
+};
+
 export const chatWrite = {
   id: "askLiru",
   path: "/api/chat",
@@ -20,6 +25,7 @@ export const chatWrite = {
   successStatus: 200,
   successDescription:
     "AI SDK UI message stream with text and server-selected source URLs. After streaming begins, provider failures are reported in the stream.",
+  successHeaders: traceHeaders,
   responseMediaType: "text/event-stream",
   response: z.string(),
   consumers: ["src/components/liru-chat.tsx"],
@@ -28,9 +34,21 @@ export const chatWrite = {
     401: "Sign in to continue.",
     403: "A local website session and same origin are required.",
     404: "Tournament unavailable.",
+    413: "Request body too large.",
+    415: "JSON is required.",
     429: "Request budget exceeded.",
     503: "Chat or site origin is not configured.",
     500: "Request could not be completed.",
   },
-  errorHeaders: { 429: { "Retry-After": z.literal("60") } },
+  errorHeaders: {
+    400: traceHeaders,
+    401: traceHeaders,
+    403: traceHeaders,
+    404: traceHeaders,
+    413: traceHeaders,
+    415: traceHeaders,
+    429: { ...traceHeaders, "Retry-After": z.literal("60") },
+    500: traceHeaders,
+    503: traceHeaders,
+  },
 } as const satisfies WriteApiOperation;

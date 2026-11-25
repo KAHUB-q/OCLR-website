@@ -4,7 +4,9 @@ export function pickLiruSuggestions(tr: AppTranslator): string[] {
   const candidates = [
     tr("How many players are there?"),
     tr("How many upcoming matches are there?"),
-    tr("How many HD maps are there?"),
+    ...["HD", "NM", "HR", "DT", "FM", "TB", "ACE"].map((mod) =>
+      tr("How many {mod} maps are there?", { mod }),
+    ),
     tr("How many teams are there?"),
     tr("How many matches are there?"),
     tr("How many matches have published results?"),

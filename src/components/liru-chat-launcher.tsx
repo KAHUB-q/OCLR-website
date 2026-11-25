@@ -20,7 +20,7 @@ export function LiruChatLauncher({
 }) {
   const tr = useAppTranslations();
   const id = useId();
-  const [suggestions, setSuggestions] = useState<string[] | null>(null);
+  const [suggestions, setSuggestions] = useState<string[]>([]);
   const panel = useRef<HTMLElement>(null);
   useEffect(() => {
     if (window.location.hash === "#ask-liru") {
@@ -82,21 +82,13 @@ export function LiruChatLauncher({
                 "Your question, recent questions and relevant public tournament information are sent to the configured AI provider.",
               )}
             </p>
-            {suggestions && (
-              <Suspense
-                fallback={
-                  <p className={styles.disclosure} role="status">
-                    {tr("Loading…")}
-                  </p>
-                }
-              >
-                <Chat
-                  edition={edition}
-                  suggestions={suggestions}
-                  viewer={viewer}
-                />
-              </Suspense>
-            )}
+            <Suspense fallback={null}>
+              <Chat
+                edition={edition}
+                suggestions={suggestions}
+                viewer={viewer}
+              />
+            </Suspense>
           </>
         ) : (
           <a

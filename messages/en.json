@@ -5252,6 +5252,7 @@
     "discord_failure_credential": "The service could not read the saved webhook credential.",
     "m04471c4af135": "Recent Discord deliveries",
     "mba118bf7fc9c": "English",
-    "m6b32e97bac1d": "Liru can help with public information for this OCLR season. Try asking about the schedule, rules, mappools or results."
+    "m6b32e97bac1d": "Liru can help with public information for this OCLR season. Try asking about the schedule, rules, mappools or results.",
+    "mc777e2e2c7f6": "How many {mod} maps are there?"
   }
 }

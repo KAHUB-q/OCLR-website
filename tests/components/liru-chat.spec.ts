@@ -60,7 +60,10 @@ test("stop a pending turn, retry with sources, and start fresh in another editio
   });
   await page.goto("/liru-chat#ask-liru");
   const launcher = page.getByRole("button", { name: "Ask Liru" });
-  await expect(page.getByRole("dialog")).toBeInViewport();
+  const dialog = page.getByRole("dialog");
+  await expect(dialog).toBeInViewport();
+  await expect(dialog.getByRole("textbox")).toBeVisible();
+  await expect(dialog.getByRole("status")).toHaveCount(0);
   const suggestions = page.getByRole("button", { name: /^How many / });
   await expect(suggestions).toHaveCount(3);
   const initial = await suggestions.allTextContents();
@@ -116,7 +119,10 @@ test("stop a pending turn, retry with sources, and start fresh in another editio
       portrait.evaluate((image: HTMLImageElement) => image.naturalWidth),
     )
     .toBe(160);
-  await expect(launcher.locator("svg")).toHaveCount(1);
+  await expect(launcher.locator("[aria-hidden=true]")).toHaveCSS(
+    "mask-image",
+    /chat-icon\.webp/,
+  );
   const sourceToggle = page.getByText("Source", { exact: true });
   const sourceLink = page.getByRole("link", { name: "Substitution" });
   await expect(sourceToggle).toBeVisible();

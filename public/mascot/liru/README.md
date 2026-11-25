@@ -28,6 +28,6 @@ Eight chibi stickers of Liru in her Chinese-style outfit, v1.0.0, for the websit
 
 Same licence and credit as above (CC BY 4.0, "Liru by JerrYamada"; AI-assisted and retouched).
 
-The chat icon in `src/components/liru-chat-icon.tsx` is a monochrome head portrait redrawn from the official chibi design. Liru by JerrYamada, adapted for OCLR chat under [CC BY 4.0](https://creativecommons.org/licenses/by/4.0/). The design retains the two-tone character's sprout-shaped forelock, pointed side locks and eyes using outlines and negative space. [Character reference](https://oclr.org/wiki/liru).
+`chat-icon.webp` is a 128×128 transparent WebP for the chat launcher and titles. It adapts the monochrome portrait redrawn from the official chibi design, with heavier lines for small display sizes. The interface uses its alpha channel to apply the active theme color. Liru by JerrYamada, adapted for OCLR chat under [CC BY 4.0](https://creativecommons.org/licenses/by/4.0/). The design retains the two-tone character's sprout-shaped forelock, pointed side locks and eyes using outlines and negative space. [Character reference](https://oclr.org/wiki/liru).
 
 `chat-wink.webp` is a 160×160 AI-assisted portrait for Liru’s chat replies. The winking illustration adapts the approved character sheet. Liru by JerrYamada, adapted for OCLR chat under [CC BY 4.0](https://creativecommons.org/licenses/by/4.0/). [Character reference](https://oclr.org/wiki/liru).

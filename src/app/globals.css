@@ -3405,6 +3405,7 @@ html[data-appearance]
   vector-effect: non-scaling-stroke;
 }
 .rank-chart-tip {
+  --rank-tip-gap: 0.55rem;
   position: absolute;
   z-index: 5;
   display: grid;
@@ -3417,8 +3418,11 @@ html[data-appearance]
   font-variant-numeric: tabular-nums;
   line-height: 1.25;
   pointer-events: none;
-  transform: translate(-50%, calc(-100% - 0.55rem));
+  transform: translate(-50%, calc(-100% - var(--rank-tip-gap)));
   white-space: nowrap;
+}
+.rank-chart-tip[data-below] {
+  transform: translate(-50%, var(--rank-tip-gap));
 }
 .rank-chart-tip strong {
   font-size: var(--text-small);

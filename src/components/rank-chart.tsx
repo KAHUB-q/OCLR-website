@@ -1,6 +1,13 @@
 "use client";
 
-import { useEffect, useId, useMemo, useRef, useState } from "react";
+import {
+  useEffect,
+  useId,
+  useLayoutEffect,
+  useMemo,
+  useRef,
+  useState,
+} from "react";
 import { useAppTranslations } from "@/i18n/shared";
 
 /** Daily global-rank history. A log axis keeps a top-100 run readable next to
@@ -58,6 +65,7 @@ export function RankChart({
   const tr = useAppTranslations();
   const gradientId = useId();
   const hostRef = useRef<HTMLDivElement>(null);
+  const tipRef = useRef<HTMLDivElement>(null);
   const [width, setWidth] = useState(0);
   const [height, setHeight] = useState(MIN_HEIGHT);
   const [pointerIndex, setPointerIndex] = useState<number | null>(null);
@@ -170,6 +178,39 @@ export function RankChart({
   const rankLabel = selectedPoint ? `#${number(selectedPoint.rank)}` : "";
   const dayLabel = selectedPoint ? formattedDay(selectedPoint.day) : null;
 
+  const pointY =
+    geometry && activePoint ? geometry.toY(activePoint.rank) : null;
+
+  useLayoutEffect(() => {
+    const host = hostRef.current;
+    const tip = tipRef.current;
+    if (!host || !tip || pointY === null) return;
+
+    const viewport = window.visualViewport;
+    const place = () => {
+      const y = host.getBoundingClientRect().top + pointY;
+      const above = y - (viewport?.offsetTop ?? 0);
+      const below = (viewport?.height ?? window.innerHeight) - above;
+      const rect = tip.getBoundingClientRect();
+      // The far edge includes both the rendered label and its gap from the point.
+      const needed = tip.hasAttribute("data-below")
+        ? rect.bottom - y
+        : y - rect.top;
+      tip.toggleAttribute("data-below", above < needed && below > above);
+    };
+    place();
+    window.addEventListener("scroll", place, true);
+    window.addEventListener("resize", place);
+    viewport?.addEventListener("scroll", place);
+    viewport?.addEventListener("resize", place);
+    return () => {
+      window.removeEventListener("scroll", place, true);
+      window.removeEventListener("resize", place);
+      viewport?.removeEventListener("scroll", place);
+      viewport?.removeEventListener("resize", place);
+    };
+  }, [pointY, rankLabel, dayLabel]);
+
   // A tap has no hover to end: touch pointers fire `pointerleave` right after
   // `pointerup`, which used to drop the readout instantly. Keep a touch pick
   // until the next tap outside the chart instead.
@@ -266,13 +307,14 @@ export function RankChart({
       )}
       {geometry && activePoint && (
         <div
+          ref={tipRef}
           className="rank-chart-tip"
           style={{
             left: Math.min(
               width - 56,
               Math.max(56, geometry.toX(activePoint.day)),
             ),
-            top: geometry.toY(activePoint.rank),
+            top: pointY ?? undefined,
           }}
         >
           <strong>{rankLabel}</strong>

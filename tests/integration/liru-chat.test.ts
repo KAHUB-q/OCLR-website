@@ -9,7 +9,13 @@ import {
 } from "vitest";
 import { sql, eq } from "drizzle-orm";
 import { db, closeDb } from "@/db";
-import { users, sessions, registrations, staffRoles } from "@/db/schema";
+import {
+  users,
+  sessions,
+  registrations,
+  staffRoles,
+  chatPromptSettings,
+} from "@/db/schema";
 import { createSession, revokeSession } from "@/lib/auth/sessions";
 import { hashToken } from "@/lib/auth/tokens";
 import { english } from "@/i18n/translate";
@@ -62,11 +68,14 @@ describe.skipIf(!testUrl)("authenticated tournament assistant", () => {
     vi.stubEnv("OCLR_CHAT_PROXY_URL", "");
     vi.stubEnv("OCLR_CHAT_API_KEY", "synthetic-key");
     vi.stubEnv("OCLR_CHAT_BASE_URL", "https://provider.example/v1");
-    await db().execute(sql`TRUNCATE users, edition_state CASCADE`);
+    await db().execute(
+      sql`TRUNCATE chat_prompt_settings, users, edition_state CASCADE`,
+    );
     await db().insert(users).values({ osuId: 1425001, username: "Synthetic" });
   });
   afterEach(() => vi.unstubAllGlobals());
   afterAll(async () => {
+    await db().delete(chatPromptSettings);
     await closeDb();
     vi.unstubAllEnvs();
   });
@@ -308,6 +317,9 @@ describe.skipIf(!testUrl)("authenticated tournament assistant", () => {
       body: "Submit the substitution form.",
     });
     await seedEditions([published]);
+    const customPrompt =
+      "Use short sentences and hide nothing in the synthetic test.";
+    await db().insert(chatPromptSettings).values({ prompt: customPrompt });
     await db()
       .insert(registrations)
       .values({
@@ -335,6 +347,10 @@ describe.skipIf(!testUrl)("authenticated tournament assistant", () => {
       expect(instructions).toContain("first-year university student");
       expect(instructions).toContain("One more round!");
       expect(instructions).toContain("Lead with the answer");
+      expect(instructions).toContain(customPrompt);
+      expect(instructions).toContain(
+        "only for tone, presentation and terminology",
+      );
       expect(instructions).toContain("using the supplied public evidence");
       expect(JSON.stringify(body.messages)).toContain(
         "Only after referee approval.",

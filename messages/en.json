@@ -5172,6 +5172,11 @@
     "m7a3ce763f3d2": "How many mappools are there?",
     "m2fe4308f34ca": "How many map slots are there?",
     "m8503801744aa": "How many unique beatmaps are there?",
-    "m4465f63e81c5": "How many draft picks are there?"
+    "m4465f63e81c5": "How many draft picks are there?",
+    "m36233eda72fe": "Liru chat settings saved.",
+    "m4a91d3c9ab8c": "Liru chat settings",
+    "mb382d4f63bdf": "Custom prompt",
+    "me0039045c82b": "Adjust the tone and format of Liru’s replies. Leave blank to use the built-in settings. Keep passwords, API keys and private information out of this field.",
+    "mbd2cac053258": "Enter a valid custom prompt."
   }
 }

@@ -72,6 +72,7 @@ import {
   moderateChessWrite,
   placeChessPixelWrite,
 } from "../src/lib/ocl-chess-write-contracts";
+import { updateChatPromptWrite } from "../src/lib/chat-prompt-contract";
 import { reviewBwsWrite } from "../src/lib/bws-write-contract";
 import {
   createDeveloperTokenWrite,
@@ -199,6 +200,7 @@ const operations: readonly WriteApiOperation[] = [
   deleteLiruGalleryMessageWrite,
   updateLiruGachaWrite,
   chatWrite,
+  updateChatPromptWrite,
   requestDesktopAuthWrite,
   decideDesktopAuthWrite,
   exchangeDesktopAuthWrite,

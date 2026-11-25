@@ -24,6 +24,8 @@ import { auditLog } from "../../src/lib/audit";
 import { assertTestDatabase } from "../database";
 import { seedEditions } from "../fixtures/editions";
 import { edition } from "../fixtures/edition";
+import { PATCH as PATCH_CHAT } from "../../src/app/api/admin/settings/chat/route";
+import { chatPromptForAdmin } from "../../src/lib/chat-prompt-settings";
 import { PATCH } from "../../src/app/api/admin/settings/route";
 import { requireUser } from "../../src/lib/auth/user";
 import { updateSiteAppearanceWrite } from "../../src/lib/admin-operations-write-contracts";
@@ -69,15 +71,54 @@ describe.skipIf(!url)("global site appearance settings", () => {
   });
   beforeEach(async () => {
     await db().execute(
-      sql`TRUNCATE site_settings, site_setting_events, edition_state, users CASCADE`,
+      sql`TRUNCATE chat_prompt_settings, chat_prompt_events, site_settings, site_setting_events, edition_state, users CASCADE`,
     );
     await seedEditions([edition]);
     await db().insert(users).values([admin, operator]);
   });
   afterAll(async () => {
-    await db().execute(sql`TRUNCATE site_settings, site_setting_events`);
+    await db().execute(
+      sql`TRUNCATE chat_prompt_settings, chat_prompt_events, site_settings, site_setting_events`,
+    );
     await closeDb();
     vi.unstubAllEnvs();
+  });
+  it("saves and clears a prompt with global authorization, revisions and redacted audit history", async () => {
+    const savePrompt = (prompt: string, expectedRevision: number) =>
+      PATCH_CHAT(
+        new Request(origin + "/api/admin/settings/chat", {
+          method: "PATCH",
+          headers: { origin, "content-type": "application/json" },
+          body: JSON.stringify({ prompt, expectedRevision }),
+        }),
+      );
+    vi.mocked(requireUser).mockResolvedValue(operator);
+    expect(await chatPromptForAdmin(operator)).toBeNull();
+    expect((await savePrompt("Denied", 0)).status).toBe(403);
+    vi.mocked(requireUser).mockResolvedValue(admin);
+    expect(await chatPromptForAdmin(admin)).toEqual({
+      prompt: "",
+      revision: 0,
+    });
+    expect((await savePrompt("x".repeat(3001), 0)).status).toBe(400);
+    const prompt = "Synthetic prompt with unique instructions.";
+    const response = await savePrompt(" " + prompt + " ", 0);
+    expect(response.status).toBe(200);
+    expect(response.headers.get("Cache-Control")).toBe("no-store");
+    expect(await response.json()).toEqual({ prompt, revision: 1 });
+    expect((await savePrompt("", 0)).status).toBe(409);
+    expect((await savePrompt(prompt, 1)).status).toBe(200);
+    expect(await (await savePrompt("", 1)).json()).toEqual({
+      prompt: "",
+      revision: 2,
+    });
+    const audit = await auditLog(admin, { module: "site" });
+    expect(audit.rows.map((row) => row.action)).toEqual([
+      "chat_prompt_updated",
+      "chat_prompt_updated",
+    ]);
+    expect(JSON.stringify(audit)).not.toContain(prompt);
+    expect(await siteSettingsForAdmin(admin)).toMatchObject({ revision: 0 });
   });
   it.each(publicAppearances.filter((value) => value !== "default"))(
     "saves %s with an authoritative audit event",
@@ -88,11 +129,13 @@ describe.skipIf(!url)("global site appearance settings", () => {
       });
       vi.mocked(requireUser).mockResolvedValue(admin);
       const patch = (input: unknown) =>
-        PATCH(new Request(origin + updateSiteAppearanceWrite.path, {
-          method: "PATCH",
-          headers: { origin, "content-type": "application/json" },
-          body: JSON.stringify(input),
-        }));
+        PATCH(
+          new Request(origin + updateSiteAppearanceWrite.path, {
+            method: "PATCH",
+            headers: { origin, "content-type": "application/json" },
+            body: JSON.stringify(input),
+          }),
+        );
       const response = await patch(save(appearance));
       expect(response.status).toBe(200);
       expect(response.headers.get("Cache-Control")).toBe("no-store");

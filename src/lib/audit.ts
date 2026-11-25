@@ -126,6 +126,11 @@ const projection = sql`
     jsonb_build_object('defaultAppearance', after_appearance, 'revision', revision),
     '{}'::jsonb, created_at FROM site_setting_events
   UNION ALL
+  SELECT 'chat_prompt', id, NULL::text, actor_id, 'chat_prompt_updated', 'site', 'site settings', 'chat',
+    jsonb_build_object('length', before_length, 'revision', revision - 1),
+    jsonb_build_object('length', after_length, 'revision', revision),
+    '{}'::jsonb, created_at FROM chat_prompt_events
+  UNION ALL
   SELECT 'developer_api', id, NULL::text, actor_id, 'developer_api_' || action, 'developer_api', 'developer API access', access_id::text,
     detail->'before', detail->'after', '{}'::jsonb, created_at FROM developer_api_events
   UNION ALL

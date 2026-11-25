@@ -1,6 +1,7 @@
 import { requireBrowserSession } from "@/lib/auth/user";
 import { apiError, readJson, requireSameOrigin } from "@/lib/http";
 import { chatConfiguration } from "@/lib/chat-config";
+import { readChatPrompt } from "@/lib/chat-prompt-settings";
 import { chatAnswer } from "@/lib/chat-answer";
 import { chatWrite } from "@/lib/chat-write-contract";
 import { chatEvidence } from "@/lib/chat-sources";
@@ -30,8 +31,13 @@ export async function POST(request: Request) {
       Date.now(),
       request.signal,
     );
+    const assistantPrompt =
+      !evidence.total && evidence.sources.length
+        ? (await readChatPrompt()).prompt
+        : "";
     request.signal.throwIfAborted();
     return chatAnswer({
+      assistantPrompt,
       config,
       evidence,
       locale,

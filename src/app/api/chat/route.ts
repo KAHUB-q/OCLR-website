@@ -2,7 +2,8 @@ import { requireBrowserSession } from "@/lib/auth/user";
 import { apiError, readJson, requireSameOrigin } from "@/lib/http";
 import { chatConfiguration } from "@/lib/chat-config";
 import { readChatPrompt } from "@/lib/chat-prompt-settings";
-import { chatAnswer } from "@/lib/chat-answer";
+import { chatRequestBlockReason } from "@/lib/chat-request-filter";
+import { chatAnswer, chatScopeReply } from "@/lib/chat-answer";
 import { createChatTrace, safeChatError } from "@/lib/chat-trace";
 import { chatWrite } from "@/lib/chat-write-contract";
 import { chatEvidence } from "@/lib/chat-sources";
@@ -48,14 +49,25 @@ export async function POST(request: Request) {
     stage = "retrieval";
     const retrievalStarted = performance.now();
     const question = questions.at(-1)!;
+    const previousQuestions = questions
+      .slice(0, -1)
+      .filter((previous) => !chatRequestBlockReason(previous));
     const evidence = await chatEvidence(
       edition,
       question,
-      questions.at(-2) ?? "",
+      previousQuestions.at(-1) ?? "",
       Date.now(),
       request.signal,
       (error) => trace("embedding_fallback", undefined, safeChatError(error)),
     );
+    if (evidence.blocked) {
+      stage = "scope_filter";
+      trace("question_blocked", undefined, {
+        edition,
+        reason: evidence.blocked,
+      });
+      return await chatScopeReply(diagnostics);
+    }
     const evidenceKind = evidence.greeting
       ? "greeting"
       : evidence.total
@@ -84,7 +96,7 @@ export async function POST(request: Request) {
       config,
       evidence,
       locale,
-      questions,
+      questions: [...previousQuestions, question],
       signal: request.signal,
     });
   } catch (error) {

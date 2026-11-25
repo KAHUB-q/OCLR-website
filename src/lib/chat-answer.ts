@@ -13,6 +13,25 @@ import { formatSeasonCount } from "./chat-season-counts";
 import { chatProvider } from "./chat-provider";
 import { safeChatError, type ChatTrace } from "./chat-trace";
 
+export async function chatScopeReply({ headers }: ChatTrace) {
+  const tr = await getAppTranslations();
+  const text = tr(
+    "Liru can help with public information for this OCLR season. Try asking about the schedule, rules, mappools or results.",
+  );
+  return createUIMessageStreamResponse({
+    headers: { ...headers, "X-Accel-Buffering": "no" },
+    stream: createUIMessageStream({
+      execute: ({ writer }) => {
+        writer.write({ type: "start" });
+        writer.write({ type: "text-start", id: "scope" });
+        writer.write({ type: "text-delta", id: "scope", delta: text });
+        writer.write({ type: "text-end", id: "scope" });
+        writer.write({ type: "finish", finishReason: "stop" });
+      },
+    }),
+  });
+}
+
 export function chatAnswer({
   config,
   diagnostics,

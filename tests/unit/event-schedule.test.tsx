@@ -160,6 +160,22 @@ describe("published schedule semantics", () => {
     ).toContain("<time>—</time>");
     expect(html).not.toContain("UTC+8");
   });
+  it("keeps complete characters in team avatar initials", async () => {
+    const match = fixture(
+      { id: "red", name: "a🎵 crew" },
+      { id: "blue", name: "👩‍🚀b club" },
+    );
+    vi.mocked(publicCompetition).mockResolvedValue(
+      competition([match], policy),
+    );
+    const html = await render();
+    expect(html).toContain(
+      '<span class="team-monogram" aria-hidden="true">A🎵</span>',
+    );
+    expect(html).toContain(
+      '<span class="team-monogram" aria-hidden="true">👩‍🚀B</span>',
+    );
+  });
   it("links a published recording in the match information table", async () => {
     const match = fixture();
     const vod = "https://video.example.test/recording";

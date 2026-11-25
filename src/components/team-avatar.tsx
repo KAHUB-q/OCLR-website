@@ -2,6 +2,13 @@
 import { cachedImageUrl } from "@/lib/osu-image-urls";
 import Image from "next/image";
 import { useState } from "react";
+import { splitGraphemes } from "unicode-segmenter/grapheme";
+
+function teamInitials(name: string) {
+  const [first = "", second = ""] = splitGraphemes(name.trim());
+  return (first + second).toLocaleUpperCase();
+}
+
 export function TeamAvatar({
   team,
 }: {
@@ -33,7 +40,7 @@ export function TeamAvatar({
           onError={() => setFailed((urls) => [...urls, src])}
         />
       ) : (
-        team.name.trim().slice(0, 2).toLocaleUpperCase()
+        teamInitials(team.name)
       )}
     </span>
   );

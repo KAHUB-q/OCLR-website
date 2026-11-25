@@ -1689,6 +1689,33 @@ body:has(dialog[open].map-dialog) {
   gap: 0.75rem;
   overflow-wrap: anywhere;
 }
+.team-roster-pending {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+  min-width: 0;
+  padding: 1rem;
+  border: 1px dashed var(--color-border);
+  border-radius: var(--radius-panel);
+  background: var(--color-raised);
+  overflow-wrap: anywhere;
+}
+.team-roster-pending-icon {
+  display: grid;
+  place-items: center;
+  flex-shrink: 0;
+  inline-size: 2.75rem;
+  block-size: 2.75rem;
+  border-radius: 50%;
+  color: var(--color-accent);
+  background: color-mix(in srgb, var(--color-accent) 12%, var(--color-surface));
+}
+.team-roster-pending strong {
+  display: block;
+}
+.team-roster-pending p {
+  margin: 0.25rem 0 0;
+}
 .public-roster-grid {
   display: grid;
   grid-template-columns: repeat(2, minmax(0, 1fr));

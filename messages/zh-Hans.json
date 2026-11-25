@@ -5162,6 +5162,9 @@
     "m6ae4e2c359a5": "公开图池共列出 {count, number} 个谱面栏位，同一谱面出现在不同栏位时分别计算。",
     "m3da0f6110ec3": "公开图池共列出 {count, number} 个 {mod} 栏位。",
     "mcbca81eda3e9": "按谱面 ID 去重后，公开图池共列出 {count, number} 张可识别的谱面。",
-    "m3e33804e3595": "本届已公布 {count, number} 笔选秀记录。"
+    "m3e33804e3595": "本届已公布 {count, number} 笔选秀记录。",
+    "m8d3f1263bd7e": "选手有多少",
+    "mf3c1f543e5dd": "赛程还剩几场",
+    "ma6c136a0f45a": "图池里有几张 HD 图"
   }
 }

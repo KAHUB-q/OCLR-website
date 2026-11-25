@@ -205,6 +205,7 @@ console.log('Registered test command.');
           input,
           encoding: "utf8",
           env: {
+            NODE_ENV: "test",
             PATH: `${bin}:${dirname(process.execPath)}:/usr/bin:/bin`,
             INHERITED_SECRET: "excluded",
           },

@@ -123,6 +123,7 @@ export function StageGroups({
     );
     setPendingCount(null);
     setSelected(null);
+    setNotice("");
     clearDrag();
   }
   function generate() {

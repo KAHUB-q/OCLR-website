@@ -5251,6 +5251,7 @@
     "discord_failure_destination_changed": "Webhook 目的地已更改或停用。",
     "discord_failure_credential": "服务无法读取已保存的 Webhook 凭证。",
     "m04471c4af135": "近期 Discord 投递",
-    "mba118bf7fc9c": "英语"
+    "mba118bf7fc9c": "英语",
+    "m6b32e97bac1d": "莉露可以协助查询本届 OCLR 的公开信息。你可以问我赛程、规则、图池或赛果。"
   }
 }

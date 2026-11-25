@@ -1,3 +1,4 @@
+import { chatRequestBlockReason } from "./chat-request-filter";
 import { artworkQuery } from "./chat-artwork";
 import { seasonCount, seasonCountIntent } from "./chat-season-counts";
 import { searchSeasonIndex } from "./chat-vectors";
@@ -25,6 +26,9 @@ export async function chatEvidence(
 ) {
   const edition = await getPublicEdition(slug);
   if (!edition) throw new HttpError(404, "Tournament not found.");
+  const blocked = chatRequestBlockReason(question);
+  if (blocked)
+    return { edition: edition.name, blocked, total: null, sources: [] };
   if (
     /^(?:(?:莉露[，,\s]*)?(?:你好|您好|嗨|哈[囉啰]|早安|早上好|午安|晚安)(?:[，,\s]*莉露)?|(?:hello|hi|hey|good morning|good afternoon|good evening)(?:[,\s]+liru)?)\s*[?!.，,。？！]*$/i.test(
       question.trim().normalize("NFKC"),

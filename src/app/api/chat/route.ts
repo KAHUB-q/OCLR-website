@@ -56,19 +56,22 @@ export async function POST(request: Request) {
       request.signal,
       (error) => trace("embedding_fallback", undefined, safeChatError(error)),
     );
+    const answerRoute = evidence.total
+      ? "local_count"
+      : evidence.greeting
+        ? "greeting"
+        : evidence.sources.length
+          ? "model"
+          : "no_evidence";
     trace("evidence_ready", undefined, {
       edition,
       sourceCount: evidence.sources.length,
       retrievalMs: Math.round(performance.now() - retrievalStarted),
-      route: evidence.total
-        ? "local_count"
-        : evidence.sources.length
-          ? "model"
-          : "no_evidence",
+      route: answerRoute,
     });
     stage = "prompt_settings";
     const settings =
-      !evidence.total && evidence.sources.length
+      answerRoute === "greeting" || answerRoute === "model"
         ? await readChatPrompt()
         : null;
     if (settings)

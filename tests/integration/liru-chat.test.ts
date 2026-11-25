@@ -325,6 +325,69 @@ describe.skipIf(!testUrl)("authenticated tournament assistant", () => {
       expect(seasonCountIntent(query)).toBeNull();
     expect(fetch).not.toHaveBeenCalled();
   });
+  it("forwards standalone greetings to the model without retrieving season facts", async () => {
+    const user = { osuId: 1425098, username: "Greeting test" };
+    await db().insert(users).values(user);
+    context.token = (await createSession(user.osuId)).token;
+    await seedEditions([season(slug, "Only after referee approval.")]);
+    const greetings = [
+      ["zh-Hant", "你好？"],
+      ["zh-Hans", "莉露，你好 ?"],
+      ["en", "Hello, Liru!"],
+    ];
+    const expectedGreetings = greetings.slice();
+    const upstream = vi.fn(async (url: unknown, init: RequestInit) => {
+      expect(String(url)).toBe("https://provider.example/v1/chat/completions");
+      const { messages } = JSON.parse(String(init.body));
+      const instructions = messages.find(
+        (message: { role: string }) => message.role === "system",
+      )?.content;
+      const prompt = JSON.parse(messages.at(-1).content);
+      const [locale, greeting] = expectedGreetings.shift()!;
+      expect(instructions).toContain(`Reply in ${locale}`);
+      expect(instructions).toContain("The current message is a greeting");
+      expect(prompt).toMatchObject({
+        currentQuestion: greeting,
+        previousQuestions: [],
+        evidence: [],
+      });
+      const chunks = [
+        {
+          choices: [
+            {
+              index: 0,
+              delta: { content: "Hello! Ask me about this season." },
+              finish_reason: null,
+            },
+          ],
+        },
+        { choices: [{ index: 0, delta: {}, finish_reason: "stop" }] },
+      ];
+      return new Response(
+        chunks
+          .map((chunk) => "data: " + JSON.stringify(chunk) + "\n\n")
+          .join("") + "data: [DONE]\n\n",
+        { headers: { "content-type": "text/event-stream" } },
+      );
+    });
+    vi.stubGlobal("fetch", upstream);
+    for (const [locale, question] of greetings) {
+      const response = await ask(["Earlier question about rules", question], {
+        locale,
+      });
+      expect(response.status).toBe(200);
+      const text = await response.text();
+      expect(text).toContain("Hello! Ask me about this season.");
+      expect(text).not.toContain('"type":"source-url"');
+    }
+    expect(upstream).toHaveBeenCalledTimes(3);
+    const mixed = await chatEvidence(slug, "你好，換人需要什麼？", "");
+    expect(mixed.greeting).toBeUndefined();
+    expect(mixed.sources[0]?.text).toContain("Only after referee approval.");
+    const unavailable = await ask(["你好？"], { edition: "unpublished-test" });
+    expect(unavailable.status).toBe(404);
+    expect(upstream).toHaveBeenCalledTimes(3);
+  });
   it("streams cited public evidence through the configured compatible provider and discards client instructions", async () => {
     context.token = (await createSession(1425001)).token;
     const published = season(slug, "Only after referee approval.");

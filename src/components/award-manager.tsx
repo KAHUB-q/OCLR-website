@@ -59,13 +59,15 @@ export function AwardManager({ initial }: { initial: Data }) {
       if (!response.ok)
         throw new Error(result.error ?? "Unable to save changes.");
       setData(result);
-      setWeeks(result.weeks);
+      if (command.action === "configure") {
+        setWeeks(result.weeks);
+        setPolicy(result.policy);
+      }
       setSelected((current) =>
         result.weeks.some((week: AwardWeek) => week.number === current)
           ? current
           : (result.weeks[0]?.number ?? 1),
       );
-      setPolicy(result.policy);
       setNotice("Saved.");
     } catch (e) {
       setError(e instanceof Error ? e.message : "Unable to save changes.");

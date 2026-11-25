@@ -13,6 +13,11 @@ const requestError = z.object({
         "missing_required_parameter",
         "context_length_exceeded",
         "model_not_found",
+        "invalid_api_key",
+        "insufficient_quota",
+        "rate_limit_exceeded",
+        "content_filter",
+        "server_error",
       ])
       .optional()
       .catch(undefined),
@@ -30,13 +35,61 @@ const requestError = z.object({
   }),
 });
 
+const networkCodes = new Set([
+  "ECONNREFUSED",
+  "ECONNRESET",
+  "ENOTFOUND",
+  "EAI_AGAIN",
+  "ETIMEDOUT",
+  "EHOSTUNREACH",
+  "ENETUNREACH",
+  "UND_ERR_CONNECT_TIMEOUT",
+  "UND_ERR_HEADERS_TIMEOUT",
+  "UND_ERR_BODY_TIMEOUT",
+  "UND_ERR_SOCKET",
+  "CERT_HAS_EXPIRED",
+  "DEPTH_ZERO_SELF_SIGNED_CERT",
+  "UNABLE_TO_VERIFY_LEAF_SIGNATURE",
+]);
+
+export function safeChatError(error: unknown) {
+  const apiError = APICallError.isInstance(error) ? error : null;
+  const parsed = requestError.safeParse(apiError?.data);
+  let networkCode: string | undefined;
+  let cause = error;
+  for (let depth = 0; depth < 4 && cause instanceof Error; depth++) {
+    if (
+      "code" in cause &&
+      typeof cause.code === "string" &&
+      networkCodes.has(cause.code)
+    ) {
+      networkCode = cause.code;
+      break;
+    }
+    cause = cause.cause;
+  }
+  return {
+    upstreamStatus: apiError?.statusCode,
+    retryable: apiError?.isRetryable,
+    code: parsed.success ? parsed.data.error.code : undefined,
+    param: parsed.success ? parsed.data.error.param : undefined,
+    networkCode,
+  };
+}
+
+type TraceValue = string | number | boolean | undefined;
+
 export function createChatTrace() {
   const requestId = randomUUID();
-  const started = Date.now();
+  const started = performance.now();
+  const headers = {
+    "X-OCLR-Chat-Request-Id": requestId,
+    "Cache-Control": "no-store",
+  };
   const trace = (
     event: string,
     status?: number,
-    details?: { code?: string; param?: string },
+    details?: Record<string, TraceValue>,
   ) => {
     console.info(
       "[liru-chat]",
@@ -45,15 +98,20 @@ export function createChatTrace() {
         event,
         status,
         ...details,
-        durationMs: Date.now() - started,
+        durationMs: Math.round(performance.now() - started),
       }),
     );
   };
   function providerError(error: unknown) {
-    if (!APICallError.isInstance(error) || error.statusCode !== 400) return;
-    const parsed = requestError.safeParse(error.data);
-    if (parsed.success && (parsed.data.error.code || parsed.data.error.param))
-      trace("invalid_request", 400, parsed.data.error);
+    const { code, param, ...details } = safeChatError(error);
+    const status = details.upstreamStatus;
+    trace(status === 400 ? "invalid_request" : "provider_error", status, {
+      code,
+      param,
+      ...details,
+    });
   }
-  return { requestId, trace, providerError };
+  return { headers, trace, providerError };
 }
+
+export type ChatTrace = ReturnType<typeof createChatTrace>;

@@ -1,10 +1,11 @@
 import { createOpenAICompatible } from "@ai-sdk/openai-compatible";
 import type { ChatConfiguration } from "./chat-config";
+import { safeChatError, type ChatTrace } from "./chat-trace";
 import { chatProxyFetch } from "./chat-proxy";
 
 export function chatProvider(
   config: ChatConfiguration,
-  trace?: (event: "upstream_start" | "upstream_http", status?: number) => void,
+  trace?: ChatTrace["trace"],
 ) {
   const send = chatProxyFetch(config.proxyURL) ?? fetch;
   return createOpenAICompatible({
@@ -19,10 +20,34 @@ export function chatProvider(
           })
         : undefined,
     fetch: async (input, init) => {
-      trace?.("upstream_start");
-      const response = await send(input, init);
-      trace?.("upstream_http", response.status);
-      return response;
+      if (!trace) return send(input, init);
+      const started = performance.now();
+      trace("upstream_start", undefined, {
+        providerHost: new URL(config.baseURL).hostname,
+        viaProxy: Boolean(config.proxyURL),
+      });
+      try {
+        const response = await send(input, init);
+        const mime = response.headers.get("content-type") ?? "";
+        const responseFormat = mime.startsWith("text/event-stream")
+          ? "event-stream"
+          : mime.startsWith("application/json")
+            ? "json"
+            : mime
+              ? "other"
+              : "missing";
+        trace("upstream_http", response.status, {
+          responseFormat,
+          headerMs: Math.round(performance.now() - started),
+        });
+        return response;
+      } catch (error) {
+        trace("upstream_transport_error", undefined, {
+          ...safeChatError(error),
+          aborted: init?.signal?.aborted ?? false,
+        });
+        throw error;
+      }
     },
   });
 }

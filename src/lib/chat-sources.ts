@@ -21,6 +21,7 @@ export async function chatEvidence(
   previous: string,
   now = Date.now(),
   signal?: AbortSignal,
+  onEmbeddingFallback?: (error: unknown) => void,
 ) {
   const edition = await getPublicEdition(slug);
   if (!edition) throw new HttpError(404, "Tournament not found.");
@@ -47,7 +48,14 @@ export async function chatEvidence(
       edition: edition.name,
       total: null,
       sources: visual
-        ? await searchSeasonIndex(edition, visual, "", signal, "artwork")
+        ? await searchSeasonIndex(
+            edition,
+            visual,
+            "",
+            signal,
+            "artwork",
+            onEmbeddingFallback,
+          )
         : [],
     };
   const countIntent = seasonCountIntent(question);
@@ -146,7 +154,14 @@ export async function chatEvidence(
           ]),
     );
   }
-  const indexed = await searchSeasonIndex(edition, question, previous, signal);
+  const indexed = await searchSeasonIndex(
+    edition,
+    question,
+    previous,
+    signal,
+    undefined,
+    onEmbeddingFallback,
+  );
   const unique = new Map(
     [...indexed, ...sources].map((s) => [
       JSON.stringify([s.url, s.title, s.text]),

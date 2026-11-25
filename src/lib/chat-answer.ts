@@ -11,10 +11,11 @@ import type { ChatConfiguration } from "./chat-config";
 import type { chatEvidence } from "./chat-sources";
 import { formatSeasonCount } from "./chat-season-counts";
 import { chatProvider } from "./chat-provider";
-import { createChatTrace } from "./chat-trace";
+import { safeChatError, type ChatTrace } from "./chat-trace";
 
 export function chatAnswer({
   config,
+  diagnostics,
   assistantPrompt,
   evidence,
   locale,
@@ -22,6 +23,7 @@ export function chatAnswer({
   signal,
 }: {
   config: ChatConfiguration;
+  diagnostics: ChatTrace;
   assistantPrompt: string;
   evidence: Awaited<ReturnType<typeof chatEvidence>>;
   locale: Locale;
@@ -31,7 +33,7 @@ export function chatAnswer({
   const sources = [
     ...new Map(evidence.sources.map((s) => [s.url, s])).values(),
   ];
-  const { requestId, trace, providerError } = createChatTrace();
+  const { headers, trace, providerError } = diagnostics;
   const stream = createUIMessageStream({
     execute: async ({ writer }) => {
       writer.write({ type: "start" });
@@ -93,6 +95,7 @@ export function chatAnswer({
         }),
       });
       let answerText = "";
+      let receivedText = false;
       let failed = false;
       writer.merge(
         toUIMessageStream({
@@ -103,7 +106,13 @@ export function chatAnswer({
         }).pipeThrough(
           new TransformStream<UIMessageChunk, UIMessageChunk>({
             transform(chunk, controller) {
-              if (chunk.type === "text-delta") answerText += chunk.delta;
+              if (chunk.type === "text-delta") {
+                answerText += chunk.delta;
+                if (!receivedText && chunk.delta.trim()) {
+                  receivedText = true;
+                  trace("first_text");
+                }
+              }
               if (chunk.type === "error" || chunk.type === "abort") {
                 const timedOut = deadline.aborted && !signal.aborted;
                 if (!failed)
@@ -113,6 +122,8 @@ export function chatAnswer({
                       : signal.aborted
                         ? "cancelled"
                         : "upstream_error",
+                    undefined,
+                    { partial: receivedText },
                   );
                 failed = true;
                 controller.enqueue(
@@ -123,25 +134,29 @@ export function chatAnswer({
                 return;
               }
               if (chunk.type === "finish" && !failed) {
-                const hasText = Boolean(answerText.trim());
-                if (!hasText || chunk.finishReason === "error") {
-                  trace(hasText ? "upstream_error" : "empty_answer");
+                if (!receivedText || chunk.finishReason === "error") {
+                  trace(
+                    receivedText ? "upstream_error" : "empty_answer",
+                    undefined,
+                    { finishReason: chunk.finishReason },
+                  );
                   controller.enqueue({
                     type: "error",
                     errorText: "provider-unavailable",
                   });
                   return;
                 }
-                trace("answer_received");
                 const cited = new Set(
                   Array.from(
                     answerText.matchAll(/\[(\d+)\]/g),
                     (match) => match[1],
                   ),
                 );
+                let citationCount = 0;
                 for (const [i, source] of sources.entries()) {
                   const sourceId = String(i + 1);
                   if (!cited.has(sourceId)) continue;
+                  citationCount++;
                   controller.enqueue({
                     type: "source-url",
                     sourceId,
@@ -149,6 +164,11 @@ export function chatAnswer({
                     title: source.title,
                   });
                 }
+                trace("answer_received", undefined, {
+                  finishReason: chunk.finishReason,
+                  answerChars: answerText.length,
+                  citationCount,
+                });
               }
               controller.enqueue(chunk);
             },
@@ -156,16 +176,15 @@ export function chatAnswer({
         ),
       );
     },
-    onError: () => {
-      trace("stream_error");
+    onError: (error) => {
+      trace("stream_error", undefined, safeChatError(error));
       return "provider-unavailable";
     },
   });
   return createUIMessageStreamResponse({
     stream,
     headers: {
-      "X-OCLR-Chat-Request-Id": requestId,
-      "Cache-Control": "no-store",
+      ...headers,
       "X-Accel-Buffering": "no",
     },
   });

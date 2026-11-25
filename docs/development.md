@@ -118,17 +118,23 @@ Chat reads the current rules, timeline, fixtures and mappools alongside the back
 
 The backend follows the provider and streaming separation used by the [Vercel Chatbot template](https://github.com/vercel/chatbot). The `/api/chat` route checks the osu! session, origin, rate limit and request, then retrieves published evidence for that edition. `chat-answer.ts` turns this evidence into an AI SDK UI message stream for assistant-ui. Both generation and embeddings use `chat-provider.ts` for the configured endpoint, key and proxy.
 
+### Sitewide custom prompt
+
+After migration 0121, a global Admin can set the custom prompt under **Site settings → Liru chat settings**. The field accepts up to 3,000 characters, and clearing it restores the built-in behavior. A saved change applies on the next request that generates an answer. The custom prompt supplements the built-in instructions for tone, presentation and terminology, and is sent to the configured model with those instructions. Keep credentials and private information out of the prompt. The site audit records the actor, revision and lengths while the prompt itself is available in the settings editor.
+
 ### Tracing a chat answer
 
-Ask about a published rule and inspect the browser Network entry for `POST /api/chat`. Copy its `X-OCLR-Chat-Request-Id` response header and look up that turn on the application host.
+Inspect the browser Network entry for `POST /api/chat`. Both streaming and JSON responses include an `X-OCLR-Chat-Request-Id`. Use it to find the same turn on the application host.
 
 ```sh
 sudo journalctl -u oclr.service --since '15 minutes ago' -o cat --no-pager | grep -F 'PASTE-REQUEST-ID'
 ```
 
-`upstream_start` records the attempt to call Chat Completions. `upstream_http` records the HTTP status observed by the website. `answer_received` confirms that the application received answer text and the SDK finished the stream. The browser should show a nonempty `text-delta` followed by `finish`. The website can return HTTP 200 before the upstream responds.
+`request_rejected` and `request_failed` identify the stage and HTTP status before streaming. `evidence_ready` records the public edition, retrieval time and source count. `embedding_fallback` records when vector search falls back to keywords. `prompt_ready` records the settings revision and whether a custom prompt was present.
 
-For HTTP 400, look for an accompanying `invalid_request` event with a recognized `code` or `param`. OpenAI Chat Completions uses `max_completion_tokens` on `api.openai.com`. Other compatible endpoints retain the SDK token limit field `max_tokens`. If the upstream returns 401/403, check the provider key and its model permissions. For 404 check the base URL and model ID, and for 429 check the provider quota and rate limits. If there is no upstream HTTP status, check proxy connectivity and the provider's request history at the same time. An HTTP 200 followed by `empty_answer` or `upstream_error` calls for inspecting the provider's streaming Chat Completions response. `timeout` marks the generation deadline and `cancelled` marks a client disconnect. Traces contain the request ID, event, elapsed milliseconds and optionally HTTP status and recognized error fields.
+`upstream_start` records the provider host and whether the chat proxy is configured. `upstream_http` records the provider HTTP status, response format and time until headers. `upstream_transport_error` includes a recognized network code when available. `first_text` records time to the first text, and `answer_received` records the finish reason, answer length and citation count. The website can return HTTP 200 before the upstream responds.
+
+For HTTP 400, look for an accompanying `invalid_request` event with a recognized `code` or `param`. OpenAI Chat Completions uses `max_completion_tokens` on `api.openai.com`. Other compatible endpoints retain the SDK token limit field `max_tokens`. If the upstream returns 401/403, check the provider key and its model permissions. For 404 check the base URL and model ID, and for 429 check the provider quota and rate limits. If there is no upstream HTTP status, check proxy connectivity and the provider's request history at the same time. An HTTP 200 followed by `empty_answer` or `upstream_error` calls for inspecting the provider's streaming Chat Completions response. `timeout` marks the generation deadline and `cancelled` marks a client disconnect. Logs record structured metadata only. They omit prompt and answer text, request bodies, API keys, proxy credentials and raw provider errors.
 
 `local_count` answers simple season totals from published data. It counts accepted registrations (or players in a historical roster), published teams, fixtures, published results, upcoming fixtures with a scheduled start, mappools, and map slots across pools. Repeated beatmaps count once per slot. Each answer links to the corresponding page in the selected edition. `no_evidence` returns the published-information fallback. Neither calls Chat Completions. Background embedding jobs use the separate `oclr-chat-index.service` journal.
 

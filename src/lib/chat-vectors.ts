@@ -60,6 +60,7 @@ export async function searchSeasonIndex(
   previous: string,
   signal?: AbortSignal,
   collection?: "artwork",
+  onEmbeddingFallback?: (error: unknown) => void,
 ) {
   const metadata = {
     digest: vectors.digest,
@@ -122,8 +123,9 @@ export async function searchSeasonIndex(
         )
         .orderBy(sql`${similarity} desc`, vectors.digest)
         .limit(10);
-    } catch {
+    } catch (error) {
       signal?.throwIfAborted();
+      onEmbeddingFallback?.(error);
       // Keyword hits remain usable while the embedding endpoint is unavailable.
     }
   }

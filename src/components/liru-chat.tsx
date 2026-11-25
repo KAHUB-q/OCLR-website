@@ -93,7 +93,7 @@ function AssistantMessage() {
     <MessagePrimitive.Root className={styles.reply}>
       <Image
         className={styles.avatar}
-        src="/mascot/liru/chat-headset.webp"
+        src="/mascot/liru/chat-wink.webp"
         alt=""
         width={34}
         height={34}

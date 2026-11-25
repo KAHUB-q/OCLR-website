@@ -23,6 +23,20 @@ describe("searchable IANA choices", () => {
     expect(timeZoneLabel("Asia/Hong_Kong")).toBe("Hong Kong — Asia/Hong_Kong");
     expect(timeZoneLabel("UTC")).toBe("UTC");
   });
+  it("offers valid identifiers missing from the enumerated list", () => {
+    const zones = ["UTC", "Asia/Hong_Kong", "America/New_York"];
+    for (const zone of ["US/Eastern", "Etc/GMT+5", "Etc/GMT-5"])
+      expect(searchTimeZones(zones, `  ${zone}  `)).toEqual([zone]);
+    expect(searchTimeZones(zones, "Hongkong")).toEqual([
+      "Asia/Hong_Kong",
+      "Hongkong",
+    ]);
+    expect(searchTimeZones(zones, "america/new_york")).toEqual([
+      "America/New_York",
+    ]);
+    expect(searchTimeZones(zones, "Invalid/Zone")).toEqual([]);
+    expect(searchTimeZones(zones, "+05:00")).toEqual([]);
+  });
   it("uses the full bundled snapshot if enumeration is unavailable", () => {
     const spy = vi.spyOn(Intl, "supportedValuesOf").mockImplementation(() => {
       throw new Error("unavailable");

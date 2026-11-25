@@ -116,6 +116,50 @@ describe("published schedule semantics", () => {
       );
     },
   );
+  it("shows each confirmed fixture's local time and offset in its card and table row", async () => {
+    const kathmandu = {
+      ...fixture(),
+      timeZone: "Asia/Kathmandu",
+    };
+    const newYork = {
+      ...fixture(teams[1], teams[2]),
+      scheduledAt: "2026-11-01T05:30:00Z",
+      timeZone: "America/New_York",
+    };
+    const afterClockChange = {
+      ...newYork,
+      id: "after-clock-change",
+      scheduledAt: "2026-11-01T06:30:00Z",
+    };
+    const unconfirmed = {
+      ...fixture(teams[2], teams[0]),
+      confirmed: false,
+      timeZone: "Asia/Tokyo",
+    };
+    vi.mocked(publicCompetition).mockResolvedValue(
+      competition([kathmandu, newYork, afterClockChange, unconfirmed], policy),
+    );
+
+    const html = await render();
+    for (const [id, localTime] of [
+      [kathmandu.id, "17:45 (UTC+5:45)"],
+      [newYork.id, "01:30 (UTC-4)"],
+      [afterClockChange.id, "01:30 (UTC-5)"],
+    ]) {
+      const card = html.match(
+        new RegExp(`<article data-match-id="${id}".*?</article>`, "s"),
+      );
+      const row = html.match(new RegExp(`<tr id="row-${id}".*?</tr>`, "s"));
+      expect(card?.[0]).toContain(localTime);
+      expect(row?.[0]).toContain(localTime);
+    }
+    expect(
+      html.match(
+        new RegExp(`<tr id="row-${unconfirmed.id}".*?</tr>`, "s"),
+      )?.[0],
+    ).toContain("<time>—</time>");
+    expect(html).not.toContain("UTC+8");
+  });
   it("links a published recording in the match information table", async () => {
     const match = fixture();
     const vod = "https://video.example.test/recording";

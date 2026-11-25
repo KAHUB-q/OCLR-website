@@ -14,7 +14,7 @@ export function EventSchedule({
   edition,
   phases,
   heading = true,
-  timeZone = "UTC+8",
+  timeZone,
   reviewMode = false,
   initialStatus = "all",
   competition,
@@ -241,7 +241,7 @@ export function EventSchedule({
       {heading && (
         <div className="event-section-heading">
           <h1>{tr("Schedule")}</h1>
-          <span>{timeZone}</span>
+          {timeZone && <span>{timeZone}</span>}
         </div>
       )}
       {reviewMode && (

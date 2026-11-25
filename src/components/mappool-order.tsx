@@ -48,6 +48,7 @@ export function MappoolOrder({
   const [target, setTarget] = useState<Target | null>(null);
   const pointer = useRef<{
     id: string;
+    pointerId: number;
     x: number;
     y: number;
     version: number;
@@ -70,7 +71,8 @@ export function MappoolOrder({
   const changed = order.some((id, i) => id !== entries[i]?.id);
   const canMove = editable && !busy;
   const ordered = order.flatMap((id) => entries.filter((e) => e.id === id));
-  function cancelDrag() {
+  function cancelDrag(event?: PointerEvent<HTMLButtonElement>) {
+    if (event && event.pointerId !== pointer.current?.pointerId) return;
     pointer.current = null;
     cancelAnimationFrame(frame.current);
     setDragging(null);
@@ -131,11 +133,13 @@ export function MappoolOrder({
   }
   function start(event: PointerEvent<HTMLButtonElement>, id: string) {
     if (!canMove || saving.current || event.button !== 0) return;
+    if (pointer.current) return;
     event.preventDefault();
     event.currentTarget.focus({ preventScroll: true });
     event.currentTarget.setPointerCapture(event.pointerId);
     pointer.current = {
       id,
+      pointerId: event.pointerId,
       x: event.clientX,
       y: event.clientY,
       version: pool.version,
@@ -145,13 +149,12 @@ export function MappoolOrder({
   }
   function drop(event: PointerEvent<HTMLButtonElement>) {
     const p = pointer.current;
-    if (p) {
-      p.x = event.clientX;
-      p.y = event.clientY;
-    }
+    if (!p || event.pointerId !== p.pointerId) return;
+    p.x = event.clientX;
+    p.y = event.clientY;
     const destination = findTarget();
     cancelDrag();
-    if (!p || !destination || p.version !== pool.version) return;
+    if (!destination || p.version !== pool.version) return;
     const remaining = order.filter((id) => id !== p.id);
     const index = remaining.indexOf(destination.id);
     if (index >= 0) move(p.id, index + Number(destination.after));
@@ -263,7 +266,7 @@ export function MappoolOrder({
                     disabled={!canMove}
                     onPointerDown={(event) => start(event, entry.id)}
                     onPointerMove={(event) => {
-                      if (pointer.current) {
+                      if (pointer.current?.pointerId === event.pointerId) {
                         pointer.current.x = event.clientX;
                         pointer.current.y = event.clientY;
                       }

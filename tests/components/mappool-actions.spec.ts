@@ -5,6 +5,50 @@ test.beforeEach(async ({ page }) => {
   await page.route("**/api/osu-images/{cover,list}/*", (route) => route.abort());
 });
 
+test("two fingers on separate handles leave the first finger in control", async ({
+  page,
+  context,
+}) => {
+  await page.goto("/mappool-actions");
+  const handles = page.locator(".mappool-drag-handle");
+  await expect(handles).toHaveCount(2);
+  const [first, second] = await handles.evaluateAll(([a, b]) => {
+    const center = (el: Element) => {
+      const rect = el.getBoundingClientRect();
+      return { x: rect.left + rect.width / 2, y: rect.top + rect.height / 2 };
+    };
+    window.scrollBy(0, (center(a).y + center(b).y - window.innerHeight) / 2);
+    return [a, b].map((el, index) => ({ ...center(el), id: index + 1 }));
+  });
+  const session = await context.newCDPSession(page);
+  await session.send("Emulation.setTouchEmulationEnabled", {
+    enabled: true,
+    maxTouchPoints: 2,
+  });
+  const touch = (
+    type: "touchStart" | "touchMove" | "touchEnd",
+    touchPoints: (typeof first)[],
+  ) => session.send("Input.dispatchTouchEvent", { type, touchPoints });
+  const order = page.locator("[data-map-entry]").first();
+  const save = page.getByRole("button", { name: "Save order", exact: true });
+
+  await touch("touchStart", [first]);
+  await touch("touchStart", [first, second]);
+  await touch("touchEnd", [first]);
+  await touch("touchEnd", []);
+  await expect(order).toHaveAttribute("data-map-entry", "entry-1");
+  await expect(save).toBeDisabled();
+
+  // Releasing the extra finger also leaves the original drag usable.
+  await touch("touchStart", [second]);
+  await touch("touchStart", [second, first]);
+  await touch("touchEnd", [first]);
+  await touch("touchMove", [{ ...first, id: second.id }]);
+  await touch("touchEnd", []);
+  await expect(order).toHaveAttribute("data-map-entry", "entry-2");
+  await expect(save).toBeEnabled();
+});
+
 const locale = "en";
 
 const theme = "light";

@@ -2,7 +2,7 @@
 
 import { useEffect, useId, useMemo, useRef, useState } from "react";
 import { useAppTranslations } from "@/i18n/shared";
-import { useLeaderboardSortLayout } from "./use-leaderboard-sort-layout";
+import { LeaderboardSortToolbar } from "./leaderboard-sort-toolbar";
 import { classRules, type PlayerClass } from "@/lib/player-class";
 import {
   PlayerRankCard,
@@ -199,20 +199,6 @@ export function PlayerLeaderboardCards({
     { key: "dt", label: tr("DT force") },
   ];
 
-  const labelKey = columns
-    .map((column) => `${column.key}:${column.label}:${column.trophy ?? ""}`)
-    .join("\u0001");
-
-  const { sortBarRef, sortRowSizes } = useLeaderboardSortLayout(labelKey);
-
-  const sortRows: (typeof columns)[] = [];
-  const rowSizes = sortRowSizes ?? [columns.length];
-  let rowOffset = 0;
-  for (const size of rowSizes) {
-    sortRows.push(columns.slice(rowOffset, rowOffset + size));
-    rowOffset += size;
-  }
-
   const sorted = useMemo(() => {
     const ranked: Ranked[] = players.map((player) => ({
       player,
@@ -275,56 +261,45 @@ export function PlayerLeaderboardCards({
           ? tr("Sorted ascending")
           : tr("Sorted descending")}
       </span>
-      <div
-        ref={sortBarRef}
-        className={styles.sortBar}
-        role="toolbar"
-        aria-label={ariaLabel ?? tr("Player leaderboard")}
+      <LeaderboardSortToolbar
+        columns={columns}
+        label={ariaLabel ?? tr("Player leaderboard")}
       >
-        {sortRows.map((row) => (
-          <div
-            key={row[0].key}
-            className={styles.sortRow}
-            data-measuring={sortRowSizes ? undefined : true}
-          >
-            {row.map((column) => {
-              const active = activeSort.key === column.key;
-              const ascending = active && activeSort.dir === "asc";
-              const descending = active && activeSort.dir === "desc";
-              return (
-                <button
-                  key={column.key}
-                  type="button"
-                  className={styles.sortButton}
-                  data-active={active || undefined}
-                  aria-pressed={active}
-                  aria-describedby={active ? sortDescriptionId : undefined}
-                  onClick={() => toggle(column.key)}
-                >
-                  <span
-                    className={styles.arrow}
-                    data-active={ascending || undefined}
-                    aria-hidden="true"
-                  >
-                    ▲
-                  </span>
-                  <span className={styles.label}>
-                    {column.trophy && <PlacementTrophy tier={column.trophy} />}
-                    {column.label}
-                  </span>
-                  <span
-                    className={styles.arrow}
-                    data-active={descending || undefined}
-                    aria-hidden="true"
-                  >
-                    ▼
-                  </span>
-                </button>
-              );
-            })}
-          </div>
-        ))}
-      </div>
+        {(column) => {
+          const active = activeSort.key === column.key;
+          const ascending = active && activeSort.dir === "asc";
+          const descending = active && activeSort.dir === "desc";
+          return (
+            <button
+              type="button"
+              className={styles.sortButton}
+              data-active={active || undefined}
+              aria-pressed={active}
+              aria-describedby={active ? sortDescriptionId : undefined}
+              onClick={() => toggle(column.key)}
+            >
+              <span
+                className={styles.arrow}
+                data-active={ascending || undefined}
+                aria-hidden="true"
+              >
+                ▲
+              </span>
+              <span className={styles.label}>
+                {column.trophy && <PlacementTrophy tier={column.trophy} />}
+                {column.label}
+              </span>
+              <span
+                className={styles.arrow}
+                data-active={descending || undefined}
+                aria-hidden="true"
+              >
+                ▼
+              </span>
+            </button>
+          );
+        }}
+      </LeaderboardSortToolbar>
       <div className={styles.list}>
         {shown.map(({ player }) => (
           <PlayerRankCard key={player.osuId} player={player} />

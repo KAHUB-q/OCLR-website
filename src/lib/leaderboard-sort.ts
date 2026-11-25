@@ -29,7 +29,7 @@ export function fitSortRows(
         rowWidth += widths[index];
         index += 1;
       }
-      if (rowWidth > available + 0.5) {
+      if (rowWidth > available) {
         fits = false;
         break;
       }

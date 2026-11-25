@@ -2,7 +2,7 @@
 
 import { useEffect, useId, useMemo, useRef, useState } from "react";
 import { useAppTranslations } from "@/i18n/shared";
-import { useLeaderboardSortLayout } from "./use-leaderboard-sort-layout";
+import { LeaderboardSortToolbar } from "./leaderboard-sort-toolbar";
 import { BeatmapRankCard, type BeatmapRankCardData } from "./beatmap-rank-card";
 import styles from "./player-leaderboard-cards.module.css";
 
@@ -101,21 +101,6 @@ export function BeatmapLeaderboardCards({
     { key: "averageCombo", label: tr("Average combo") },
   ];
 
-  const labelKey = columns
-    .map((column) => `${column.key}:${column.label}`)
-    .join("\u0001");
-
-  const { sortBarRef, sortRowSizes } = useLeaderboardSortLayout(labelKey);
-
-  const sortRows: (typeof columns)[] = [];
-  const rowSizes = sortRowSizes ?? [columns.length];
-  let rowOffset = 0;
-  for (const size of rowSizes) {
-    const row = columns.slice(rowOffset, rowOffset + size);
-    if (row.length > 0) sortRows.push(row);
-    rowOffset += size;
-  }
-
   const sorted = useMemo(() => {
     const ranked: Ranked[] = maps.map((map) => ({ map, rank: map.rank }));
     return [...ranked]
@@ -175,53 +160,42 @@ export function BeatmapLeaderboardCards({
           ? tr("Sorted ascending")
           : tr("Sorted descending")}
       </span>
-      <div
-        ref={sortBarRef}
-        className={styles.sortBar}
-        role="toolbar"
-        aria-label={ariaLabel ?? tr("Beatmap leaderboard")}
+      <LeaderboardSortToolbar
+        columns={columns}
+        label={ariaLabel ?? tr("Beatmap leaderboard")}
       >
-        {sortRows.map((row) => (
-          <div
-            key={row[0].key}
-            className={styles.sortRow}
-            data-measuring={sortRowSizes ? undefined : true}
-          >
-            {row.map((column) => {
-              const active = activeSort.key === column.key;
-              const ascending = active && activeSort.dir === "asc";
-              const descending = active && activeSort.dir === "desc";
-              return (
-                <button
-                  key={column.key}
-                  type="button"
-                  className={styles.sortButton}
-                  data-active={active || undefined}
-                  aria-pressed={active}
-                  aria-describedby={active ? sortDescriptionId : undefined}
-                  onClick={() => toggle(column.key)}
-                >
-                  <span
-                    className={styles.arrow}
-                    data-active={ascending || undefined}
-                    aria-hidden="true"
-                  >
-                    ▲
-                  </span>
-                  <span className={styles.label}>{column.label}</span>
-                  <span
-                    className={styles.arrow}
-                    data-active={descending || undefined}
-                    aria-hidden="true"
-                  >
-                    ▼
-                  </span>
-                </button>
-              );
-            })}
-          </div>
-        ))}
-      </div>
+        {(column) => {
+          const active = activeSort.key === column.key;
+          const ascending = active && activeSort.dir === "asc";
+          const descending = active && activeSort.dir === "desc";
+          return (
+            <button
+              type="button"
+              className={styles.sortButton}
+              data-active={active || undefined}
+              aria-pressed={active}
+              aria-describedby={active ? sortDescriptionId : undefined}
+              onClick={() => toggle(column.key)}
+            >
+              <span
+                className={styles.arrow}
+                data-active={ascending || undefined}
+                aria-hidden="true"
+              >
+                ▲
+              </span>
+              <span className={styles.label}>{column.label}</span>
+              <span
+                className={styles.arrow}
+                data-active={descending || undefined}
+                aria-hidden="true"
+              >
+                ▼
+              </span>
+            </button>
+          );
+        }}
+      </LeaderboardSortToolbar>
       <div className={styles.list}>
         {shown.map(({ map }) => (
           <BeatmapRankCard key={map.beatmapId} map={map} />

@@ -4,6 +4,7 @@ import { InfoNote } from "@/components/info-note";
 
 import { ReadOnlyFields, MutationButton } from "./staff-read-only";
 import { useEffect, useRef, useState, type FormEvent } from "react";
+import { flushSync } from "react-dom";
 import Image from "next/image";
 import { usePendingRefresh } from "./use-pending-refresh";
 import { LoadingRegion } from "./loading-region";
@@ -86,7 +87,7 @@ export function TeamEditor({
           chooseImage(null);
           setRemove(false);
           setError("");
-          setOpened((n) => n + 1);
+          flushSync(() => setOpened((n) => n + 1));
           dialog.current?.showModal();
         }}
       >

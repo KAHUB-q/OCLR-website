@@ -1,6 +1,25 @@
 import { expect, test } from "@playwright/test";
 import sharp from "sharp";
 
+test("a keyboard user can type in the team name immediately after opening", async ({
+  page,
+}) => {
+  await page.goto("/team-editor");
+  const open = page.getByRole("button", { name: "Edit team", exact: true });
+  const name = page.getByRole("dialog").getByLabel("Team name", { exact: true });
+  await open.focus();
+  await page.keyboard.press("Enter");
+  await expect(name).toBeFocused();
+  await page.keyboard.press("End");
+  await page.keyboard.type(" B");
+  await expect(name).toHaveValue("Synthetic B");
+  await page.keyboard.press("Escape");
+  await expect(open).toBeFocused();
+  await page.keyboard.press("Enter");
+  await expect(name).toBeFocused();
+  await expect(name).toHaveValue("Synthetic");
+});
+
 test("keeps the conflict and team draft until dismissal, then reopens current data", async ({
   page,
 }) => {

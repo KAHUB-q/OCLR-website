@@ -16,17 +16,10 @@ test("stop a pending turn, retry with sources, and start fresh in another editio
     };
   });
   const editions: string[] = [];
-  let chosen: string;
   await page.route("**/api/chat", async (route) => {
     count++;
     const body = route.request().postDataJSON();
     editions.push(body.edition);
-    if (body.edition === "cup-b") {
-      expect(body).toMatchObject({
-        locale: "en",
-        questions: [chosen],
-      });
-    }
     if (count === 1) {
       await gate;
       await route.abort().catch(() => {});
@@ -107,8 +100,14 @@ test("stop a pending turn, retry with sources, and start fresh in another editio
   await expect(page.getByRole("log", { includeHidden: true })).toBeEmpty();
   await page.getByRole("textbox").fill("My next question");
   await expect(suggestions).toHaveCount(3);
-  chosen = await suggestions.first().innerText();
+  const chosen = await suggestions.first().innerText();
+  const request = page.waitForRequest("**/api/chat");
   await suggestions.first().click();
+  expect((await request).postDataJSON()).toMatchObject({
+    edition: "cup-b",
+    locale: "en",
+    questions: [chosen],
+  });
   await expect(
     page.getByRole("log").getByText(chosen, { exact: true }),
   ).toBeVisible();

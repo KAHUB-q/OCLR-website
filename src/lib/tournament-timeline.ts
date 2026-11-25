@@ -73,6 +73,8 @@ export function tournamentTimeline(
       action: tr("View registration"),
     });
   }
+  const registrationRows = rows.slice();
+  const seenEventKeys = new Set<string>();
   edition.schedule.forEach((event, index) => {
     const label = isMilestoneName(event.kind, event.label)
       ? milestoneName(event.label, tr)
@@ -84,20 +86,24 @@ export function tournamentTimeline(
     const detail = interval
       ? range(event.at, event.endAt, event.precision)
       : date(event.at, singleTime ? "instant" : event.precision);
-    // Exact event identity only; authored labels are never interpreted as phase types.
-    // Suppress repeated rows at render time without mutating stored milestones.
+    const at = event.at ? Date.parse(event.at) : null;
     if (
-      rows.some(
-        (row) =>
-          row.event === label &&
-          (row.date === detail ||
-            (!event.kind &&
-              row.at &&
-              event.at &&
-              Date.parse(row.at) === Date.parse(event.at))),
+      !event.kind &&
+      at !== null &&
+      registrationRows.some(
+        (row) => row.event === label && row.at && Date.parse(row.at) === at,
       )
     )
       return;
+    const key = JSON.stringify([
+      event.kind,
+      event.label,
+      at,
+      endAt ? Date.parse(endAt) : null,
+      singleTime ? "instant" : (event.precision ?? "instant"),
+    ]);
+    if (seenEventKeys.has(key)) return;
+    seenEventKeys.add(key);
     rows.push({
       event: label,
       date: detail,

@@ -45,7 +45,7 @@ createRoot(document.getElementById("root")!).render(
             edition="synthetic"
             players={directoryPlayers}
             remote
-            grouped
+            grouped={!params.has("ungrouped")}
             preview={params.has("preview")}
           />
         </main>

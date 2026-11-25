@@ -41,6 +41,30 @@ test("clearing filters keeps the selected registration list", async ({
   }
 });
 
+test("clearing an invalid shared group restores a directory without view controls", async ({
+  page,
+}) => {
+  const restoredUrl = "/event-players?ungrouped=1&theme=light#players";
+  for (const query of ["", "&q=missing-player-name"]) {
+    await page.goto(
+      `/event-players?ungrouped=1&theme=light&group=cards${query}#players`,
+    );
+    await expect(page.getByRole("alert")).toContainText(
+      "Choose valid player filters",
+    );
+    await expect(page.getByRole("button", { name: "Team groups" })).toHaveCount(
+      0,
+    );
+    const clear = page.getByRole("button", { name: "Clear filters" });
+    await (query ? clear.last() : clear.first()).click();
+    await expect(page).toHaveURL(restoredUrl);
+    await expect(page.getByRole("alert")).toHaveCount(0);
+    await expect(
+      page.getByText("105 / 105 Players", { exact: true }),
+    ).toBeVisible();
+  }
+});
+
 test("a shared range stays editable when its last digit is erased", async ({
   page,
 }) => {

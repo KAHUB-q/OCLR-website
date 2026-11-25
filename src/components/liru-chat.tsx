@@ -108,7 +108,13 @@ function UserMessage() {
   );
 }
 
-export function LiruChat({ edition }: { edition: string }) {
+export function LiruChat({
+  edition,
+  suggestions,
+}: {
+  edition: string;
+  suggestions: readonly string[];
+}) {
   const tr = useAppTranslations();
   const locale = tr.locale;
   const transport = useMemo(
@@ -179,11 +185,7 @@ export function LiruChat({ edition }: { edition: string }) {
         )}
         <ComposerPrimitive.Root className={styles.composer}>
           <div className={styles.suggestions}>
-            {[
-              tr("How many players are there?"),
-              tr("How many upcoming matches are there?"),
-              tr("How many HD maps are there?"),
-            ].map((question) => (
+            {suggestions.map((question) => (
               <ThreadPrimitive.Suggestion
                 key={question}
                 type="button"

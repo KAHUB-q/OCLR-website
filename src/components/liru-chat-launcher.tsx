@@ -2,6 +2,7 @@
 
 import { lazy, Suspense, useEffect, useId, useRef, useState } from "react";
 import { useAppTranslations } from "@/i18n/shared";
+import { pickLiruSuggestions } from "@/lib/liru-chat-suggestions";
 import { LiruChatIcon } from "./liru-chat-icon";
 import styles from "./liru-chat.module.css";
 
@@ -18,7 +19,7 @@ export function LiruChatLauncher({
 }) {
   const tr = useAppTranslations();
   const id = useId();
-  const [opened, setOpened] = useState(false);
+  const [suggestions, setSuggestions] = useState<string[] | null>(null);
   const panel = useRef<HTMLElement>(null);
   useEffect(() => {
     if (window.location.hash === "#ask-liru") {
@@ -47,7 +48,8 @@ export function LiruChatLauncher({
         ref={panel}
         id={id}
         onToggle={(event) => {
-          if (event.newState === "open") setOpened(true);
+          if (signedIn && event.newState === "open")
+            setSuggestions(pickLiruSuggestions(tr));
         }}
         popover="auto"
         role="dialog"
@@ -74,9 +76,9 @@ export function LiruChatLauncher({
                 "Your question, recent questions and relevant public tournament information are sent to the configured AI provider.",
               )}
             </p>
-            {opened && (
+            {suggestions && (
               <Suspense fallback={<p role="status">{tr("Loading…")}</p>}>
-                <Chat edition={edition} />
+                <Chat edition={edition} suggestions={suggestions} />
               </Suspense>
             )}
           </>

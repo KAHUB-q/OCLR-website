@@ -3,6 +3,7 @@ import { getPublicEdition } from "@/lib/content";
 import { currentUser } from "@/lib/auth/user";
 import { chatConfiguration } from "@/lib/chat-config";
 import { getAppTranslations } from "@/i18n/server";
+import { pickLiruSuggestions } from "@/lib/liru-chat-suggestions";
 import { LiruChat } from "@/components/liru-chat";
 import { LiruChatIcon } from "@/components/liru-chat-icon";
 
@@ -29,7 +30,11 @@ export default async function ChatPage({
               "Your question, recent questions and relevant public tournament information are sent to the configured AI provider.",
             )}
           </p>
-          <LiruChat key={slug} edition={slug} />
+          <LiruChat
+            key={slug}
+            edition={slug}
+            suggestions={pickLiruSuggestions(tr)}
+          />
         </>
       ) : (
         <a

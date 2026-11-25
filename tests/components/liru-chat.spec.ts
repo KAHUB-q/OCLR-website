@@ -7,7 +7,16 @@ test("stop a pending turn, retry with sources, and start fresh in another editio
   const gate = new Promise<void>((r) => {
     release = r;
   });
+  // Seed the draw so checking that reopening refreshes the buttons is reproducible.
+  await page.addInitScript(() => {
+    let seed = 42;
+    Math.random = () => {
+      seed = (seed * 16807) % 2147483647;
+      return seed / 2147483647;
+    };
+  });
   const editions: string[] = [];
+  let chosen: string;
   await page.route("**/api/chat", async (route) => {
     count++;
     const body = route.request().postDataJSON();
@@ -15,7 +24,7 @@ test("stop a pending turn, retry with sources, and start fresh in another editio
     if (body.edition === "cup-b") {
       expect(body).toMatchObject({
         locale: "en",
-        questions: ["How many HD maps are there?"],
+        questions: [chosen],
       });
     }
     if (count === 1) {
@@ -50,15 +59,20 @@ test("stop a pending turn, retry with sources, and start fresh in another editio
   await page.goto("/liru-chat#ask-liru");
   const launcher = page.getByRole("button", { name: "Ask Liru" });
   await expect(page.getByRole("dialog")).toBeInViewport();
+  const suggestions = page.getByRole("button", { name: /^How many / });
+  await expect(suggestions).toHaveCount(3);
+  const initial = await suggestions.allTextContents();
+  expect(new Set(initial).size).toBe(3);
   await page.getByRole("textbox").fill("Substitution?");
   await page.getByRole("button", { name: "Send", exact: true }).click();
   await expect.poll(() => count).toBe(1);
   await expect(
     page.getByRole("status").filter({ hasText: "Loading…" }),
   ).toBeVisible();
-  await expect(
-    page.getByRole("button", { name: "How many players are there?" }),
-  ).toBeDisabled();
+  await expect(suggestions).toHaveText(initial);
+  for (const suggestion of await suggestions.all()) {
+    await expect(suggestion).toBeDisabled();
+  }
   await page.getByRole("button", { name: "Stop", exact: true }).click();
   release();
   await expect(page.getByRole("textbox")).toHaveValue("Substitution?");
@@ -76,25 +90,29 @@ test("stop a pending turn, retry with sources, and start fresh in another editio
   await expect(
     page.getByRole("status").filter({ hasText: "Loading…" }),
   ).toHaveCount(0);
+  await page.getByRole("textbox").fill("Draft for this season");
+  await expect(suggestions).toHaveText(initial);
   await page.keyboard.press("Escape");
   await expect(page.getByRole("dialog")).toBeHidden();
   await launcher.click();
   await expect(page.getByText("Ask the referee.")).toBeVisible();
+  await expect(page.getByRole("textbox")).toHaveValue("Draft for this season");
+  await expect(suggestions).toHaveCount(3);
+  await expect.poll(() => suggestions.allTextContents()).not.toEqual(initial);
+  expect(new Set(await suggestions.allTextContents()).size).toBe(3);
   await page.getByRole("button", { name: "Try again" }).click();
   await expect.poll(() => count).toBe(3);
   await page.getByRole("button", { name: "Switch season" }).click();
   await launcher.click();
   await expect(page.getByRole("log", { includeHidden: true })).toBeEmpty();
   await page.getByRole("textbox").fill("My next question");
-  await page
-    .getByRole("button", { name: "How many HD maps are there?" })
-    .click();
+  await expect(suggestions).toHaveCount(3);
+  chosen = await suggestions.first().innerText();
+  await suggestions.first().click();
   await expect(
-    page.getByRole("log").getByText("How many HD maps are there?"),
+    page.getByRole("log").getByText(chosen, { exact: true }),
   ).toBeVisible();
-  await expect(
-    page.getByRole("button", { name: "How many upcoming matches are there?" }),
-  ).toBeEnabled();
+  await expect(suggestions.first()).toBeEnabled();
   await expect(page.getByRole("textbox")).toHaveValue("My next question");
   await expect
     .poll(() => editions)
